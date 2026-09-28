@@ -2,10 +2,16 @@
 // Connects to Supabase Auth & PostgreSQL database with JSONB document support.
 // You can use standard Supabase cloud credentials (URL + anon key).
 
-const SUPABASE_CDN = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-
 export async function createSupabaseApi(supabaseUrl, supabaseAnonKey){
-  const { createClient } = await import(SUPABASE_CDN);
+  let createClient;
+  try {
+    const mod = await import("@supabase/supabase-js");
+    createClient = mod.createClient;
+  } catch(e){
+    const mod = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
+    createClient = mod.createClient;
+  }
+
   const client = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       persistSession: true,
@@ -23,24 +29,23 @@ export async function createSupabaseApi(supabaseUrl, supabaseAnonKey){
     return { table: parts[0], id: parts.slice(1).join("__") };
   }
 
+  let currentUser = null;
+
   const api = {
     mode: "supabase",
     client,
     auth: {
-      current: () => {
-        const u = client.auth.getUser ? null : null; // async in supabase v2
-        const s = client.auth.getSession ? null : null;
-        // cached session
-        return null;
-      },
+      current: () => currentUser,
       onChange: cb => {
         client.auth.getSession().then(({ data: { session } }) => {
           const u = session?.user;
-          cb(u ? { uid: u.id, email: u.email } : null);
+          currentUser = u ? { uid: u.id, email: u.email } : null;
+          cb(currentUser);
         });
         const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
           const u = session?.user;
-          cb(u ? { uid: u.id, email: u.email } : null);
+          currentUser = u ? { uid: u.id, email: u.email } : null;
+          cb(currentUser);
         });
         return () => subscription.unsubscribe();
       },
