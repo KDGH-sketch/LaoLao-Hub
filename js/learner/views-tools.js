@@ -264,7 +264,7 @@ VIEWS.chars = () => {
     ctx2.stroke();
     // Draw faint background guide letter
     ctx2.font = "bold 140px 'Noto Sans Lao', sans-serif";
-    ctx2.fillStyle = "rgba(179, 48, 42, 0.15)";
+    ctx2.fillStyle = "rgba(2, 132, 199, 0.16)";
     ctx2.textAlign = "center";
     ctx2.textBaseline = "middle";
     ctx2.fillText(currentLetter, 120, 130);
@@ -289,7 +289,7 @@ VIEWS.chars = () => {
     const ny = cy * (canvas.height / rect.height);
 
     ctx2.save();
-    ctx2.strokeStyle = "#B3302A";
+    ctx2.strokeStyle = "#0284C7";
     ctx2.lineWidth = 7;
     ctx2.lineCap = "round";
     ctx2.lineJoin = "round";

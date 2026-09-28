@@ -58,7 +58,7 @@ async function renderAuth(mode){
   const L = lang();
   root.innerHTML = "";
   root.append(A.api.mode==="demo" ? h("div",{class:"demo-bar"}, t("demo_banner")) : "", h("div",{class:"auth"},
-    h("div",{class:"auth-art"}, h("div",null, h("div",{class:"big",lang:"zh-CN"},"学路"), h("h2",{style:"margin-top:14px"}, settings.appName||"Xuélù")), h("p",{class:L==="lo"?"lo":""}, t("auth_intro"))),
+    h("div",{class:"auth-art"}, h("div",null, h("div",{class:"big lo"},"ລ"), h("h2",{style:"margin-top:14px"}, settings.appName||"LaoLao")), h("p",{class:L==="lo"?"lo":""}, t("auth_intro"))),
     h("form",{class:"auth-form",onsubmit:submit},
       h("div",{class:"langsw",style:"align-self:flex-start"}, [["en","EN"],["lo","ລາວ"],["zh","中文"]].map(([l,n]) => h("button",{type:"button","aria-pressed":String(L===l),onclick:()=>{ setLang(l); try{ localStorage.setItem("xuelu.lang",l); }catch(e){} renderAuth(mode); }}, n))),
       h("h1",null, mode==="register" ? t("register") : mode==="reset" ? t("forgot") : t("sign_in")),
