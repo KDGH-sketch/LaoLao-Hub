@@ -10,6 +10,7 @@ import { createWaitingScreen, dokChampaSvg, LAO_SAMPLES } from "../shared/lao-de
 import { A, loadAccount, prefs, setPref, applyPrefs, srsDue, T } from "./core.js";
 import * as LV from "./views-learn.js";
 import * as TV from "./views-tools.js";
+import { LAB_VIEWS } from "./views-labs.js";
 
 const root = document.getElementById("root");
 try { const l = localStorage.getItem("xuelu.lang"); if (l) setLang(l); } catch(e){}
@@ -57,10 +58,8 @@ async function renderAuth(mode){
   const pwToggle = h("button",{type:"button",class:"pw-toggle-btn","aria-label":"Toggle password visibility",onclick:()=>{
     showPw = !showPw;
     pw.type = showPw ? "text" : "password";
-    pwToggle.innerHTML = showPw
-      ? `<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`
-      : `<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
-  }}, `<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`);
+    pwToggle.replaceChildren(icon(showPw ? "eyeOff" : "eye"));
+  }}, icon("eye"));
 
   const pwWrap = h("div",{class:"input-wrap"}, pw, pwToggle);
 
@@ -199,12 +198,34 @@ function renderDisabled(){
 }
 
 // ---------- shell ----------
-const VIEWS = Object.assign({}, LV.VIEWS, TV.VIEWS);
+const VIEWS = Object.assign({}, LV.VIEWS, TV.VIEWS, LAB_VIEWS, {
+  script_lab: TV.VIEWS.chars
+});
 const NAV = [
-  ["home","nav_home","home"],["paths","nav_paths","path"],["lessons","nav_lessons","learn"],["patterns","nav_patterns","gen"],["vocab","nav_vocab","dict"],["grammar","nav_grammar","layers"],["practice","nav_practice","practice"],["review","nav_review","review"],
-  null,["dict","nav_dict","dict"],["pinyin","nav_pinyin","pinyin"],["chars","nav_chars","chars"],["speak","nav_speak","mic"],
-  null,["saved","nav_saved","bookmark"],["notes","nav_notes","note"],["progress","nav_progress","chart"],["news","nav_new","gift"],["downloads","nav_offline","download"],["account","nav_account","user"]];
-const TABS = [["home","nav_home","home"],["paths","nav_learn","path"],["practice","nav_practice","practice"],["review","nav_review","review"],["more","nav_more","more"]];
+  ["home","nav_home","home"],
+  ["paths","nav_paths","path"],
+  ["lessons","nav_lessons","learn"],
+  ["tone_lab","nav_tone_lab","spark"],
+  ["pronounce_lab","nav_pronounce","speaker"],
+  ["chars","nav_chars","pen"],
+  ["particle_lab","nav_particles","flame"],
+  ["kinship_lab","nav_kinship","users"],
+  ["classifiers_lab","nav_classifiers","layers"],
+  ["culture_lab","nav_culture","globe"],
+  ["patterns","nav_patterns","gen"],
+  ["practice","nav_practice","practice"],
+  ["review","nav_review","review"],
+  null,
+  ["dict","nav_dict","dict"],
+  ["pinyin","nav_pinyin","pinyin"],
+  ["speak","nav_speak","mic"],
+  null,
+  ["saved","nav_saved","bookmark"],
+  ["notes","nav_notes","note"],
+  ["progress","nav_progress","chart"],
+  ["downloads","nav_offline","download"],
+  ["account","nav_account","user"]];
+const TABS = [["home","nav_home","home"],["paths","nav_learn","path"],["tone_lab","nav_tone_lab","spark"],["practice","nav_practice","practice"],["review","nav_review","review"],["more","nav_more","more"]];
 const PARENT = { lesson:"lessons", path:"paths", pattern:"patterns", grammarItem:"grammar", quiz:"practice", gen:"patterns" };
 let searchPop, netEl;
 function render(){

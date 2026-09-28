@@ -19,6 +19,19 @@ const lessonDone = id => !!(A.prog.lessons[id]||{}).done;
 const SKILL_ACTION = { vocabulary:["practice",{type:"words"}], grammar:["practice",{type:"blank"}], reading:["practice",{type:"meaning"}], listening:["practice",{type:"listen"}],
   writing:["practice",{type:"write"}], speaking:["speak",{}], pinyin:["practice",{type:"tones"}], characters:["practice",{type:"write"}], sentence:["practice",{type:"order"}] };
 
+export const STAGE_NAMES = {
+  0: { en:"Stage 0 · Orientation & Foundations", lo:"ຂັ້ນຕອນ 0 · ພື້ນຖານ ແລະ ຕົວອັກສອນ", zh:"阶段 0 · 入门与拼读" },
+  1: { en:"Stage 1 · Survival Lao", lo:"ຂັ້ນຕອນ 1 · ພາສາລາວເພື່ອການເອົາຕົວລອດ", zh:"阶段 1 · 生存老挝语" },
+  2: { en:"Stage 2 · Everyday Lao", lo:"ຂັ້ນຕອນ 2 · ຊີວິດປະຈຳວັນ", zh:"阶段 2 · 日常生活" },
+  3: { en:"Stage 3 · Conversational Lao", lo:"ຂັ້ນຕອນ 3 · ການສົນທະນາທຳມະຊາດ", zh:"阶段 3 · 自然对话" },
+  4: { en:"Stage 4 · Intermediate Lao", lo:"ຂັ້ນຕອນ 4 · ລະດັບກາງ", zh:"阶段 4 · 中级老挝语" },
+  5: { en:"Stage 5 · Upper Intermediate", lo:"ຂັ້ນຕອນ 5 · ລະດັບກາງຂັ້ນສູງ", zh:"阶段 5 · 中高级" },
+  6: { en:"Stage 6 · Advanced Lao", lo:"ຂັ້ນຕອນ 6 · ລະດັບສູງ", zh:"阶段 6 · 高级老挝语" },
+  7: { en:"Stage 7 · Native Communication", lo:"ຂັ້ນຕອນ 7 · ການສື່ສານແບບຄົນທ້ອງຖິ່ນ", zh:"阶段 7 · 母语式沟通" },
+  8: { en:"Stage 8 · Near-Native Professional", lo:"ຂັ້ນຕອນ 8 · ລະດັບມືອາຊີບ", zh:"阶段 8 · 专业流利" }
+};
+export const stageLabel = n => tr(STAGE_NAMES[n] || { en:"Stage "+n, lo:"ຂັ້ນຕອນ "+n, zh:"阶段 "+n }, lang());
+
 // ---------- dashboard ----------
 VIEWS.home = () => {
   touchDay();
@@ -36,7 +49,7 @@ VIEWS.home = () => {
   // today's learning (recommendations from real activity)
   const recs = [];
   const nl = nextLesson();
-  if (nl) recs.push(h("button",{class:"rec",onclick:()=>go("lesson",{id:nl.id})}, h("span",{class:"qi"},icon("learn")), h("span",null, h("b",null, Object.keys(A.prog.lessons).length ? t("rec_continue") : t("rec_start")), h("div",{class:"small muted"}, T(nl.title)+" · HSK "+nl.level))));
+  if (nl) recs.push(h("button",{class:"rec",onclick:()=>go("lesson",{id:nl.id})}, h("span",{class:"qi"},icon("learn")), h("span",null, h("b",null, Object.keys(A.prog.lessons).length ? t("rec_continue") : t("rec_start")), h("div",{class:"small muted"}, T(nl.title)+" · "+stageLabel(nl.level)))));
   const due = srsDue().length; if (due) recs.push(h("button",{class:"rec",onclick:()=>go("review")}, h("span",{class:"qi"},icon("review")), h("b",null,t("rec_review",{n:due}))));
   const tried = SKILLS.filter(k => (A.prog.skills[k]||{}).t >= 5).sort((a,b)=>skillPct(a)-skillPct(b));
   const weak = tried[0] || (A.prog.answers.t ? SKILLS.find(k=>!(A.prog.skills[k]||{}).t) : null);
@@ -44,6 +57,35 @@ VIEWS.home = () => {
   const q = Object.values(A.byType.quizzes||{}).find(q => !A.prog.lessons["quiz:"+q.id]);
   if (q) recs.push(h("button",{class:"rec",onclick:()=>go("quiz",{id:q.id})}, h("span",{class:"qi"},icon("star")), h("span",null, h("b",null,t("rec_quiz")), h("div",{class:"small muted"},T(q.title)))));
   root.append(h("section",{class:"sect"}, h("h2",null,t("today")), h("div",{class:"grid2"}, recs)));
+
+  // Lao Language Labs
+  const labsBox = h("div",{class:"grid3"},
+    h("button",{class:"card",style:"text-align:left;display:flex;align-items:center;gap:12px",onclick:()=>go("tone_lab")},
+      h("span",{class:"qi",style:"background:var(--surface-2);color:var(--accent)"}, icon("spark")),
+      h("div",null, h("b",null,lang()==="lo"?"ຫ້ອງສຽງວັນນະຍຸດ":"Lao Tone Lab"), h("div",{class:"small muted"},"6 Pitch Contours & Minimal Pairs"))
+    ),
+    h("button",{class:"card",style:"text-align:left;display:flex;align-items:center;gap:12px",onclick:()=>go("pronounce_lab")},
+      h("span",{class:"qi",style:"background:var(--surface-2);color:var(--accent)"}, icon("speaker")),
+      h("div",null, h("b",null,lang()==="lo"?"ການອອກສຽງ & ຕົວສະກົດ":"Pronunciation Lab"), h("div",{class:"small muted"},"8 Final Consonants & Vowel Length"))
+    ),
+    h("button",{class:"card",style:"text-align:left;display:flex;align-items:center;gap:12px",onclick:()=>go("particle_lab")},
+      h("span",{class:"qi",style:"background:var(--surface-2);color:var(--accent)"}, icon("flame")),
+      h("div",null, h("b",null,lang()==="lo"?"ຄຳລົງທ້າຍ & ຄຳຊ່ວຍ":"Particle Lab"), h("div",{class:"small muted"},"ເດີ້, ເນາະ, ຕິ, ດອກ, ໃດ໋, ແດ່"))
+    ),
+    h("button",{class:"card",style:"text-align:left;display:flex;align-items:center;gap:12px",onclick:()=>go("kinship_lab")},
+      h("span",{class:"qi",style:"background:var(--surface-2);color:var(--accent)"}, icon("users")),
+      h("div",null, h("b",null,lang()==="lo"?"ຄຳແທນນາມ & ສາຍພົວພັນ":"Kinship & Pronouns"), h("div",{class:"small muted"},"ອ້າຍ, ເອື້ອຍ, ນ້ອງ, ລຸງ, ປ້າ"))
+    ),
+    h("button",{class:"card",style:"text-align:left;display:flex;align-items:center;gap:12px",onclick:()=>go("classifiers_lab")},
+      h("span",{class:"qi",style:"background:var(--surface-2);color:var(--accent)"}, icon("layers")),
+      h("div",null, h("b",null,lang()==="lo"?"ລັກສະນະນາມ":"Classifiers Lab"), h("div",{class:"small muted"},"ຄົນ, ໂຕ, ຫົວ, ຄັນ, ຫຼັງ, ໜ່ວຍ"))
+    ),
+    h("button",{class:"card",style:"text-align:left;display:flex;align-items:center;gap:12px",onclick:()=>go("culture_lab")},
+      h("span",{class:"qi",style:"background:var(--surface-2);color:var(--accent)"}, icon("globe")),
+      h("div",null, h("b",null,lang()==="lo"?"ວັດທະນະທຳລາວ":"Lao Culture Lab"), h("div",{class:"small muted"},"Baci, Sabaidee, Dialects & Context"))
+    )
+  );
+  root.append(h("section",{class:"sect"}, h("h2",null,lang()==="lo"?"ຫ້ອງທົດລອງພາສາລາວ (Lao Language Labs)":"Lao Language Labs & Culture"), labsBox));
   // skills + weak areas
   const skills = h("div",{class:"card stack",style:"gap:10px"}, SKILLS.map(k => h("div",{class:"skill"}, h("span",null,t("sk_"+k)), h("div",{class:"bar"},h("i",{style:`width:${skillPct(k)}%`})), h("span",{class:"tabnum small muted"}, (A.prog.skills[k]||{}).t ? skillPct(k)+"%" : "—"))));
   // recent lessons
@@ -102,13 +144,13 @@ VIEWS.lessons = ({ lv }) => {
     const lk = A.catalog.filter(c => c.type==="lessons" && c.tier > A.tier && (!level || c.level===level));
     const groups = {}; ls.forEach(l => (groups[l.level] = groups[l.level]||[]).push(l)); lk.forEach(c => (groups[c.level] = groups[c.level]||[]).push(Object.assign({ locked:true }, c)));
     Object.keys(groups).sort((a,b)=>a-b).forEach(L => { const items = groups[L].sort((a,b)=>(a.order||0)-(b.order||0));
-      box.append(h("div",{class:"group-h"}, h("h2",null,"HSK "+L), h("span",{class:"muted small"}, items.filter(x=>!x.locked && lessonDone(x.id)).length+" / "+items.length)),
+      box.append(h("div",{class:"group-h"}, h("h2",null,stageLabel(L)), h("span",{class:"muted small"}, items.filter(x=>!x.locked && lessonDone(x.id)).length+" / "+items.length)),
         h("div",{class:"list-card"}, items.map(l => l.locked
           ? h("div",{class:"item-row",style:"opacity:.6"}, h("span",{class:"stepnum"},icon("lock")), h("span",null, h("div",{class:"ttl"},T(l.title)), h("div",{class:"sub"}, lockBadge(l.tier))), h("span"))
           : h("button",{class:"item-row",onclick:()=>go("lesson",{id:l.id})}, h("span",{class:"stepnum"+(lessonDone(l.id)?" done":"")}, lessonDone(l.id)?icon("check"):String(l.order||"")), h("span",null, h("div",{class:"ttl"},T(l.title)), h("div",{class:"sub"+(expLang()==="lo"?" lo":"")}, T(l.desc).slice(0,110))), icon("right"))))); });
     if (!box.childElementCount) box.append(h("div",{class:"empty"},t("no_rows")));
   };
-  const seg = h("div",{class:"seg"}, [0,1,2,3,4,5,6].map(n => h("button",{"aria-pressed":String(level===n),onclick:e=>{ level=n; $$("button",seg).forEach(b=>b.setAttribute("aria-pressed","false")); e.currentTarget.setAttribute("aria-pressed","true"); draw(); }}, n?("HSK "+n):t("all_levels"))));
+  const seg = h("div",{class:"seg"}, [0,1,2,3,4,5,6].map(n => h("button",{"aria-pressed":String(level===n),onclick:e=>{ level=n; $$("button",seg).forEach(b=>b.setAttribute("aria-pressed","false")); e.currentTarget.setAttribute("aria-pressed","true"); draw(); }}, n?("Stage "+n):t("all_levels"))));
   draw();
   return h("div",null, pageHead(t("nav_lessons"), t("learn_sub")), h("div",{style:"margin-bottom:14px;overflow-x:auto"}, seg), box);
 };
@@ -118,9 +160,9 @@ VIEWS.lesson = ({ id }) => {
   setLast("lesson", id); logEvent("lesson_open", { ref:id }); touchDay();
   const EL = expLang(), root = h("div",{class:"stack-l"});
   const done = lessonDone(id);
-  root.append(h("div",null, h("div",{class:"crumb"}, h("button",{onclick:()=>go("lessons")},t("nav_lessons")), "›", h("span",null,"HSK "+l.level), l.topic ? ["›", h("span",null,l.topic)] : null),
+  root.append(h("div",null, h("div",{class:"crumb"}, h("button",{onclick:()=>go("lessons")},t("nav_lessons")), "›", h("span",null,stageLabel(l.level)), l.topic ? ["›", h("span",null,l.topic)] : null),
     h("div",{class:"spread"}, h("div",null, h("h1",null,T(l.title)), h("p",{class:"muted"+(EL==="lo"?" lo":""),style:"margin-top:6px;max-width:62ch"}, T(l.desc))),
-      h("div",{class:"row"}, toggleBtn("l:"+id, { type:"lesson", id, title:l.title }, "btn sm"), h("span",{class:"chip lv"},"HSK "+l.level)))));
+      h("div",{class:"row"}, toggleBtn("l:"+id, { type:"lesson", id, title:l.title }, "btn sm"), h("span",{class:"chip lv"},stageLabel(l.level))))));
   const objs = (l.objectives && (l.objectives[EL]||l.objectives.en)) || [];
   if (objs.length) root.append(h("section",{class:"card"}, h("h3",{style:"margin-bottom:8px"},t("objectives")), h("ul",{class:"obj"+(EL==="lo"?" lo":"")}, objs.map(o=>h("li",null,o)))));
   // dialogue

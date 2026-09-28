@@ -474,11 +474,12 @@ textarea.input{min-height:80px;resize:vertical;line-height:1.45}
 
 /* Input Enhancements with Password Toggle */
 .field{display:flex;flex-direction:column;gap:6px}
-.input-wrap{position:relative;display:flex;align-items:center}
-.input-wrap .input{width:100%;padding-right:42px}
-.pw-toggle-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--ink-3);padding:6px;cursor:pointer;border-radius:6px;display:grid;place-items:center;transition:color .15s}
-.pw-toggle-btn:hover{color:var(--accent)}
-.pw-toggle-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
+.input-wrap{position:relative;display:flex;align-items:center;width:100%}
+.input-wrap .input{width:100%;padding-right:44px}
+.pw-toggle-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--ink-3);width:32px;height:32px;padding:0;cursor:pointer;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;transition:color .15s, background .15s;z-index:2}
+.pw-toggle-btn:hover{color:var(--accent);background:var(--surface-2)}
+.pw-toggle-btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.pw-toggle-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;display:block}
 
 /* Demo account fast switcher cards */
 .demo-quick-box{background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}

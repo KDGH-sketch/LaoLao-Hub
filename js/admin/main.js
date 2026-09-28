@@ -43,11 +43,19 @@ function authFrame(...kids){
 }
 function demoBar(){ return S.api && S.api.mode==="demo" ? h("div",{class:"demo-bar"}, t("demo_banner")+" ", h("button",{onclick:async()=>{ if(await confirmDialog(t("reset_demo"), "Delete all demo data in this browser and start again?", t("reset_demo"), t("cancel"), true)){ await S.api._reset(); location.reload(); } }}, t("reset_demo"))) : ""; }
 function renderLogin(){
-  const email = h("input",{class:"input",type:"email",autocomplete:"username",id:"em"}), pw = h("input",{class:"input",type:"password",autocomplete:"current-password",id:"pw"});
+  const email = h("input",{class:"input",type:"email",autocomplete:"username",id:"em"});
+  const pw = h("input",{class:"input",type:"password",autocomplete:"current-password",id:"pw"});
+  let showPw = false;
+  const pwToggle = h("button",{type:"button",class:"pw-toggle-btn","aria-label":"Toggle password visibility",onclick:()=>{
+    showPw = !showPw;
+    pw.type = showPw ? "text" : "password";
+    pwToggle.replaceChildren(icon(showPw ? "eyeOff" : "eye"));
+  }}, icon("eye"));
+  const pwWrap = h("div",{class:"input-wrap"}, pw, pwToggle);
   const msg = h("p",{class:"small",style:"color:var(--bad)"});
   const go_ = async e => { e && e.preventDefault(); msg.textContent=""; try { await S.api.auth.signIn(email.value.trim(), pw.value); } catch(err){ msg.textContent = errText(err); } };
   authFrame(h("h1",null,t("sign_in")),
-    h("form",{class:"stack",onsubmit:go_}, h("div",{class:"field"}, h("label",{for:"em"},t("email")), email), h("div",{class:"field"}, h("label",{for:"pw"},t("password")), pw), msg,
+    h("form",{class:"stack",onsubmit:go_}, h("div",{class:"field"}, h("label",{for:"em"},t("email")), email), h("div",{class:"field"}, h("label",{for:"pw"},t("password")), pwWrap), msg,
       h("button",{class:"btn primary",type:"submit"}, t("sign_in"))),
     h("button",{class:"linkbtn",onclick:async()=>{ if(!email.value) { msg.textContent=t("email")+"?"; return; } try{ await S.api.auth.resetPassword(email.value.trim()); toast(t("reset_sent")); }catch(err){ msg.textContent=errText(err); } }}, t("forgot")),
     S.api.mode==="demo" ? h("div",{class:"banner info"}, h("div",null, h("b",null,t("demo_accounts")), h("div",{class:"small mono"}, DEMO.admin.email+" / "+DEMO.admin.pw)), h("button",{class:"btn sm",onclick:()=>{ email.value=DEMO.admin.email; pw.value=DEMO.admin.pw; go_(); }}, t("sign_in"))) : null,
