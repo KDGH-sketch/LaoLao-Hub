@@ -1,0 +1,8 @@
+{
+  "name": "LaoLao · ຮຽນພາສາລາວ",
+  "description": "Learn Lao language through sentence patterns: script, romanization, native audio, dictionary, sentence generator, quizzes and review. Works offline.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

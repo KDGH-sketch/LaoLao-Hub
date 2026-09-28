@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LaoLao · ຮຽນພາສາລາວ</title>
+<meta name="description" content="Learn Lao language through sentence patterns: script, romanization, audio, dictionary, sentence generator, quizzes and review. Works offline.">
+<meta property="og:title" content="LaoLao · ຮຽນພາສາລາວ">
+<meta property="og:description" content="Learn Lao language through sentence patterns: script, romanization, audio, dictionary, sentence generator, quizzes and review. Works offline.">
+<meta name="theme-color" content="#B3302A">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;600&family=Noto+Serif+SC:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="root"><div class="empty" style="margin:40px">学 · Loading…</div></div>
+<script src="env-config.js"></script>
+<script src="vendor/hanzi-writer.min.js"></script>
+<script type="module" src="js/learner/main.js"></script>
+<script>
+if ("serviceWorker" in navigator && /^https?:/.test(location.protocol)) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+</body>
+</html>

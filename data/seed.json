@@ -1,0 +1,519 @@
+{
+  "patterns": [
+    {
+      "id": "p001",
+      "n": 1,
+      "sec": "A",
+      "hz": "ແມ່ນ…ແລ້ວ",
+      "py": "mâaen…lɛ̂ɛo",
+      "gloss": "is/are already",
+      "level": 1,
+      "formula": "S + ແມ່ນ + N / Adj + ແລ້ວ",
+      "tr": {
+        "en": {"meaning": "confirms that something is indeed the case or already happened", "how": "Use ແມ່ນ to affirm identity or truth, and ແລ້ວ at the end to show completion or agreement: 'Yes, that is already true / It is indeed so.'", "note": "To negate, use ບໍ່ແມ່ນ."},
+        "lo": {"meaning": "ຢືນຢັນວ່າຖືກຕ້ອງ ຫຼື ເປັນແນວນັ້ນແລ້ວ"},
+        "zh": {"meaning": "确实是这样 / 已经…了"}
+      },
+      "mistake": {"wrong": "ຂ້ອຍແມ່ນນັກຮຽນບໍແມ່ນແລ້ວ", "right": "ຂ້ອຍແມ່ນນັກຮຽນແລ້ວ", "tr": {"en": "Don't combine question ບໍ with affirmation ແລ້ວ in the same clause."}},
+      "examples": [
+        {"zh": "ແມ່ນແລ້ວ, ຂ້ອຍແມ່ນຄົນລາວ.", "py": "Mâaen lɛ̂ɛo, khɔ̀ɔi mâaen khon láao.", "tokens": [{"z": "ແມ່ນ", "p": "mâaen"}, {"z": "ແລ້ວ", "p": "lɛ̂ɛo"}, {"z": "ຂ້ອຍ", "p": "khɔ̀ɔi"}, {"z": "ແມ່ນ", "p": "mâaen"}, {"z": "ຄົນລາວ", "p": "khon láao"}], "tr": {"en": "That's right, I am Lao."}},
+        {"zh": "ອັນນີ້ແມ່ນຂອງຂ້ອຍແລ້ວ.", "py": "An nîi mâaen khɔ̌ɔng khɔ̀ɔi lɛ̂ɛo.", "tokens": [{"z": "ອັນນີ້", "p": "an nîi"}, {"z": "ແມ່ນ", "p": "mâaen"}, {"z": "ຂອງຂ້ອຍ", "p": "khɔ̌ɔng khɔ̀ɔi"}, {"z": "ແລ້ວ", "p": "lɛ̂ɛo"}], "tr": {"en": "This is already mine."}}
+      ],
+      "gen": [
+        {"zh": "{P} ແມ່ນ {OCC} ແລ້ວ .", "en": "{P} is already {OCC.e}.", "slots": ""},
+        {"zh": "ອັນນີ້ ແມ່ນ {O} ຂອງ {P} .", "en": "This is {P.ps} {O.e}.", "slots": ""}
+      ],
+      "status": "published",
+      "access": "free",
+      "order": 1
+    },
+    {
+      "id": "p002",
+      "n": 2,
+      "sec": "A",
+      "hz": "ບໍ່…",
+      "py": "bɔ̀ɔ…",
+      "gloss": "negation (do not / not)",
+      "level": 1,
+      "formula": "S + ບໍ່ + V / Adj",
+      "tr": {
+        "en": {"meaning": "standard negative construction: 'do not / is not'", "how": "Place ບໍ່ directly before the verb or adjective you want to negate. In Lao, verbs do not change form.", "note": "For 'is not a [noun]', use ບໍ່ແມ່ນ."},
+        "lo": {"meaning": "ປະຕິເສດການກະທຳ ຫຼື ຄຸນລັກສະນະ (ບໍ່ + ກິລິຍາ/ຄຸນນາມ)"},
+        "zh": {"meaning": "否定句 (不 + 动词/形容词)"}
+      },
+      "mistake": {"wrong": "ຂ້ອຍກິນບໍ່ເຂົ້າ", "right": "ຂ້ອຍບໍ່ກິນເຂົ້າ", "tr": {"en": "ບໍ່ goes before the verb (ກິນ), not after it."}},
+      "examples": [
+        {"zh": "ຂ້ອຍບໍ່ກິນຊີ້ນ.", "py": "Khɔ̀ɔi bɔ̀ɔ kin sîin.", "tokens": [{"z": "ຂ້ອຍ", "p": "khɔ̀ɔi"}, {"z": "ບໍ່", "p": "bɔ̀ɔ"}, {"z": "ກິນ", "p": "kin"}, {"z": "ຊີ້ນ", "p": "sîin"}], "tr": {"en": "I don't eat meat."}},
+        {"zh": "ມື້ນີ້ລາວບໍ່ສະບາຍ.", "py": "Mɯ̂ɯ nîi láao bɔ̀ɔ sà-bāai.", "tokens": [{"z": "ມື້ນີ້", "p": "mɯ̂ɯ nîi"}, {"z": "ລາວ", "p": "láao"}, {"z": "ບໍ່", "p": "bɔ̀ɔ"}, {"z": "ສະບາຍ", "p": "sà-bāai"}], "tr": {"en": "Today he is not well."}}
+      ],
+      "gen": [
+        {"zh": "{P} ບໍ່ {V} {O} .", "en": "{P} {P.do} not {V.e} {O.e}.", "slots": ""},
+        {"zh": "{P} ມື້ນີ້ ບໍ່ {A} .", "en": "{P} {P.is} not {A.e} today.", "slots": ""}
+      ],
+      "status": "published",
+      "access": "free",
+      "order": 2
+    },
+    {
+      "id": "p003",
+      "n": 3,
+      "sec": "A",
+      "hz": "…ບໍ? (ຫຼື ບໍ່?)",
+      "py": "…bɔ̀ɔ?",
+      "gloss": "yes/no question",
+      "level": 1,
+      "formula": "Statement + ບໍ ?",
+      "tr": {
+        "en": {"meaning": "forms a yes/no question at the end of a sentence", "how": "Add ບໍ (or ບໍ່) to the end of any statement to turn it into a question, exactly like '吗' in Chinese or 'right?' in English.", "note": "Respond with the verb to agree, or ບໍ່ + verb to disagree."},
+        "lo": {"meaning": "ສ້າງປະໂຫຍກຄຳຖາມ ແມ່ນ/ບໍ່ແມ່ນ ໂດຍໃສ່ ບໍ? ທ້າຍປະໂຫຍກ"},
+        "zh": {"meaning": "是非疑问句 (相当于 '吗？')"}
+      },
+      "mistake": {"wrong": "ບໍເຈົ້າສະບາຍດີ?", "right": "ເຈົ້າສະບາຍດີບໍ?", "tr": {"en": "ບໍ goes at the end of the sentence, never at the beginning."}},
+      "examples": [
+        {"zh": "ເຈົ້າສະບາຍດີບໍ?", "py": "Jâo sà-bāai-dī bɔ̀ɔ?", "tokens": [{"z": "ເຈົ້າ", "p": "jâo"}, {"z": "ສະບາຍດີ", "p": "sà-bāai-dī"}, {"z": "ບໍ", "p": "bɔ̀ɔ"}, {"z": "?", "p": ""}], "tr": {"en": "How are you? / Are you well?"}},
+        {"zh": "ອາຫານລາວແຊບບໍ?", "py": "Āa-hǎan láao sàaep bɔ̀ɔ?", "tokens": [{"z": "ອາຫານລາວ", "p": "āa-hǎan láao"}, {"z": "ແຊບ", "p": "sàaep"}, {"z": "ບໍ", "p": "bɔ̀ɔ"}, {"z": "?", "p": ""}], "tr": {"en": "Is Lao food delicious?"}}
+      ],
+      "gen": [
+        {"zh": "{P} ມັກ {FOOD} ບໍ ?", "en": "{P.Do} {P} like {FOOD.e}?", "slots": ""},
+        {"zh": "{P} ຈະ ໄປ {PLACE} ບໍ ?", "en": "Will {P} go to {PLACE.e}?", "slots": ""},
+        {"zh": "{NA} ແພງ ບໍ ?", "en": "Is {NA.e} expensive?", "slots": ""}
+      ],
+      "status": "published",
+      "access": "free",
+      "order": 3
+    },
+    {
+      "id": "p004",
+      "n": 4,
+      "sec": "A",
+      "hz": "ຢາກ…",
+      "py": "yàak…",
+      "gloss": "want to (verb)",
+      "level": 1,
+      "formula": "S + ຢາກ + V + (O)",
+      "tr": {
+        "en": {"meaning": "expresses the desire to do an action: 'want to...'", "how": "Place ຢາກ directly before the verb. When you want a noun (object), use ຢາກໄດ້ or ຕ້ອງການ.", "note": "To say 'do not want to', use ບໍ່ຢາກ + V."},
+        "lo": {"meaning": "ສະແດງຄວາມຕ້ອງການຢາກກະທຳສິ່ງໃດສິ່ງໜຶ່ງ (ຢາກ + ກິລິຍາ)"},
+        "zh": {"meaning": "想 / 要 (想做某事)"}
+      },
+      "mistake": {"wrong": "ຂ້ອຍຢາກນ້ຳ", "right": "ຂ້ອຍຢາກດື່ມນ້ຳ", "tr": {"en": "ຢາກ needs a verb after it: ຢາກດື່ມນ້ຳ (want to drink water), or use ຢາກໄດ້ນ້ຳ."}},
+      "examples": [
+        {"zh": "ຂ້ອຍຢາກກິນເຂົ້າໜຽວ.", "py": "Khɔ̀ɔi yàak kin khào-nǐao.", "tokens": [{"z": "ຂ້ອຍ", "p": "khɔ̀ɔi"}, {"z": "ຢາກ", "p": "yàak"}, {"z": "ກິນ", "p": "kin"}, {"z": "ເຂົ້າໜຽວ", "p": "khào-nǐao"}], "tr": {"en": "I want to eat sticky rice."}},
+        {"zh": "ເຈົ້າຢາກໄປໃສ?", "py": "Jâo yàak pái sǎi?", "tokens": [{"z": "ເຈົ້າ", "p": "jâo"}, {"z": "ຢາກ", "p": "yàak"}, {"z": "ໄປ", "p": "pái"}, {"z": "ໃສ", "p": "sǎi"}, {"z": "?", "p": ""}], "tr": {"en": "Where do you want to go?"}}
+      ],
+      "gen": [
+        {"zh": "{P} ຢາກ ກິນ {FOOD} .", "en": "{P} want{P.s} to eat {FOOD.e}.", "slots": ""},
+        {"zh": "{P} ຢາກ ດື່ມ {DRINK} .", "en": "{P} want{P.s} to drink {DRINK.e}.", "slots": ""},
+        {"zh": "{P} ຢາກ ໄປ ທ່ຽວ {CITY} .", "en": "{P} want{P.s} to visit {CITY.e}.", "slots": ""}
+      ],
+      "status": "published",
+      "access": "free",
+      "order": 4
+    },
+    {
+      "id": "p005",
+      "n": 5,
+      "sec": "A",
+      "hz": "ກຳລັງ…ຢູ່",
+      "py": "kam-lang…yùu",
+      "gloss": "progressive (-ing)",
+      "level": 2,
+      "formula": "S + ກຳລັງ + V + (O) + (ຢູ່)",
+      "tr": {
+        "en": {"meaning": "marks continuous or progressive action: 'in the middle of doing'", "how": "Put ກຳລັງ before the verb and optionally ຢູ່ at the end of the clause. In informal spoken Lao, either word alone can mark progress.", "note": "Similar to '正在…呢' in Chinese or '-ing' in English."},
+        "lo": {"meaning": "ບອກການກະທຳທີ່ກຳລັງດຳເນີນຢູ່"},
+        "zh": {"meaning": "正在… (进行时)"}
+      },
+      "mistake": null,
+      "examples": [
+        {"zh": "ຂ້ອຍກຳລັງຮຽນພາສາລາວຢູ່.", "py": "Khɔ̀ɔi kam-lang híian phāa-sǎa láao yùu.", "tokens": [{"z": "ຂ້ອຍ", "p": "khɔ̀ɔi"}, {"z": "ກຳລັງ", "p": "kam-lang"}, {"z": "ຮຽນ", "p": "híian"}, {"z": "ພາສາລາວ", "p": "phāa-sǎa láao"}, {"z": "ຢູ່", "p": "yùu"}], "tr": {"en": "I am currently studying Lao language."}},
+        {"zh": "ລາວກຳລັງກິນເຂົ້າຢູ່.", "py": "Láao kam-lang kin khào yùu.", "tokens": [{"z": "ລາວ", "p": "láao"}, {"z": "ກຳລັງ", "p": "kam-lang"}, {"z": "ກິນ", "p": "kin"}, {"z": "ເຂົ້າ", "p": "khào"}, {"z": "ຢູ່", "p": "yùu"}], "tr": {"en": "He is currently eating."}}
+      ],
+      "gen": [
+        {"zh": "{P} ກຳລັງ {V} {O} ຢູ່ .", "en": "{P} {P.is} {V.g} {O.e} right now.", "slots": ""},
+        {"zh": "{P} ກຳລັງ ເຮັດວຽກ ຢູ່ {PLACE} .", "en": "{P} {P.is} working at {PLACE.e}.", "slots": ""}
+      ],
+      "status": "published",
+      "access": "free",
+      "order": 5
+    },
+    {
+      "id": "p006",
+      "n": 6,
+      "sec": "A",
+      "hz": "ໄດ້…ແລ້ວ",
+      "py": "dài…lɛ̂ɛo",
+      "gloss": "past completion (did / have done)",
+      "level": 2,
+      "formula": "S + (ໄດ້) + V + O + ແລ້ວ",
+      "tr": {
+        "en": {"meaning": "expresses past completion or finished actions", "how": "Place ແລ້ວ at the end of the action clause to show it is finished. You can optionally add ໄດ້ before the verb for extra emphasis on past occurrence.", "note": "Negate with ຍັງບໍ່ໄດ້ (haven't yet)."},
+        "lo": {"meaning": "ບອກວ່າການກະທຳນັ້ນໄດ້ເກີດຂຶ້ນ ແລະ ສຳເລັດແລ້ວ"},
+        "zh": {"meaning": "已经…了 (完成态)"}
+      },
+      "mistake": null,
+      "examples": [
+        {"zh": "ຂ້ອຍກິນເຂົ້າແລ້ວ.", "py": "Khɔ̀ɔi kin khào lɛ̂ɛo.", "tokens": [{"z": "ຂ້ອຍ", "p": "khɔ̀ɔi"}, {"z": "ກິນ", "p": "kin"}, {"z": "ເຂົ້າ", "p": "khào"}, {"z": "ແລ້ວ", "p": "lɛ̂ɛo"}], "tr": {"en": "I have already eaten."}},
+        {"zh": "ລາວໄດ້ໄປວຽງຈັນແລ້ວ.", "py": "Láao dài pái wíang-jan lɛ̂ɛo.", "tokens": [{"z": "ລາວ", "p": "láao"}, {"z": "ໄດ້", "p": "dài"}, {"z": "ໄປ", "p": "pái"}, {"z": "ວຽງຈັນ", "p": "wíang-jan"}, {"z": "ແລ້ວ", "p": "lɛ̂ɛo"}], "tr": {"en": "She has already gone to Vientiane."}}
+      ],
+      "gen": [
+        {"zh": "{P} ໄດ້ {V} {O} ແລ້ວ .", "en": "{P} already {V.d} {O.e}.", "slots": ""},
+        {"zh": "{P} ໄປ {CITY} ມາ ແລ້ວ .", "en": "{P} has already returned from visiting {CITY.e}.", "slots": ""}
+      ],
+      "status": "published",
+      "access": "free",
+      "order": 6
+    },
+    {
+      "id": "p007",
+      "n": 7,
+      "sec": "A",
+      "hz": "…ກວ່າ…",
+      "py": "…gwaa…",
+      "gloss": "comparative (more than)",
+      "level": 2,
+      "formula": "A + Adj + ກວ່າ + B",
+      "tr": {
+        "en": {"meaning": "comparative adjective: 'A is more [Adj] than B'", "how": "In Lao, the adjective comes before ກວ່າ: 'A [Adj] than B'. For example, ໃຫຍ່ກວ່າ means 'bigger than'.", "note": "To say 'the most / best', use ທີ່ສຸດ (thii-sut) after the adjective."},
+        "lo": {"meaning": "ປຽບທຽບຂັ້ນກວ່າ (A + ຄຸນນາມ + ກວ່າ + B)"},
+        "zh": {"meaning": "比…更 (比较级)"}
+      },
+      "mistake": {"wrong": "ວຽງຈັນກວ່າໃຫຍ່ຫຼວງພະບາງ", "right": "ວຽງຈັນໃຫຍ່ກວ່າຫຼວງພະບາງ", "tr": {"en": "The adjective (ໃຫຍ່) comes before ກວ່າ."}},
+      "examples": [
+        {"zh": "ວຽງຈັນໃຫຍ່ກວ່າຫຼວງພະບາງ.", "py": "Wíang-jan nyǎi gwaa lǔang phā-bāang.", "tokens": [{"z": "ວຽງຈັນ", "p": "wíang-jan"}, {"z": "ໃຫຍ່", "p": "nyǎi"}, {"z": "ກວ່າ", "p": "gwaa"}, {"z": "ຫຼວງພະບາງ", "p": "lǔang phā-bāang"}], "tr": {"en": "Vientiane is bigger than Luang Prabang."}},
+        {"zh": "ເບຍລາວແຊບກວ່າມື້ວານນີ້.", "py": "Bīa láao sàaep gwaa mɯ̂ɯ wāan nîi.", "tokens": [{"z": "ເບຍລາວ", "p": "bīa láao"}, {"z": "ແຊບ", "p": "sàaep"}, {"z": "ກວ່າ", "p": "gwaa"}, {"z": "ມື້ວານນີ້", "p": "mɯ̂ɯ wāan nîi"}], "tr": {"en": "Beerlao tastes even better than yesterday."}}
+      ],
+      "gen": [
+        {"zh": "{CITY} {A} ກວ່າ {CITY2} .", "en": "{CITY.e} is more {A.e} than {CITY2.e}.", "slots": ""},
+        {"zh": "ອາຫານ ນີ້ {A} ກວ່າ .", "en": "This food is more {A.e}.", "slots": ""}
+      ],
+      "status": "published",
+      "access": "standard",
+      "order": 7
+    },
+    {
+      "id": "p008",
+      "n": 8,
+      "sec": "A",
+      "hz": "ຖ້າ…ກໍ…",
+      "py": "thâa…gɔɔ…",
+      "gloss": "if...then...",
+      "level": 3,
+      "formula": "ຖ້າ + Condition ， (S) + ກໍ + Result",
+      "tr": {
+        "en": {"meaning": "conditional clause: 'if...then...'", "how": "Open the condition with ຖ້າ (if), and introduce the consequence with ກໍ (then) before the main verb.", "note": "In conversational Lao, ຖ້າວ່າ is also very common."},
+        "lo": {"meaning": "ສົມມຸດຕິຖານ (ຖ້າຫາກວ່າ…ກໍຈະ…)"},
+        "zh": {"meaning": "如果…就…"}
+      },
+      "mistake": null,
+      "examples": [
+        {"zh": "ຖ້າມື້ອື່ນຝົນຕົກ, ພວກເຮົາກໍຈະບໍ່ໄປ.", "py": "Thâa mɯ̂ɯ ɯ̀ɯn fǒn dtók, phùak-háo gɔɔ ja bɔ̀ɔ pái.", "tokens": [{"z": "ຖ້າ", "p": "thâa"}, {"z": "ມື້ອື່ນ", "p": "mɯ̂ɯ ɯ̀ɯn"}, {"z": "ຝົນຕົກ", "p": "fǒn dtók"}, {"z": ",", "p": ""}, {"z": "ພວກເຮົາ", "p": "phùak-háo"}, {"z": "ກໍ", "p": "gɔɔ"}, {"z": "ຈະ", "p": "ja"}, {"z": "ບໍ່", "p": "bɔ̀ɔ"}, {"z": "ໄປ", "p": "pái"}], "tr": {"en": "If it rains tomorrow, then we will not go."}},
+        {"zh": "ຖ້າເຈົ້າມີເວລາ, ມາເຮືອນຂ້ອຍເດີ.", "py": "Thâa jâo mīi wēe-lāa, māa hɯ́an khɔ̀ɔi də̂ə.", "tokens": [{"z": "ຖ້າ", "p": "thâa"}, {"z": "ເຈົ້າ", "p": "jâo"}, {"z": "ມີ", "p": "mīi"}, {"z": "ເວລາ", "p": "wēe-lāa"}, {"z": ",", "p": ""}, {"z": "ມາ", "p": "māa"}, {"z": "ເຮືອນ", "p": "hɯ́an"}, {"z": "ຂ້ອຍ", "p": "khɔ̀ɔi"}, {"z": "ເດີ", "p": "də̂ə"}], "tr": {"en": "If you have time, come over to my place."}}
+      ],
+      "gen": [
+        {"zh": "ຖ້າ {P} ມີ ເວລາ , {P} ກໍ ຈະ {V} .", "en": "If {P} has time, {P} will {V.e}.", "slots": ""},
+        {"zh": "ຖ້າ ລາຄາ ບໍ່ {A} , ຂ້ອຍ ກໍ ຈະ ຊື້ .", "en": "If the price is not too {A.e}, I will buy it.", "slots": ""}
+      ],
+      "status": "published",
+      "access": "standard",
+      "order": 8
+    },
+    {
+      "id": "p009",
+      "n": 9,
+      "sec": "A",
+      "hz": "ຍ້ອນວ່າ…ຈຶ່ງ…",
+      "py": "nyɔ̂ɔn-wâa…jɯ̀ng…",
+      "gloss": "because...therefore...",
+      "level": 3,
+      "formula": "ຍ້ອນວ່າ + Reason ， S + ຈຶ່ງ + Result",
+      "tr": {
+        "en": {"meaning": "cause and effect: 'because...so / therefore...'", "how": "ຍ້ອນວ່າ introduces the reason, and ຈຶ່ງ precedes the verb in the result clause: 'Because A happened, therefore B.'", "note": "In speech, ຍ້ອນ alone can replace ຍ້ອນວ່າ."},
+        "lo": {"meaning": "ບອກສາເຫດ ແລະ ຜົນຮັບ (ຍ້ອນວ່າ…ສະນັ້ນຈຶ່ງ…)"},
+        "zh": {"meaning": "因为…所以…"}
+      },
+      "mistake": null,
+      "examples": [
+        {"zh": "ຍ້ອນວ່າລາວບໍ່ສະບາຍ, ລາວຈຶ່ງບໍ່ມາຮຽນ.", "py": "Nyɔ̂ɔn-wâa láao bɔ̀ɔ sà-bāai, láao jɯ̀ng bɔ̀ɔ māa híian.", "tokens": [{"z": "ຍ້ອນວ່າ", "p": "nyɔ̂ɔn-wâa"}, {"z": "ລາວ", "p": "láao"}, {"z": "ບໍ່", "p": "bɔ̀ɔ"}, {"z": "ສະບາຍ", "p": "sà-bāai"}, {"z": ",", "p": ""}, {"z": "ລາວ", "p": "láao"}, {"z": "ຈຶ່ງ", "p": "jɯ̀ng"}, {"z": "ບໍ່", "p": "bɔ̀ɔ"}, {"z": "ມາ", "p": "māa"}, {"z": "ຮຽນ", "p": "híian"}], "tr": {"en": "Because he is not well, he therefore didn't come to school."}}
+      ],
+      "gen": [
+        {"zh": "ຍ້ອນວ່າ {P} ມັກ {FOOD} , {P} ຈຶ່ງ ກິນ ຫຼາຍ .", "en": "Because {P} likes {FOOD.e}, {P} eats a lot.", "slots": ""}
+      ],
+      "status": "published",
+      "access": "standard",
+      "order": 9
+    },
+    {
+      "id": "p010",
+      "n": 10,
+      "sec": "A",
+      "hz": "ທັງ…ທັງ…",
+      "py": "thang…thang…",
+      "gloss": "both...and...",
+      "level": 3,
+      "formula": "ທັງ + Adj/V + ທັງ + Adj/V",
+      "tr": {
+        "en": {"meaning": "expresses two qualities or actions existing at once: 'both...and...'", "how": "Place ທັງ before each adjective or verb. Example: ທັງຖືກທັງແຊບ (both cheap and delicious).", "note": "Both attributes should share the same positive or negative tone."},
+        "lo": {"meaning": "ມີສອງລັກສະນະ ຫຼື ເຮັດສອງຢ່າງພ້ອມກັນ (ທັງ…ທັງ…)"},
+        "zh": {"meaning": "又…又… / 既…又…"}
+      },
+      "mistake": null,
+      "examples": [
+        {"zh": "ຮ້ານນີ້ອາຫານທັງຖືກທັງແຊບ.", "py": "Hâan nîi āa-hǎan thang thɯ̀ɯk thang sàaep.", "tokens": [{"z": "ຮ້ານນີ້", "p": "hâan nîi"}, {"z": "ອາຫານ", "p": "āa-hǎan"}, {"z": "ທັງ", "p": "thang"}, {"z": "ຖືກ", "p": "thɯ̀ɯk"}, {"z": "ທັງ", "p": "thang"}, {"z": "ແຊບ", "p": "sàaep"}], "tr": {"en": "At this restaurant, the food is both cheap and delicious."}}
+      ],
+      "gen": [
+        {"zh": "{FOOD} ນີ້ ທັງ {A} ທັງ {B} .", "en": "This {FOOD.e} is both {A.e} and {B.e}.", "slots": ""}
+      ],
+      "status": "published",
+      "access": "standard",
+      "order": 10
+    }
+  ],
+  "lessons": [
+    {
+      "id": "lao1-greetings",
+      "level": 1,
+      "order": 1,
+      "status": "published",
+      "title": {"en": "Lao Greetings & Introductions", "lo": "ການທັກທາຍ ແລະ ແນະນຳຕົວ"},
+      "desc": {"en": "Master essential Lao greetings: Sabaidee, thank you, names, polite particles, and asking how someone is.", "lo": "ຮຽນຮູ້ຄຳທັກທາຍພື້ນຖານ ສະບາຍດີ, ຂອບໃຈ, ການຖາມຊື່ ແລະ ຄວາມສຸພາບ."},
+      "steps": [
+        {"type": "vocab", "words": ["ສະບາຍດີ", "ຂອບໃຈ", "ຂໍໂທດ", "ບໍ່ເປັນຫຍັງ", "ເຈົ້າ", "ໂດຍ"]},
+        {"type": "pattern", "n": 1},
+        {"type": "pattern", "n": 3},
+        {"type": "quiz", "qid": "q-greetings"}
+      ]
+    },
+    {
+      "id": "lao1-food",
+      "level": 1,
+      "order": 2,
+      "status": "published",
+      "title": {"en": "Lao Food & Sticky Rice Culture", "lo": "ອາຫານລາວ ແລະ ວັດທະນະທຳເຂົ້າໜຽວ"},
+      "desc": {"en": "Explore famous Lao dishes: khao niao, laap, tam mak hoong, Lao coffee, and how to express deliciousness.", "lo": "ອາຫານລາວຍອດນິຍົມ ເຂົ້າໜຽວ, ລາບ, ຕຳໝາກຫຸ່ງ, ກາເຟລາວ ແລະ ຄຳວ່າແຊບ."},
+      "steps": [
+        {"type": "vocab", "words": ["ກິນ", "ດື່ມ", "ເຂົ້າໜຽວ", "ລາບ", "ຕຳໝາກຫຸ່ງ", "ແຊບ", "ແຊບຫຼາຍ"]},
+        {"type": "pattern", "n": 4},
+        {"type": "quiz", "qid": "q-food"}
+      ]
+    },
+    {
+      "id": "lao1-shopping",
+      "level": 1,
+      "order": 3,
+      "status": "published",
+      "title": {"en": "Shopping at Talat Sao & Bargaining", "lo": "ຊື້ເຄື່ອງຢູ່ຕະຫຼາດເຊົ້າ ແລະ ຕໍ່ລອງລາຄາ"},
+      "desc": {"en": "Numbers, prices in Kip, asking 'how much?', and politely asking for a discount.", "lo": "ການຖາມລາຄາ, ຕົວເລກເງິນກີບ ແລະ ການຂໍຫຼຸດລາຄາ."},
+      "steps": [
+        {"type": "vocab", "words": ["ຊື້", "ຂາຍ", "ລາຄາ", "ເທົ່າໃດ", "ແພງ", "ຖືກ", "ຫຼຸດໄດ້ບໍ"]},
+        {"type": "pattern", "n": 2},
+        {"type": "pattern", "n": 7}
+      ]
+    }
+  ],
+  "grammar": [
+    {
+      "id": "g01-word-order",
+      "level": 1,
+      "status": "published",
+      "title": {"en": "Lao Sentence Structure (S-V-O)", "lo": "ໂຄງສ້າງປະໂຫຍກພາສາລາວ (ປະທານ + ກິລິຍາ + ກຳ)"},
+      "body": {
+        "en": "Lao is an analytic SVO (Subject - Verb - Object) language. Verbs never change or conjugate for tense, person, or number. Modifiers (adjectives and possessives) always follow the noun: e.g. ອາຫານແຊບ (food delicious = delicious food), ເຮືອນຂ້ອຍ (house me = my house).",
+        "lo": "ພາສາລາວມີໂຄງສ້າງຫຼັກ ປະທານ + ກິລິຍາ + ກຳ. ຄຳກິລິຍາບໍ່ມີການປ່ຽນຮູບ. ຄຳຄຸນນາມ ແລະ ຄຳຂະຫຍາຍຈະຢູ່ດ້ານຫຼັງຄຳນາມສະເໝີ ເຊັ່ນ: ອາຫານແຊບ, ລົດໃໝ່, ເຮືອນຂອງຂ້ອຍ."
+      },
+      "examples": [
+        {"zh": "ຂ້ອຍຮຽນພາສາລາວ.", "py": "Khɔ̀ɔi híian phāa-sǎa láao.", "tr": {"en": "I study Lao language."}},
+        {"zh": "ລາວມັກອາຫານລາວ.", "py": "Láao mák āa-hǎan láao.", "tr": {"en": "He likes Lao food."}}
+      ]
+    },
+    {
+      "id": "g02-classifiers",
+      "level": 2,
+      "status": "published",
+      "title": {"en": "Lao Classifiers (ລັກສະນະນາມ)", "lo": "ລັກສະນະນາມໃນພາສາລາວ"},
+      "body": {
+        "en": "In Lao, when counting nouns or pointing to them ('this/that'), you must use a classifier: [Noun] + [Number] + [Classifier], or [Noun] + [Classifier] + [ນີ້/ນັ້ນ]. Key classifiers: ໂຕ (animals, shirts, furniture), ຄົນ (people), ອັນ (small things), ຫົວ (books), ແກ້ວ (bottles), ຈອກ (cups).",
+        "lo": "ລັກສະນະນາມໃຊ້ບອກໝວດໝູ່ສິ່ງຂອງ ເວລານັບຈຳນວນ ຫຼື ຊີ້ສະເພາະ ເຊັ່ນ: ປຶ້ມສອງຫົວ, ເບຍສາມແກ້ວ, ໝາໜຶ່ງໂຕ, ຄົນສອງຄົນ."
+      },
+      "examples": [
+        {"zh": "ຂໍເບຍລາວສອງແກ້ວ.", "py": "Khɔ̌ɔ bīa láao sɔ̌ɔng kɛ̂ɛo.", "tr": {"en": "Two bottles of Beerlao, please."}},
+        {"zh": "ລາວມີໝູ່ສາມຄົນ.", "py": "Láao mīi mùu sǎam khon.", "tr": {"en": "She has three friends."}}
+      ]
+    },
+    {
+      "id": "g03-politeness",
+      "level": 1,
+      "status": "published",
+      "title": {"en": "Lao Politeness: Jao, Doey & De", "lo": "ຄວາມສຸພາບໃນພາສາລາວ: ເຈົ້າ, ໂດຍ, ເດີ"},
+      "body": {
+        "en": "Lao culture places deep emphasis on warmth and courtesy. 'ເຈົ້າ' (jao) is used as a polite 'yes' or acknowledgment. 'ໂດຍ' (doey) is formal and shows deep respect (used with elders, monks, officials). Sentence-ending particles like 'ເດີ' (de) soften statements warmly: ສະບາຍດີເດີ, ໂຊກດີເດີ (good luck!).",
+        "lo": "ວັດທະນະທຳລາວເນັ້ນຄວາມອ່ອນຫວານສຸພາບ. ຄຳວ່າ 'ໂດຍ' ໃຊ້ຕອບຮັບຜູ້ໃຫຍ່ດ້ວຍຄວາມເຄົາລົບ, 'ເຈົ້າ' ໃຊ້ທົ່ວໄປ, ສ່ວນ 'ເດີ' ເຮັດໃຫ້ປະໂຫຍກອ່ອນໂຍນເປັນກັນເອງ."
+      },
+      "examples": [
+        {"zh": "ໂດຍ, ຂອບໃຈຫຼາຍໆ.", "py": "Dōoei, khɔ̀ɔp-jái lǎai lǎai.", "tr": {"en": "Yes, thank you very much."}},
+        {"zh": "ພົບກັນໃໝ່ເດີ.", "py": "Phóp kan mǎi də̂ə.", "tr": {"en": "See you again soon!"}}
+      ]
+    }
+  ],
+  "dialogues": [
+    {
+      "id": "d01-restaurant",
+      "title": {"en": "At a Lao Noodle Shop", "lo": "ຢູ່ຮ້ານເຝີ"},
+      "lines": [
+        {"sp": "Customer", "zh": "ສະບາຍດີ, ມີເຝີບໍ?", "py": "Sà-bāai-dī, mīi fə̌ə bɔ̀ɔ?", "tr": {"en": "Hello, do you have pho noodles?"}},
+        {"sp": "Vendor", "zh": "ໂດຍ, ມີ. ເຈົ້າຢາກກິນເຝີງົວ ຫຼື ເຝີໄກ່?", "py": "Dōoei, mīi. Jâo yàak kin fə̌ə ngúaa lɯ̌ɯ fə̌ə kái?", "tr": {"en": "Yes, we do. Would you like beef pho or chicken pho?"}},
+        {"sp": "Customer", "zh": "ຂໍເຝີງົວໜຶ່ງຖ້ວຍ ແລະ ນ້ຳດື່ມໜຶ່ງແກ້ວ.", "py": "Khɔ̌ɔ fə̌ə ngúaa nɯ̀ng thùai lɛ́ nâm dɯ̀ɯm nɯ̀ng kɛ̂ɛo.", "tr": {"en": "One bowl of beef pho and one bottle of water, please."}},
+        {"sp": "Vendor", "zh": "ໂດຍ, ລໍຖ້າໜ້ອຍໜຶ່ງເດີ.", "py": "Dōoei, lɔɔ thâa nɔ̂ɔi nɯ̀ng də̂ə.", "tr": {"en": "Certainly, please wait a moment."}}
+      ]
+    },
+    {
+      "id": "d02-market",
+      "title": {"en": "Bargaining at Talat Sao", "lo": "ຊື້ເສື້ອຢູ່ຕະຫຼາດເຊົ້າ"},
+      "lines": [
+        {"sp": "Tourist", "zh": "ສະບາຍດີ, ເສື້ອໂຕນີ້ລາຄາເທົ່າໃດ?", "py": "Sà-bāai-dī, sɯ̂a dtōo nîi lāa-khāa thào-dài?", "tr": {"en": "Hello, how much is this shirt?"}},
+        {"sp": "Seller", "zh": "ແປດສິບພັນກີບເດີ.", "py": "Pàaet síp phán kìip də̂ə.", "tr": {"en": "Eighty thousand Kip."}},
+        {"sp": "Tourist", "zh": "ແພງໜ້ອຍໜຶ່ງ, ຫຼຸດໄດ້ບໍ? ເຈັດສິບພັນໄດ້ບໍ?", "py": "Pháaeng nɔ̂ɔi nɯ̀ng, lùt dài bɔ̀ɔ? Jét síp phán dài bɔ̀ɔ?", "tr": {"en": "A little bit expensive, can you discount? How about 70,000 Kip?"}},
+        {"sp": "Seller", "zh": "ໄດ້, ຂອບໃຈຫຼາຍໆເດີ!", "py": "Dài, khɔ̀ɔp-jái lǎai lǎai də̂ə!", "tr": {"en": "Can do! Thank you very much!"}}
+      ]
+    }
+  ],
+  "quizzes": [
+    {
+      "id": "q-greetings",
+      "title": {"en": "Lao Greetings Quiz", "lo": "ແບບທົດສອບຄຳທັກທາຍ"},
+      "questions": [
+        {
+          "type": "mc",
+          "prompt": {"zh": "ສະບາຍດີ", "py": "sà-bāi-dī"},
+          "options": [{"en": "Hello / Good day"}, {"en": "Goodbye"}, {"en": "Thank you"}, {"en": "Sorry"}],
+          "answer": 0
+        },
+        {
+          "type": "mc",
+          "prompt": {"zh": "ຂອບໃຈ", "py": "khɔ̀ɔp-jái"},
+          "options": [{"en": "Excuse me"}, {"en": "Thank you"}, {"en": "No problem"}, {"en": "Please"}],
+          "answer": 1
+        }
+      ]
+    },
+    {
+      "id": "q-food",
+      "title": {"en": "Lao Food & Dining Quiz", "lo": "ແບບທົດສອບອາຫານລາວ"},
+      "questions": [
+        {
+          "type": "mc",
+          "prompt": {"zh": "ເຂົ້າໜຽວ", "py": "khào-nǐao"},
+          "options": [{"en": "Sticky rice"}, {"en": "Steamed noodles"}, {"en": "Fried rice"}, {"en": "Bread"}],
+          "answer": 0
+        }
+      ]
+    }
+  ],
+  "lexicon": [
+    {
+      "id": "P",
+      "cat": "P",
+      "data": [
+        {"z": "ຂ້ອຍ", "e": "I", "e2": "am", "ps": "My", "do": "do", "have": "have", "Be": "am", "was": "was", "o": "me"},
+        {"z": "ເຈົ້າ", "e": "you", "e2": "are", "ps": "Your", "do": "do", "have": "have", "Be": "are", "was": "were", "o": "you"},
+        {"z": "ລາວ", "e": "he/she", "e2": "is", "ps": "His/Her", "do": "does", "have": "has", "Be": "is", "was": "was", "o": "him/her"},
+        {"z": "ພວກເຮົາ", "e": "we", "e2": "are", "ps": "Our", "do": "do", "have": "have", "Be": "are", "was": "were", "o": "us"},
+        {"z": "ພວກເຂົາ", "e": "they", "e2": "are", "ps": "Their", "do": "do", "have": "have", "Be": "are", "was": "were", "o": "them"}
+      ]
+    },
+    {
+      "id": "FOOD",
+      "cat": "FOOD",
+      "data": [
+        {"z": "ເຂົ້າໜຽວ", "e": "sticky rice"},
+        {"z": "ລາບ", "e": "laap minced meat salad"},
+        {"z": "ຕຳໝາກຫຸ່ງ", "e": "spicy papaya salad"},
+        {"z": "ເຝີ", "e": "Lao noodle soup"},
+        {"z": "ປາປີ້ງ", "e": "grilled river fish"},
+        {"z": "ໄກ່ປີ້ງ", "e": "grilled chicken"}
+      ]
+    },
+    {
+      "id": "DRINK",
+      "cat": "DRINK",
+      "data": [
+        {"z": "ນ້ຳດື່ມ", "e": "drinking water"},
+        {"z": "ກາເຟລາວ", "e": "Lao iced coffee"},
+        {"z": "ຊາເຢັນ", "e": "iced tea"},
+        {"z": "ເບຍລາວ", "e": "Beerlao"}
+      ]
+    },
+    {
+      "id": "CITY",
+      "cat": "CITY",
+      "data": [
+        {"z": "ວຽງຈັນ", "e": "Vientiane"},
+        {"z": "ຫຼວງພະບາງ", "e": "Luang Prabang"},
+        {"z": "ປາກເຊ", "e": "Pakse"},
+        {"z": "ວັງວຽງ", "e": "Vang Vieng"},
+        {"z": "ສະຫວັນນະເຂດ", "e": "Savannakhet"}
+      ]
+    },
+    {
+      "id": "PLACE",
+      "cat": "PLACE",
+      "data": [
+        {"z": "ຕະຫຼາດເຊົ້າ", "e": "Talat Sao Market"},
+        {"z": "ພະທາດຫຼວງ", "e": "That Luang Stupa"},
+        {"z": "ໂຮງຮຽນ", "e": "school"},
+        {"z": "ຮ້ານອາຫານ", "e": "the restaurant"},
+        {"z": "ຫ້ອງການ", "e": "the office"}
+      ]
+    },
+    {
+      "id": "OCC",
+      "cat": "OCC",
+      "data": [
+        {"z": "ຄູສອນ", "e": "a teacher"},
+        {"z": "ນັກຮຽນ", "e": "a student"},
+        {"z": "ທ່ານໝໍ", "e": "a doctor"},
+        {"z": "ພະນັກງານ", "e": "an office worker"}
+      ]
+    },
+    {
+      "id": "A",
+      "cat": "A",
+      "data": [
+        {"z": "ແຊບ", "e": "delicious"},
+        {"z": "ແພງ", "e": "expensive"},
+        {"z": "ຖືກ", "e": "cheap"},
+        {"z": "ໃຫຍ່", "e": "big"},
+        {"z": "ງາມ", "e": "beautiful"},
+        {"z": "ມ່ວນ", "e": "fun"}
+      ]
+    }
+  ],
+  "paths": [
+    {
+      "id": "path-beginner",
+      "order": 1,
+      "title": {"en": "Lao for Beginners", "lo": "ພາສາລາວຂັ້ນພື້ນຖານ"},
+      "desc": {"en": "Start from zero: greetings, self-introductions, alphabet, and core conversational patterns.", "lo": "ເລີ່ມຕົ້ນຈາກສູນ: ການທັກທາຍ, ອັກສອນ, ແລະ ຮູບແບບປະໂຫຍກພື້ນຖານ."},
+      "itemIds": ["lao1-greetings", "lao1-food", "lao1-shopping"]
+    }
+  ],
+  "releases": [
+    {
+      "id": "r100",
+      "date": "2026-09-28",
+      "title": {"en": "Welcome to LaoLao! (ສະບາຍດີ ລາວລາວ)", "lo": "ຍິນດີຕ້ອນຮັບສູ່ ລາວລາວ!"},
+      "notes": {"en": "Dedicated platform for mastering the Lao language: Lao script, phonetics, sentence patterns, audio pronunciation, stroke handwriting studio, dictionary, and quizzes.", "lo": "ເວັບແອັບຮຽນພາສາລາວຢ່າງຄົບວົງຈອນ ພ້ອມສຽງ, ອັກສອນ, ໄວຍາກອນ, ວັດຈະນານຸກົມ ແລະ ແບບຝຶກຫັດ."}
+    }
+  ],
+  "plans": [
+    {"id": "free", "name": "Free", "tier": 1, "price": 0, "order": 1, "features": ["Basic Lao patterns", "Alphabet & audio", "Essential dictionary"]},
+    {"id": "standard", "name": "Standard", "tier": 2, "price": 9, "order": 2, "features": ["All Lao patterns", "Sentence generator", "Handwriting studio", "Spaced repetition"]},
+    {"id": "premium", "name": "Premium", "tier": 3, "price": 19, "order": 3, "features": ["Full curriculum", "All dialogues & audio", "Offline pack", "VIP Support"]}
+  ],
+  "settings": {
+    "appName": "LaoLao",
+    "allowRegistration": true,
+    "defaultPlanId": "free",
+    "supportContact": "kindathanomsuck@gmail.com"
+  }
+}
