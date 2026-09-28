@@ -89,14 +89,14 @@ export function openWord(w, push=true){
   document.body.append(scrim, sheet);
 }
 export function closeSheet(all=true){ $$(".sheet-scrim,.sheet").forEach(e=>e.remove()); if (all) stack = []; }
-document.addEventListener("keydown", e => { if (e.key==="Escape" && document.querySelector(".sheet")) closeSheet(); });
+if (typeof document !== "undefined") document.addEventListener("keydown", e => { if (e.key==="Escape" && document.querySelector(".sheet")) closeSheet(); });
 
 export function entryEl(w){
   const D = dict(), C = chars(), d = D[w], L = ctx.exp();
   const py = d ? d.p : [...w].map(c => C[c] ? C[c].p.split(",")[0] : "").join("");
   const box = h("div",{class:"stack"});
   box.append(h("div",{class:"entry-h"},
-    h("div",{class:"row"}, h("span",{class:"big",lang:"zh-CN"}, w),
+    h("div",{class:"row"}, h("span",{class:"big lo",lang:"lo"}, w),
       h("button",{class:"btn sm",onclick:()=>speak(w)}, icon("play"), t("play")),
       h("button",{class:"btn sm","aria-label":t("slow"),onclick:()=>speak(w,{slow:1})}, icon("slow"))),
     h("div",{class:"epy",html:pyHTML(py)}),

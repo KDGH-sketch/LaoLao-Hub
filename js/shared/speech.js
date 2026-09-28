@@ -12,7 +12,7 @@ function loadVoices(){
     if (!VOICES.length) VOICES = all;
   } catch(e){ VOICES = []; }
 }
-if ("speechSynthesis" in window){ loadVoices(); speechSynthesis.addEventListener?.("voiceschanged", loadVoices); }
+if (typeof window !== "undefined" && "speechSynthesis" in window){ loadVoices(); speechSynthesis.addEventListener?.("voiceschanged", loadVoices); }
 function pickVoice(){
   return VOICES.find(v=>v.name===settings.voice)
     || VOICES.find(v=>/^lo/i.test(v.lang))

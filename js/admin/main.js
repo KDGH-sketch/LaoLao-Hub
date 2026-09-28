@@ -1,7 +1,7 @@
-// Xuélù Admin Backend
+// LaoLao Admin Backend
 import { getApi } from "../api/index.js";
 import { OWNER_EMAIL } from "../config.js";
-import { h, $, $$, icon, toast, dialog, confirmDialog, fmtDate, errText } from "../shared/ui.js";
+import { h, $, $$, icon, toast, dialog, confirmDialog, fmtDate, errText, themeSwitcher } from "../shared/ui.js";
 import { setLang, lang } from "../shared/i18n.js";
 import { buildBundles, CONTENT_TYPES } from "../shared/content.js";
 import { bootstrapOwner, importSeed, ensureDemo, DEMO } from "../shared/setup.js";
@@ -10,6 +10,7 @@ import { S, L, t, go, isSuper, canContent, canSupport, refreshPlans, fld } from 
 import { viewLearners, viewLearner } from "./learners.js";
 import { viewPlans } from "./plans.js";
 import { viewContentHome, viewContentList, viewEditor } from "./cms.js";
+import { EXT_VIEWS } from "./cms-extended.js";
 
 const root = document.getElementById("root");
 const pref = (() => { try { return localStorage.getItem("xuelu.admin.lang") || "en"; } catch(e){ return "en"; } })();
@@ -76,15 +77,28 @@ function renderSetup(user){
       h("button",{class:"btn ghost",onclick:()=>S.api.auth.signOut()}, t("sign_out"))));
 }
 function langSwitch(){
-  return h("div",{class:"langsw"}, [["en","EN"],["lo","ລາວ"]].map(([l,n]) => h("button",{"aria-pressed":String(lang()===l),onclick:()=>{ setLang(l); try{ localStorage.setItem("xuelu.admin.lang",l); }catch(e){} S.me ? renderShell() : renderLogin(); }}, n)));
+  return h("div",{class:"langsw"}, [["en","EN"],["lo","ລາວ"],["zh","中"]].map(([l,n]) => h("button",{"aria-pressed":String(lang()===l),onclick:()=>{ setLang(l); try{ localStorage.setItem("xuelu.admin.lang",l); }catch(e){} S.me ? renderShell() : renderLogin(); }}, n)));
 }
 
 // ---------- shell ----------
-const NAV = [["dashboard","adm_dashboard","chart"],["learners","adm_learners","users"],["plans","adm_plans","plan"],["content","adm_content","content"],["activity","adm_activity","clock"],["admins","adm_admins","shield"],["settings","adm_settings","settings"]];
+const NAV = [
+  ["dashboard","adm_dashboard","chart"],
+  ["learners","adm_learners","users"],
+  ["content","adm_content","content"],
+  ["audioStudio","adm_audio_studio","mic"],
+  ["excelImport","adm_excel_import","upload"],
+  ["videoManager","adm_videos","video"],
+  ["promotions","adm_promotions","gift"],
+  ["contentHealth","adm_content_health","spark"],
+  ["plans","adm_plans","plan"],
+  ["activity","adm_activity","clock"],
+  ["admins","adm_admins","shield"],
+  ["settings","adm_settings","settings"]
+];
 function renderShell(){
   root.innerHTML = "";
   const side = h("nav",{class:"side","aria-label":"Admin"},
-    h("div",{class:"brand"}, h("div",{class:"seal",lang:"zh-CN"},"学"), h("div",null, h("b",null,"Xuélù"), h("small",null,t("adm_title")+" · "+t("role_"+S.me.role)))));
+    h("div",{class:"brand"}, h("div",{class:"seal lo"},"ລ"), h("div",null, h("b",null,"LaoLao"), h("small",null,t("adm_title")+" · "+t("role_"+S.me.role)))));
   const activeTop = ["learner"].includes(S.view) ? "learners" : ["contentList","editor"].includes(S.view) ? "content" : S.view;
   NAV.forEach(([id,k,ic]) => { if (id==="admins" && !isSuper()) return; if (id==="content" && !canContent()) return;
     side.append(h("button",{class:"nav-btn","aria-current":activeTop===id?"page":null,onclick:()=>go(id)}, icon(ic), t(k))); });
@@ -92,12 +106,22 @@ function renderShell(){
     h("button",{class:"nav-btn",onclick:()=>S.api.auth.signOut()}, icon("logout"), t("sign_out")),
     h("div",{class:"side-foot"}, S.me.email));
   const top = h("header",{class:"topbar"},
-    h("div",{class:"mbrand"}, h("span",{class:"seal"},"学"), h("b",null,t("adm_title"))),
-    h("div",{style:"flex:1"}), publishChip(), langSwitch(),
-    h("select",{class:"input hide-desk",style:"width:auto","aria-label":"Menu",onchange:e=>go(e.target.value)}, NAV.filter(([id])=>!(id==="admins"&&!isSuper())).map(([id,k]) => h("option",{value:id,selected:activeTop===id},t(k)))));
+    h("div",{class:"mbrand"}, h("span",{class:"seal lo"},"ລ"), h("b",null,t("adm_title"))),
+    h("div",{style:"flex:1"}),
+    h("a",{class:"btn sm ghost",href:"../",style:"text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:5px 9px",title:t("adm_open_learner")}, icon("home"), h("span",{class:"hide-sm"}, t("adm_open_learner"))),
+    publishChip(),
+    themeSwitcher(),
+    langSwitch(),
+    h("select",{class:"input hide-desk",style:"width:auto","aria-label":"Menu",onchange:e=>{
+      if (e.target.value === "__learner__") location.href = "../";
+      else go(e.target.value);
+    }},
+      NAV.filter(([id])=>!(id==="admins"&&!isSuper())).map(([id,k]) => h("option",{value:id,selected:activeTop===id},t(k))),
+      h("option",{value:"__learner__"}, "↗ " + t("adm_open_learner"))
+    ));
   const main = h("main",{id:"main"});
   root.append(demoBar(), h("div",{class:"app adm"}, side, h("div",{class:"mainwrap"}, top, main)));
-  const V = { dashboard:viewDashboard, learners:viewLearners, learner:viewLearner, plans:viewPlans, content:viewContentHome, contentList:viewContentList, editor:viewEditor, activity:viewActivity, admins:viewAdmins, settings:viewSettings };
+  const V = Object.assign({ dashboard:viewDashboard, learners:viewLearners, learner:viewLearner, plans:viewPlans, content:viewContentHome, contentList:viewContentList, editor:viewEditor, activity:viewActivity, admins:viewAdmins, settings:viewSettings }, EXT_VIEWS);
   const fn = V[S.view] || viewDashboard;
   Promise.resolve(fn(S.params||{})).then(el => { main.innerHTML=""; main.append(el); }).catch(err => { console.error(err); main.innerHTML=""; main.append(h("div",{class:"banner"}, errText(err))); });
 }

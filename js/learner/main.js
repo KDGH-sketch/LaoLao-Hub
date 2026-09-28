@@ -11,6 +11,8 @@ import { A, loadAccount, prefs, setPref, applyPrefs, srsDue, T } from "./core.js
 import * as LV from "./views-learn.js";
 import * as TV from "./views-tools.js";
 import { LAB_VIEWS } from "./views-labs.js";
+import { MEDIA_VIEWS } from "./views-media.js";
+import { themeSwitcher } from "../shared/ui.js";
 
 const root = document.getElementById("root");
 try { const l = localStorage.getItem("xuelu.lang"); if (l) setLang(l); } catch(e){}
@@ -160,9 +162,12 @@ async function renderAuth(mode){
   const authFormWrap = h("div",{class:"auth-form-wrap"},
     h("form",{class:"auth-form",onsubmit:submit},
       h("div",{class:"auth-form-header"},
-        h("div",{class:"langsw"}, [["en","EN"],["lo","ລາວ"],["zh","中文"]].map(([l,n]) =>
-          h("button",{type:"button","aria-pressed":String(L===l),onclick:()=>{ setLang(l); try{ localStorage.setItem("xuelu.lang",l); }catch(e){} renderAuth(mode); }}, n)
-        )),
+        h("div",{class:"row",style:"align-items:center;gap:8px"},
+          themeSwitcher(),
+          h("div",{class:"langsw"}, [["en","EN"],["lo","ລາວ"],["zh","中文"]].map(([l,n]) =>
+            h("button",{type:"button","aria-pressed":String(L===l),onclick:()=>{ setLang(l); try{ localStorage.setItem("xuelu.lang",l); }catch(e){} renderAuth(mode); }}, n)
+          ))
+        ),
         h("div",{class:"small",style:"color:var(--accent);font-weight:700"}, mode==="register" ? "New Account" : mode==="reset" ? "Reset Access" : "Welcome Back")
       ),
       h("h1",null, mode==="register" ? t("register") : mode==="reset" ? t("forgot") : t("sign_in")),
@@ -182,7 +187,34 @@ async function renderAuth(mode){
           h("button",{type:"button",class:"btn primary sm",onclick:()=>{ email.value=DEMO.premium.email; pw.value=DEMO.premium.pw; submit(); }}, "✨ Premium Learner"),
           h("button",{type:"button",class:"btn sm",onclick:()=>{ email.value=DEMO.free.email; pw.value=DEMO.free.pw; submit(); }}, "🌱 Free Learner")
         )
-      ) : null
+      ) : null,
+
+      // Lao Learning Feed (Interesting Culture, Daily Tip)
+      h("div",{class:"card stack",style:"gap:8px;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:14px"},
+        h("div",{class:"spread"},
+          h("b",{style:"font-size:.85rem;color:var(--accent);text-transform:uppercase;letter-spacing:.04em"}, "🇱🇦 Lao Learning Feed"),
+          h("span",{class:"chip lv"}, "Daily Tip")
+        ),
+        h("div",{class:"lo",style:"font-size:1.05rem;font-weight:700"}, "“ບໍ່ເປັນຫຍັງ” (Bo Pen Nyang)"),
+        h("p",{class:"small muted",style:"margin:0"}, "The cornerstone of Lao social harmony: means 'no problem / it is alright'. Use it whenever someone apologizes or thanks you."),
+        h("button",{type:"button",class:"btn sm ghost",style:"align-self:flex-start;padding:4px 8px;font-size:.8rem",onclick:()=>speak("ບໍ່ເປັນຫຍັງ")}, icon("play"), "Listen")
+      ),
+
+      // Promotional Resource Banner & Socials
+      h("div",{class:"promo-card",style:"margin-top:10px"},
+        h("div",{class:"spread"},
+          h("b",{style:"font-size:.9rem"}, "🎁 Free Lao Starter PDF Guide"),
+          h("span",{class:"chip lv"}, "Free")
+        ),
+        h("p",{class:"small muted",style:"margin:0"}, "Download our structured 30-day Lao script, tones, and survival conversation reference book."),
+        h("div",{class:"row",style:"justify-content:space-between;align-items:center;margin-top:6px"},
+          h("button",{type:"button",class:"btn primary sm",onclick:()=>toast("Downloading Lao Beginner PDF guide...", "ok")}, icon("download"), "Free Download"),
+          h("div",{class:"row",style:"gap:8px"},
+            h("a",{href:"https://youtube.com/@laolaohub",target:"_blank",rel:"noreferrer",class:"btn sm ghost",title:"YouTube Channel"}, icon("video")),
+            h("a",{href:"https://facebook.com/laolaohub",target:"_blank",rel:"noreferrer",class:"btn sm ghost",title:"Facebook"}, icon("globe"))
+          )
+        )
+      )
     )
   );
 
@@ -198,16 +230,17 @@ function renderDisabled(){
 }
 
 // ---------- shell ----------
-const VIEWS = Object.assign({}, LV.VIEWS, TV.VIEWS, LAB_VIEWS, {
+const VIEWS = Object.assign({}, LV.VIEWS, TV.VIEWS, LAB_VIEWS, MEDIA_VIEWS, {
   script_lab: TV.VIEWS.chars
 });
 const NAV = [
   ["home","nav_home","home"],
   ["paths","nav_paths","path"],
   ["lessons","nav_lessons","learn"],
+  ["videos","nav_videos","video"],
   ["tone_lab","nav_tone_lab","spark"],
   ["pronounce_lab","nav_pronounce","speaker"],
-  ["chars","nav_chars","pen"],
+  ["handwriting","nav_handwriting","pen"],
   ["particle_lab","nav_particles","flame"],
   ["kinship_lab","nav_kinship","users"],
   ["classifiers_lab","nav_classifiers","layers"],
@@ -225,8 +258,8 @@ const NAV = [
   ["progress","nav_progress","chart"],
   ["downloads","nav_offline","download"],
   ["account","nav_account","user"]];
-const TABS = [["home","nav_home","home"],["paths","nav_learn","path"],["tone_lab","nav_tone_lab","spark"],["practice","nav_practice","practice"],["review","nav_review","review"],["more","nav_more","more"]];
-const PARENT = { lesson:"lessons", path:"paths", pattern:"patterns", grammarItem:"grammar", quiz:"practice", gen:"patterns" };
+const TABS = [["home","nav_home","home"],["paths","nav_learn","path"],["videos","nav_videos","video"],["tone_lab","nav_tone_lab","spark"],["practice","nav_practice","practice"],["more","nav_more","more"]];
+const PARENT = { lesson:"lessons", path:"paths", pattern:"patterns", grammarItem:"grammar", quiz:"practice", gen:"patterns", handwriting:"handwriting", videos:"videos" };
 let searchPop, netEl;
 function render(){
   const cur = PARENT[A.view.name] || A.view.name;

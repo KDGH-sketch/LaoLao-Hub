@@ -82,16 +82,16 @@ VIEWS.gen = () => {
 };
 
 // ---------- practice ----------
-const PTYPES = [["order","句","pr_order"],["blank","空","pr_blank"],["listen","听","pr_listen"],["meaning","意","pr_meaning"],["reverse","说","pr_reverse"],["pattern","型","pr_pattern"],["words","词","pr_words"],["tones","调","pr_tones"],["write","写","stroke_quiz"],["speak","读","nav_speak"]];
+const PTYPES = [["order","ຈັດ","pr_order"],["blank","ຕື່ມ","pr_blank"],["listen","ຟັງ","pr_listen"],["meaning","ແປ","pr_meaning"],["reverse","ເວົ້າ","pr_reverse"],["pattern","ຮູບ","pr_pattern"],["words","ສັບ","pr_words"],["tones","ສຽງ","pr_tones"],["write","ຂຽນ","stroke_quiz"],["speak","ອ່ານ","nav_speak"]];
 VIEWS.practice = ({ type }) => {
   const root = h("div");
   if (type) return startPractice(root, type);
   const quizzes = Object.values(A.byType.quizzes||{}).sort((a,b)=>(a.level-b.level)||((a.order||0)-(b.order||0)));
   root.append(pageHead(t("practice_title"), t("practice_sub")),
-    h("div",{class:"grid2"}, PTYPES.map(([k,ic,l]) => h("button",{class:"pcard",onclick:()=>go("practice",{type:k})}, h("span",{class:"qi",lang:"zh-CN"},ic), h("div",null, h("b",null,t(l)), h("span",null, t(l+"_d")!==l+"_d" ? t(l+"_d") : ""))))),
+    h("div",{class:"grid2"}, PTYPES.map(([k,ic,l]) => h("button",{class:"pcard",onclick:()=>go("practice",{type:k})}, h("span",{class:"qi lo",style:"font-weight:700"},ic), h("div",null, h("b",null,t(l)), h("span",null, t(l+"_d")!==l+"_d" ? t(l+"_d") : ""))))),
     h("div",{style:"margin-top:14px"}, h("button",{class:"btn primary",onclick:()=>go("practice",{type:"mix"})}, icon("spark"), t("start")+" · mix")),
     quizzes.length ? h("section",{class:"sect",style:"margin-top:28px"}, h("h2",null,t("quiz")), h("div",{class:"list-card"}, quizzes.map(q => { const r = A.prog.lessons["quiz:"+q.id];
-      return h("button",{class:"item-row",onclick:()=>go("quiz",{id:q.id})}, h("span",{class:"stepnum"+(r?" done":"")}, r?icon("check"):icon("star")), h("span",null, h("div",{class:"ttl"},T(q.title)), h("div",{class:"sub"}, "HSK "+q.level+" · "+(q.questions||[]).length+" "+t("questions").toLowerCase()+(r?" · "+r.score+"/"+r.total:""))), icon("right")); }))) : null);
+      return h("button",{class:"item-row",onclick:()=>go("quiz",{id:q.id})}, h("span",{class:"stepnum"+(r?" done":"")}, r?icon("check"):icon("star")), h("span",null, h("div",{class:"ttl"},T(q.title)), h("div",{class:"sub"}, "Stage "+q.level+" · "+(q.questions||[]).length+" "+t("questions").toLowerCase()+(r?" · "+r.score+"/"+r.total:""))), icon("right")); }))) : null);
   return root;
 };
 function startPractice(root, type){
@@ -119,9 +119,9 @@ VIEWS.quiz = ({ id }) => {
 // ---------- dictionary ----------
 VIEWS.dict = ({ q="" }) => {
   const res = h("div"), EL = expLang();
-  const listEl = keys => { const D = dict(); return h("div",{class:"dres"}, keys.map(k => h("button",{onclick:()=>openWord(k)}, h("span",{class:"hz",lang:"zh-CN"},k), h("span",{html:pyHTML(D[k].p)}), h("span",{class:"gl"+(EL==="lo"&&D[k].lo?" lo":"")}, meaning(k,EL)), D[k].h ? h("span",{class:"chip lv"},"HSK "+D[k].h) : h("span")))); };
+  const listEl = keys => { const D = dict(); return h("div",{class:"dres"}, keys.map(k => h("button",{onclick:()=>openWord(k)}, h("span",{class:"lo",style:"font-size:1.35rem;font-weight:700"},k), h("span",{html:pyHTML(D[k].p)}), h("span",{class:"gl"+(EL==="lo"&&D[k].lo?" lo":"")}, meaning(k,EL)), D[k].h ? h("span",{class:"chip lv"},"Stage "+D[k].h) : h("span")))); };
   const draw = () => { res.innerHTML="";
-    if (!q.trim()){ const D = dict(); res.append(h("h3",{style:"margin:6px 0 10px"},"HSK 1"), listEl(Object.keys(D).filter(k=>D[k].h===1).sort((a,b)=>D[a].fq-D[b].fq).slice(0,60))); return; }
+    if (!q.trim()){ const D = dict(); res.append(h("h3",{style:"margin:6px 0 10px"},"Stage 1 · High Frequency"), listEl(Object.keys(D).filter(k=>D[k].h===1).sort((a,b)=>D[a].fq-D[b].fq).slice(0,60))); return; }
     const hits = searchDict(q, 60); if (!hits.length){ res.append(h("div",{class:"empty"},t("search_none"))); return; }
     if (dict()[q.trim()]) res.append(h("div",{class:"card",style:"margin-bottom:16px"}, entryEl(q.trim())));
     res.append(h("p",{class:"muted small",style:"margin-bottom:8px"}, hits.length+" "+t("results")), listEl(hits)); };

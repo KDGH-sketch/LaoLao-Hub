@@ -30,25 +30,42 @@ const PUNCT = {"，":", ","。":".","？":"?","！":"!","、":", ","：":": ","�
 const isHan = c => (c>="\u0E80" && c<="\u0EFF") || (c>="一" && c<="鿿");
 
 function makeEngine(DICT, CHARS, LEX){
-  function tokPinyin(tok){
-    if (tok.includes("|")) return tok.split("|")[1];
-    const d = DICT && DICT[tok]; if (d) return d.p;
-    let s="";
-    for (const c of tok){
-      if (CHARS && CHARS[c]){
-        let sy = CHARS[c].p ? CHARS[c].p.split(",")[0].trim() : c;
-        s += (s ? " " : "") + sy;
-      } else {
-        s += c;
-      }
+  // Normalize LEX whether array of categories or map
+  const NORM_LEX = {};
+  if (Array.isArray(LEX)){
+    LEX.forEach(cat => { if (cat && (cat.id || cat.cat)) NORM_LEX[cat.cat || cat.id] = cat.data || cat; });
+  } else if (LEX && typeof LEX === "object"){
+    Object.assign(NORM_LEX, LEX);
+  }
+
+  // Build fast romanization lookup from lexicon
+  const LEX_MAP = {};
+  for (const cat in NORM_LEX){
+    const arr = NORM_LEX[cat];
+    if (Array.isArray(arr)){
+      arr.forEach(it => { if (it && it.z && it.p) LEX_MAP[it.z] = it.p; });
     }
-    return s || tok;
+  }
+
+  function tokPinyin(tok){
+    if (!tok) return "";
+    if (tok.includes("|")) return tok.split("|")[1];
+    if (LEX_MAP[tok]) return LEX_MAP[tok];
+    const d = DICT && DICT[tok];
+    if (d){
+      const p = Array.isArray(d) ? d[0] : (d.p || d[0]);
+      if (p) return p;
+    }
+    if (CHARS && CHARS[tok] && CHARS[tok].p){
+      return CHARS[tok].p.split(",")[0].trim();
+    }
+    return tok;
   }
   function sandhi(tokens){
     return tokens;
   }
   function tokenize(zhSpaced){
-    const raw = zhSpaced.replace(/([，。？！、：；])/g," $1 ").split(/\s+/).filter(Boolean);
+    const raw = zhSpaced.replace(/([，。？！、：；,.?!])/g," $1 ").split(/\s+/).filter(Boolean);
     const toks = raw.map(r=>{
       if (PUNCT[r]!==undefined) return {z:r, p:"", punct:1};
       const z = r.split("|")[0];
@@ -59,7 +76,7 @@ function makeEngine(DICT, CHARS, LEX){
   function pinyinLine(toks){
     let s="", cap=true;
     for (const t of toks){
-      if (t.punct){ s = s.replace(/\s+$/,"") + PUNCT[t.z]; if (/[.?!]/.test(PUNCT[t.z])) cap=true; continue; }
+      if (t.punct){ s = s.replace(/\s+$/,"") + (PUNCT[t.z] || t.z); if (/[.?!]/.test(PUNCT[t.z]||t.z)) cap=true; continue; }
       let p=t.p; if (cap && p){ p=p[0].toUpperCase()+p.slice(1); cap=false; }
       s += (s && !s.endsWith(" ") ? " " : "") + p;
     }
@@ -76,25 +93,25 @@ function makeEngine(DICT, CHARS, LEX){
     }
     return x;
   }
-  function adj(key){ const a=LEX.ADJ[key]||{e:key}; return Object.assign({z:key}, a); }
+  function adj(key){ const a=(NORM_LEX.ADJ && NORM_LEX.ADJ[key]) || {e:key}; return Object.assign({z:key}, a); }
   function pickFor(name, slots, ctx){
     if (ctx.picks[name]) return ctx.picks[name];
     let list, key, cat = name.replace(/\d+$/,"");
     let spec = slots && (slots[name]!==undefined && slots[name]!==null ? slots[name] : (name!==cat && slots[cat]!=null && typeof slots[cat]!=="string" ? slots[cat] : undefined));
-    if (typeof spec==="string"){ list = LEX[spec]; key = spec; }
+    if (typeof spec==="string"){ list = NORM_LEX[spec]; key = spec; }
     else if (spec){ list = spec; key = "@"+cat; }
-    else if (LEX[cat]){ list = LEX[cat]; key = cat; }
-    else if (LEX[name]){ list = LEX[name]; key = name; }
+    else if (NORM_LEX[cat]){ list = NORM_LEX[cat]; key = cat; }
+    else if (NORM_LEX[name]){ list = NORM_LEX[name]; key = name; }
     else throw new Error("Unknown slot "+name);
     if (!list) throw new Error("Bad slot "+name);
-    if (Array.isArray(list) && typeof list[0]==="string" && !list[0].includes("|") && LEX.ADJ[list[0]]) list = list.map(adj);
+    if (Array.isArray(list) && typeof list[0]==="string" && !list[0].includes("|") && NORM_LEX.ADJ && NORM_LEX.ADJ[list[0]]) list = list.map(adj);
     list = list.map(asItem);
     const used = ctx.used[key] || (ctx.used[key]=new Set());
     let cands = list.filter(x=>!used.has(x.z)); if (!cands.length) cands=list;
     let it = Object.assign({}, rnd(cands));
     used.add(it.z);
-    if (it.a) it.A = adj(rnd(it.a));
-    if (it.x) it.A = adj(rnd(it.x));
+    if (it.a && NORM_LEX.ADJ) it.A = adj(rnd(it.a));
+    if (it.x && NORM_LEX.ADJ) it.A = adj(rnd(it.x));
     ctx.picks[name]=it; return it;
   }
   function subj(ctx){ return ctx.picks.P || ctx.picks.PS || ctx.picks.P1; }
@@ -109,7 +126,7 @@ function makeEngine(DICT, CHARS, LEX){
       if (f==="do") return s?"does":"do";
       if (f==="have") return s?"has":"have";
       if (f==="was") return (s||I)?"was":"were";
-      if (f==="Be") return cur.be || "is";
+      if (f==="Be") return cur.be || (s ? "is" : I ? "am" : "are");
       if (f==="po") return cur.o || cur.e;
       if (f==="@"){ const sb = subj(ctx); return conj(cur.e, sb && sb.s===1 ? "s":"b"); }
       if (["s","d","g","p","b"].includes(f)) return conj(cur.e, f);
@@ -131,13 +148,30 @@ function makeEngine(DICT, CHARS, LEX){
     return str;
   }
   function generate(tpl){
-    const [zt, et, slots] = tpl;
+    let zt, et, slots;
+    if (Array.isArray(tpl)){
+      [zt, et, slots] = tpl;
+    } else if (tpl && typeof tpl === "object"){
+      zt = tpl.zh || tpl.lo || tpl.lao || tpl.z;
+      et = tpl.en || tpl.e;
+      slots = tpl.slots ? (typeof tpl.slots === "string" ? JSON.parse(tpl.slots) : tpl.slots) : undefined;
+    } else {
+      throw new Error("Invalid template passed to generate");
+    }
     const ctx = {picks:{}, used:{}};
-    // zh first so picks are shared; en uses same picks
+    // Lao text first so picks are shared; en uses same picks
     const zhSp = fill(zt, "zh", slots, ctx);
     let et2 = et;
     for (const nm of ["P","PS","P1","P2"]){ let seen=0; et2 = et2.replace(new RegExp("\\{"+nm+"\\}","g"), m=>(seen++ ? "{"+nm+".pr}" : m)); }
-    let en = fill(et2, "en", slots, ctx).replace(/\[\[([a-z' ]+)\]\]/g,(m,v)=>{ const sb=subj(ctx); if(v==="be") return sb?sb.be||"is":"is"; return conj(v, sb&&sb.s===1?"s":"b"); }).replace(/\s+/g," ").replace(/\s([,.?!])/g,"$1").trim();
+    let en = fill(et2, "en", slots, ctx).replace(/\[\[([a-z' ]+)\]\]/g,(m,v)=>{
+      const sb = subj(ctx);
+      const isSingular = sb && sb.s === 1;
+      const isI = sb && sb.e === "I";
+      if (v === "be") return isSingular ? "is" : (isI ? "am" : "are");
+      if (v === "have") return isSingular ? "has" : "have";
+      if (v === "do") return isSingular ? "does" : "do";
+      return conj(v, isSingular ? "s" : "b");
+    }).replace(/\s+/g," ").replace(/\s([,.?!])/g,"$1").trim();
     en = en[0].toUpperCase()+en.slice(1);
     const toks = tokenize(zhSp);
     return {toks, zh: toks.map(t=>t.z).join(""), py: pinyinLine(toks), en};

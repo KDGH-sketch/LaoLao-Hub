@@ -111,7 +111,7 @@ async function normalize(type, d){
   const fixSentence = snt => { if (!snt || !snt.zh) return snt; const a = autoPinyin(eng, snt.zh.trim()); snt.zh = snt.zh.trim(); snt.tokens = a.tokens; if (!snt.py) snt.py = a.py; return snt; };
   ["examples","lines"].forEach(k => { if (Array.isArray(o[k])) o[k] = o[k].filter(x=>x && x.zh).map(fixSentence); });
   if (type==="vocabulary"){ o.hz = (o.hz||"").trim(); if (!o.py) o.py = autoPinyin(eng, o.hz).py.toLowerCase(); }
-  if (type==="patterns"){ o.markers = undefined; (o.gen||[]).forEach(g => { if (g.slots){ JSON.parse(g.slots); } }); if (!o.hz) throw new Error("Pattern (Chinese) is required."); }
+  if (type==="patterns"){ o.markers = undefined; (o.gen||[]).forEach(g => { if (g.slots){ JSON.parse(g.slots); } }); if (!o.hz) throw new Error("Pattern (Lao) is required."); }
   if (type==="lexicon" && typeof o.data==="string") o.data = JSON.parse(o.data);
   if (type==="quizzes") (o.questions||[]).forEach(q => { if (q.prompt && q.prompt.zh && !q.prompt.py && !["listen_select","listen_type"].includes(q.type)) q.prompt.py = autoPinyin(eng, q.prompt.zh).py; if (q.type==="order" && q.tokens && !q.answer) q.answer = q.tokens.join(""); });
   Object.keys(o).forEach(k => o[k]===undefined && delete o[k]);
@@ -139,7 +139,7 @@ function renderField(f, obj, type){
     case "words": {
       const v = get() || []; set(v); const tags = h("div",{class:"refpick"});
       const draw = () => { tags.innerHTML=""; v.forEach((w,i) => tags.append(h("span",{class:"tag"}, h("span",{class:"hz"},w), " ", h("span",{class:"small muted",html:pyHTML(dict()[w]?dict()[w].p:"")}), h("button",{type:"button","aria-label":t("remove"),onclick:()=>{ v.splice(i,1); draw(); }},"×")))); };
-      const inp = h("input",{class:"input",placeholder:"学习, 喜欢 …",onkeydown:e=>{ if (e.key==="Enter"){ e.preventDefault(); e.target.value.split(/[,，\s]+/).map(s=>s.trim()).filter(Boolean).forEach(w=>{ if(!v.includes(w)) v.push(w); }); e.target.value=""; draw(); } }});
+      const inp = h("input",{class:"input",placeholder:"ກິນ, ດື່ມ, ສະບາຍດີ …",onkeydown:e=>{ if (e.key==="Enter"){ e.preventDefault(); e.target.value.split(/[,，\s]+/).map(s=>s.trim()).filter(Boolean).forEach(w=>{ if(!v.includes(w)) v.push(w); }); e.target.value=""; draw(); } }});
       loadDict().then(draw); draw();
       return fld(label, h("div",{class:"stack",style:"gap:8px"}, tags, inp), "Type a word and press Enter");
     }
@@ -169,10 +169,10 @@ function renderField(f, obj, type){
     case "sentence": {
       const v = obj; v.tr = v.tr || {};
       const pyIn = input(v.py, x=>v.py=x);
-      const zhIn = input(v.zh, x=>{ v.zh=x; v.tokens=null; }, { cls:"hz", placeholder:"我每天学习中文。" });
+      const zhIn = input(v.zh, x=>{ v.zh=x; v.tokens=null; }, { cls:"hz", placeholder:"ຂ້ອຍຮຽນພາສາລາວທຸກມື້." });
       return h("div",{class:"stack",style:"gap:8px"},
-        fld(L(["Chinese","ພາສາຈີນ"]), zhIn),
-        fld(L(["Pinyin (leave empty for automatic)","ພິນອິນ (ປ່ອຍວ່າງເພື່ອສ້າງອັດຕະໂນມັດ)"]), h("div",{class:"row",style:"flex-wrap:nowrap"}, pyIn, h("button",{class:"btn sm",type:"button",onclick:async()=>{ const e = await engine(); v.py = autoPinyin(e, v.zh||"").py; pyIn.value = v.py; }}, t("auto_pinyin")))),
+        fld(L(["Lao","ພາສາລາວ"]), zhIn),
+        fld(L(["Romanization (leave empty for automatic)","ຄຳອ່ານໂຣມັນ (ປ່ອຍວ່າງເພື່ອສ້າງອັດຕະໂນມັດ)"]), h("div",{class:"row",style:"flex-wrap:nowrap"}, pyIn, h("button",{class:"btn sm",type:"button",onclick:async()=>{ const e = await engine(); v.py = autoPinyin(e, v.zh||"").py; pyIn.value = v.py; }}, t("auto_pinyin")))),
         h("div",{class:"field-row"}, LANGS.map(([l,n]) => fld(n, input(v.tr[l], x=>v.tr[l]=x, { cls:l==="lo"?"lo":"" })))));
     }
     case "trgroup": {
@@ -253,9 +253,9 @@ function questionsBuilder(obj, key){
       q.prompt = q.prompt || {};
       const needsZh = ["mc","fill","listen_select","listen_type","tone","speak","write_char","flashcard","type"].includes(q.type);
       if (needsZh) item.append(h("div",{class:"field-row"},
-        fld(L(["Chinese prompt","ຄຳຖາມພາສາຈີນ"])+(q.type==="fill"?" (use ___ for the blank)":""), h("input",{class:"input hz",value:q.prompt.zh||"",oninput:e=>{ q.prompt.zh=e.target.value; q.prompt.py=""; }})),
-        fld(L(["Pinyin (auto if empty)","ພິນອິນ (ອັດຕະໂນມັດຖ້າວ່າງ)"]), h("input",{class:"input",value:q.prompt.py||"",oninput:e=>q.prompt.py=e.target.value}))));
-      if (["mc","type","fill"].includes(q.type)){ q.prompt.tr = q.prompt.tr || {}; item.append(renderField({ key:"tr", type:"tr", label:["Prompt translation (optional; shown when there's no Chinese)","ຄຳແປຂອງຄຳຖາມ"] }, q.prompt)); }
+        fld(L(["Lao prompt","ຄຳຖາມພາສາລາວ"])+(q.type==="fill"?" (use ___ for the blank)":""), h("input",{class:"input hz",value:q.prompt.zh||"",oninput:e=>{ q.prompt.zh=e.target.value; q.prompt.py=""; }})),
+        fld(L(["Romanization (auto if empty)","ຄຳອ່ານໂຣມັນ (ອັດຕະໂນມັດຖ້າວ່າງ)"]), h("input",{class:"input",value:q.prompt.py||"",oninput:e=>q.prompt.py=e.target.value}))));
+      if (["mc","type","fill"].includes(q.type)){ q.prompt.tr = q.prompt.tr || {}; item.append(renderField({ key:"tr", type:"tr", label:["Prompt translation (optional; shown when there's no Lao text)","ຄຳແປຂອງຄຳຖາມ"] }, q.prompt)); }
       if (["mc","fill","listen_select"].includes(q.type)){
         q.options = q.options || [{},{},{},{}]; if (q.answer==null) q.answer = 0;
         const ob = h("div",{class:"stack",style:"gap:6px"});
@@ -263,26 +263,26 @@ function questionsBuilder(obj, key){
           q.options.forEach((o,k) => { if (typeof o==="string") o = q.options[k] = { zh:o };
             ob.append(h("div",{class:"row",style:"flex-wrap:nowrap;align-items:flex-end"},
               h("label",{class:"row small",style:"flex:none"}, h("input",{type:"radio",name:"ans"+i+Math.random(),checked:q.answer===k,onchange:()=>q.answer=k}), "✓"),
-              h("input",{class:"input hz",placeholder:"中文",value:o.zh||"",oninput:e=>o.zh=e.target.value}),
+              h("input",{class:"input hz",placeholder:"ລາວ (Lao)",value:o.zh||"",oninput:e=>o.zh=e.target.value}),
               q.type==="listen_select" ? null : h("input",{class:"input",placeholder:"English",value:o.en||"",oninput:e=>o.en=e.target.value}),
               q.type==="listen_select" ? null : h("input",{class:"input lo",placeholder:"ລາວ",value:o.lo||"",oninput:e=>o.lo=e.target.value}),
               h("button",{class:"ib",type:"button","aria-label":t("remove"),onclick:()=>{ q.options.splice(k,1); if (q.answer>=q.options.length) q.answer=0; drawOpts(); }}, icon("x")))); });
           ob.append(h("button",{class:"btn sm",type:"button",style:"align-self:flex-start",onclick:()=>{ q.options.push({}); drawOpts(); }}, icon("plus"), t("add"))); };
-        drawOpts(); item.append(fld(L(["Options (tick the correct one; use Chinese or a translation)","ຕົວເລືອກ (ໝາຍອັນທີ່ຖືກ)"]), ob));
+        drawOpts(); item.append(fld(L(["Options (tick the correct one; use Lao or a translation)","ຕົວເລືອກ (ໝາຍອັນທີ່ຖືກ)"]), ob));
       }
-      if (q.type==="order") item.append(fld(L(["Words in the correct order, separated by spaces","ຄຳຕາມລຳດັບທີ່ຖືກ ແຍກດ້ວຍຍະຫວ່າງ"]), h("input",{class:"input hz",value:(q.tokens||[]).join(" "),placeholder:"我 每天 学习 中文",oninput:e=>{ q.tokens = e.target.value.split(/\s+/).filter(Boolean); q.answer = q.tokens.join(""); }})));
+      if (q.type==="order") item.append(fld(L(["Words in the correct order, separated by spaces","ຄຳຕາມລຳດັບທີ່ຖືກ ແຍກດ້ວຍຍະຫວ່າງ"]), h("input",{class:"input hz",value:(q.tokens||[]).join(" "),placeholder:"ຂ້ອຍ ຮຽນ ພາສາ ລາວ",oninput:e=>{ q.tokens = e.target.value.split(/\s+/).filter(Boolean); q.answer = q.tokens.join(""); }})));
       if (q.type==="match"){
         q.pairs = q.pairs || [{a:"",b:{}},{a:"",b:{}},{a:"",b:{}}];
         const pb = h("div",{class:"stack",style:"gap:6px"});
         const drawP = () => { pb.innerHTML=""; q.pairs.forEach((p,k) => { if (typeof p.b==="string") p.b = { en:p.b };
-          pb.append(h("div",{class:"row",style:"flex-wrap:nowrap"}, h("input",{class:"input hz",placeholder:"中文",value:p.a||"",oninput:e=>p.a=e.target.value}), h("input",{class:"input",placeholder:"English",value:p.b.en||"",oninput:e=>p.b.en=e.target.value}), h("input",{class:"input lo",placeholder:"ລາວ",value:p.b.lo||"",oninput:e=>p.b.lo=e.target.value}), h("button",{class:"ib",type:"button",onclick:()=>{ q.pairs.splice(k,1); drawP(); }}, icon("x")))); });
+          pb.append(h("div",{class:"row",style:"flex-wrap:nowrap"}, h("input",{class:"input hz",placeholder:"ລາວ (Lao)",value:p.a||"",oninput:e=>p.a=e.target.value}), h("input",{class:"input",placeholder:"English",value:p.b.en||"",oninput:e=>p.b.en=e.target.value}), h("input",{class:"input lo",placeholder:"ລາວ",value:p.b.lo||"",oninput:e=>p.b.lo=e.target.value}), h("button",{class:"ib",type:"button",onclick:()=>{ q.pairs.splice(k,1); drawP(); }}, icon("x")))); });
           pb.append(h("button",{class:"btn sm",type:"button",style:"align-self:flex-start",onclick:()=>{ q.pairs.push({a:"",b:{}}); drawP(); }}, icon("plus"), t("add"))); };
         drawP(); item.append(fld(L(["Pairs","ຄູ່"]), pb));
       }
       if (["type","listen_type"].includes(q.type)) item.append(h("div",{class:"field-row"},
         fld(L(["Accepted answers (one per line)","ຄຳຕອບທີ່ຍອມຮັບ (ແຖວລະອັນ)"]), h("textarea",{class:"input",value:(q.accept||[]).join("\n"),oninput:e=>q.accept=e.target.value.split("\n").map(s=>s.trim()).filter(Boolean)})),
-        fld(L(["Checking","ວິທີກວດ"]), h("select",{class:"input",onchange:e=>q.mode=e.target.value}, [["pinyin","Pinyin (tones optional)"],["hanzi","Characters (exact)"],["text","Text"]].map(([k,n])=>h("option",{value:k,selected:(q.mode||"pinyin")===k},n))))));
-      if (q.type==="tone") item.append(fld(L(["Correct tone","ວັນນະຍຸດທີ່ຖືກ"]), h("select",{class:"input",style:"width:auto",onchange:e=>q.answer=+e.target.value}, [1,2,3,4].map(n=>h("option",{value:n,selected:+q.answer===n},n)))));
+        fld(L(["Checking","ວິທີກວດ"]), h("select",{class:"input",onchange:e=>q.mode=e.target.value}, [["pinyin","Romanization (tones optional)"],["hanzi","Lao script (exact)"],["text","Text"]].map(([k,n])=>h("option",{value:k,selected:(q.mode||"pinyin")===k},n))))));
+      if (q.type==="tone") item.append(fld(L(["Correct tone (1-6)","ວັນນະຍຸດທີ່ຖືກ (1-6)"]), h("select",{class:"input",style:"width:auto",onchange:e=>q.answer=+e.target.value}, [1,2,3,4,5,6].map(n=>h("option",{value:n,selected:+q.answer===n},"Tone "+n)))));
       if (q.type==="flashcard"){ q.back = q.back || {}; item.append(renderField({ key:"back", type:"tr", label:["Back of the card","ດ້ານຫຼັງບັດ"] }, q)); }
       q.explain = q.explain || {}; item.append(renderField({ key:"explain", type:"tr", label:["Explanation after answering (optional)","ຄຳອະທິບາຍຫຼັງຕອບ"] }, q));
       box.append(item);

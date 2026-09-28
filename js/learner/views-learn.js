@@ -83,6 +83,14 @@ VIEWS.home = () => {
     h("button",{class:"card",style:"text-align:left;display:flex;align-items:center;gap:12px",onclick:()=>go("culture_lab")},
       h("span",{class:"qi",style:"background:var(--surface-2);color:var(--accent)"}, icon("globe")),
       h("div",null, h("b",null,lang()==="lo"?"ວັດທະນະທຳລາວ":"Lao Culture Lab"), h("div",{class:"small muted"},"Baci, Sabaidee, Dialects & Context"))
+    ),
+    h("button",{class:"card",style:"text-align:left;display:flex;align-items:center;gap:12px",onclick:()=>go("videos")},
+      h("span",{class:"qi",style:"background:var(--surface-2);color:var(--accent)"}, icon("video")),
+      h("div",null, h("b",null,lang()==="lo"?"ວິດີໂອບົດຮຽນ":"Video Lessons"), h("div",{class:"small muted"},"Native Speakers & Synced Transcripts"))
+    ),
+    h("button",{class:"card",style:"text-align:left;display:flex;align-items:center;gap:12px",onclick:()=>go("handwriting")},
+      h("span",{class:"qi",style:"background:var(--surface-2);color:var(--accent)"}, icon("pen")),
+      h("div",null, h("b",null,lang()==="lo"?"ຝຶກຂຽນຕົວອັກສອນ":"Handwriting Studio"), h("div",{class:"small muted"},"Interactive Canvas & Stroke Guides"))
     )
   );
   root.append(h("section",{class:"sect"}, h("h2",null,lang()==="lo"?"ຫ້ອງທົດລອງພາສາລາວ (Lao Language Labs)":"Lao Language Labs & Culture"), labsBox));

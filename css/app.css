@@ -14,14 +14,8 @@
   --f-lo:"Noto Sans Lao","Phetsarath OT","Saysettha OT","Lao UI","Noto Sans",sans-serif;
   color-scheme:light;
 }
-@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
-  --bg:#08121D; --surface:#0E1B2A; --surface-2:#16283D; --surface-3:#1E3652;
-  --ink:#F0F7FD; --ink-2:#A4C2E0; --ink-3:#6D8FAE; --line:#1C344E; --line-2:#284B6E;
-  --accent:#38BDF8; --accent-hover:#7DD3FC; --accent-2:#0E2A44; --accent-3:#133E64; --accent-ink:#061424;
-  --accent-grad:linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
-  --jade:#34D399; --jade-2:#064E3B; --warn:#FBBF24; --warn-2:#451A03; --bad:#FB7185; --bad-2:#4C0519;
-  --t1:#38BDF8; --t2:#2DD4BF; --t3:#FBBF24; --t4:#FB7185; --t0:#94A3B8;
-  --shadow:0 2px 4px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.3); color-scheme:dark; }}
+/* DAY (Light) is the default; NIGHT (Dark) triggers on data-theme="night" or "dark" */
+:root[data-theme="night"],
 :root[data-theme="dark"]{
   --bg:#08121D; --surface:#0E1B2A; --surface-2:#16283D; --surface-3:#1E3652;
   --ink:#F0F7FD; --ink-2:#A4C2E0; --ink-3:#6D8FAE; --line:#1C344E; --line-2:#284B6E;
@@ -29,7 +23,21 @@
   --accent-grad:linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
   --jade:#34D399; --jade-2:#064E3B; --warn:#FBBF24; --warn-2:#451A03; --bad:#FB7185; --bad-2:#4C0519;
   --t1:#38BDF8; --t2:#2DD4BF; --t3:#FBBF24; --t4:#FB7185; --t0:#94A3B8;
-  --shadow:0 2px 4px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.3); color-scheme:dark; }
+  --shadow:0 2px 4px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.3); color-scheme:dark;
+}
+/* SYSTEM mode follows OS preferences when explicitly selected */
+@media (prefers-color-scheme:dark){
+  :root[data-theme="system"],
+  :root[data-theme="auto"]{
+    --bg:#08121D; --surface:#0E1B2A; --surface-2:#16283D; --surface-3:#1E3652;
+    --ink:#F0F7FD; --ink-2:#A4C2E0; --ink-3:#6D8FAE; --line:#1C344E; --line-2:#284B6E;
+    --accent:#38BDF8; --accent-hover:#7DD3FC; --accent-2:#0E2A44; --accent-3:#133E64; --accent-ink:#061424;
+    --accent-grad:linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
+    --jade:#34D399; --jade-2:#064E3B; --warn:#FBBF24; --warn-2:#451A03; --bad:#FB7185; --bad-2:#4C0519;
+    --t1:#38BDF8; --t2:#2DD4BF; --t3:#FBBF24; --t4:#FB7185; --t0:#94A3B8;
+    --shadow:0 2px 4px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.3); color-scheme:dark;
+  }
+}
 
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -533,6 +541,50 @@ textarea.input{min-height:80px;resize:vertical;line-height:1.45}
 .badge svg{width:18px;height:18px;stroke:var(--warn);fill:none;stroke-width:1.8}
 .badge.off{opacity:.4}
 .rec{display:flex;gap:12px;align-items:center;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 14px;text-align:left;width:100%}
+
+/* Theme Switcher Segmented Control */
+.themesw{display:inline-flex;align-items:center;background:var(--surface-2);border:1px solid var(--line);border-radius:99px;padding:2px;gap:2px}
+.themesw button{border:0;background:none;color:var(--ink-3);font-size:.78rem;font-weight:700;padding:4px 9px;border-radius:99px;display:inline-flex;align-items:center;gap:4px;cursor:pointer;transition:all .15s}
+.themesw button svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+.themesw button:hover{color:var(--ink)}
+.themesw button[aria-pressed="true"]{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+
+/* Lao Handwriting & Canvas */
+.hw-container{display:flex;flex-direction:column;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px}
+.hw-canvas-wrap{position:relative;width:260px;height:260px;background:var(--surface-2);border:2px dashed var(--line-2);border-radius:14px;overflow:hidden;touch-action:none;user-select:none}
+.hw-canvas-bg{position:absolute;inset:0;display:grid;place-items:center;font-size:160px;color:rgba(2,132,199,.15);pointer-events:none;font-family:var(--f-lo);font-weight:700}
+.hw-canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;z-index:2}
+.hw-grid-lines{position:absolute;inset:0;pointer-events:none}
+.hw-grid-lines::before{content:"";position:absolute;top:50%;left:0;right:0;border-top:1px dashed var(--line);transform:translateY(-50%)}
+.hw-grid-lines::after{content:"";position:absolute;left:50%;top:0;bottom:0;border-left:1px dashed var(--line);transform:translateX(-50%)}
+.hw-controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+
+/* Video Feed */
+.video-card{border:1px solid var(--line);background:var(--surface);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+.video-embed-wrap{position:relative;width:100%;padding-bottom:56.25%;background:#000;border-radius:14px 14px 0 0;overflow:hidden}
+.video-embed-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.video-info{padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+
+/* Audio Studio & Voice QC */
+.audio-qc-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:99px;font-size:.72rem;font-weight:800;text-transform:uppercase}
+.audio-qc-pill.verified{background:#dcfce7;color:#15803d}
+.audio-qc-pill.needs_review{background:#fef3c7;color:#b45309}
+.audio-qc-pill.missing{background:#fee2e2;color:#b91c1c}
+.audio-qc-pill.recorded{background:#e0f2fe;color:#0369a1}
+.rec-indicator{display:inline-flex;align-items:center;gap:6px;color:#dc2626;font-weight:700;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Feed & Promotional Banners */
+.promo-card{background:linear-gradient(135deg, rgba(2,132,199,.08) 0%, rgba(56,189,248,.12) 100%);border:1px solid var(--line);border-radius:16px;padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+.feed-item{border-bottom:1px solid var(--line);padding:12px 0;display:flex;flex-direction:column;gap:4px}
+.feed-item:last-child{border-bottom:0}
+
+/* Excel Import Preview & Health Tables */
+.xl-preview-table{max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+.health-meter{display:flex;align-items:center;gap:10px}
+.health-meter .bar{flex:1;height:8px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.health-meter .bar i{display:block;height:100%;border-radius:99px}
+
 .rec:hover{background:var(--surface-2)}
 .rec .qi{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;flex:none;background:var(--accent-2);color:var(--accent)}
 .rec .qi svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9}

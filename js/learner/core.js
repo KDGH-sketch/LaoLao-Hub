@@ -1,5 +1,5 @@
 // Learner app state, data access and progress tracking
-import { h, icon, toast, todayKey, tr, rnd, shuffle, isHan } from "../shared/ui.js";
+import { h, icon, toast, todayKey, tr, rnd, shuffle, isHan, setTheme, getTheme } from "../shared/ui.js";
 import { t, lang, setLang } from "../shared/i18n.js";
 import { tierFor, loadBundle, SKILLS, TIERS } from "../shared/content.js";
 import { loadDict, dict, chars, mergeVocabulary } from "../shared/dict.js";
@@ -13,12 +13,13 @@ export const A = {
   prog:{ skills:{}, lessons:{}, patterns:{}, days:{}, answers:{r:0,t:0}, last:null },
   srs:{}, saved:{}, view:{ name:"home", params:{} }, hist:[], render:()=>{}
 };
-export const prefs = () => Object.assign({ uiLang:"en", explainLang:"", showPy:true, showTr:true, toneColor:true, rate:0.85, voice:"", theme:"auto" }, (A.profile && A.profile.prefs) || {});
+export const prefs = () => Object.assign({ uiLang:"en", explainLang:"", showPy:true, showTr:true, toneColor:true, rate:0.85, voice:"", theme:getTheme()||"day" }, (A.profile && A.profile.prefs) || {});
 export const expLang = () => prefs().explainLang || lang();
 let prefT;
 export function setPref(k, v){
   A.profile.prefs = Object.assign({}, A.profile.prefs||{}, { [k]:v });
   if (k==="uiLang") setLang(v);
+  if (k==="theme") setTheme(v);
   applyPrefs();
   clearTimeout(prefT); prefT = setTimeout(() => A.api.db.update(`users/${A.user.uid}`, { prefs: A.profile.prefs }).catch(()=>{}), 400);
 }
@@ -27,7 +28,8 @@ export function applyPrefs(){
   document.body.classList.toggle("hide-py", !p.showPy);
   document.body.classList.toggle("hide-tr", !p.showTr);
   document.body.classList.toggle("no-tone", !p.toneColor);
-  if (p.theme==="auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", p.theme);
+  const th = p.theme || getTheme() || "day";
+  setTheme(th);
   document.documentElement.lang = lang()==="zh" ? "zh-CN" : lang();
   setSpeechSettings({ rate:p.rate, voice:p.voice });
 }

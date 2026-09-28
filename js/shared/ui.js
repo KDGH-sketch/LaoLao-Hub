@@ -78,10 +78,55 @@ const IC = {
  trophy:'<path d="M8 4h8v5a4 4 0 01-8 0z"/><path d="M8 6H4a4 4 0 004 4M16 6h4a4 4 0 01-4 4M12 13v4M8 21h8"/>',
  flame:'<path d="M12 3s5 5 5 10a5 5 0 01-10 0c0-3 2-4 2-7 2 1 3 3 3 3"/>',
  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/>',
+ sun:'<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>',
+ moon:'<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>',
+ monitor:'<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
+ video:'<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>',
  layers:'<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>', history:'<path d="M3 12a9 9 0 109-9 9 9 0 00-7 3.3"/><path d="M3 4v4h4M12 7v5l3 2"/>',
  send:'<path d="M4 12l16-8-6 16-3-7z"/>', copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/>'
 };
 export function icon(n, cls){ const s=document.createElementNS("http://www.w3.org/2000/svg","svg"); s.setAttribute("viewBox","0 0 24 24"); s.setAttribute("aria-hidden","true"); if (cls) s.setAttribute("class",cls); s.innerHTML = IC[n] || IC.more; return s; }
+
+// ----- theme management (Day, Night, System) -----
+export function getTheme(){
+  try {
+    const saved = localStorage.getItem("laolao_theme");
+    if (saved && ["day","night","system"].includes(saved)) return saved;
+  } catch(e){}
+  return "day";
+}
+export function setTheme(mode="day"){
+  if (!["day","night","system"].includes(mode)) mode = "day";
+  try { localStorage.setItem("laolao_theme", mode); } catch(e){}
+  if (mode === "day") {
+    document.documentElement.setAttribute("data-theme", "day");
+  } else if (mode === "night") {
+    document.documentElement.setAttribute("data-theme", "night");
+  } else {
+    document.documentElement.setAttribute("data-theme", "system");
+  }
+}
+export function themeSwitcher(onChange){
+  let cur = getTheme();
+  const wrap = h("div",{class:"themesw","aria-label":"Theme switcher"});
+  const modes = [["day","sun","Day"],["night","moon","Night"],["system","monitor","Auto"]];
+  const updateBtns = () => {
+    $$("button", wrap).forEach((btn, idx) => {
+      const active = modes[idx][0] === cur;
+      btn.setAttribute("aria-pressed", String(active));
+    });
+  };
+  modes.forEach(([mode, ic, label]) => {
+    const btn = h("button",{type:"button","aria-pressed":String(cur===mode),title:label,onclick:()=>{
+      cur = mode;
+      setTheme(mode);
+      updateBtns();
+      if (onChange) onChange(mode);
+    }}, icon(ic), h("span",{class:"hide-sm"}, label));
+    wrap.append(btn);
+  });
+  return wrap;
+}
 
 // ----- feedback -----
 let toastT;
