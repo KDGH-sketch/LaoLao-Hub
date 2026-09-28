@@ -5,6 +5,7 @@
 //     everything works in this browser only, with sample accounts, so you can try it.
 // ============================================================
 export const firebaseConfig = (typeof window !== "undefined" && window.__FIREBASE_CONFIG__) || null;
+export const supabaseConfig = (typeof window !== "undefined" && window.__SUPABASE_CONFIG__) || null;
 
 // The email of the platform owner. Must match OWNER_EMAIL_HERE in firestore.rules.
 export const OWNER_EMAIL = (typeof window !== "undefined" && window.__OWNER_EMAIL__) || "kindathanomsuck@gmail.com";

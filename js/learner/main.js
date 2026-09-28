@@ -1,11 +1,12 @@
-// Xuélù learner app
+// LaoLao learner app
 import { getApi } from "../api/index.js";
 import { h, $, $$, icon, toast, errText, pyHTML, stripTone, debounce, tr } from "../shared/ui.js";
 import { t, lang, setLang } from "../shared/i18n.js";
 import { ensureDemo, DEMO } from "../shared/setup.js";
 import { dict, searchDict } from "../shared/dict.js";
-import { onMissingVoice } from "../shared/speech.js";
+import { onMissingVoice, speak } from "../shared/speech.js";
 import { openWord, closeSheet } from "../shared/widgets.js";
+import { createWaitingScreen, dokChampaSvg, LAO_SAMPLES } from "../shared/lao-decorations.js";
 import { A, loadAccount, prefs, setPref, applyPrefs, srsDue, T } from "./core.js";
 import * as LV from "./views-learn.js";
 import * as TV from "./views-tools.js";
@@ -18,12 +19,19 @@ export function back(){ const v = A.hist.pop(); if (v){ A.view = v; render(); } 
 A.go = go; A.back = back;
 
 async function boot(){
+  root.innerHTML = "";
+  root.append(createWaitingScreen("ສະບາຍດີ", "ກຳລັງເລີ່ມຕົ້ນລະບົບ... / Starting LaoLao..."));
   const api = A.api = await getApi();
-  if (api.mode==="demo"){ root.innerHTML=""; root.append(h("div",{class:"empty",style:"margin:40px"}, t("loading"))); await ensureDemo(api); }
+  if (api.mode==="demo"){
+    root.innerHTML = "";
+    root.append(createWaitingScreen("ສະບາຍດີ", t("loading")+"..."));
+    await ensureDemo(api);
+  }
   onMissingVoice(() => toast(t("voice_none")));
   api.auth.onChange(async user => {
     if (!user) return renderAuth("signin");
-    root.innerHTML=""; root.append(h("div",{class:"empty",style:"margin:40px"}, "ລ · "+t("loading")));
+    root.innerHTML = "";
+    root.append(createWaitingScreen("ສະບາຍດີ", "ກຳລັງໂຫລດຂໍ້ມູນ... / Preparing your account..."));
     try { await loadAccount(user); } catch(e){ console.error(e); }
     if (A.profile.status!=="active" && !A.isAdmin) return renderDisabled();
     A.render = render;
@@ -38,11 +46,28 @@ async function boot(){
 // ---------- auth ----------
 async function renderAuth(mode){
   let settings = {}; try { settings = await A.api.db.get("settings/app") || {}; } catch(e){}
-  const email = h("input",{class:"input",type:"email",id:"em",autocomplete:"username"}), pw = h("input",{class:"input",type:"password",id:"pw",autocomplete:mode==="register"?"new-password":"current-password"});
-  const name = h("input",{class:"input",id:"nm",autocomplete:"name"});
-  const msg = h("p",{class:"small",style:"color:var(--bad)",role:"alert"});
+  const email = h("input",{class:"input",type:"email",id:"em",autocomplete:"username",placeholder:"name@example.com"});
+  const pw = h("input",{class:"input",type:"password",id:"pw",autocomplete:mode==="register"?"new-password":"current-password",placeholder:"••••••••"});
+  const name = h("input",{class:"input",id:"nm",autocomplete:"name",placeholder:lang()==="lo"?"ຊື່ຂອງທ່ານ":"Your name"});
+  const msg = h("p",{class:"small",style:"color:var(--bad);margin:0",role:"alert"});
+  const submitBtn = h("button",{class:"btn primary",type:"submit"}, mode==="register" ? t("register") : mode==="reset" ? t("send_reset") : t("sign_in"));
+
+  // Password visibility toggle
+  let showPw = false;
+  const pwToggle = h("button",{type:"button",class:"pw-toggle-btn","aria-label":"Toggle password visibility",onclick:()=>{
+    showPw = !showPw;
+    pw.type = showPw ? "text" : "password";
+    pwToggle.innerHTML = showPw
+      ? `<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`
+      : `<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+  }}, `<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`);
+
+  const pwWrap = h("div",{class:"input-wrap"}, pw, pwToggle);
+
   const submit = async e => {
     e && e.preventDefault(); msg.textContent = "";
+    submitBtn.disabled = true;
+    submitBtn.textContent = lang()==="lo" ? "ກຳລັງດຳເນີນການ..." : "Please wait...";
     try {
       if (mode==="signin") await A.api.auth.signIn(email.value.trim(), pw.value);
       else if (mode==="reset"){ await A.api.auth.resetPassword(email.value.trim()); toast(t("reset_sent")); renderAuth("signin"); }
@@ -53,29 +78,124 @@ async function renderAuth(mode){
         await A.api.db.set(`access/${u.uid}`, { planId: settings.defaultPlanId||"free", tier:1, status:"active", start:now, expiresAt:null, source:"registration" });
         location.reload();
       }
-    } catch(err){ msg.textContent = errText(err); }
+    } catch(err){
+      msg.textContent = errText(err);
+      submitBtn.disabled = false;
+      submitBtn.textContent = mode==="register" ? t("register") : mode==="reset" ? t("send_reset") : t("sign_in");
+    }
   };
+
   const L = lang();
   root.innerHTML = "";
-  root.append(A.api.mode==="demo" ? h("div",{class:"demo-bar"}, t("demo_banner")) : "", h("div",{class:"auth"},
-    h("div",{class:"auth-art"}, h("div",null, h("div",{class:"big lo"},"ລ"), h("h2",{style:"margin-top:14px"}, settings.appName||"LaoLao")), h("p",{class:L==="lo"?"lo":""}, t("auth_intro"))),
+
+  // Left Hero (Authentic Lao Interactive Experience)
+  const heroArt = h("div",{class:"auth-art"});
+
+  // Floating background ambient glyphs
+  const floatCont = h("div",{class:"floating-elements"});
+  ["ກ","ດ","ນ","ສ","ລ","ຮ"].forEach(g => floatCont.appendChild(h("div",{class:"float-glyph"}, g)));
+  heroArt.appendChild(floatCont);
+
+  const heroTop = h("div",{class:"auth-hero-top"},
+    h("div",{class:"auth-badge"}, h("i"), "ຮຽນຮູ້ພາສາລາວ · Authentic Lao Journey"),
+    h("div",{class:"auth-brand-row"},
+      h("div",{class:"auth-champa-icon"}, dokChampaSvg(56)),
+      h("div",{class:"auth-title-group"},
+        h("h2",null, settings.appName||"LaoLao"),
+        h("small",null, "ຮຽນພາສາລາວດ້ວຍຄວາມສຸກ · Learn Lao Joyfully")
+      )
+    )
+  );
+
+  // Interactive Sabaidee Audio Button
+  const sabaideeBtn = h("button",{type:"button",class:"sabaidee-interactive-btn",onclick:()=>{
+    sabaideeBtn.classList.add("playing");
+    speak("ສະບາຍດີ");
+    setTimeout(() => sabaideeBtn.classList.remove("playing"), 1500);
+  }},
+    h("span",{style:"font-size:1.35rem"}, "🔊"),
+    h("div",null,
+      h("div",{class:"lo",style:"font-size:1.15rem;font-weight:700"}, "ສະບາຍດີ! (Sabaidee)"),
+      h("small",{style:"opacity:.85;font-size:.78rem;display:block"}, "ແຕະເພື່ອຟັງສຽງທັກທາຍ · Tap to hear greeting")
+    ),
+    h("div",{class:"sound-bars"}, h("span"), h("span"), h("span"), h("span"))
+  );
+
+  // Interactive Consonants Showcase
+  const chipDesc = h("div",{class:"small",style:"color:rgba(255,255,255,.9);font-weight:600;min-height:20px"}, "ແຕະພະຍັນຊະນະເພື່ອຟັງສຽງ · Tap any consonant to hear its sound:");
+  const chipsCont = h("div",{class:"consonant-chips"});
+  LAO_SAMPLES.slice(0, 7).forEach(c => {
+    const chip = h("button",{
+      type: "button",
+      class: "consonant-chip",
+      title: `${c.char} - ${c.name} (${c.meaning})`,
+      onclick: e => {
+        e.preventDefault();
+        chipsCont.querySelectorAll(".consonant-chip").forEach(x => x.classList.remove("active"));
+        chip.classList.add("active");
+        chipDesc.innerHTML = `<span style="color:#FEF08A;font-weight:700">${c.char}</span> · <b>${c.name}</b> (${c.meaning}) · Sound: /${c.ipa}/`;
+        speak(c.char);
+      }
+    },
+      h("span",{class:"c-char"}, c.char),
+      h("span",{class:"c-name"}, c.name)
+    );
+    chipsCont.appendChild(chip);
+  });
+
+  const heroConsonants = h("div",{class:"hero-consonants"},
+    h("div",{class:"hero-consonants-title"}, "Lao Alphabet Preview"),
+    chipsCont,
+    chipDesc
+  );
+
+  // Proverb Box
+  const proverbBox = h("div",{class:"lao-proverb-box"},
+    h("div",{class:"pv-lao"}, "“ຄວາມພະຍາຍາມ ຢູ່ໃສ, ຄວາມສຳເລັດ ຢູ່ຫັ້ນ”"),
+    h("div",{class:"pv-tr"}, "Where there is perseverance, there is success.")
+  );
+
+  heroArt.append(heroTop, sabaideeBtn, heroConsonants, proverbBox);
+
+  // Right Form
+  const authFormWrap = h("div",{class:"auth-form-wrap"},
     h("form",{class:"auth-form",onsubmit:submit},
-      h("div",{class:"langsw",style:"align-self:flex-start"}, [["en","EN"],["lo","ລາວ"],["zh","中文"]].map(([l,n]) => h("button",{type:"button","aria-pressed":String(L===l),onclick:()=>{ setLang(l); try{ localStorage.setItem("xuelu.lang",l); }catch(e){} renderAuth(mode); }}, n))),
+      h("div",{class:"auth-form-header"},
+        h("div",{class:"langsw"}, [["en","EN"],["lo","ລາວ"],["zh","中文"]].map(([l,n]) =>
+          h("button",{type:"button","aria-pressed":String(L===l),onclick:()=>{ setLang(l); try{ localStorage.setItem("xuelu.lang",l); }catch(e){} renderAuth(mode); }}, n)
+        )),
+        h("div",{class:"small",style:"color:var(--accent);font-weight:700"}, mode==="register" ? "New Account" : mode==="reset" ? "Reset Access" : "Welcome Back")
+      ),
       h("h1",null, mode==="register" ? t("register") : mode==="reset" ? t("forgot") : t("sign_in")),
       mode==="register" ? h("div",{class:"field"}, h("label",{for:"nm"},t("name")), name) : null,
       h("div",{class:"field"}, h("label",{for:"em"},t("email")), email),
-      mode!=="reset" ? h("div",{class:"field"}, h("label",{for:"pw"},t("password")), pw) : null,
+      mode!=="reset" ? h("div",{class:"field"}, h("label",{for:"pw"},t("password")), pwWrap) : null,
       msg,
-      h("button",{class:"btn primary",type:"submit"}, mode==="register" ? t("register") : mode==="reset" ? t("send_reset") : t("sign_in")),
+      submitBtn,
       mode==="signin" ? h("button",{type:"button",class:"linkbtn",onclick:()=>renderAuth("reset")}, t("forgot")) : h("button",{type:"button",class:"linkbtn",onclick:()=>renderAuth("signin")}, t("have_account")),
       mode==="signin" ? (settings.allowRegistration ? h("p",{class:"small"}, t("no_account")+" ", h("button",{type:"button",class:"linkbtn",onclick:()=>renderAuth("register")}, t("register"))) : h("p",{class:"small muted"}, t("reg_closed"), settings.supportContact ? " · "+settings.supportContact : "")) : null,
-      A.api.mode==="demo" && mode==="signin" ? h("div",{class:"banner info"}, h("div",null, h("b",null,t("demo_accounts")),
-        h("div",{class:"small mono"}, DEMO.premium.email+" / "+DEMO.premium.pw+" (Premium)"), h("div",{class:"small mono"}, DEMO.free.email+" / "+DEMO.free.pw+" (Free)"), h("div",{class:"small"}, h("a",{href:"admin/"}, "Admin → "+DEMO.admin.email))),
-        h("div",{class:"stack",style:"gap:6px"}, h("button",{type:"button",class:"btn sm",onclick:()=>{ email.value=DEMO.premium.email; pw.value=DEMO.premium.pw; submit(); }}, "Premium"), h("button",{type:"button",class:"btn sm",onclick:()=>{ email.value=DEMO.free.email; pw.value=DEMO.free.pw; submit(); }}, "Free"))) : null)));
+      A.api.mode==="demo" && mode==="signin" ? h("div",{class:"demo-quick-box"},
+        h("div",{class:"demo-quick-header"},
+          h("span",null,"⚡ "+t("demo_accounts")),
+          h("a",{href:"admin/",class:"linkbtn",style:"font-size:.8rem"}, "Admin Portal →")
+        ),
+        h("div",{class:"demo-btn-group"},
+          h("button",{type:"button",class:"btn primary sm",onclick:()=>{ email.value=DEMO.premium.email; pw.value=DEMO.premium.pw; submit(); }}, "✨ Premium Learner"),
+          h("button",{type:"button",class:"btn sm",onclick:()=>{ email.value=DEMO.free.email; pw.value=DEMO.free.pw; submit(); }}, "🌱 Free Learner")
+        )
+      ) : null
+    )
+  );
+
+  root.append(
+    A.api.mode==="demo" ? h("div",{class:"demo-bar"}, t("demo_banner")) : "",
+    h("div",{class:"auth"}, heroArt, authFormWrap)
+  );
 }
+
 function renderDisabled(){
   root.innerHTML = "";
-  root.append(h("div",{class:"auth"}, h("div",{class:"auth-art"}, h("div",{class:"big lo"},"ລ")), h("div",{class:"auth-form"}, h("h1",null,t("disabled")), A.settings.supportContact ? h("p",null,t("contact")+": "+A.settings.supportContact) : null, h("button",{class:"btn",onclick:()=>A.api.auth.signOut()}, t("sign_out")))));
+  root.append(h("div",{class:"auth"}, h("div",{class:"auth-art"}, h("div",{class:"big lo"},"ລ")), h("div",{class:"auth-form-wrap"}, h("div",{class:"auth-form"}, h("h1",null,t("disabled")), A.settings.supportContact ? h("p",null,t("contact")+": "+A.settings.supportContact) : null, h("button",{class:"btn",onclick:()=>A.api.auth.signOut()}, t("sign_out"))))));
 }
 
 // ---------- shell ----------

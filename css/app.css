@@ -378,18 +378,132 @@ textarea.input{min-height:80px;resize:vertical;line-height:1.45}
 .netdot i{width:8px;height:8px;border-radius:50%;background:var(--jade)}
 .netdot.off i{background:var(--warn)}
 
-/* auth */
-.auth{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
-.auth-art{background:linear-gradient(145deg, #0284C7 0%, #0369A1 55%, #075985 100%);color:#fff;display:flex;flex-direction:column;justify-content:space-between;padding:48px 40px;position:relative;overflow:hidden}
-.auth-art::before{content:"";position:absolute;width:380px;height:380px;top:-100px;right:-100px;background:radial-gradient(circle,rgba(56,189,248,.38) 0%,transparent 70%);pointer-events:none}
-.auth-art::after{content:"";position:absolute;width:500px;height:500px;bottom:-140px;left:-120px;background:radial-gradient(circle,rgba(255,255,255,.14) 0%,transparent 70%);pointer-events:none}
-.auth-art .big{font:700 clamp(4.5rem,13vw,9.5rem)/1 var(--f-lo);opacity:.98;filter:drop-shadow(0 8px 24px rgba(7,89,133,.35));position:relative;z-index:1}
-.auth-art p{max-width:32ch;font-size:1.15rem;opacity:.95;position:relative;z-index:1;line-height:1.6}
-.auth-art h2{position:relative;z-index:1;font-size:1.9rem;letter-spacing:-.01em}
-.auth-form{display:flex;flex-direction:column;justify-content:center;padding-block:40px;padding-inline:clamp(16px,6vw,72px);gap:16px;max-width:520px;width:100%;margin:0 auto}
-.auth-form h1{font-size:1.8rem}
-.linkbtn{border:0;background:none;color:var(--accent);font-weight:600;padding:0;text-align:left}
-@media (max-width:760px){.auth{grid-template-columns:1fr}.auth-art{padding:28px 20px;gap:10px}.auth-art .big{font-size:4.5rem}}
+/* auth & waiting */
+.waiting-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 30%, #E0F2FE 0%, #F0F7FD 60%, #E2EDF8 100%);padding:24px;text-align:center}
+:root[data-theme="dark"] .waiting-screen{background:radial-gradient(ellipse at 50% 30%, #0E2A44 0%, #08121D 60%, #060D15 100%)}
+.waiting-card{position:relative;z-index:2;background:rgba(255,255,255,.82);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(56,189,248,.35);border-radius:24px;padding:clamp(28px,6vw,44px) clamp(20px,6vw,40px);max-width:440px;width:100%;box-shadow:0 20px 48px -10px rgba(2,132,199,.22),0 0 0 1px rgba(255,255,255,.8);display:flex;flex-direction:column;align-items:center;gap:16px;animation:fadeScaleIn .6s cubic-bezier(.16,1,.3,1) both}
+:root[data-theme="dark"] .waiting-card{background:rgba(14,27,42,.85);border-color:rgba(56,189,248,.25);box-shadow:0 20px 48px -10px rgba(0,0,0,.55),0 0 0 1px rgba(56,189,248,.15)}
+
+/* Dok Champa (Lao Flower) Animation */
+.champa-wrap{position:relative;width:120px;height:120px;margin-bottom:6px}
+.champa-svg{width:100%;height:100%;animation:champaSpin 24s linear infinite, champaBreathe 4s ease-in-out infinite}
+.champa-halo{position:absolute;inset:-12px;border-radius:50%;background:radial-gradient(circle,rgba(56,189,248,.35) 0%,rgba(251,191,36,.22) 50%,transparent 70%);animation:haloPulse 3s ease-in-out infinite;pointer-events:none}
+@keyframes champaSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+@keyframes champaBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes haloPulse{0%,100%{opacity:.5;transform:scale(.95)}50%{opacity:.9;transform:scale(1.12)}}
+
+/* Sabaidee Typography & Glowing Welcome */
+.lao-sabaidee{font-family:var(--f-lo);font-size:clamp(2.4rem,8vw,3.4rem);font-weight:700;line-height:1.1;background:linear-gradient(135deg, #0284C7 0%, #0369A1 50%, #0D9488 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 2px 8px rgba(2,132,199,.25));margin:0}
+:root[data-theme="dark"] .lao-sabaidee{background:linear-gradient(135deg, #38BDF8 0%, #7DD3FC 50%, #34D399 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.waiting-sub{font-size:.95rem;color:var(--ink-2);font-weight:600;margin:0}
+.waiting-note{font-size:.84rem;color:var(--ink-3);margin:0;display:flex;align-items:center;gap:6px}
+
+/* Mekong River Shimmer Bar */
+.mekong-stream{width:100%;height:6px;background:rgba(2,132,199,.15);border-radius:99px;overflow:hidden;position:relative;margin-top:6px}
+.mekong-shimmer{position:absolute;inset:0;width:40%;background:linear-gradient(90deg, transparent, #38BDF8, #0284C7, transparent);border-radius:99px;animation:mekongFlow 1.8s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes mekongFlow{0%{left:-40%}100%{left:100%}}
+
+/* Floating Lao Alphabet Background Particles */
+.floating-elements{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1}
+.float-glyph{position:absolute;font-family:var(--f-lo);font-weight:700;color:#0284C7;opacity:.18;filter:blur(.4px);user-select:none;animation:floatDrift 14s ease-in-out infinite}
+:root[data-theme="dark"] .float-glyph{color:#38BDF8;opacity:.14}
+.float-glyph:nth-child(1){top:12%;left:10%;font-size:3.5rem;animation-duration:12s;animation-delay:0s}
+.float-glyph:nth-child(2){top:22%;right:12%;font-size:4.2rem;animation-duration:15s;animation-delay:1.5s}
+.float-glyph:nth-child(3){bottom:18%;left:14%;font-size:3.8rem;animation-duration:13s;animation-delay:2.5s}
+.float-glyph:nth-child(4){bottom:25%;right:15%;font-size:4.5rem;animation-duration:17s;animation-delay:3.5s}
+.float-glyph:nth-child(5){top:48%;left:6%;font-size:3rem;animation-duration:16s;animation-delay:4s}
+.float-glyph:nth-child(6){top:65%;right:8%;font-size:3.4rem;animation-duration:14s;animation-delay:5s}
+@keyframes floatDrift{
+  0%,100%{transform:translate(0,0) rotate(0deg)}
+  33%{transform:translate(12px,-18px) rotate(6deg)}
+  66%{transform:translate(-10px,14px) rotate(-5deg)}
+}
+@keyframes fadeScaleIn{0%{opacity:0;transform:scale(.92)}100%{opacity:1;transform:scale(1)}}
+
+/* Enhanced Interactive Auth Page */
+.auth{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);background:var(--bg)}
+.auth-art{background:linear-gradient(145deg, #0284C7 0%, #0369A1 50%, #075985 100%);color:#fff;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(28px,5vw,52px);position:relative;overflow:hidden;box-shadow:inset -1px 0 0 rgba(255,255,255,.1)}
+.auth-art::before{content:"";position:absolute;width:420px;height:420px;top:-120px;right:-100px;background:radial-gradient(circle,rgba(56,189,248,.35) 0%,transparent 70%);pointer-events:none}
+.auth-art::after{content:"";position:absolute;width:550px;height:550px;bottom:-180px;left:-140px;background:radial-gradient(circle,rgba(255,255,255,.12) 0%,transparent 70%);pointer-events:none}
+
+.auth-hero-top{position:relative;z-index:2;display:flex;flex-direction:column;gap:14px}
+.auth-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.25);padding:5px 14px;border-radius:99px;font-size:.82rem;font-weight:700;color:#fff;width:fit-content;letter-spacing:.02em}
+.auth-badge i{width:8px;height:8px;border-radius:50%;background:#34D399;box-shadow:0 0 8px #34D399}
+
+.auth-brand-row{display:flex;align-items:center;gap:14px}
+.auth-champa-icon{width:56px;height:56px;flex:none;filter:drop-shadow(0 4px 12px rgba(0,0,0,.25));animation:champaBreathe 5s ease-in-out infinite}
+.auth-title-group h2{margin:0;font-size:2.2rem;font-weight:700;letter-spacing:-.01em;line-height:1.1}
+.auth-title-group small{display:block;color:rgba(255,255,255,.82);font-size:.88rem;font-weight:600;margin-top:2px}
+
+/* Interactive Sabaidee Audio Button */
+.sabaidee-interactive-btn{display:inline-flex;align-items:center;gap:12px;background:rgba(255,255,255,.18);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.32);color:#fff;padding:12px 18px;border-radius:14px;font-size:1.05rem;font-weight:700;cursor:pointer;transition:all .2s cubic-bezier(.16,1,.3,1);width:fit-content;box-shadow:0 6px 20px rgba(0,0,0,.15);text-align:left;position:relative;z-index:2}
+.sabaidee-interactive-btn:hover{background:rgba(255,255,255,.28);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.22)}
+.sabaidee-interactive-btn:active{transform:translateY(0)}
+.sound-bars{display:flex;align-items:flex-end;gap:3px;height:18px}
+.sound-bars span{width:3.5px;height:6px;background:#fff;border-radius:2px;transition:height .15s}
+.sabaidee-interactive-btn.playing .sound-bars span:nth-child(1){animation:equalize 0.6s infinite ease-in-out}
+.sabaidee-interactive-btn.playing .sound-bars span:nth-child(2){animation:equalize 0.8s 0.15s infinite ease-in-out}
+.sabaidee-interactive-btn.playing .sound-bars span:nth-child(3){animation:equalize 0.5s 0.3s infinite ease-in-out}
+.sabaidee-interactive-btn.playing .sound-bars span:nth-child(4){animation:equalize 0.7s 0.2s infinite ease-in-out}
+@keyframes equalize{0%,100%{height:4px}50%{height:18px}}
+
+/* Interactive Lao Consonant Chips on Hero */
+.hero-consonants{position:relative;z-index:2;display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.hero-consonants-title{font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.8)}
+.consonant-chips{display:flex;flex-wrap:wrap;gap:8px}
+.consonant-chip{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.14);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.24);border-radius:10px;padding:6px 10px;min-width:44px;color:#fff;cursor:pointer;transition:all .15s;font-family:var(--f-ui)}
+.consonant-chip:hover{background:rgba(255,255,255,.28);transform:scale(1.08);border-color:#fff}
+.consonant-chip .c-char{font-family:var(--f-lo);font-size:1.35rem;font-weight:700;line-height:1}
+.consonant-chip .c-name{font-size:.68rem;opacity:.9;font-weight:600;margin-top:2px}
+.consonant-chip.active{background:#fff;color:#0284C7;transform:scale(1.1);box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.consonant-chip.active .c-name{color:#0369A1}
+
+/* Proverb / Wisdom Box */
+.lao-proverb-box{position:relative;z-index:2;background:rgba(0,0,0,.18);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:14px 18px;margin-top:14px}
+.lao-proverb-box .pv-lao{font-family:var(--f-lo);font-size:1.05rem;font-weight:700;line-height:1.4;color:#fff}
+.lao-proverb-box .pv-tr{font-size:.82rem;color:rgba(255,255,255,.85);margin-top:4px;font-style:italic}
+
+/* Mekong River Aesthetic Wave curve */
+.auth-art-wave{position:absolute;bottom:0;left:0;right:0;height:70px;pointer-events:none;opacity:.25}
+
+/* Auth Form Container */
+.auth-form-wrap{display:flex;flex-direction:column;justify-content:center;align-items:center;padding:clamp(20px,5vw,48px) clamp(16px,4vw,36px);width:100%}
+.auth-form{display:flex;flex-direction:column;gap:18px;max-width:440px;width:100%;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:clamp(24px,5vw,36px);box-shadow:var(--shadow-lg)}
+.auth-form-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.auth-form h1{font-size:1.75rem;margin:0;font-weight:700;color:var(--ink)}
+
+/* Input Enhancements with Password Toggle */
+.field{display:flex;flex-direction:column;gap:6px}
+.input-wrap{position:relative;display:flex;align-items:center}
+.input-wrap .input{width:100%;padding-right:42px}
+.pw-toggle-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--ink-3);padding:6px;cursor:pointer;border-radius:6px;display:grid;place-items:center;transition:color .15s}
+.pw-toggle-btn:hover{color:var(--accent)}
+.pw-toggle-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
+
+/* Demo account fast switcher cards */
+.demo-quick-box{background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.demo-quick-header{display:flex;align-items:center;justify-content:space-between;font-size:.85rem;font-weight:700}
+.demo-btn-group{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* Responsive Breakpoints for All Devices */
+@media (max-width: 900px){
+  .auth{grid-template-columns:1fr;min-height:auto}
+  .auth-art{padding:32px 24px;border-radius:0 0 24px 24px}
+  .auth-title-group h2{font-size:1.85rem}
+  .auth-form-wrap{padding:24px 16px}
+  .auth-form{padding:24px 20px;border-radius:16px}
+}
+@media (max-width: 480px){
+  .auth-art{padding:24px 16px}
+  .auth-title-group h2{font-size:1.55rem}
+  .auth-badge{font-size:.75rem}
+  .sabaidee-interactive-btn{font-size:.92rem;padding:10px 14px}
+  .consonant-chips{gap:6px}
+  .consonant-chip{min-width:38px;padding:5px 7px}
+  .consonant-chip .c-char{font-size:1.15rem}
+  .demo-btn-group{grid-template-columns:1fr}
+}
+
 
 /* lesson & content */
 .speaker{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--ink-3);text-transform:uppercase}
