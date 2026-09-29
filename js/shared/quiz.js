@@ -136,7 +136,7 @@ export function questionEl(q, L, onResult, onNext){
       box.append(h("div",{class:"grid3",style:"margin-top:16px"}, [1,2,3,4,5,6].map(n => h("button",{class:"opt","data-i":n,style:"text-align:center",onclick:e=>{
         if (answered) return; const ok = n===+q.answer; e.currentTarget.classList.add(ok?"right":"wrong");
         if (!ok) $$(".opt",box).forEach(b=>{ if (+b.dataset.i===+q.answer) b.classList.add("right"); });
-        finish(ok, q.prompt.py ? h("div",{style:"font-size:1.4rem",html:pyHTML(q.prompt.py)}) : null); }}, toneSVG(Math.min(4,n),50), h("div",{class:"small"}, "Tone "+n))))));
+        finish(ok, q.prompt.py ? h("div",{style:"font-size:1.4rem",html:pyHTML(q.prompt.py)}) : null); }}, toneSVG(Math.min(4,n),50), h("div",{class:"small"}, "Tone "+n)))));
       setTimeout(()=>speak(q.prompt.zh), 300);
       break;
     }

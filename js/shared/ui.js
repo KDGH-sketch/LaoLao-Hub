@@ -11,7 +11,7 @@ export function h(tag, attrs, ...kids){
     else if (k.startsWith("on") && typeof v==="function") el.addEventListener(k.slice(2), v);
     else el.setAttribute(k, v===true ? "" : v);
   }
-  for (const k of kids.flat(Infinity)){ if (k===null || k===undefined || k===false) continue; el.append(k instanceof Node ? k : document.createTextNode(String(k))); }
+  for (const k of kids.flat(Infinity)){ if (k===null || k===undefined || k===false) continue; el.append((typeof Node !== "undefined" && k instanceof Node) || (k && k.nodeType) ? k : document.createTextNode(String(k))); }
   if (tag==="select" && attrs && attrs.value!==undefined) el.value = attrs.value;
   return el;
 }

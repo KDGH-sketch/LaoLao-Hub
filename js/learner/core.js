@@ -61,7 +61,7 @@ export async function loadContent(){
   A.engine = makeEngine(dict(), chars(), LEX);
   // every example sentence, for "in example sentences" in the dictionary
   A.examples = [];
-  (B.patterns||[]).forEach(p => p.examples.forEach(e => A.examples.push(Object.assign({ pn:p.n }, e))));
+  (B.patterns||[]).forEach(p => (p.examples||[]).forEach(e => A.examples.push(Object.assign({ pn:p.n }, e))));
   (B.grammar||[]).forEach(g => (g.examples||[]).forEach(e => A.examples.push(e)));
   (B.dialogues||[]).forEach(d => (d.lines||[]).forEach(e => A.examples.push(e)));
 }

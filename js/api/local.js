@@ -7,9 +7,43 @@ const clone = v => v === undefined ? v : JSON.parse(JSON.stringify(v));
 const uidGen = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
 const INC = "__inc__", DELF = "__delete__";
 
-const idb = () => new Promise((res, rej) => { const r = indexedDB.open("laolao-demo", 1); r.onupgradeneeded = () => r.result.createObjectStore("kv"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
-async function idbGet(key){ try { const d = await idb(); return await new Promise(res => { const t = d.transaction("kv").objectStore("kv").get(key); t.onsuccess = () => res(t.result); t.onerror = () => res(null); }); } catch(e){ return null; } }
-async function idbSet(key, val){ try { const d = await idb(); await new Promise(res => { const t = d.transaction("kv","readwrite"); t.objectStore("kv").put(val, key); t.oncomplete = res; t.onerror = res; }); } catch(e){ console.warn(e); } }
+const idb = () => new Promise(res => {
+  if (typeof indexedDB === "undefined") return res(null);
+  const timer = setTimeout(() => res(null), 1200);
+  try {
+    const r = indexedDB.open("laolao-demo", 1);
+    r.onupgradeneeded = () => { try { r.result.createObjectStore("kv"); } catch(e){} };
+    r.onsuccess = () => { clearTimeout(timer); res(r.result); };
+    r.onerror = () => { clearTimeout(timer); res(null); };
+  } catch(e) { clearTimeout(timer); res(null); }
+});
+async function idbGet(key){
+  try {
+    const d = await idb();
+    if (!d) return null;
+    return await new Promise(res => {
+      try {
+        const t = d.transaction("kv").objectStore("kv").get(key);
+        t.onsuccess = () => res(t.result);
+        t.onerror = () => res(null);
+      } catch(e) { res(null); }
+    });
+  } catch(e){ return null; }
+}
+async function idbSet(key, val){
+  try {
+    const d = await idb();
+    if (!d) return;
+    await new Promise(res => {
+      try {
+        const t = d.transaction("kv","readwrite");
+        t.objectStore("kv").put(val, key);
+        t.oncomplete = res;
+        t.onerror = res;
+      } catch(e) { res(); }
+    });
+  } catch(e){ console.warn(e); }
+}
 
 export async function createLocalApi(){
   let db = (await idbGet(DBKEY)) || {};
