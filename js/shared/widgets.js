@@ -100,7 +100,7 @@ export function entryEl(w){
       h("button",{class:"btn sm",onclick:()=>speak(w)}, icon("play"), t("play")),
       h("button",{class:"btn sm","aria-label":t("slow"),onclick:()=>speak(w,{slow:1})}, icon("slow"))),
     h("div",{class:"epy",html:pyHTML(py)}),
-    h("div",{class:"row"}, d&&d.pos?h("span",{class:"chip"},posName(d.pos)):null, d&&d.h?h("span",{class:"chip lv"},"HSK "+d.h):null, d&&d.n?h("span",{class:"chip"},t("new_hsk")+" "+(d.n>=7?"7–9":d.n)):null)));
+    h("div",{class:"row"}, d&&d.pos?h("span",{class:"chip"},posName(d.pos)):null, d&&d.h?h("span",{class:"chip lv"},"Stage "+d.h):null)));
   if (d){
     const kv = h("dl",{class:"kv"}, h("dt",null,"English"), h("dd",null,d.en));
     if (d.lo) kv.append(h("dt",null,t("lao")), h("dd",{class:"lo"},d.lo));
@@ -114,7 +114,7 @@ export function entryEl(w){
     const cc = h("div",{class:"charcards"});
     cs.forEach(c => { const ci = C[c]||{};
       cc.append(h("div",{class:"charcard"},
-        h("button",{class:"cc",lang:"zh-CN","aria-label":c,onclick:()=>{ if (c!==w) openWord(c); else showStroke(box,c); }}, c),
+        h("button",{class:"cc lo",lang:"lo","aria-label":c,onclick:()=>{ if (c!==w) openWord(c); else showStroke(box,c); }}, c),
         h("div",{class:"row"}, h("span",{html:pyHTML(ci.p||"")}), ci.s?h("span",{class:"muted small"},ci.s+" "+t("strokes")):null, ci.r?h("span",{class:"muted small"},t("radical")+" "+ci.r):null),
         h("div",{class:"small"}, ci.d||""),
         ci.x && ci.x!=="？" ? h("div",{class:"small muted"}, t("components")+": ", h("span",{class:"hz"}, ci.x.replace(/[⿰-⿻]/g," ").trim()), ci.hi ? " · "+ci.hi : "") : null));

@@ -1,13 +1,14 @@
-// Xuélù service worker: the app shell and data work offline; updates arrive in the background.
-const SHELL = "xuelu-shell-v2", RUNTIME = "xuelu-runtime";
+// LaoLao service worker: the app shell and curriculum work offline; updates arrive in the background.
+const SHELL = "laolao-shell-v3", RUNTIME = "laolao-runtime";
 const CORE = ["./","index.html","admin/index.html","css/app.css","css/admin.css","manifest.webmanifest","icon.svg",
   "js/config.js","js/api/index.js","js/api/firebase.js","js/api/local.js",
   "js/shared/ui.js","js/shared/i18n.js","js/shared/content.js","js/shared/dict.js","js/shared/engine.js","js/shared/speech.js","js/shared/widgets.js","js/shared/quiz.js","js/shared/setup.js",
-  "js/learner/main.js","js/learner/core.js","js/learner/views-learn.js","js/learner/views-tools.js",
-  "vendor/hanzi-writer.min.js","vendor/firebase/firebase-app.js","vendor/firebase/firebase-auth.js","vendor/firebase/firebase-firestore.js",
-  "data/dictionary.json","data/chars.json"];
+  "js/learner/main.js","js/learner/core.js","js/learner/views-learn.js","js/learner/views-tools.js","js/learner/views-labs.js","js/learner/views-media.js",
+  "js/admin/cms-extended.js",
+  "vendor/firebase/firebase-app.js","vendor/firebase/firebase-auth.js","vendor/firebase/firebase-firestore.js",
+  "data/dictionary.json","data/chars.json","data/seed.json","data/strokes.json"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(SHELL).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
-self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith("xuelu-shell") && k!==SHELL).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
+self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => (k.startsWith("laolao-shell") || k.startsWith("xuelu-shell")) && k!==SHELL).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener("fetch", e => {
   const req = e.request; if (req.method !== "GET") return;
   const url = new URL(req.url);

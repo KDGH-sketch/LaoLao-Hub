@@ -1,7 +1,7 @@
 // Content schemas drive the admin editor: add a field here and it appears in the CMS.
 // Labels are [English, Lao].
 export const SECS = "ABCDEFGHIJKLMNOPQRS".split("");
-const lv = { key:"level", type:"select", label:["HSK level","ລະດັບ HSK"], options:[1,2,3,4,5,6].map(n=>[n,"HSK "+n]), num:true };
+const lv = { key:"level", type:"select", label:["Stage / Level","ລະດັບ"], options:[1,2,3,4,5,6].map(n=>[n,"Stage "+n]), num:true };
 const sentence = (key, label) => ({ key, type:"list", label, itemLabel:["Sentence","ປະໂຫຍກ"], item:[{ key:"", type:"sentence" }], summary: s => s.zh || "" });
 
 export const SCHEMAS = {
@@ -61,7 +61,7 @@ export const SCHEMAS = {
   paths: { title: d => d.title, idHint:"business", defaults:{ kind:"topic", level:0, title:{en:"",lo:"",zh:""}, desc:{en:"",lo:"",zh:""}, steps:[] },
     fields:[
       { key:"title", type:"tr", label:["Title","ຫົວຂໍ້"] }, { key:"desc", type:"tr", multiline:true, label:["Description","ຄຳອະທິບາຍ"] },
-      { row:[ { key:"kind", type:"select", label:["Kind","ປະເພດ"], options:[["level","HSK level"],["topic","Topic (travel, business…)"],["skill","Skill (grammar, listening…)"]] }, { key:"level", type:"select", label:["Level","ລະດັບ"], options:[[0,"—"],...[1,2,3,4,5,6].map(n=>[n,"HSK "+n])], num:true } ] },
+      { row:[ { key:"kind", type:"select", label:["Kind","ປະເພດ"], options:[["level","Stage level"],["topic","Topic (travel, business…)"],["skill","Skill (grammar, listening…)"]] }, { key:"level", type:"select", label:["Level","ລະດັບ"], options:[[0,"—"],...[1,2,3,4,5,6].map(n=>[n,"Stage "+n])], num:true } ] },
       { key:"steps", type:"list", label:["Steps","ຂັ້ນຕອນ"], itemLabel:["Step","ຂັ້ນ"], summary: s => s.type+": "+s.id, item:[ { row:[ { key:"type", type:"select", label:["Type","ປະເພດ"], options:[["lesson","Lesson"],["pattern","Pattern"],["grammar","Grammar"],["quiz","Quiz"],["dialogue","Dialogue"],["page","App page (pinyin, chars, speak)"]] }, { key:"id", type:"stepref", label:["Item","ລາຍການ"] } ] } ] } ] },
   releases: { title: d => d.title, idHint:"2026-11", defaults:{ date:new Date().toISOString().slice(0,10), title:{en:"",lo:"",zh:""}, notes:{en:"",lo:"",zh:""}, items:[] },
     fields:[
@@ -70,7 +70,7 @@ export const SCHEMAS = {
       { key:"items", type:"list", label:["Highlighted items","ລາຍການເດັ່ນ"], itemLabel:["Item","ລາຍການ"], summary: s => s.type+": "+s.id, item:[ { row:[ { key:"type", type:"select", label:["Type","ປະເພດ"], options:[["lesson","Lesson"],["pattern","Pattern"],["grammar","Grammar"],["quiz","Quiz"],["dialogue","Dialogue"]] }, { key:"id", type:"stepref", label:["Item","ລາຍການ"] } ] } ] } ] },
   lexicon: { title: d => ({ en: d.cat || d.id }), idHint:"FRUIT", defaults:{ cat:"", data:[] }, noAccess:true,
     fields:[ { key:"cat", type:"text", label:["Slot name (use in templates as {NAME})","ຊື່ Slot"], cls:"mono" },
-      { key:"data", type:"json", label:["Items (JSON)","ລາຍການ (JSON)"], help:["Array of objects like {\"z\":\"咖啡\",\"e\":\"coffee\"}. People need e (subject), o (object), s (1 = he/she).","ອາເຣຂອງອອບເຈັກ ເຊັ່ນ {\"z\":\"咖啡\",\"e\":\"coffee\"}."] } ] }
+      { key:"data", type:"json", label:["Items (JSON)","ລາຍການ (JSON)"], help:["Array of objects like {\"z\":\"ກາເຟ\",\"e\":\"coffee\"}. People need e (subject), o (object), s (1 = he/she).","ອາເຣຂອງອອບເຈັກ ເຊັ່ນ {\"z\":\"ກາເຟ\",\"e\":\"coffee\"}."] } ] }
 };
 export const STEP_TYPE_TO_COL = { lesson:"lessons", pattern:"patterns", grammar:"grammar", quiz:"quizzes", dialogue:"dialogues" };
 export const APP_PAGES = [["pinyin","Pinyin & tones"],["chars","Characters"],["speak","Pronunciation"],["gen","Sentence generator"],["dict","Dictionary"]];

@@ -37,8 +37,8 @@ export async function viewContentList({ type, q="", status="", level="" }){
     const list = all.filter(d => (!status || d.status===status) && (!level || String(d.level)===level) && (!f || d.id.toLowerCase().includes(f) || titleOf(type,d).toLowerCase().includes(f) || JSON.stringify(d.title||d.tr||"").toLowerCase().includes(f)))
       .sort((a,b)=>(a.level||0)-(b.level||0) || (a.order??a.n??0)-(b.order??b.n??0) || String(a.id).localeCompare(String(b.id)));
     list.slice(0,400).forEach(d => body.append(h("tr",{onclick:()=>go("editor",{type,id:d.id})},
-      h("td",{class:"mono small"}, d.id), h("td",{class:/[一-鿿]/.test(titleOf(type,d).slice(0,2))?"hz":""}, titleOf(type,d)),
-      h("td",null, d.level ? "HSK "+d.level : "—"), h("td",null, s.noAccess ? "—" : h("span",{class:"chip"}, t("acc_"+(d.access||"free")))),
+      h("td",{class:"mono small"}, d.id), h("td",{class:/[\u0E80-\u0EFF]/.test(titleOf(type,d).slice(0,2))?"hz lo":""}, titleOf(type,d)),
+      h("td",null, d.level ? "Stage "+d.level : "—"), h("td",null, s.noAccess ? "—" : h("span",{class:"chip"}, t("acc_"+(d.access||"free")))),
       h("td",null, s.noAccess ? "" : h("span",{class:"pill "+(d.status||"draft")}, t("status_"+(d.status||"draft")))), h("td",{class:"small muted"}, fmtDate(d.updatedAt, lang())))));
     if (!list.length) body.append(h("tr",null,h("td",{colspan:"6",class:"muted"},t("no_rows"))));
   };
@@ -48,7 +48,7 @@ export async function viewContentList({ type, q="", status="", level="" }){
     h("div",{class:"toolbar"},
       h("input",{class:"input grow",placeholder:t("filter_ph"),value:q,oninput:debounce(e=>{ q=e.target.value; draw(); },120)}),
       s.noAccess ? null : h("select",{class:"input",onchange:e=>{ status=e.target.value; draw(); }}, h("option",{value:""},t("status")+": "+t("all")), STATUS_KEYS.map(k=>h("option",{value:k,selected:status===k},t("status_"+k)))),
-      h("select",{class:"input",onchange:e=>{ level=e.target.value; draw(); }}, h("option",{value:""},t("level")+": "+t("all")), [1,2,3,4,5,6].map(n=>h("option",{value:String(n)},"HSK "+n)))),
+      h("select",{class:"input",onchange:e=>{ level=e.target.value; draw(); }}, h("option",{value:""},t("level")+": "+t("all")), [1,2,3,4,5,6].map(n=>h("option",{value:String(n)},"Stage "+n)))),
     h("div",{class:"tbl-wrap"}, h("table",{class:"tbl"}, h("thead",null,h("tr",null,[t("id_f"),t("title_f"),t("level"),t("access"),t("status"),t("updated")].map(x=>h("th",null,x)))), body)));
   draw();
   return wrap;
@@ -281,7 +281,7 @@ function questionsBuilder(obj, key){
       }
       if (["type","listen_type"].includes(q.type)) item.append(h("div",{class:"field-row"},
         fld(L(["Accepted answers (one per line)","ຄຳຕອບທີ່ຍອມຮັບ (ແຖວລະອັນ)"]), h("textarea",{class:"input",value:(q.accept||[]).join("\n"),oninput:e=>q.accept=e.target.value.split("\n").map(s=>s.trim()).filter(Boolean)})),
-        fld(L(["Checking","ວິທີກວດ"]), h("select",{class:"input",onchange:e=>q.mode=e.target.value}, [["pinyin","Romanization (tones optional)"],["hanzi","Lao script (exact)"],["text","Text"]].map(([k,n])=>h("option",{value:k,selected:(q.mode||"pinyin")===k},n))))));
+        fld(L(["Checking","ວິທີກວດ"]), h("select",{class:"input",onchange:e=>q.mode=e.target.value}, [["pinyin","Romanization (tones optional)"],["script","Lao script (exact)"],["text","Text"]].map(([k,n])=>h("option",{value:k,selected:(q.mode||"script")===k||q.mode==="hanzi"},n))))));
       if (q.type==="tone") item.append(fld(L(["Correct tone (1-6)","ວັນນະຍຸດທີ່ຖືກ (1-6)"]), h("select",{class:"input",style:"width:auto",onchange:e=>q.answer=+e.target.value}, [1,2,3,4,5,6].map(n=>h("option",{value:n,selected:+q.answer===n},"Tone "+n)))));
       if (q.type==="flashcard"){ q.back = q.back || {}; item.append(renderField({ key:"back", type:"tr", label:["Back of the card","ດ້ານຫຼັງບັດ"] }, q)); }
       q.explain = q.explain || {}; item.append(renderField({ key:"explain", type:"tr", label:["Explanation after answering (optional)","ຄຳອະທິບາຍຫຼັງຕອບ"] }, q));

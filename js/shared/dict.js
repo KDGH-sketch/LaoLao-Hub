@@ -1,4 +1,4 @@
-// Dictionary layer: the built-in HSK dictionary (static, cached offline) merged with
+// Dictionary layer: the built-in Lao dictionary (static, cached offline) merged with
 // vocabulary entries that admins add or edit in the Admin Backend.
 import { stripTone } from "./ui.js";
 const url = f => new URL(`../../data/${f}`, import.meta.url).href;

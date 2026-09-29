@@ -235,31 +235,32 @@ const VIEWS = Object.assign({}, LV.VIEWS, TV.VIEWS, LAB_VIEWS, MEDIA_VIEWS, {
 });
 const NAV = [
   ["home","nav_home","home"],
-  ["paths","nav_paths","path"],
-  ["lessons","nav_lessons","learn"],
+  ["paths","nav_learn","path"],
+  ["handwriting","nav_script","pen"],
+  ["vocab","nav_vocab","cards"],
+  ["dict","nav_dict","dict"],
+  ["grammar","nav_grammar","structure"],
+  ["tone_lab","nav_tone_lab","sound"],
+  ["patterns","nav_patterns","gen"],
+  ["pronounce_lab","nav_pronounce","headphones"],
+  ["speak","nav_speak","mic"],
   ["videos","nav_videos","video"],
-  ["tone_lab","nav_tone_lab","spark"],
-  ["pronounce_lab","nav_pronounce","speaker"],
-  ["handwriting","nav_handwriting","pen"],
+  ["practice","nav_practice","practice"],
+  ["review","nav_review","review"],
+  ["culture_lab","nav_culture","globe"],
+  ["progress","nav_progress","chart"],
+  null,
   ["particle_lab","nav_particles","flame"],
   ["kinship_lab","nav_kinship","users"],
   ["classifiers_lab","nav_classifiers","layers"],
-  ["culture_lab","nav_culture","globe"],
-  ["patterns","nav_patterns","gen"],
-  ["practice","nav_practice","practice"],
-  ["review","nav_review","review"],
-  null,
-  ["dict","nav_dict","dict"],
-  ["pinyin","nav_pinyin","pinyin"],
-  ["speak","nav_speak","mic"],
+  ["pinyin","nav_pinyin","book"],
   null,
   ["saved","nav_saved","bookmark"],
   ["notes","nav_notes","note"],
-  ["progress","nav_progress","chart"],
   ["downloads","nav_offline","download"],
   ["account","nav_account","user"]];
-const TABS = [["home","nav_home","home"],["paths","nav_learn","path"],["videos","nav_videos","video"],["tone_lab","nav_tone_lab","spark"],["practice","nav_practice","practice"],["more","nav_more","more"]];
-const PARENT = { lesson:"lessons", path:"paths", pattern:"patterns", grammarItem:"grammar", quiz:"practice", gen:"patterns", handwriting:"handwriting", videos:"videos" };
+const TABS = [["home","nav_home","home"],["paths","nav_learn","path"],["dict","nav_dict","dict"],["videos","nav_videos","video"],["practice","nav_practice","practice"],["more","nav_more","more"]];
+const PARENT = { lesson:"paths", path:"paths", pattern:"patterns", grammarItem:"grammar", quiz:"practice", gen:"patterns", handwriting:"handwriting", videos:"videos", vocab:"vocab", grammar:"grammar", tone_lab:"tone_lab", pronounce_lab:"pronounce_lab", culture_lab:"culture_lab", particle_lab:"culture_lab", kinship_lab:"culture_lab", classifiers_lab:"culture_lab" };
 let searchPop, netEl;
 function render(){
   const cur = PARENT[A.view.name] || A.view.name;
@@ -301,7 +302,7 @@ function setupSearch(inp){
     const f = q.toLowerCase(), qp = stripTone(q);
     const add = (head, list) => { if (!list.length) return; searchPop.append(h("div",{class:"sp-head"},head)); list.forEach(b => { items.push(b); searchPop.append(b); }); };
     const match = s => s && (String(s).toLowerCase().includes(f) || (qp.length>1 && stripTone(s).includes(qp)));
-    add(t("nav_lessons"), Object.values(A.byType.lessons||{}).filter(l => match(T(l.title)) || match(l.title&&l.title.zh) || (l.vocab||[]).includes(q)).slice(0,4).map(l => h("button",{class:"sp-item",onclick:()=>{ close(); go("lesson",{id:l.id}); }}, h("span",null,T(l.title)), h("span",{class:"muted small"},"HSK "+l.level))));
+    add(t("nav_lessons"), Object.values(A.byType.lessons||{}).filter(l => match(T(l.title)) || match(l.title&&l.title.zh) || (l.vocab||[]).includes(q)).slice(0,4).map(l => h("button",{class:"sp-item",onclick:()=>{ close(); go("lesson",{id:l.id}); }}, h("span",null,T(l.title)), h("span",{class:"muted small"},"Stage "+l.level))));
     add(t("nav_patterns"), Object.values(A.P).filter(p => String(p.n)===f || p.hz.includes(q) || match(T({en:p.tr.en.meaning, lo:p.tr.lo&&p.tr.lo.meaning})) || match(p.py)).slice(0,5).map(p => h("button",{class:"sp-item",onclick:()=>{ close(); go("pattern",{n:p.n}); }}, h("span",{class:"hz"},p.hz), h("span",{class:"muted small"},"#"+p.n+" · "+T({en:p.tr.en.meaning, lo:p.tr.lo&&p.tr.lo.meaning})))));
     add(t("nav_grammar"), Object.values(A.byType.grammar||{}).filter(g => match(T(g.title)) || (g.structure||"").includes(q)).slice(0,3).map(g => h("button",{class:"sp-item",onclick:()=>{ close(); go("grammarItem",{id:g.id}); }}, h("span",null,T(g.title)))));
     const D = dict(); add(t("nav_dict"), searchDict(q, 8).map(w => h("button",{class:"sp-item",onclick:()=>{ close(); openWord(w); }}, h("span",{class:"hz"},w), h("span",{class:"py",html:pyHTML(D[w].p)}), h("span",{class:"muted small"+(lang()==="lo"&&D[w].lo?" lo":"")}, ((lang()==="lo"&&D[w].lo)?D[w].lo:D[w].en).slice(0,60)))));

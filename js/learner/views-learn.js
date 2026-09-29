@@ -135,7 +135,7 @@ VIEWS.path = ({ id }) => {
     if (s.type==="page"){ title = t({pinyin:"nav_pinyin",chars:"nav_chars",speak:"nav_speak",gen:"nav_gen",dict:"nav_dict"}[s.id]||"nav_home"); open = () => go(s.id); }
     else if (s.type==="pattern"){ const pt = A.P[s.id]; if (pt){ title = pt.hz; sub = pMeaning(pt); open = () => go("pattern",{n:pt.n}); done = !!A.prog.patterns[pt.n]; } else lock = lockedItem("patterns","p"+String(s.id).padStart(3,"0")); }
     else { const [col, view] = map[s.type]||[]; const d = col && A.byType[col][s.id];
-      if (d){ title = T(d.title); sub = d.level ? "HSK "+d.level : ""; open = () => go(view,{id:s.id}); done = s.type==="lesson" ? lessonDone(s.id) : !!A.prog.lessons[s.type+":"+s.id]; }
+      if (d){ title = T(d.title); sub = d.level ? "Stage "+d.level : ""; open = () => go(view,{id:s.id}); done = s.type==="lesson" ? lessonDone(s.id) : !!A.prog.lessons[s.type+":"+s.id]; }
       else { lock = lockedItem(col, s.id); if (lock) title = T(lock.title); } }
     if (!title && !lock) return;
     list.append(h("button",{class:"item-row",disabled:!!lock,onclick:()=>open&&open()}, h("span",{class:"stepnum"+(done?" done":"")}, done ? icon("check") : String(i+1)), h("span",null, h("div",{class:"ttl "+(isHan(title[0])?"hz":"")}, title), h("div",{class:"sub"}, sub, lock ? lockBadge(lock.tier) : "")), lock ? icon("lock") : icon("right")));
@@ -215,12 +215,12 @@ VIEWS.patterns = ({ q="", mode="lv" }) => {
     const f = q.trim().toLowerCase(), qp = stripTone(q);
     const match = p => !f || String(p.n)===f || p.hz.includes(q.trim()) || pMeaning(p).toLowerCase().includes(f) || (qp.length>1 && stripTone(p.py).includes(qp));
     const all = Object.values(A.P);
-    const groups = mode==="lv" ? [1,2,3,4,5,6].map(L=>["HSK "+L, all.filter(p=>p.level===L)]) : "ABCDEFGHIJKLMNOPQRS".split("").map(s=>[s+" · "+secName(s), all.filter(p=>p.sec===s)]);
+    const groups = mode==="lv" ? [1,2,3,4,5,6].map(L=>["Stage "+L, all.filter(p=>p.level===L)]) : "ABCDEFGHIJKLMNOPQRS".split("").map(s=>[s+" · "+secName(s), all.filter(p=>p.sec===s)]);
     groups.forEach(([title, items]) => { items = items.filter(match).sort((a,b)=>a.n-b.n);
-      const lk = mode==="lv" ? A.catalog.filter(c => c.type==="patterns" && c.tier>A.tier && ("HSK "+c.level)===title) : [];
+      const lk = mode==="lv" ? A.catalog.filter(c => c.type==="patterns" && c.tier>A.tier && ("Stage "+c.level)===title) : [];
       if (!items.length && !lk.length) return;
       list.append(h("div",{class:"group-h"}, h("h2",null,title), h("span",{class:"muted small"}, items.filter(p=>A.prog.patterns[p.n]).length+" / "+(items.length+lk.length)+" "+t("learned_all"))));
-      items.forEach(p => list.append(h("button",{class:"prow",onclick:()=>go("pattern",{n:p.n})}, h("span",{class:"pn"},"#"+String(p.n).padStart(3,"0")), h("span",{class:"ph",lang:"zh-CN"},p.hz), h("span",{class:"pm"+(expLang()==="lo"?" lo":"")},pMeaning(p)), h("span",{class:"status"+(A.prog.patterns[p.n]?" done":"")}))));
+      items.forEach(p => list.append(h("button",{class:"prow",onclick:()=>go("pattern",{n:p.n})}, h("span",{class:"pn"},"#"+String(p.n).padStart(3,"0")), h("span",{class:"ph lo",lang:"lo"},p.hz), h("span",{class:"pm"+(expLang()==="lo"?" lo":"")},pMeaning(p)), h("span",{class:"status"+(A.prog.patterns[p.n]?" done":"")}))));
       if (lk.length && !f) list.append(h("div",{class:"prow",style:"opacity:.6"}, h("span",{class:"pn"},icon("lock")), h("span",{class:"ph"}, lk.length+" "+t("patterns")), h("span",{class:"pm"}, t("locked_d",{s:tierName(lk[0].tier)})), h("span")));
     });
     if (!list.childElementCount) list.append(h("div",{class:"empty"},t("search_none")));
@@ -233,8 +233,8 @@ VIEWS.patterns = ({ q="", mode="lv" }) => {
 function formulaEl(f){
   const box = h("div",{class:"formula"});
   const loc = s => lang()==="en" ? s.replace(/\bS\b/g,"Subject").replace(/\bV\b/g,"Verb").replace(/\bO\b/g,"Object").replace(/\bN\b/g,"Noun").replace(/\bM\b/g,"Measure") : s.replace(/\b(S|V|O|Adj|N|Time|Place|Num|M|VP|Clause)\b/g, m=>t(m));
-  f.split(/\s+\/\s+(?=[A-Z(]|[一-鿿])/).forEach((alt,ai) => { if (ai) box.append(h("span",{class:"fplus",style:"flex-basis:100%;height:0"}));
-    alt.split(/\s\+\s/).forEach((part,i) => { if (i) box.append(h("span",{class:"fplus"},"+")); const hz = /[一-鿿]/.test(part); box.append(h("span",{class:"fchip"+(hz?" hz":""),lang:hz?"zh-CN":null}, hz?part:loc(part))); }); });
+  f.split(/\s+\/\s+(?=[A-Z(]|[\u0E80-\u0EFF])/).forEach((alt,ai) => { if (ai) box.append(h("span",{class:"fplus",style:"flex-basis:100%;height:0"}));
+    alt.split(/\s\+\s/).forEach((part,i) => { if (i) box.append(h("span",{class:"fplus"},"+")); const hz = /[\u0E80-\u0EFF]/.test(part); box.append(h("span",{class:"fchip"+(hz?" hz lo":""),lang:hz?"lo":null}, hz?part:loc(part))); }); });
   return box;
 }
 VIEWS.pattern = ({ n }) => {
@@ -244,16 +244,16 @@ VIEWS.pattern = ({ n }) => {
   const EL = expLang(), root = h("div",{class:"stack-l"}), trx = p.tr[EL] && p.tr[EL].how ? p.tr[EL] : p.tr.en;
   const learned = !!A.prog.patterns[n];
   const lbtn = h("button",{class:"btn"+(learned?" jade":""),onclick:e=>{ const on = !A.prog.patterns[n]; learnPattern(n, on); e.currentTarget.className="btn"+(on?" jade":""); e.currentTarget.textContent = on?t("learned"):t("mark_learned"); }}, learned?t("learned"):t("mark_learned"));
-  root.append(h("div",null, h("div",{class:"crumb"}, h("button",{onclick:()=>go("patterns")},t("nav_patterns")), "›", h("span",null,"HSK "+p.level), "›", h("span",null,p.sec+" · "+secName(p.sec))),
+  root.append(h("div",null, h("div",{class:"crumb"}, h("button",{onclick:()=>go("patterns")},t("nav_patterns")), "›", h("span",null,"Stage "+p.level), "›", h("span",null,p.sec+" · "+secName(p.sec))),
     h("div",{class:"phead"}, h("div",null, h("span",{class:"bigno"},"#"+String(p.n).padStart(3,"0")),
-        h("div",{class:"row",style:"gap:14px"}, h("span",{class:"pat-big",lang:"zh-CN"},p.hz), h("button",{class:"ib","aria-label":t("play"),onclick:()=>speak(p.hz.replace(/[.…+A-Za-z/ ]+/g,"，"))}, icon("speaker"))),
+        h("div",{class:"row",style:"gap:14px"}, h("span",{class:"pat-big lo",lang:"lo"},p.hz), h("button",{class:"ib","aria-label":t("play"),onclick:()=>speak(p.hz.replace(/[.…+A-Za-z/ ]+/g,"，"))}, icon("speaker"))),
         h("div",{class:"py",style:"font-size:1.1rem",html:pyHTML(p.py)}), h("div",{class:"pmean"}, p.tr.en.meaning), p.tr.lo && p.tr.lo.meaning ? h("div",{class:"plo",lang:"lo"}, p.tr.lo.meaning) : null),
-      h("div",{class:"row"}, h("span",{class:"chip lv"},"HSK "+p.level), toggleBtn("p:"+n, { type:"pattern", n }, "btn sm"), lbtn))));
+      h("div",{class:"row"}, h("span",{class:"chip lv"},"Stage "+p.level), toggleBtn("p:"+n, { type:"pattern", n }, "btn sm"), lbtn))));
   if (p.formula) root.append(h("section",{class:"sect"}, h("h2",null,t("structure")), formulaEl(p.formula)));
   if (trx.how) root.append(h("section",{class:"sect"}, h("h2",null,t("how_why")), h("p",{class:"why"+(trx===p.tr.lo?" lo":"")}, trx.how)));
   if (trx.note || p.tr.en.note) root.append(h("section",{class:"sect"}, h("h2",null,t("note")), h("p",{class:"why"}, trx.note || p.tr.en.note)));
-  if (p.mistake) root.append(h("section",{class:"sect"}, h("h2",null,t("mistake")), h("div",{class:"mistake"}, h("span",{class:"mk-x"},"✗"), h("span",{class:"hz bad",lang:"zh-CN"},p.mistake.wrong), h("span",{class:"mk-v"},"✓"),
-    h("span",null, h("span",{class:"hz",lang:"zh-CN"},p.mistake.right), " ", h("button",{class:"ib","aria-label":t("play"),onclick:()=>speak(p.mistake.right.split("/")[0])},icon("play"))), h("p",{class:"reason"}, T(p.mistake.tr)))));
+  if (p.mistake) root.append(h("section",{class:"sect"}, h("h2",null,t("mistake")), h("div",{class:"mistake"}, h("span",{class:"mk-x"},"✗"), h("span",{class:"hz bad lo",lang:"lo"},p.mistake.wrong), h("span",{class:"mk-v"},"✓"),
+    h("span",null, h("span",{class:"hz lo",lang:"lo"},p.mistake.right), " ", h("button",{class:"ib","aria-label":t("play"),onclick:()=>speak(p.mistake.right.split("/")[0])},icon("play"))), h("p",{class:"reason"}, T(p.mistake.tr)))));
   const ex = h("div",{class:"card",style:"padding-block:4px"}); p.examples.forEach(e => ex.append(sentenceEl(exampleOf(p,e), { markers:p.markers, fix:e.fixed })));
   root.append(h("section",{class:"sect"}, h("div",{class:"spread"}, h("h2",null,t("examples")), h("button",{class:"btn sm ghost",onclick:()=>speak(p.examples.map(e=>e.zh).join(""))}, icon("play"), t("play_all"))), ex));
   if (p.gen && p.gen.length){
@@ -277,7 +277,7 @@ VIEWS.grammar = () => {
   const gs = Object.values(A.byType.grammar||{}).sort((a,b)=>(a.level-b.level)||((a.order||0)-(b.order||0)));
   const lk = A.catalog.filter(c=>c.type==="grammar" && c.tier>A.tier);
   return h("div",null, pageHead(t("nav_grammar")),
-    h("div",{class:"list-card"}, gs.map(g => h("button",{class:"item-row",onclick:()=>go("grammarItem",{id:g.id})}, h("span",{class:"chip lv"},"HSK "+g.level), h("span",null, h("div",{class:"ttl"},T(g.title)), h("div",{class:"sub hz"},g.structure)), icon("right"))),
+    h("div",{class:"list-card"}, gs.map(g => h("button",{class:"item-row",onclick:()=>go("grammarItem",{id:g.id})}, h("span",{class:"chip lv"},"Stage "+g.level), h("span",null, h("div",{class:"ttl"},T(g.title)), h("div",{class:"sub hz lo"},g.structure)), icon("right"))),
       lk.map(c => h("div",{class:"item-row",style:"opacity:.6"}, icon("lock"), h("span",null,h("div",{class:"ttl"},T(c.title)), lockBadge(c.tier)), h("span")))),
     h("p",{class:"muted small",style:"margin-top:14px"}, t("nav_patterns")+": ", h("button",{class:"linkbtn",onclick:()=>go("patterns")}, Object.keys(A.P).length+" "+t("patterns"))));
 };
@@ -286,15 +286,15 @@ VIEWS.grammarItem = ({ id }) => {
   logEvent("grammar", { ref:id }); touchDay();
   const EL = expLang(), x = (g.tr[EL] && g.tr[EL].explain) ? g.tr[EL] : g.tr.en;
   const root = h("div",{class:"stack-l"});
-  root.append(h("div",null, h("div",{class:"crumb"}, h("button",{onclick:()=>go("grammar")},t("nav_grammar")), "›", h("span",null,"HSK "+g.level)),
+  root.append(h("div",null, h("div",{class:"crumb"}, h("button",{onclick:()=>go("grammar")},t("nav_grammar")), "›", h("span",null,"Stage "+g.level)),
     h("div",{class:"spread"}, h("h1",null,T(g.title)), toggleBtn("g:"+id, { type:"grammar", id, title:g.title }, "btn sm"))));
   if (g.structure) root.append(h("section",{class:"sect"}, h("h2",null,t("structure")), formulaEl(g.structure.replace(/\s·\s/g," / "))));
   root.append(h("section",{class:"sect"}, h("p",{class:"why"+(x===g.tr.lo?" lo":"")}, x.explain)));
   if ((x.usage||[]).length) root.append(h("section",{class:"sect"}, h("h2",null,t("usage")), h("ul",{class:"obj"+(x===g.tr.lo?" lo":"")}, x.usage.map(u=>h("li",null,u)))));
   if ((g.examples||[]).length) root.append(h("section",{class:"sect"}, h("h2",null,t("examples_label")), h("div",{class:"card",style:"padding-block:4px"}, g.examples.map(e=>sentenceEl(ensureTokens(e, A.engine), { open:false })))));
-  (g.mistakes||[]).forEach(m => root.append(h("div",{class:"mistake"}, h("span",{class:"mk-x"},"✗"), h("span",{class:"hz bad"},m.wrong), h("span",{class:"mk-v"},"✓"), h("span",{class:"hz"},m.right), h("p",{class:"reason"+(EL==="lo"&&m.tr.lo?" lo":"")}, T(m.tr)))));
+  (g.mistakes||[]).forEach(m => root.append(h("div",{class:"mistake"}, h("span",{class:"mk-x"},"✗"), h("span",{class:"hz bad lo",lang:"lo"},m.wrong), h("span",{class:"mk-v"},"✓"), h("span",{class:"hz lo",lang:"lo"},m.right), h("p",{class:"reason"+(EL==="lo"&&m.tr.lo?" lo":"")}, T(m.tr)))));
   const ps = (g.patterns||[]).map(n=>A.P[n]).filter(Boolean);
-  if (ps.length) root.append(h("section",{class:"sect"}, h("h2",null,t("related_patterns")), h("div",{class:"wordchips"}, ps.map(p => h("button",{onclick:()=>go("pattern",{n:p.n})}, "#"+p.n+" ", h("span",{class:"hz"},p.hz))))));
+  if (ps.length) root.append(h("section",{class:"sect"}, h("h2",null,t("related_patterns")), h("div",{class:"wordchips"}, ps.map(p => h("button",{onclick:()=>go("pattern",{n:p.n})}, "#"+p.n+" ", h("span",{class:"hz lo"},p.hz))))));
   return root;
 };
 
@@ -307,8 +307,8 @@ VIEWS.vocab = ({ words, title, lv }) => {
   const draw = () => { box.innerHTML = ""; const ws = listFor();
     box.append(h("div",{class:"row",style:"margin-bottom:12px"}, h("span",{class:"muted"}, ws.length+" "+t("word_count")+" · "+wordsMastered()+" "+t("learned_words")),
       h("button",{class:"btn sm primary",onclick:()=>{ const qb = h("div",{class:"quiz"}); box.prepend(qb); runQuiz(qb, ws.slice().sort(()=>Math.random()-.5).slice(0,12).map(w => ({ type:"flashcard", skill:"vocabulary", prompt:{ zh:w, py:D[w]?D[w].p:"" }, back:{ en:D[w]?D[w].en:"", lo:D[w]?D[w].lo:"" }, w })), { onAnswer:(q,ok)=>{ recordAnswer("vocabulary",ok); if(!ok) import("./core.js").then(m=>m.srsAdd("w:"+q.w,{type:"w",w:q.w})); }, onExit:()=>draw() }); }}, icon("review"), t("flashcards"))),
-      h("div",{class:"vgrid"}, ws.slice(0,300).map(w => h("button",{class:"vcard",onclick:()=>openWord(w)}, h("span",{class:"hz",lang:"zh-CN"},w), h("span",{html:pyHTML(D[w]?D[w].p:"")}), h("span",{class:"m"+(EL==="lo"&&D[w]&&D[w].lo?" lo":"")}, (meaning(w,EL)||"").split(";")[0].slice(0,40)))))); };
-  const seg = words ? null : h("div",{class:"seg",style:"margin-bottom:14px"}, [1,2,3,4,5,6].map(n => h("button",{"aria-pressed":String(level===n),onclick:e=>{ level=n; $$("button",seg).forEach(b=>b.setAttribute("aria-pressed","false")); e.currentTarget.setAttribute("aria-pressed","true"); draw(); }}, "HSK "+n)));
+      h("div",{class:"vgrid"}, ws.slice(0,300).map(w => h("button",{class:"vcard",onclick:()=>openWord(w)}, h("span",{class:"hz lo",lang:"lo"},w), h("span",{html:pyHTML(D[w]?D[w].p:"")}), h("span",{class:"m"+(EL==="lo"&&D[w]&&D[w].lo?" lo":"")}, (meaning(w,EL)||"").split(";")[0].slice(0,40)))))); };
+  const seg = words ? null : h("div",{class:"seg",style:"margin-bottom:14px"}, [1,2,3,4,5,6].map(n => h("button",{"aria-pressed":String(level===n),onclick:e=>{ level=n; $$("button",seg).forEach(b=>b.setAttribute("aria-pressed","false")); e.currentTarget.setAttribute("aria-pressed","true"); draw(); }}, "Stage "+n)));
   draw();
   return h("div",null, pageHead(title ? t("vocabulary")+" · "+title : t("nav_vocab"), words ? null : t("dict_sub")), seg, box);
 };

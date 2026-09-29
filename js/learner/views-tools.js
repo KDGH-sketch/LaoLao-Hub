@@ -66,12 +66,12 @@ VIEWS.gen = () => {
   const selInfo = () => { info.textContent = sel.size+" "+t("patterns"); A.genSel = [...sel]; };
   const drawList = () => { listBox.innerHTML=""; const f = q.trim().toLowerCase();
     Object.values(A.P).sort((a,b)=>a.n-b.n).filter(p => (!lvF.size||lvF.has(p.level)) && (!f || String(p.n)===f || p.hz.includes(q.trim()) || pMeaning(p).toLowerCase().includes(f) || stripTone(p.py).includes(stripTone(f)))).forEach(p =>
-      listBox.append(h("label",{class:"pick"}, h("input",{type:"checkbox",checked:sel.has(p.n),"aria-label":p.hz,onchange:e=>{ e.target.checked ? sel.add(p.n) : sel.delete(p.n); selInfo(); }}), h("span",{class:"pn"},"#"+p.n), h("span",null, h("span",{class:"hz",lang:"zh-CN"},p.hz), h("small",{class:expLang()==="lo"?"lo":""},pMeaning(p)))))); };
+      listBox.append(h("label",{class:"pick"}, h("input",{type:"checkbox",checked:sel.has(p.n),"aria-label":p.hz,onchange:e=>{ e.target.checked ? sel.add(p.n) : sel.delete(p.n); selInfo(); }}), h("span",{class:"pn"},"#"+p.n), h("span",null, h("span",{class:"hz lo",lang:"lo"},p.hz), h("small",{class:expLang()==="lo"?"lo":""},pMeaning(p)))))); };
   const run = append => { if (!sel.size){ toast(t("gen_empty")); return; } if (!append) results.innerHTML="";
     const ps = [...sel].map(n=>A.P[n]).filter(Boolean); const grp = h("div",{class:"gen-group"}); results.append(grp);
     for (let i=0;i<count;i++){ const p = rnd(ps); const s = genSentence(p); if (!s) continue; const el = sentenceEl(s, { markers:p.markers }); el.querySelector(".sent-main").prepend(h("button",{class:"sent-src",style:"border:0;background:none;padding:0;text-align:left",onclick:()=>go("pattern",{n:p.n})},"#"+p.n+" "+p.hz)); grp.append(el); }
     logEvent("generate", { ref:[...sel].slice(0,5).join(",") }); touchDay(); };
-  const lvChips = h("div",{class:"lvchips"}, [1,2,3,4,5,6].map(L => h("button",{"aria-pressed":"false",onclick:e=>{ lvF.has(L)?lvF.delete(L):lvF.add(L); e.currentTarget.setAttribute("aria-pressed",String(lvF.has(L))); drawList(); }},"HSK "+L)));
+  const lvChips = h("div",{class:"lvchips"}, [1,2,3,4,5,6].map(L => h("button",{"aria-pressed":"false",onclick:e=>{ lvF.has(L)?lvF.delete(L):lvF.add(L); e.currentTarget.setAttribute("aria-pressed",String(lvF.has(L))); drawList(); }},"Stage "+L)));
   const cnt = h("span",{class:"tabnum",style:"min-width:2ch;font-weight:700"},count);
   const picker = h("aside",{class:"picker"}, h("input",{class:"input",placeholder:t("filter_ph"),oninput:debounce(e=>{ q=e.target.value; drawList(); },120)}), lvChips, listBox,
     h("div",{class:"spread"}, info, h("div",{class:"row"}, h("button",{class:"btn sm",onclick:()=>{ $$("input[type=checkbox]",listBox).forEach(c=>{ if(!c.checked){ c.checked=true; c.dispatchEvent(new Event("change")); } }); }}, t("gen_all")), h("button",{class:"btn sm ghost",onclick:()=>{ sel.clear(); drawList(); selInfo(); }}, t("gen_clear")))));
@@ -441,7 +441,7 @@ VIEWS.progress = () => {
     return h("div",{class:"skill"}, h("span",null,t("sk_"+k)), h("div",{class:"bar"},h("i",{style:`width:${skillPct(k)}%`})), h("span",{class:"tabnum small",title:s.r+"/"+s.t}, s.t ? skillPct(k)+"%" : "—")); }))));
   const byLevel = h("div",{class:"card stack",style:"gap:10px"});
   for (let L=1; L<=6; L++){ const all = Object.values(A.P).filter(p=>p.level===L); if (!all.length) continue; const d = all.filter(p=>A.prog.patterns[p.n]).length;
-    byLevel.append(h("div",{class:"lvbar"}, h("b",null,"HSK "+L), h("div",{class:"bar"},h("i",{style:`width:${100*d/all.length}%`})), h("span",{class:"muted tabnum",style:"text-align:right"}, d+" / "+all.length))); }
+    byLevel.append(h("div",{class:"lvbar"}, h("b",null,"Stage "+L), h("div",{class:"bar"},h("i",{style:`width:${100*d/all.length}%`})), h("span",{class:"muted tabnum",style:"text-align:right"}, d+" / "+all.length))); }
   root.append(h("section",{class:"sect"}, h("h2",null,t("by_level")), byLevel), achievementsEl(false));
   const hist = h("div",{class:"feed"}, h("p",{class:"muted"},t("loading")));
   A.api.db.list(`progress/${A.user.uid}/events`, { orderBy:["at","desc"], limit:60 }).then(ev => { hist.innerHTML=""; const rows = ev.filter(e=>["quiz","practice","lesson","speaking"].includes(e.type)).slice(0,20);
@@ -461,7 +461,7 @@ VIEWS.downloads = () => {
     (async () => { const ok = urls.length && (await Promise.all(urls.map(state))).every(Boolean); if (ok){ btn.replaceWith(h("span",{class:"chip lv"}, icon("check"), t("dl_done"))); } })();
     btn.addEventListener("click", async () => { if (!("caches" in window)){ toast("Not supported in this browser","err"); return; } btn.disabled = true; st.textContent = t("loading"); const n = await fetchTo(urls); st.textContent = n+"/"+urls.length; btn.replaceWith(h("span",{class:"chip lv"}, icon("check"), t("dl_done"))); });
     return h("div",{class:"dl-row"}, h("div",null, h("b",null,label), desc ? h("div",{class:"small muted"},desc) : null, st), btn); };
-  const core = ["","index.html","css/app.css","js/learner/main.js","js/learner/core.js","js/learner/views-learn.js","js/learner/views-tools.js","js/shared/ui.js","js/shared/i18n.js","js/shared/content.js","js/shared/dict.js","js/shared/engine.js","js/shared/speech.js","js/shared/widgets.js","js/shared/quiz.js","js/shared/setup.js","js/api/index.js","js/api/firebase.js","js/api/local.js","js/config.js","vendor/hanzi-writer.min.js","vendor/firebase/firebase-app.js","vendor/firebase/firebase-auth.js","vendor/firebase/firebase-firestore.js","manifest.webmanifest","icon.svg"].map(p=>base+p);
+  const core = ["","index.html","css/app.css","js/learner/main.js","js/learner/core.js","js/learner/views-learn.js","js/learner/views-tools.js","js/learner/views-labs.js","js/learner/views-media.js","js/shared/ui.js","js/shared/i18n.js","js/shared/content.js","js/shared/dict.js","js/shared/engine.js","js/shared/speech.js","js/shared/widgets.js","js/shared/quiz.js","js/shared/setup.js","js/api/index.js","js/api/firebase.js","js/api/local.js","js/config.js","manifest.webmanifest","icon.svg"].map(p=>base+p);
   rows.append(row(t("dl_core"), t("sync_note"), core), row(t("dl_dict"), "≈ 1.3 MB", [base+"data/dictionary.json", base+"data/chars.json"]), row(t("dl_strokes"), "≈ 1.9 MB", [base+"data/strokes.json"]));
   const audio = (A.B.audio||[]).filter(a=>a.url);
   for (let L=1; L<=6; L++){ const words = new Set(Object.values(A.byType.lessons||{}).filter(l=>l.level===L).flatMap(l=>l.vocab||[]));
@@ -484,7 +484,7 @@ VIEWS.account = () => {
   root.append(h("section",{class:"card"},
     row(t("name"), h("div",{class:"row"}, nameIn, h("button",{class:"btn sm",onclick:async()=>{ A.profile.name = nameIn.value.trim(); await A.api.db.update(`users/${A.user.uid}`,{ name:A.profile.name }).catch(e=>toast(errText(e),"err")); toast(t("saved")); }}, t("save_btn")))),
     row(t("email"), h("span",{class:"muted"}, A.user.email)),
-    row(t("level_label"), h("span",{class:"chip lv"}, "HSK "+(A.profile.level||1))),
+    row(t("level_label"), h("span",{class:"chip lv"}, "Stage "+(A.profile.level||1))),
     row(t("member_since"), h("span",{class:"muted"}, fmtDate(A.profile.createdAt, lang())))));
   root.append(h("section",{class:"card"}, h("h2",{style:"margin-bottom:6px"},t("current_plan")),
     h("div",{class:"spread"}, h("div",null, h("b",{style:"font-size:1.3rem"}, A.isAdmin ? t("adm_title") : tierName(A.tier)), a ? h("p",{class:"small muted"}, t("status")+": "+t(accessState(a))+" · "+t("expires")+": "+(a.expiresAt?fmtDate(a.expiresAt, lang()):t("no_expiry"))) : null),
@@ -495,8 +495,8 @@ VIEWS.account = () => {
     row(t("explain_lang"), h("div",{class:"seg"}, [["","Auto"],["en","English"],["lo","ລາວ"],["zh","中文"]].map(([l,n]) => h("button",{"aria-pressed":String((p.explainLang||"")===l),onclick:()=>{ setPref("explainLang",l); A.render(); }}, n))), t("explain_lang_d")),
     row(t("theme"), h("div",{class:"seg"}, [["auto","theme_auto"],["light","theme_light"],["dark","theme_dark"]].map(([k,l]) => h("button",{"aria-pressed":String(p.theme===k),onclick:()=>{ setPref("theme",k); A.render(); }}, t(l))))),
     row(t("show_pinyin"), sw("showPy")), row(t("show_trans"), sw("showTr")), row(t("tone_colors"), sw("toneColor")),
-    row(t("speech_rate"), h("input",{type:"range",min:"0.5",max:"1.2",step:"0.05",value:p.rate,"aria-label":t("speech_rate"),onchange:e=>{ setPref("rate",+e.target.value); speak("我每天学习中文。"); }})),
-    row(t("voice"), vs.length ? h("select",{class:"input",style:"width:auto;max-width:220px",onchange:e=>{ setPref("voice",e.target.value); speak("你好，欢迎学习中文。"); }}, h("option",{value:""},"Auto"), vs.map(v=>h("option",{value:v.name,selected:v.name===p.voice},v.name+" ("+v.lang+")"))) : h("span",{class:"chip warn"},t("voice_none")), vs.length ? null : t("voice_help"))));
+    row(t("speech_rate"), h("input",{type:"range",min:"0.5",max:"1.2",step:"0.05",value:p.rate,"aria-label":t("speech_rate"),onchange:e=>{ setPref("rate",+e.target.value); speak("ຂ້ອຍຮຽນພາສາລາວທຸກມື້."); }})),
+    row(t("voice"), vs.length ? h("select",{class:"input",style:"width:auto;max-width:220px",onchange:e=>{ setPref("voice",e.target.value); speak("ສະບາຍດີ, ຍິນດີຕ້ອນຮັບສູ່ LaoLao."); }}, h("option",{value:""},"Auto"), vs.map(v=>h("option",{value:v.name,selected:v.name===p.voice},v.name+" ("+v.lang+")"))) : h("span",{class:"chip warn"},t("voice_none")), vs.length ? null : t("voice_help"))));
   const oldPw = h("input",{class:"input",type:"password",autocomplete:"current-password"}), newPw = h("input",{class:"input",type:"password",autocomplete:"new-password"});
   root.append(h("section",{class:"card stack"}, h("h2",null,t("change_pw")), h("div",{class:"field-row"}, h("div",{class:"field"},h("label",null,t("current_pw")),oldPw), h("div",{class:"field"},h("label",null,t("new_pw")),newPw)),
     h("div",{class:"row"}, h("button",{class:"btn",onclick:async()=>{ try { await A.api.auth.changePassword(oldPw.value, newPw.value); toast(t("pw_changed")); oldPw.value=newPw.value=""; } catch(e){ toast(errText(e),"err"); } }}, t("change_pw")),
@@ -506,6 +506,6 @@ VIEWS.account = () => {
 
 // ---------- more (mobile) ----------
 VIEWS.more = () => h("div",null, pageHead(t("nav_more")), h("div",{class:"stack",style:"gap:10px"},
-  [["lessons","nav_lessons","learn"],["tone_lab","nav_tone_lab","spark"],["pronounce_lab","nav_pronounce","speaker"],["particle_lab","nav_particles","flame"],["kinship_lab","nav_kinship","users"],["classifiers_lab","nav_classifiers","layers"],["culture_lab","nav_culture","globe"],["patterns","nav_patterns","gen"],["gen","gen_title","spark"],["vocab","nav_vocab","dict"],["grammar","nav_grammar","layers"],["dict","nav_dict","dict"],["pinyin","nav_pinyin","pinyin"],["chars","nav_chars","chars"],["speak","nav_speak","mic"],["saved","nav_saved","bookmark"],["notes","nav_notes","note"],["progress","nav_progress","chart"],["downloads","nav_offline","download"],["account","nav_account","user"]]
+  [["lessons","nav_lessons","learn"],["videos","nav_videos","video"],["handwriting","nav_handwriting","pen"],["tone_lab","nav_tone_lab","spark"],["pronounce_lab","nav_pronounce","speaker"],["particle_lab","nav_particles","flame"],["kinship_lab","nav_kinship","users"],["classifiers_lab","nav_classifiers","layers"],["culture_lab","nav_culture","globe"],["patterns","nav_patterns","gen"],["gen","gen_title","spark"],["vocab","nav_vocab","dict"],["grammar","nav_grammar","layers"],["dict","nav_dict","dict"],["pinyin","nav_pinyin","pinyin"],["speak","nav_speak","mic"],["saved","nav_saved","bookmark"],["notes","nav_notes","note"],["progress","nav_progress","chart"],["downloads","nav_offline","download"],["account","nav_account","user"]]
     .map(([id,k,ic]) => h("button",{class:"qs",onclick:()=>go(id)}, h("span",{class:"qi",style:"background:var(--surface-2)"},icon(ic)), h("b",null,t(k))))),
   A.isAdmin ? h("a",{class:"qs",href:"admin/",style:"margin-top:10px;text-decoration:none;color:inherit"}, h("span",{class:"qi",style:"background:var(--surface-2)"},icon("shield")), h("b",null,t("adm_title"))) : null);

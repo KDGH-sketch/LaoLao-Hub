@@ -28,7 +28,7 @@ export async function viewLearners(p){
         h("td",null, h("b",null,u.name||"—"), h("div",{class:"small muted"},u.email)),
         h("td",null, a ? planName(a.planId) : "—"), h("td",null, pill(st, stLabel(st))),
         h("td",{class:"tabnum"}, a ? (a.expiresAt ? fmtDate(a.expiresAt, lang()) : t("never")) : "—"),
-        h("td",null, "HSK "+(u.level||1)), h("td",{class:"small muted"}, fmtDate(u.lastActive, lang()))));
+        h("td",null, "Stage "+(u.level||1)), h("td",{class:"small muted"}, fmtDate(u.lastActive, lang()))));
     });
     if (!rows.length) body.append(h("tr",null,h("td",{colspan:"6",class:"muted"},t("no_rows"))));
   };
@@ -45,7 +45,7 @@ export async function viewLearners(p){
 
 async function newLearner(){
   const name = h("input",{class:"input"}), email = h("input",{class:"input",type:"email"}), pw = h("input",{class:"input",value:genPw()});
-  const level = h("select",{class:"input"}, [1,2,3,4,5,6].map(n=>h("option",{value:n},"HSK "+n)));
+  const level = h("select",{class:"input"}, [1,2,3,4,5,6].map(n=>h("option",{value:n},"Stage "+n)));
   const plan = h("select",{class:"input"}, S.plans.map(p=>h("option",{value:p.id,selected:p.id===(S.settings.defaultPlanId||"free")},planName(p.id))));
   const exp = dateInput(Date.now()+365*DAY);
   const reset = h("input",{type:"checkbox",checked:S.api.mode!=="demo"});
@@ -82,11 +82,11 @@ export async function viewLearner({ uid }){
   const st = u.status!=="active" ? "disabled" : accessState(a);
   wrap.append(h("div",null, h("div",{class:"crumb"}, h("button",{onclick:()=>go("learners")}, t("adm_learners")), "›", h("span",null,u.name||u.email)),
     h("div",{class:"spread"}, h("div",null, h("h1",null,u.name||"—"), h("p",{class:"muted"}, u.email)),
-      h("div",{class:"row"}, pill(st, stLabel(st)), h("span",{class:"chip lv"},"HSK "+(u.level||1))))));
+      h("div",{class:"row"}, pill(st, stLabel(st)), h("span",{class:"chip lv"},"Stage "+(u.level||1))))));
 
   // profile
   const name = h("input",{class:"input",value:u.name||""});
-  const level = h("select",{class:"input"}, [1,2,3,4,5,6].map(n=>h("option",{value:n,selected:(u.level||1)===n},"HSK "+n)));
+  const level = h("select",{class:"input"}, [1,2,3,4,5,6].map(n=>h("option",{value:n,selected:(u.level||1)===n},"Stage "+n)));
   const profile = h("section",{class:"panel"}, h("h3",null,t("account_title")),
     h("div",{class:"field-row"}, fld(t("name"),name), fld(t("level"),level)),
     h("p",{class:"small muted"}, t("created")+": "+fmtDate(u.createdAt, lang())+" · "+t("last_active")+": "+fmtDate(u.lastActive, lang(), true)),

@@ -9,8 +9,8 @@ import { ctx } from "./widgets.js";
 export const QTYPES = ["mc","fill","order","match","type","listen_select","listen_type","tone","speak","write_char","flashcard"];
 export const QTYPE_SKILL = { mc:"reading", fill:"grammar", order:"sentence", match:"vocabulary", type:"writing", listen_select:"listening", listen_type:"listening", tone:"pinyin", speak:"speaking", write_char:"characters", flashcard:"vocabulary" };
 const optText = (o, L) => typeof o === "string" ? o : (o.zh ? o.zh : tr(o, L));
-const optIsHz = o => typeof o === "string" ? /[一-鿿]/.test(o) : !!o.zh;
-const norm = (s, mode) => mode==="hanzi" ? String(s).replace(/[\s，。？！,.?!]/g,"") : stripTone(String(s).replace(/[，。？！,.?!]/g,""));
+const optIsHz = o => typeof o === "string" ? /[\u0E80-\u0EFF]/.test(o) : !!o.zh;
+const norm = (s, mode) => (mode==="hanzi" || mode==="script" || mode==="text") ? String(s).replace(/[\s，。？！,.?!]/g,"") : stripTone(String(s).replace(/[，。？！,.?!]/g,""));
 
 /**
  * runQuiz(container, questions, { onAnswer(q, correct), onFinish({right,total}), title })
@@ -92,12 +92,12 @@ export function questionEl(q, L, onResult, onNext){
       const toks = q.tokens.map((z,i)=>({ z: typeof z==="string"?z:z.z, p: typeof z==="string"? "" : z.p, i }));
       box.append(...promptBlock());
       const ansRow = h("div",{class:"tiles answer"}), pool = h("div",{class:"tiles",style:"margin-top:12px"}), chosen=[];
-      shuffle(toks).forEach(tk => { const b = h("button",{class:"tile",lang:"zh-CN",onclick:()=>{ if (answered) return; chosen.push(tk); b.classList.add("used");
-        ansRow.append(h("button",{class:"tile",lang:"zh-CN",onclick:ev=>{ if (answered) return; chosen.splice(chosen.indexOf(tk),1); b.classList.remove("used"); ev.currentTarget.remove(); }}, tk.z)); }}, tk.z, tk.p ? h("small",{html:pyHTML(tk.p)}) : null); pool.append(b); });
+      shuffle(toks).forEach(tk => { const b = h("button",{class:"tile lo",lang:"lo",onclick:()=>{ if (answered) return; chosen.push(tk); b.classList.add("used");
+        ansRow.append(h("button",{class:"tile lo",lang:"lo",onclick:ev=>{ if (answered) return; chosen.splice(chosen.indexOf(tk),1); b.classList.remove("used"); ev.currentTarget.remove(); }}, tk.z)); }}, tk.z, tk.p ? h("small",{html:pyHTML(tk.p)}) : null); pool.append(b); });
       box.append(ansRow, pool, h("div",{class:"qfoot"},
         h("button",{class:"btn sm ghost",onclick:()=>{ if (answered) return; chosen.splice(0); ansRow.innerHTML=""; $$(".tile.used",pool).forEach(b=>b.classList.remove("used")); }}, t("reset")),
         h("button",{class:"btn primary",onclick:()=>{ if (answered || !chosen.length) return; const got = chosen.map(c=>c.z).join(""); const want = q.answer || toks.map(x=>x.z).join("");
-          finish(norm(got,"hanzi")===norm(want,"hanzi"), got!==want ? h("div",null, t("answer_was")+": ", h("span",{class:"hz"}, want)) : null); }}, t("check"))));
+          finish(norm(got,"script")===norm(want,"script"), got!==want ? h("div",null, t("answer_was")+": ", h("span",{class:"hz lo"}, want)) : null); }}, t("check"))));
       q.say = q.say || q.answer;
       break;
     }
@@ -106,7 +106,7 @@ export function questionEl(q, L, onResult, onNext){
       const left = shuffle(q.pairs.map((p,i)=>({ i, txt:p.a }))), right = shuffle(q.pairs.map((p,i)=>({ i, txt: optText(p.b, L) })));
       let sel = null, done = 0, mistakes = 0;
       const colA = h("div",{class:"opts"}), colB = h("div",{class:"opts"});
-      const mk = (item, side) => h("button",{class:"opt"+(side==="a"?" hz":""),lang:side==="a"?"zh-CN":null,onclick:e=>{
+      const mk = (item, side) => h("button",{class:"opt"+(side==="a"?" hz lo":""),lang:side==="a"?"lo":null,onclick:e=>{
         if (answered) return; const b = e.currentTarget;
         if (b.classList.contains("right")) return;
         if (!sel || sel.side===side){ $$(".opt.sel",box).forEach(x=>x.classList.remove("sel")); sel = { item, side, b }; b.classList.add("sel"); if (side==="a") speak(item.txt); return; }
@@ -122,8 +122,8 @@ export function questionEl(q, L, onResult, onNext){
       else box.append(...promptBlock());
       const inp = h("input",{class:"input",style:"font-size:1.2rem;margin-top:14px",placeholder:t("q_type_ph"),autocomplete:"off",autocapitalize:"off",spellcheck:"false"});
       const check = () => { if (answered || !inp.value.trim()) return; const v = inp.value.trim();
-        const ok = (q.accept||[]).some(a => norm(a, q.mode) === norm(v, q.mode) || norm(a,"hanzi")===norm(v,"hanzi"));
-        finish(ok, ok ? null : h("div",null, t("answer_was")+": ", h("b",{class:"hz"}, (q.accept||[])[0]||""))); };
+        const ok = (q.accept||[]).some(a => norm(a, q.mode) === norm(v, q.mode) || norm(a,"script")===norm(v,"script") || norm(a,"hanzi")===norm(v,"hanzi"));
+        finish(ok, ok ? null : h("div",null, t("answer_was")+": ", h("b",{class:"hz lo"}, (q.accept||[])[0]||""))); };
       inp.addEventListener("keydown", e => { if (e.key==="Enter") check(); });
       box.append(inp, h("div",{class:"qfoot"}, h("span"), h("button",{class:"btn primary",onclick:check}, t("check"))));
       if (q.type==="listen_type") setTimeout(()=>speak(q.prompt.zh), 300);
@@ -132,11 +132,11 @@ export function questionEl(q, L, onResult, onNext){
     }
     case "tone": {
       box.append(h("div",{class:"qprompt",style:"text-align:center"}, ask || t("pr_tones_d")),
-        h("div",{class:"row",style:"justify-content:center"}, q.prompt.zh ? h("span",{class:"qzh",style:"font-size:2.6rem",lang:"zh-CN"}, q.prompt.zh) : null, h("button",{class:"listen-big","aria-label":t("play"),onclick:()=>speak(q.prompt.zh)}, icon("play"))));
-      box.append(h("div",{class:"grid4",style:"margin-top:16px"}, [1,2,3,4].map(n => h("button",{class:"opt","data-i":n,style:"text-align:center",onclick:e=>{
+        h("div",{class:"row",style:"justify-content:center"}, q.prompt.zh ? h("span",{class:"qzh lo",style:"font-size:2.6rem",lang:"lo"}, q.prompt.zh) : null, h("button",{class:"listen-big","aria-label":t("play"),onclick:()=>speak(q.prompt.zh)}, icon("play"))));
+      box.append(h("div",{class:"grid3",style:"margin-top:16px"}, [1,2,3,4,5,6].map(n => h("button",{class:"opt","data-i":n,style:"text-align:center",onclick:e=>{
         if (answered) return; const ok = n===+q.answer; e.currentTarget.classList.add(ok?"right":"wrong");
         if (!ok) $$(".opt",box).forEach(b=>{ if (+b.dataset.i===+q.answer) b.classList.add("right"); });
-        finish(ok, q.prompt.py ? h("div",{style:"font-size:1.4rem",html:pyHTML(q.prompt.py)}) : null); }}, toneSVG(n,60), h("div",{class:"small"}, t("tone"+n))))));
+        finish(ok, q.prompt.py ? h("div",{style:"font-size:1.4rem",html:pyHTML(q.prompt.py)}) : null); }}, toneSVG(Math.min(4,n),50), h("div",{class:"small"}, "Tone "+n))))));
       setTimeout(()=>speak(q.prompt.zh), 300);
       break;
     }
@@ -152,7 +152,7 @@ export function questionEl(q, L, onResult, onNext){
           const alts = await listen(); btn.disabled=false; btn.replaceChildren(icon("mic"), t("q_speak_btn"));
           if (!alts.length){ self(); return; }
           const best = Math.max(...alts.map(a=>similarity(a, q.prompt.zh)));
-          out.innerHTML = ""; out.append(h("p",null, t("q_heard")+": ", h("b",{class:"hz"}, alts[0]), " · "+Math.round(best*100)+"%"));
+          out.innerHTML = ""; out.append(h("p",null, t("q_heard")+": ", h("b",{class:"hz lo"}, alts[0]), " · "+Math.round(best*100)+"%"));
           if (best >= 0.75) finish(true); else out.append(h("div",{class:"row"}, h("button",{class:"btn sm",onclick:()=>btn.click()}, t("q_retry")), h("button",{class:"btn sm ghost",onclick:()=>finish(false)}, t("q_skip"))));
         } catch(e){ btn.disabled=false; btn.replaceChildren(icon("mic"), t("q_speak_btn")); self(); }
       }}, icon("mic"), t("q_speak_btn"));
@@ -161,22 +161,34 @@ export function questionEl(q, L, onResult, onNext){
       break;
     }
     case "write_char": {
-      box.append(...promptBlock().slice(0,1), h("p",{class:"muted small"}, t("q_write_hint")));
-      const target = h("div",{class:"hw-target",style:"margin:10px auto"}); box.append(target);
-      strokes().then(S => {
-        const c = q.prompt.zh[0]; if (!S[c] || !window.HanziWriter){ target.replaceWith(h("p",{class:"muted"},t("no_strokes"))); box.append(h("div",{class:"qfoot"},h("span"),h("button",{class:"btn",onclick:()=>finish(true)},t("q_skip")))); return; }
-        const cs = getComputedStyle(document.documentElement);
-        const w = HanziWriter.create(target, c, { width:220, height:220, padding:12, showCharacter:false, showOutline:true, showHintAfterMisses:2, highlightOnComplete:true,
-          strokeColor: cs.getPropertyValue("--ink").trim(), outlineColor: cs.getPropertyValue("--surface-3").trim(), drawingColor: cs.getPropertyValue("--t1").trim(), charDataLoader:(ch,done)=>done(S[ch]) });
-        w.quiz({ onComplete: s => finish(s.totalMistakes <= 3) });
-        box.append(h("div",{class:"row",style:"justify-content:center"}, h("button",{class:"btn sm",onclick:()=>{ w.cancelQuiz(); w.showCharacter(); w.animateCharacter({ onComplete:()=>{ w.hideCharacter(); w.quiz({ onComplete: s => finish(s.totalMistakes<=3) }); } }); }}, icon("eye"), t("stroke_play"))));
-      });
+      box.append(...promptBlock().slice(0,1), h("p",{class:"muted small"}, lang()==="lo" ? "ຝຶກຂຽນຕົວອັກສອນຕາມຮູບແບບດ້ານຫຼັງ" : "Practice writing the Lao letter over the guide outline."));
+      const char = (q.prompt.zh||"ກ")[0];
+      const cvWrap = h("div",{class:"hw-canvas-wrap",style:"margin:12px auto"});
+      const bg = h("div",{class:"hw-canvas-bg"}, char);
+      const cv = document.createElement("canvas");
+      cv.className = "hw-canvas"; cv.width = 240; cv.height = 240;
+      const cctx = cv.getContext("2d");
+      let drawing = false, strokeCount = 0;
+      const getPos = e => { const r = cv.getBoundingClientRect(); const ev = e.touches ? e.touches[0] : e; return { x: (ev.clientX - r.left)*(cv.width/r.width), y: (ev.clientY - r.top)*(cv.height/r.height) }; };
+      const startD = e => { e.preventDefault(); drawing = true; strokeCount++; const p = getPos(e); cctx.beginPath(); cctx.moveTo(p.x, p.y); cctx.strokeStyle = "#0284c7"; cctx.lineWidth = 10; cctx.lineCap = "round"; cctx.lineJoin = "round"; };
+      const moveD = e => { if (!drawing) return; e.preventDefault(); const p = getPos(e); cctx.lineTo(p.x, p.y); cctx.stroke(); };
+      const stopD = () => { drawing = false; };
+      cv.addEventListener("mousedown", startD); cv.addEventListener("mousemove", moveD); cv.addEventListener("mouseup", stopD);
+      cv.addEventListener("touchstart", startD, { passive:false }); cv.addEventListener("touchmove", moveD, { passive:false }); cv.addEventListener("touchend", stopD);
+      cvWrap.append(bg, cv, h("div",{class:"hw-grid-lines"}));
+      box.append(cvWrap, h("div",{class:"row",style:"justify-content:center;gap:10px;margin-top:10px"},
+        h("button",{class:"btn sm ghost",type:"button",onclick:()=>{ cctx.clearRect(0,0,cv.width,cv.height); strokeCount=0; }}, icon("trash"), t("reset")),
+        h("button",{class:"btn sm",type:"button",onclick:()=>speak(char)}, icon("speaker"), t("play")),
+        h("button",{class:"btn primary sm",type:"button",onclick:()=>{
+          if (strokeCount > 0){ finish(true); }
+          else { toast(lang()==="lo"?"ກະລຸນາຂຽນຕົວອັກສອນກ່ອນ":"Please draw the character on the canvas","warn"); }
+        }}, icon("check"), t("check"))));
       break;
     }
     case "flashcard": {
       const back = h("div",{class:"stack",style:"align-items:center;gap:6px",hidden:true}, q.prompt.py ? h("div",{style:"font-size:1.3rem",html:pyHTML(q.prompt.py)}) : null, h("div",{style:"font-size:1.2rem",class:L==="lo"?"lo":""}, tr(q.back||{}, L)));
       const btns = h("div",{class:"row",style:"justify-content:center",hidden:true}, h("button",{class:"btn",onclick:()=>finish(false)}, t("q_didnt")), h("button",{class:"btn jade",onclick:()=>finish(true)}, t("q_knew")));
-      box.append(h("div",{class:"flash"}, h("div",{class:"front",lang:"zh-CN"}, q.prompt.zh), back, h("button",{class:"btn primary",onclick:e=>{ back.hidden=false; btns.hidden=false; e.currentTarget.remove(); speak(q.prompt.zh); }}, t("q_flip"))), btns);
+      box.append(h("div",{class:"flash"}, h("div",{class:"front lo",lang:"lo"}, q.prompt.zh), back, h("button",{class:"btn primary",onclick:e=>{ back.hidden=false; btns.hidden=false; e.currentTarget.remove(); speak(q.prompt.zh); }}, t("q_flip"))), btns);
       break;
     }
     default: box.append(h("p",null,"Unknown question type: "+q.type), h("button",{class:"btn",onclick:()=>finish(true)},t("q_skip")));
