@@ -72,25 +72,47 @@
   </div>
 </div>
 <script>
+window.__laolaoReload = function() { location.reload(); };
+window.__laolaoClear = function() { localStorage.clear(); location.reload(); };
+window.__laolaoReset = function() {
+  if (confirm("Reset demo data and cache?")) {
+    localStorage.clear();
+    try { indexedDB.deleteDatabase("laolao-demo"); } catch(e){}
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        for (var i = 0; i < regs.length; i++) regs[i].unregister();
+        location.reload();
+      }).catch(function() { location.reload(); });
+    } else {
+      location.reload();
+    }
+  }
+};
 window.addEventListener("error", function(e) {
   console.error("LaoLao startup error:", e);
   var note = document.querySelector(".waiting-note");
   if (note) {
-    note.innerHTML = '<span style="color:var(--bad,#ef4444);font-weight:600">ເກີດຂໍ້ຜິດພາດໃນການໂຫລດ / Startup Notice</span><br><div style="margin-top:10px;display:flex;gap:8px;justify-content:center"><button onclick="location.reload()" style="padding:6px 14px;background:var(--accent,#0284c7);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600">ໂຫລດໃໝ່ / Reload</button><button onclick="localStorage.clear();location.reload()" style="padding:6px 14px;background:var(--surface-2,#e2e8f0);color:var(--ink,#1e293b);border:none;border-radius:8px;cursor:pointer">ລ້າງແຄຊ / Clear Cache</button></div>';
+    note.innerHTML = '<span style="color:var(--bad,#ef4444);font-weight:600">ເກີດຂໍ້ຜິດພາດໃນການໂຫລດ / Startup Notice</span><br><div style="margin-top:10px;display:flex;gap:8px;justify-content:center"><button onclick="window.__laolaoReload()" style="padding:6px 14px;background:var(--accent,#0284c7);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600">ໂຫລດໃໝ່ / Reload</button><button onclick="window.__laolaoClear()" style="padding:6px 14px;background:var(--surface-2,#e2e8f0);color:var(--ink,#1e293b);border:none;border-radius:8px;cursor:pointer">ລ້າງແຄຊ / Clear Cache</button></div>';
   }
 });
 setTimeout(function() {
   var note = document.querySelector(".waiting-note");
   var waitingScreen = document.querySelector(".waiting-screen");
   if (waitingScreen && note && !document.querySelector(".app") && !document.querySelector(".auth-card")) {
-    note.innerHTML = '<span>ກຳລັງໂຫລດ... / Taking longer than usual?</span><br><div style="margin-top:10px;display:flex;gap:8px;justify-content:center"><button onclick="location.reload()" style="padding:6px 14px;background:var(--accent,#0284c7);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600">ໂຫລດໃໝ່ / Reload</button><button onclick="if(confirm(\'Reset cached data?\')){localStorage.clear();indexedDB.deleteDatabase(\'laolao-demo\');location.reload();}" style="padding:6px 14px;background:var(--surface-2,#e2e8f0);color:var(--ink,#1e293b);border:none;border-radius:8px;cursor:pointer">ເລີ່ມໃໝ່ / Reset</button></div>';
+    note.innerHTML = '<span>ກຳລັງໂຫລດ... / Taking longer than usual?</span><br><div style="margin-top:10px;display:flex;gap:8px;justify-content:center"><button onclick="window.__laolaoReload()" style="padding:6px 14px;background:var(--accent,#0284c7);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600">ໂຫລດໃໝ່ / Reload</button><button onclick="window.__laolaoReset()" style="padding:6px 14px;background:var(--surface-2,#e2e8f0);color:var(--ink,#1e293b);border:none;border-radius:8px;cursor:pointer">ເລີ່ມໃໝ່ / Reset</button></div>';
   }
 }, 8000);
 </script>
 <script src="env-config.js"></script>
 <script type="module" src="js/learner/main.js"></script>
 <script>
-if ("serviceWorker" in navigator && /^https?:/.test(location.protocol)) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));
+if ("serviceWorker" in navigator && /^https?:/.test(location.protocol)) {
+  window.addEventListener("load", function() {
+    navigator.serviceWorker.register("sw.js").then(function(reg) {
+      reg.update();
+    }).catch(function() {});
+  });
+}
 </script>
 </body>
 </html>
