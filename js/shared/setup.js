@@ -16,7 +16,7 @@ export async function importSeed(api, who, onStep=()=>{}){
   const seed = await fetch(new URL("../../data/seed.json", import.meta.url)).then(r=>r.json());
   const now = new Date(), ops = [];
   const meta = { version:1, createdAt: now, updatedAt: now, createdBy: who, updatedBy: who };
-  for (const type of ["patterns","lessons","grammar","vocabulary","dialogues","quizzes","audio","paths","releases","lexicon"]){
+  for (const type of ["patterns","lessons","grammar","vocabulary","dialogues","quizzes","audio","paths","releases","lexicon","videos","tones","culture","characters","dictionary"]){
     for (const item of (seed[type]||[])){ const { id, ...rest } = item; ops.push({ op:"set", path:`${type}/${id}`, data: Object.assign(rest, meta) }); }
   }
   for (const p of seed.plans){ const { id, ...rest } = p; ops.push({ op:"set", path:`plans/${id}`, data: rest }); }

@@ -2,7 +2,10 @@
 export const TIERS = { public:0, free:1, standard:2, premium:3, admin:99 };
 export const ACCESS_KEYS = ["public","free","standard","premium","admin"];
 export const STATUS_KEYS = ["draft","published","archived"];
-export const CONTENT_TYPES = ["lessons","patterns","grammar","vocabulary","dialogues","quizzes","audio","paths","releases","lexicon"];
+export const CONTENT_TYPES = [
+  "lessons","patterns","grammar","vocabulary","dialogues","quizzes","audio","paths","releases","lexicon",
+  "videos","tones","culture","characters","dictionary"
+];
 export const LEVELS = [1,2,3,4,5,6];
 export const SKILLS = ["vocabulary","grammar","reading","listening","writing","speaking","pinyin","characters","sentence"];
 
@@ -60,7 +63,7 @@ export async function buildBundles(api, who, onStep=()=>{}){
   const version = Date.now();
   const pub = t => all[t].filter(d => d.status === "published" && minTier(d) < 99);
   const catalog = [];
-  for (const t of ["lessons","patterns","grammar","dialogues","quizzes","paths","releases"]) for (const d of pub(t))
+  for (const t of ["lessons","patterns","grammar","dialogues","quizzes","paths","releases","videos","culture"]) for (const d of pub(t))
     catalog.push({ type:t, id:d.id, title: d.title || (d.hz ? {en:d.hz} : null), hz:d.hz||"", level:d.level||0, tier:minTier(d), order:d.order??0, kind:d.kind||"" });
   const meta = { version, tiers:{}, builtAt:new Date(), builtBy: who||"", counts:{} };
   const ops = [];
@@ -68,7 +71,7 @@ export async function buildBundles(api, who, onStep=()=>{}){
   for (const T of tiers){
     const data = { version, tier:T, catalog };
     for (const t of CONTENT_TYPES){
-      const items = t==="lexicon" ? all[t] : pub(t).filter(d => minTier(d) <= T);
+      const items = (t==="lexicon" || t==="characters" || t==="tones" || t==="dictionary") ? all[t] : pub(t).filter(d => minTier(d) <= T);
       data[t] = items.map(d => publicView(t, d));
     }
     const json = JSON.stringify(data);

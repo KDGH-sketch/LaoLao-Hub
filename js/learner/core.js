@@ -49,14 +49,14 @@ export async function loadAccount(user){
   if (A.profile.status==="active") api.db.update(`users/${user.uid}`, { lastActive: new Date() }).catch(()=>{});
 }
 export async function loadContent(){
-  A.B = await loadBundle(A.api, A.tier) || { patterns:[], lessons:[], grammar:[], vocabulary:[], dialogues:[], quizzes:[], audio:[], paths:[], releases:[], lexicon:[], catalog:[] };
+  A.B = await loadBundle(A.api, A.tier) || { patterns:[], lessons:[], grammar:[], vocabulary:[], dialogues:[], quizzes:[], audio:[], paths:[], releases:[], lexicon:[], videos:[], tones:[], culture:[], characters:[], dictionary:[], catalog:[] };
   const B = A.B; A.byType = {};
-  for (const ty of ["lessons","grammar","vocabulary","dialogues","quizzes","audio","paths","releases"]) A.byType[ty] = Object.fromEntries((B[ty]||[]).map(d=>[d.id,d]));
+  for (const ty of ["lessons","grammar","vocabulary","dialogues","quizzes","audio","paths","releases","videos","tones","culture","characters","dictionary"]) A.byType[ty] = Object.fromEntries((B[ty]||[]).map(d=>[d.id,d]));
   A.P = {};
   (B.patterns||[]).forEach(p => { p.markers = (p.hz.match(/[\u0E80-\u0EFF\u4E00-\u9FA5\w]+/g)||[]); p.l = p.level; A.P[p.n] = p; });
   A.catalog = B.catalog || [];
   const LEX = {}; (B.lexicon||[]).forEach(x => LEX[x.cat||x.id] = x.data);
-  mergeVocabulary(B.vocabulary||[]);
+  mergeVocabulary([...(B.vocabulary||[]), ...(B.dictionary||[])]);
   setAudioLibrary(B.audio||[]);
   A.engine = makeEngine(dict(), chars(), LEX);
   // every example sentence, for "in example sentences" in the dictionary

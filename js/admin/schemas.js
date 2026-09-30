@@ -70,7 +70,48 @@ export const SCHEMAS = {
       { key:"items", type:"list", label:["Highlighted items","ລາຍການເດັ່ນ"], itemLabel:["Item","ລາຍການ"], summary: s => s.type+": "+s.id, item:[ { row:[ { key:"type", type:"select", label:["Type","ປະເພດ"], options:[["lesson","Lesson"],["pattern","Pattern"],["grammar","Grammar"],["quiz","Quiz"],["dialogue","Dialogue"]] }, { key:"id", type:"stepref", label:["Item","ລາຍການ"] } ] } ] } ] },
   lexicon: { title: d => ({ en: d.cat || d.id }), idHint:"FRUIT", defaults:{ cat:"", data:[] }, noAccess:true,
     fields:[ { key:"cat", type:"text", label:["Slot name (use in templates as {NAME})","ຊື່ Slot"], cls:"mono" },
-      { key:"data", type:"json", label:["Items (JSON)","ລາຍການ (JSON)"], help:["Array of objects like {\"z\":\"ກາເຟ\",\"e\":\"coffee\"}. People need e (subject), o (object), s (1 = he/she).","ອາເຣຂອງອອບເຈັກ ເຊັ່ນ {\"z\":\"ກາເຟ\",\"e\":\"coffee\"}."] } ] }
+      { key:"data", type:"json", label:["Items (JSON)","ລາຍການ (JSON)"], help:["Array of objects like {\"z\":\"ກາເຟ\",\"e\":\"coffee\"}. People need e (subject), o (object), s (1 = he/she).","ອາເຣຂອງອອບເຈັກ ເຊັ່ນ {\"z\":\"ກາເຟ\",\"e\":\"coffee\"}."] } ] },
+  videos: { title: d => d.title, idHint:"v01-greetings", defaults:{ level:1, category:"beginner", title:{en:"",lo:"",zh:""}, desc:{en:"",lo:"",zh:""}, embedUrl:"", difficulty:"Stage 1 · Beginner", transcript:[], vocab:[] },
+    fields:[
+      { key:"title", type:"tr", label:["Title","ຫົວຂໍ້"] },
+      { key:"desc", type:"tr", multiline:true, label:["Description","ຄຳອະທິບາຍ"] },
+      { row:[ lv, { key:"category", type:"select", label:["Category","ໝວດໝູ່"], options:[["beginner","Beginner"],["conversation","Conversation"],["pronunciation","Pronunciation"],["culture","Culture"]] }, { key:"difficulty", type:"text", label:["Difficulty badge","ລະດັບ"], placeholder:"Stage 1 · Beginner" } ] },
+      { key:"embedUrl", type:"text", label:["Video Embed URL (YouTube embed or MP4)","ລິ້ງວິດີໂອ Embed"], placeholder:"https://www.youtube.com/embed/..." },
+      { key:"transcript", type:"list", label:["Transcript lines","ບົດສົນທະນາໃນວິດີໂອ"], itemLabel:["Line","ແຖວ"], summary: l => (l.sp?l.sp+": ":"")+(l.lo||""),
+        item:[ { row:[ { key:"sp", type:"text", label:["Speaker","ຜູ້ເວົ້າ"], placeholder:"Somxai" }, { key:"lo", type:"text", label:["Lao text","ຂໍ້ຄວາມລາວ"], cls:"hz" } ] },
+               { row:[ { key:"rom", type:"text", label:["Romanization","ຄຳອ່ານ"] }, { key:"en", type:"text", label:["English meaning","ຄວາມໝາຍອັງກິດ"] } ] } ] },
+      { key:"vocab", type:"list", label:["Key vocabulary featured","ຄຳສັບສຳຄັນ"], itemLabel:["Word","ຄຳສັບ"], summary: v => (v.lo||"")+" ("+(v.en||"")+")",
+        item:[ { row:[ { key:"lo", type:"text", label:["Lao word","ຄຳສັບລາວ"], cls:"hz" }, { key:"rom", type:"text", label:["Romanization","ຄຳອ່ານ"] }, { key:"en", type:"text", label:["English","ອັງກິດ"] } ] } ] } ] },
+  tones: { title: d => ({ en: "Tone "+(d.num||"")+": "+((d.name&&d.name.en)||"") }), idHint:"tone-1", defaults:{ num:1, name:{en:"",lo:"",zh:""}, contour:"33", color:"#0284c7", desc:{en:"",lo:"",zh:""}, pathD:"M 10 32 Q 50 30 90 28", examples:[] },
+    fields:[
+      { row:[ { key:"num", type:"number", label:["Tone number (1-6)","ໝາຍເລກສຽງ (1-6)"] }, { key:"contour", type:"text", label:["Pitch contour (e.g. 33, 11, 31, 55, 35, 13)","ລະດັບສຽງ"] }, { key:"color", type:"text", label:["Color code (HEX)","ລະຫັດສີ"], placeholder:"#0284c7" } ] },
+      { key:"name", type:"tr", label:["Tone name","ຊື່ສຽງວັນນະຍຸດ"] },
+      { key:"desc", type:"tr", multiline:true, label:["Description & acoustic rules","ຄຳອະທິບາຍ ແລະ ຫຼັກການຜັນສຽງ"] },
+      { key:"pathD", type:"text", label:["SVG pitch curve path","ເສັ້ນໂຄ້ງ SVG"], placeholder:"M 10 32 Q 50 30 90 28" },
+      { key:"examples", type:"list", label:["Tone minimal pair examples","ຕົວຢ່າງຄຳສັບ"], itemLabel:["Example","ຕົວຢ່າງ"], summary: e => (e.lao||"")+" ("+(e.rom||"")+")",
+        item:[ { row:[ { key:"lao", type:"text", label:["Lao word","ຄຳລາວ"], cls:"hz" }, { key:"rom", type:"text", label:["Romanization","ຄຳອ່ານ"] } ] },
+               { row:[ { key:"mean", type:"text", label:["Meaning","ຄວາມໝາຍ"] }, { key:"note", type:"text", label:["Tone rule note","ໝາຍເຫດ"] } ] } ] } ] },
+  culture: { title: d => d.title, idHint:"cul-alms", defaults:{ category:"traditions", title:{en:"",lo:"",zh:""}, desc:{en:"",lo:"",zh:""}, content:{en:"",lo:"",zh:""}, keyTips:[], vocab:[] },
+    fields:[
+      { key:"title", type:"tr", label:["Story / Culture Title","ຫົວຂໍ້ວັດທະນະທຳ"] },
+      { key:"category", type:"select", label:["Category","ໝວດໝູ່"], options:[["traditions","Traditions & Rituals"],["etiquette","Social Etiquette"],["food","Cuisine & Dining"],["festivals","Festivals & Holidays"],["places","Geography & Life"]] },
+      { key:"desc", type:"tr", multiline:true, label:["Short summary","ບົດສະຫຼຸບຫຍໍ້"] },
+      { key:"content", type:"tr", multiline:true, label:["Full story / Guide","ເນື້ອໃນເຕັມ"] },
+      { key:"keyTips", type:"list", label:["Key etiquette tips & cultural dos/don'ts","ຂໍ້ຄວນປະຕິບັດ"], itemLabel:["Tip","ຂໍ້ແນະນຳ"], summary: t => t.tip||"", item:[ { key:"tip", type:"text", label:["Tip rule","ຄຳແນະນຳ"] } ] },
+      { key:"vocab", type:"list", label:["Associated Lao cultural words","ຄຳສັບວັດທະນະທຳທີ່ກ່ຽວຂ້ອງ"], itemLabel:["Word","ຄຳສັບ"], summary: v => (v.lao||"")+" ("+(v.en||"")+")",
+        item:[ { row:[ { key:"lao", type:"text", label:["Lao word","ຄຳລາວ"], cls:"hz" }, { key:"rom", type:"text", label:["Romanization","ຄຳອ່ານ"] }, { key:"en", type:"text", label:["English","ອັງກິດ"] } ] } ] } ] },
+  characters: { title: d => ({ en: (d.char||d.id)+" ("+(d.name||"")+" — "+(d.meaning||"")+")" }), idHint:"char-ກ", defaults:{ char:"", name:"", meaning:"", ipa:"", class:"middle", strokeCount:1, medial:"", final:"" },
+    fields:[
+      { row:[ { key:"char", type:"text", label:["Lao letter / symbol","ຕົວອັກສອນ"], cls:"hz" }, { key:"name", type:"text", label:["Traditional name (e.g. Kai, Khai)","ຊື່ຕົວອັກສອນ"] }, { key:"meaning", type:"text", label:["Meaning of name (e.g. Chicken)","ຄວາມໝາຍ"] } ] },
+      { row:[ { key:"class", type:"select", label:["Consonant tone class / type","ໝວດອັກສອນ"], options:[["middle","Middle consonant (ອັກສອນກາງ)"],["high","High consonant (ອັກສອນສູງ)"],["low","Low consonant (ອັກສອນຕ່ຳ)"],["vowel","Vowel (ສະຫຼະ)"],["tone_mark","Tone mark (ວັນນະຍຸດ)"]] }, { key:"ipa", type:"text", label:["IPA pronunciation","ສຽງ IPA"] }, { key:"strokeCount", type:"number", label:["Stroke count","ຈຳນວນເສັ້ນຂີດ"] } ] },
+      { row:[ { key:"medial", type:"text", label:["Initial sound","ສຽງຕົ້ນ"] }, { key:"final", type:"text", label:["Final ending sound","ສຽງທ້າຍ"] } ] } ] },
+  dictionary: { title: d => ({ en: (d.hz||d.id)+" ["+(d.p||"")+"] — "+(d.en||"") }), idFrom:"hz", idHint:"ກິນ", defaults:{ hz:"", p:"", pos:"v", level:1, en:"", lo:"", zh:"", examples:[] },
+    fields:[
+      { row:[ { key:"hz", type:"text", label:["Word (Lao)","ຄຳສັບ (ພາສາລາວ)"], cls:"hz" }, { key:"p", type:"text", label:["Romanization (Phonetics)","ຄຳອ່ານໂຣມັນ"] }, { key:"pos", type:"select", label:["Part of speech","ປະເພດຄຳ"], options:["n","v","adj","adv","prep","conj","part","pron","num","m","t","prop","loc","mod","int","idiom","ph"].map(x=>[x,x]) }, lv ] },
+      { key:"en", type:"text", label:["English definition","ຄວາມໝາຍພາສາອັງກິດ"] },
+      { key:"lo", type:"text", label:["Lao definition","ຄວາມໝາຍພາສາລາວ"] },
+      { key:"zh", type:"text", label:["Chinese definition (中文)","中文释义"] },
+      sentence("examples", ["Example sentences","ປະໂຫຍກຕົວຢ່າງ"]) ] }
 };
 export const STEP_TYPE_TO_COL = { lesson:"lessons", pattern:"patterns", grammar:"grammar", quiz:"quizzes", dialogue:"dialogues" };
 export const APP_PAGES = [["pinyin","Pinyin & tones"],["chars","Characters"],["speak","Pronunciation"],["gen","Sentence generator"],["dict","Dictionary"]];

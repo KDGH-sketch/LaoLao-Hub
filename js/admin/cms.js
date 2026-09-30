@@ -21,35 +21,233 @@ export function autoPinyin(eng, zh){ const toks = eng.tokenize(segment(zh).join(
 // ---------- content home ----------
 export async function viewContentHome(){
   const counts = await Promise.all(CONTENT_TYPES.map(async ty => [ty, await S.api.db.count(ty).catch(()=>0)]));
-  const ICON = { lessons:"learn", patterns:"gen", grammar:"layers", vocabulary:"dict", dialogues:"users", quizzes:"practice", audio:"speaker", paths:"path", releases:"gift", lexicon:"content" };
-  return h("div",null, h("div",{class:"pagehead"}, h("h1",null,t("adm_content")), h("p",null,"Create in any of the three languages, keep drafts private, and publish when ready.")),
-    h("div",{class:"grid3"}, counts.map(([ty,n]) => h("button",{class:"qs",onclick:()=>go("contentList",{type:ty})}, h("span",{class:"qi",style:"background:var(--surface-2);color:var(--accent)"}, icon(ICON[ty])), h("span",null, h("b",null,t("type_"+ty)), h("div",{class:"small muted"}, n+" "+t("items")))))));
+  const ICON = {
+    lessons:"learn", patterns:"gen", grammar:"layers", vocabulary:"dict", dialogues:"users",
+    quizzes:"practice", audio:"speaker", paths:"path", releases:"gift", lexicon:"content",
+    videos:"play", tones:"speaker", culture:"culture", characters:"chars", dictionary:"dict"
+  };
+  return h("div",null, h("div",{class:"pagehead"}, h("h1",null,t("adm_content")), h("p",null,"Universal Content Management System: Create, edit, duplicate, bulk-manage, and publish curriculum entities.")),
+    h("div",{class:"grid3"}, counts.map(([ty,n]) => h("button",{class:"qs",onclick:()=>go("contentList",{type:ty})}, h("span",{class:"qi",style:"background:var(--surface-2);color:var(--accent)"}, icon(ICON[ty]||"content")), h("span",null, h("b",null,t("type_"+ty)||ty), h("div",{class:"small muted"}, n+" "+t("items")))))));
 }
 
-// ---------- list ----------
+// ---------- list (Universal Admin DataTable) ----------
 export async function viewContentList({ type, q="", status="", level="" }){
   const all = await rows(type, true);
-  const s = SCHEMAS[type];
+  const s = SCHEMAS[type] || {};
+  const selected = new Set();
+  let page = 1;
+  const pageSize = 30;
+
   const body = h("tbody");
+  const bulkBar = h("div",{class:"bulk-bar",style:"display:none;padding:12px 16px;background:var(--surface-2);border-radius:10px;margin-bottom:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px"});
+  const selCountLabel = h("span",{style:"font-weight:600"});
+  const selectAllBox = h("input",{type:"checkbox","aria-label":"Select all"});
+
+  const paginator = h("div",{class:"row",style:"justify-content:space-between;align-items:center;margin-top:14px;padding:8px 0"});
+
+  const updateBulkBar = () => {
+    if (selected.size > 0) {
+      bulkBar.style.display = "flex";
+      selCountLabel.textContent = `${selected.size} item${selected.size > 1 ? "s" : ""} selected`;
+    } else {
+      bulkBar.style.display = "none";
+    }
+  };
+
+  const getFiltered = () => {
+    const f = q.trim().toLowerCase();
+    return all.filter(d => (!status || d.status===status) && (!level || String(d.level)===level) && (!f || String(d.id).toLowerCase().includes(f) || titleOf(type,d).toLowerCase().includes(f) || JSON.stringify(d.title||d.tr||"").toLowerCase().includes(f)))
+      .sort((a,b)=>(a.level||0)-(b.level||0) || (a.order??a.n??0)-(b.order??b.n??0) || String(a.id).localeCompare(String(b.id)));
+  };
+
   const draw = () => {
     body.innerHTML = "";
-    const f = q.trim().toLowerCase();
-    const list = all.filter(d => (!status || d.status===status) && (!level || String(d.level)===level) && (!f || d.id.toLowerCase().includes(f) || titleOf(type,d).toLowerCase().includes(f) || JSON.stringify(d.title||d.tr||"").toLowerCase().includes(f)))
-      .sort((a,b)=>(a.level||0)-(b.level||0) || (a.order??a.n??0)-(b.order??b.n??0) || String(a.id).localeCompare(String(b.id)));
-    list.slice(0,400).forEach(d => body.append(h("tr",{onclick:()=>go("editor",{type,id:d.id})},
-      h("td",{class:"mono small"}, d.id), h("td",{class:/[\u0E80-\u0EFF]/.test(titleOf(type,d).slice(0,2))?"hz lo":""}, titleOf(type,d)),
-      h("td",null, d.level ? "Stage "+d.level : "—"), h("td",null, s.noAccess ? "—" : h("span",{class:"chip"}, t("acc_"+(d.access||"free")))),
-      h("td",null, s.noAccess ? "" : h("span",{class:"pill "+(d.status||"draft")}, t("status_"+(d.status||"draft")))), h("td",{class:"small muted"}, fmtDate(d.updatedAt, lang())))));
-    if (!list.length) body.append(h("tr",null,h("td",{colspan:"6",class:"muted"},t("no_rows"))));
+    const filtered = getFiltered();
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    if (page > totalPages) page = totalPages;
+    const startIdx = (page - 1) * pageSize;
+    const pageItems = filtered.slice(startIdx, startIdx + pageSize);
+
+    selectAllBox.checked = pageItems.length > 0 && pageItems.every(d => selected.has(d.id));
+
+    pageItems.forEach(d => {
+      const isSel = selected.has(d.id);
+      const rowBox = h("input",{type:"checkbox",checked:isSel,onclick:e=>{
+        e.stopPropagation();
+        if (e.target.checked) selected.add(d.id); else selected.delete(d.id);
+        updateBulkBar();
+        draw();
+      }});
+
+      const dupBtn = h("button",{class:"btn sm ghost",title:"Duplicate with new ID",onclick:async e=>{
+        e.stopPropagation();
+        const newId = d.id + "-copy-" + Date.now().toString(36).slice(-4);
+        const copy = JSON.parse(JSON.stringify(d));
+        copy.id = newId;
+        copy.status = "draft";
+        if (copy.n !== undefined && type==="patterns"){
+          const allP = await rows("patterns");
+          copy.n = Math.max(0, ...allP.map(p=>p.n||0)) + 1;
+        }
+        await saveContent(S.api, type, newId, copy, S.me ? S.me.uid : "admin");
+        delete cache[type];
+        toast("Duplicated as " + newId, "ok");
+        go("editor", { type, id: newId });
+      }}, icon("copy"));
+
+      const delBtn = h("button",{class:"btn sm ghost",style:"color:var(--bad)",title:"Delete item",onclick:async e=>{
+        e.stopPropagation();
+        if (await confirmDialog(t("delete_item"), `Delete "${titleOf(type,d)}" (${d.id})?`, t("delete_item"), t("cancel"), true)){
+          await S.api.db.del(`${type}/${d.id}`);
+          await S.api.db.set("settings/bundle", { dirty:true }, true);
+          delete cache[type];
+          selected.delete(d.id);
+          toast("Deleted " + d.id, "ok");
+          const idx = all.findIndex(x=>x.id===d.id);
+          if (idx>=0) all.splice(idx, 1);
+          updateBulkBar();
+          draw();
+        }
+      }}, icon("trash"));
+
+      body.append(h("tr",{class:isSel?"active-row":"",onclick:()=>go("editor",{type,id:d.id})},
+        h("td",{onclick:e=>e.stopPropagation(),style:"width:36px;text-align:center"}, rowBox),
+        h("td",{class:"mono small"}, d.id),
+        h("td",{class:/[\u0E80-\u0EFF]/.test(titleOf(type,d).slice(0,2))?"hz lo":""}, titleOf(type,d)),
+        h("td",null, d.level ? "Stage "+d.level : "—"),
+        h("td",null, s.noAccess ? "—" : h("span",{class:"chip"}, t("acc_"+(d.access||"free")))),
+        h("td",null, s.noAccess ? "" : h("span",{class:"pill "+(d.status||"draft")}, t("status_"+(d.status||"draft")))),
+        h("td",{class:"small muted"}, fmtDate(d.updatedAt, lang())),
+        h("td",{onclick:e=>e.stopPropagation(),style:"text-align:right;white-space:nowrap"}, h("div",{class:"row",style:"gap:4px;justify-content:flex-end"}, dupBtn, delBtn))));
+    });
+
+    if (!pageItems.length) body.append(h("tr",null,h("td",{colspan:"8",class:"muted",style:"text-align:center;padding:24px"},t("no_rows"))));
+
+    // Render pagination
+    paginator.innerHTML = "";
+    const prevBtn = h("button",{class:"btn sm",disabled:page<=1,onclick:()=>{ if (page>1){ page--; draw(); } }}, "← Previous");
+    const nextBtn = h("button",{class:"btn sm",disabled:page>=totalPages,onclick:()=>{ if (page<totalPages){ page++; draw(); } }}, "Next →");
+    const info = h("span",{class:"small muted"}, `Page ${page} of ${totalPages} · Showing ${filtered.length ? startIdx+1 : 0}–${Math.min(startIdx+pageSize, filtered.length)} of ${filtered.length} items`);
+    paginator.append(prevBtn, info, nextBtn);
   };
+
+  selectAllBox.onclick = e => {
+    const filtered = getFiltered();
+    const startIdx = (page - 1) * pageSize;
+    const pageItems = filtered.slice(startIdx, startIdx + pageSize);
+    if (e.target.checked) pageItems.forEach(d => selected.add(d.id));
+    else pageItems.forEach(d => selected.delete(d.id));
+    updateBulkBar();
+    draw();
+  };
+
+  // Bulk actions handlers
+  const bulkPublish = async () => {
+    if (!selected.size) return;
+    const count = selected.size;
+    const ops = [];
+    selected.forEach(id => ops.push({ op:"set", path:`${type}/${id}`, data:{ status:"published", updatedAt:new Date() }, merge:true }));
+    await S.api.db.batch(ops);
+    await S.api.db.set("settings/bundle", { dirty:true }, true);
+    delete cache[type];
+    all.forEach(d => { if (selected.has(d.id)) d.status = "published"; });
+    selected.clear();
+    toast(`Published ${count} items`, "ok");
+    updateBulkBar();
+    draw();
+  };
+
+  const bulkDraft = async () => {
+    if (!selected.size) return;
+    const count = selected.size;
+    const ops = [];
+    selected.forEach(id => ops.push({ op:"set", path:`${type}/${id}`, data:{ status:"draft", updatedAt:new Date() }, merge:true }));
+    await S.api.db.batch(ops);
+    await S.api.db.set("settings/bundle", { dirty:true }, true);
+    delete cache[type];
+    all.forEach(d => { if (selected.has(d.id)) d.status = "draft"; });
+    selected.clear();
+    toast(`Set ${count} items to Draft`, "ok");
+    updateBulkBar();
+    draw();
+  };
+
+  const bulkDelete = async () => {
+    if (!selected.size) return;
+    const count = selected.size;
+    if (await confirmDialog("Bulk Delete", `Are you sure you want to permanently delete ${count} selected items from ${type}?`, "Delete All", t("cancel"), true)){
+      const ops = [];
+      selected.forEach(id => ops.push({ op:"del", path:`${type}/${id}` }));
+      await S.api.db.batch(ops);
+      await S.api.db.set("settings/bundle", { dirty:true }, true);
+      delete cache[type];
+      const selArr = Array.from(selected);
+      for (const id of selArr){
+        const idx = all.findIndex(x=>x.id===id);
+        if (idx>=0) all.splice(idx,1);
+      }
+      selected.clear();
+      toast(`Deleted ${count} items`, "ok");
+      updateBulkBar();
+      draw();
+    }
+  };
+
+  const bulkExport = () => {
+    const items = all.filter(d => selected.has(d.id) || (!selected.size && getFiltered().includes(d)));
+    const blob = new Blob([JSON.stringify(items, null, 2)], { type:"application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${type}-export-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    toast(`Exported ${items.length} items`, "ok");
+  };
+
+  bulkBar.append(
+    h("div",{class:"row",style:"align-items:center;gap:12px"},
+      selCountLabel,
+      h("button",{class:"btn sm ghost",onclick:()=>{ selected.clear(); updateBulkBar(); draw(); }}, "Deselect All")
+    ),
+    h("div",{class:"row",style:"gap:8px"},
+      h("button",{class:"btn sm jade",onclick:bulkPublish}, icon("upload"), "Publish Selected"),
+      h("button",{class:"btn sm",onclick:bulkDraft}, "Set as Draft"),
+      h("button",{class:"btn sm",onclick:bulkExport}, icon("download"), "Export"),
+      h("button",{class:"btn sm ghost",style:"color:var(--bad)",onclick:bulkDelete}, icon("trash"), "Delete Selected")
+    )
+  );
+
   const wrap = h("div");
-  wrap.append(h("div",{class:"crumb"}, h("button",{onclick:()=>go("content")}, t("adm_content")), "›", h("span",null,t("type_"+type))),
-    h("div",{class:"pagehead"}, h("div",{class:"spread"}, h("h1",null,t("type_"+type)+" ("+all.length+")"), canContent() ? h("button",{class:"btn primary",onclick:()=>newItem(type)}, icon("plus"), t("new_item")) : null)),
+  wrap.append(
+    h("div",{class:"crumb"}, h("button",{onclick:()=>go("content")}, t("adm_content")), "›", h("span",null,t("type_"+type)||type)),
+    h("div",{class:"pagehead"},
+      h("div",{class:"spread"},
+        h("h1",null,(t("type_"+type)||type)+" ("+all.length+")"),
+        h("div",{class:"row",style:"gap:8px"},
+          h("button",{class:"btn ghost sm",onclick:bulkExport}, icon("download"), "Export All"),
+          canContent() ? h("button",{class:"btn primary",onclick:()=>newItem(type)}, icon("plus"), t("new_item")) : null
+        )
+      )
+    ),
+    bulkBar,
     h("div",{class:"toolbar"},
-      h("input",{class:"input grow",placeholder:t("filter_ph"),value:q,oninput:debounce(e=>{ q=e.target.value; draw(); },120)}),
-      s.noAccess ? null : h("select",{class:"input",onchange:e=>{ status=e.target.value; draw(); }}, h("option",{value:""},t("status")+": "+t("all")), STATUS_KEYS.map(k=>h("option",{value:k,selected:status===k},t("status_"+k)))),
-      h("select",{class:"input",onchange:e=>{ level=e.target.value; draw(); }}, h("option",{value:""},t("level")+": "+t("all")), [1,2,3,4,5,6].map(n=>h("option",{value:String(n)},"Stage "+n)))),
-    h("div",{class:"tbl-wrap"}, h("table",{class:"tbl"}, h("thead",null,h("tr",null,[t("id_f"),t("title_f"),t("level"),t("access"),t("status"),t("updated")].map(x=>h("th",null,x)))), body)));
+      h("input",{class:"input grow",placeholder:t("filter_ph"),value:q,oninput:debounce(e=>{ q=e.target.value; page=1; draw(); },120)}),
+      s.noAccess ? null : h("select",{class:"input",onchange:e=>{ status=e.target.value; page=1; draw(); }}, h("option",{value:""},t("status")+": "+t("all")), STATUS_KEYS.map(k=>h("option",{value:k,selected:status===k},t("status_"+k)))),
+      h("select",{class:"input",onchange:e=>{ level=e.target.value; page=1; draw(); }}, h("option",{value:""},t("level")+": "+t("all")), [1,2,3,4,5,6].map(n=>h("option",{value:String(n)},"Stage "+n)))
+    ),
+    h("div",{class:"tbl-wrap"},
+      h("table",{class:"tbl"},
+        h("thead",null,
+          h("tr",null,
+            h("th",{style:"width:36px;text-align:center"}, selectAllBox),
+            [t("id_f"),t("title_f"),t("level"),t("access"),t("status"),t("updated"),"Actions"].map(x=>h("th",null,x))
+          )
+        ),
+        body
+      )
+    ),
+    paginator
+  );
+
   draw();
   return wrap;
 }
@@ -58,7 +256,7 @@ async function newItem(type){
   const id = h("input",{class:"input mono",placeholder:s.idHint||""});
   if (s.idFrom) return go("editor",{ type, id:"", isNew:true });
   if (type==="patterns"){ const all = await rows("patterns"); id.value = "p"+String(Math.max(0,...all.map(p=>p.n||0))+1).padStart(3,"0"); }
-  const r = await dialog({ title:t("new_item")+" · "+t("type_"+type), body:h("div",{class:"stack"}, fld(t("id_f"), id, t("id_d"))),
+  const r = await dialog({ title:t("new_item")+" · "+(t("type_"+type)||type), body:h("div",{class:"stack"}, fld(t("id_f"), id, t("id_d"))),
     actions:[{label:t("cancel"),value:false},{label:t("create"),primary:true,onClick:async()=>{ const v = id.value.trim().replace(/[^A-Za-z0-9_\-一-鿿]/g,"-"); if (!v) return false; if (await S.api.db.get(`${type}/${v}`)){ toast("That ID already exists.","err"); return false; } return v; }}] });
   if (r) go("editor",{ type, id:r, isNew:true });
 }

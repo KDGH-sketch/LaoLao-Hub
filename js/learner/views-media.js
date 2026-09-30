@@ -99,9 +99,16 @@ MEDIA_VIEWS.videos = () => {
   let filter = "all";
   const videoGrid = h("div",{class:"stack",style:"gap:24px"});
 
+  const getVideoItems = () => {
+    const fromB = (A.B && A.B.videos && A.B.videos.length) ? A.B.videos : [];
+    const fromBT = (A.byType && A.byType.videos) ? Object.values(A.byType.videos) : [];
+    return fromB.length ? fromB : fromBT.length ? fromBT : CURATED_VIDEOS;
+  };
+
   function drawVideos(){
     videoGrid.innerHTML = "";
-    const items = filter==="all" ? CURATED_VIDEOS : CURATED_VIDEOS.filter(v => v.category === filter);
+    const list = getVideoItems();
+    const items = filter==="all" ? list : list.filter(v => v.category === filter);
     if (!items.length){
       videoGrid.append(h("div",{class:"empty"}, "No videos found in this category."));
       return;

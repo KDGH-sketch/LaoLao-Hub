@@ -152,7 +152,8 @@ LAB_VIEWS.tone_lab = () => {
 
   // 1. Tone Contours Grid
   const toneGrid = h("div",{class:"grid3"});
-  LAO_TONES_DATA.forEach(tData => {
+  const tonesData = (A.B && A.B.tones && A.B.tones.length) ? A.B.tones : LAO_TONES_DATA;
+  tonesData.forEach(tData => {
     const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
     svg.setAttribute("viewBox","0 0 100 60");
     svg.setAttribute("class","pitch-svg");
@@ -258,7 +259,8 @@ LAB_VIEWS.tone_lab = () => {
       toneNum = 5; ruleName = "Any Consonant + ໄມ້ຈັດຕະວາ = Tone 5 (High Rising)"; sampleWord = "ກ໋ອງ (can/box)";
     }
 
-    const tObj = LAO_TONES_DATA.find(x => x.num === toneNum) || LAO_TONES_DATA[0];
+    const tonesList = (A.B && A.B.tones && A.B.tones.length) ? A.B.tones : LAO_TONES_DATA;
+    const tObj = tonesList.find(x => x.num === toneNum) || tonesList[0];
     calcResult.innerHTML = "";
     calcResult.append(
       h("div",{class:"spread",style:"align-items:center;justify-content:center;gap:12px"},
@@ -906,7 +908,19 @@ LAB_VIEWS.culture_lab = () => {
   ));
 
   const cultGrid = h("div",{class:"stack",style:"gap:20px"});
-  CULTURE_MODULES.forEach(mod => {
+  const getCultMods = () => {
+    const fromB = (A.B && A.B.culture && A.B.culture.length) ? A.B.culture : [];
+    if (fromB.length) {
+      return fromB.map(c => ({
+        tag: (c.category || "culture").toUpperCase(),
+        title: c.title,
+        body: c.desc || c.content,
+        cards: (c.keyTips || []).map(t => ({ type: "ETIQUETTE TIP", text: t.tip }))
+      }));
+    }
+    return CULTURE_MODULES;
+  };
+  getCultMods().forEach(mod => {
     const cardEl = h("div",{class:"card stack",style:"gap:12px;padding:22px"},
       h("div",{class:"spread"},
         h("h2",{style:"font-size:1.35rem;color:var(--accent)"}, tr(mod.title, lang())),

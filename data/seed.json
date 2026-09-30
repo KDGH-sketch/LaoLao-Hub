@@ -1876,5 +1876,5648 @@
     "allowRegistration": true,
     "defaultPlanId": "free",
     "supportContact": "kindathanomsuck@gmail.com"
-  }
+  },
+  "videos": [
+    {
+      "id": "v01-greetings",
+      "level": 1,
+      "category": "beginner",
+      "difficulty": "Stage 1 · Survival",
+      "embedUrl": "https://www.youtube.com/embed/fW_7e93H2_Y",
+      "title": {
+        "en": "Essential Lao Daily Greetings & Politeness",
+        "lo": "ການທັກທາຍ ແລະ ມາລະຍາດພາສາລາວໃນຊີວິດປະຈຳວັນ",
+        "zh": "老挝语日常问候与礼仪"
+      },
+      "desc": {
+        "en": "Learn natural greetings, respectful hand nop gestures, and friendly everyday responses with native speakers.",
+        "lo": "ຮຽນຮູ້ການທັກທາຍແບບສຸພາບ, ການນົບ ແລະ ການຕອບຮັບທີ່ເປັນທຳມະຊາດ."
+      },
+      "transcript": [
+        {
+          "sp": "Somxai",
+          "lo": "ສະບາຍດີຕອນເຊົ້າເອື້ອຍ! ມື້ນີ້ສະບາຍດີບໍ່?",
+          "rom": "sà-bāi-dīi tɔɔn-sào ɯ̂aai! mɯ̂ɯ-nîi sà-bāi-dīi bɔ̀ɔ?",
+          "en": "Good morning older sister! How are you doing today?"
+        },
+        {
+          "sp": "Noy",
+          "lo": "ສະບາຍດີ! ເອື້ອຍສະບາຍດີ, ຂອບໃຈຫຼາຍໆເດີ້.",
+          "rom": "sà-bāi-dīi! ɯ̂aai sà-bāi-dīi, khɔ̌ɔp-jái lǎai-lǎai dêe.",
+          "en": "Hello! I am doing well, thank you so much!"
+        },
+        {
+          "sp": "Somxai",
+          "lo": "ກິນເຂົ້າເຊົ້າແລ້ວບໍ?",
+          "rom": "kin khào sào lɛ̂ɛo bɔ̀ɔ?",
+          "en": "Have you eaten breakfast yet?"
+        },
+        {
+          "sp": "Noy",
+          "lo": "ກິນແລ້ວລະ, ເຈົ້າເດ?",
+          "rom": "kin lɛ̂ɛo la, jâo de?",
+          "en": "I have eaten already, and you?"
+        }
+      ],
+      "vocab": [
+        {
+          "lo": "ສະບາຍດີ",
+          "rom": "sà-bāi-dīi",
+          "en": "hello / good health"
+        },
+        {
+          "lo": "ຕອນເຊົ້າ",
+          "rom": "tɔɔn-sào",
+          "en": "morning time"
+        },
+        {
+          "lo": "ກິນເຂົ້າເຊົ້າ",
+          "rom": "kin khào sào",
+          "en": "eat breakfast"
+        },
+        {
+          "lo": "ຂອບໃຈ",
+          "rom": "khɔ̌ɔp-jái",
+          "en": "thank you"
+        }
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "v02-vientiane-market",
+      "level": 2,
+      "category": "conversation",
+      "difficulty": "Stage 2 · Everyday",
+      "embedUrl": "https://www.youtube.com/embed/5a4x3w8k9fA",
+      "title": {
+        "en": "Shopping & Ordering Food at Talat Sao Market",
+        "lo": "ການໄປຊື້ເຄື່ອງ ແລະ ສັ່ງອາຫານຢູ່ຕະຫຼາດເຊົ້າ",
+        "zh": "万象早市购物与点餐"
+      },
+      "desc": {
+        "en": "Real conversations for ordering fresh fruit, sticky rice, and asking prices politely.",
+        "lo": "ການສົນທະນາຕົວຈິງໃນການຊື້ໝາກໄມ້, ເຂົ້າໜຽວ ແລະ ຖາມລາຄາ."
+      },
+      "transcript": [
+        {
+          "sp": "Customer",
+          "lo": "ເອື້ອຍ, ໝາກກ້ວຍໜ່ວຍນີ້ຂາຍແນວໃດ?",
+          "rom": "ɯ̂aai, màak-kùay nùay nîi khǎai nɛ́ɛo-dǎi?",
+          "en": "Older sister, how do you sell these bananas?"
+        },
+        {
+          "sp": "Vendor",
+          "lo": "ຫວີລະ 15,000 ກີບເດີ້. ຫວານຫຼາຍ!",
+          "rom": "wǐi la sìp-hâa phan kìip dêe. wǎan lǎai!",
+          "en": "15,000 Kip per bunch. They are very sweet!"
+        },
+        {
+          "sp": "Customer",
+          "lo": "ຂໍ 2 ຫວີແດ່ເດີ້, ຫຼຸດໄດ້ບໍ່?",
+          "rom": "khɔ̌ɔ sɔ̌ɔng wǐi dɛ̀ɛ dêe, lùt dài bɔ̀ɔ?",
+          "en": "I would like 2 bunches please, can you give a small discount?"
+        },
+        {
+          "sp": "Vendor",
+          "lo": "ໄດ້ເລີຍ! ຄົນກັນເອງ, ເອົາ 28,000 ກີບພໍ.",
+          "rom": "dài lə́əi! khon kan-ēeng, ao sâao-pɛ̀ɛt phan kìip phɔɔ.",
+          "en": "Certainly! As friendly neighbors, 28,000 Kip is fine."
+        }
+      ],
+      "vocab": [
+        {
+          "lo": "ຂາຍແນວໃດ",
+          "rom": "khǎai nɛ́ɛo-dǎi",
+          "en": "how is it sold / what is the price"
+        },
+        {
+          "lo": "ຫຼຸດໄດ້ບໍ່",
+          "rom": "lùt dài bɔ̀ɔ",
+          "en": "can you give a discount?"
+        },
+        {
+          "lo": "ຫວີ",
+          "rom": "wǐi",
+          "en": "bunch of bananas (classifier)"
+        },
+        {
+          "lo": "ຄົນກັນເອງ",
+          "rom": "khon kan-ēeng",
+          "en": "friendly acquaintance / among friends"
+        }
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "v03-tone-mastery",
+      "level": 1,
+      "category": "pronunciation",
+      "difficulty": "Stage 0 · Foundation",
+      "embedUrl": "https://www.youtube.com/embed/3v7X8k0w4mE",
+      "title": {
+        "en": "How Native Lao Speakers Shape the 6 Tones",
+        "lo": "ວິທີການຜັນສຽງວັນນະຍຸດ 6 ສຽງ ໂດຍຄົນລາວແທ້",
+        "zh": "老挝语6个声调的发音秘诀"
+      },
+      "desc": {
+        "en": "A complete visual and audio breakdown of the 6 authentic Lao tone contours.",
+        "lo": "ການອະທິບາຍລະດັບສຽງທັງ 6 ຢ່າງລະອຽດ ພ້ອມຕົວຢ່າງຄຳສັບ."
+      },
+      "transcript": [
+        {
+          "sp": "Teacher",
+          "lo": "ສະບາຍດີນັກຮຽນທຸກຄົນ. ມື້ນີ້ເຮົາຊິມາຮຽນເລື່ອງສຽງວັນນະຍຸດ 6 ສຽງ.",
+          "rom": "sà-bāi-dīi nák-hían thúk khon. mɯ̂ɯ-nîi háo si maa hían lɯ̂ang sǐang wán-nà-yút hók sǐang.",
+          "en": "Hello students! Today we will learn about the 6 tone contours in Lao."
+        },
+        {
+          "sp": "Teacher",
+          "lo": "ສຽງທີໜຶ່ງ ແມ່ນສຽງສາມັນ: ກາ, ດີ, ປາ.",
+          "rom": "sǐang thīi nɯ̀ng mɛ̀ɛn sǐang sǎa-mán: kāa, dīi, paa.",
+          "en": "The first tone is Mid-Level: kaa, dii, paa."
+        }
+      ],
+      "vocab": [
+        {
+          "lo": "ວັນນະຍຸດ",
+          "rom": "wán-nà-yút",
+          "en": "tone mark / tone"
+        },
+        {
+          "lo": "ສຽງສາມັນ",
+          "rom": "sǐang sǎa-mán",
+          "en": "mid-level tone"
+        },
+        {
+          "lo": "ຮຽນ",
+          "rom": "hían",
+          "en": "to study / learn"
+        }
+      ],
+      "status": "published",
+      "access": "free"
+    }
+  ],
+  "tones": [
+    {
+      "id": "tone-1",
+      "num": 1,
+      "name": {
+        "en": "Tone 1: Mid-Level",
+        "lo": "ສຽງສາມັນ (ສຽງກາງ)",
+        "zh": "第一声：中平调"
+      },
+      "contour": "33 / 35",
+      "color": "#0284c7",
+      "desc": {
+        "en": "Neutral mid-level pitch, relaxed and smooth. Very common in unmarked mid-consonant syllables.",
+        "lo": "ສຽງກາງພຽງ ບໍ່ຂຶ້ນບໍ່ລົງ ຟັງສະບາຍ ພົບເລື້ອຍໃນອັກສອນກາງບໍ່ມີວັນນະຍຸດ."
+      },
+      "pathD": "M 10 32 Q 50 30 90 28",
+      "examples": [
+        {
+          "lao": "ກາ",
+          "rom": "kāa",
+          "mean": "crow / kettle",
+          "note": "Mid cons + long vowel"
+        },
+        {
+          "lao": "ດີ",
+          "rom": "dīi",
+          "mean": "good / well",
+          "note": "Mid cons + long vowel"
+        },
+        {
+          "lao": "ປາ",
+          "rom": "paa",
+          "mean": "fish",
+          "note": "Mid cons + long vowel"
+        },
+        {
+          "lao": "ໄປ",
+          "rom": "pai",
+          "mean": "to go",
+          "note": "Mid cons + mai may"
+        }
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "tone-2",
+      "num": 2,
+      "name": {
+        "en": "Tone 2: Low-Falling",
+        "lo": "ສຽງເອກ (ສຽງຕ່ຳ)",
+        "zh": "第二声：低降调"
+      },
+      "contour": "11 / 21",
+      "color": "#059669",
+      "desc": {
+        "en": "Starts low and drops down in pitch. Produced with marked ໄມ້ເອກ (່) or dead syllables with short vowels.",
+        "lo": "ສຽງເລີ່ມຕົ້ນຕ່ຳ ແລ້ວຫຼຸດລົງອີກ. ມັກເກີດກັບໄມ້ເອກ ່ ຫຼື ຄຳຕາຍ."
+      },
+      "pathD": "M 10 40 Q 50 48 90 55",
+      "examples": [
+        {
+          "lao": "ກ່າ",
+          "rom": "kàa",
+          "mean": "sprout / shoot",
+          "note": "Mid cons + ໄມ້ເອກ"
+        },
+        {
+          "lao": "ໄຂ່",
+          "rom": "khǎi",
+          "mean": "egg",
+          "note": "High cons + ໄມ້ເອກ"
+        },
+        {
+          "lao": "ແມ່",
+          "rom": "mɛ̂ɛ",
+          "mean": "mother",
+          "note": "Low cons + ໄມ້ເອກ"
+        },
+        {
+          "lao": "ເຜັດ",
+          "rom": "phét",
+          "mean": "spicy",
+          "note": "High cons + dead stop"
+        }
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "tone-3",
+      "num": 3,
+      "name": {
+        "en": "Tone 3: Low-Mid Falling",
+        "lo": "ສຽງໂທກາງ / ຕົກ",
+        "zh": "第三声：降调"
+      },
+      "contour": "31 / 32",
+      "color": "#d97706",
+      "desc": {
+        "en": "Starts at mid pitch and falls firmly. Associated with ໄມ້ໂທ (້) on middle or high consonants.",
+        "lo": "ເລີ່ມຕົ້ນລະດັບກາງ ແລ້ວຕົກລົງຢ່າງໜັກແໜ້ນ. ມັກເກີດກັບໄມ້ໂທ ້ ໃນອັກສອນກາງ ແລະ ສູງ."
+      },
+      "pathD": "M 10 25 Q 50 40 90 52",
+      "examples": [
+        {
+          "lao": "ກ້າ",
+          "rom": "kâa",
+          "mean": "brave / bold",
+          "note": "Mid cons + ໄມ້ໂທ"
+        },
+        {
+          "lao": "ເຂົ້າ",
+          "rom": "khào",
+          "mean": "rice / enter",
+          "note": "High cons + ໄມ້ໂທ"
+        },
+        {
+          "lao": "ບ້ານ",
+          "rom": "bâan",
+          "mean": "village / home",
+          "note": "Mid cons + ໄມ້ໂທ"
+        },
+        {
+          "lao": "ເຫັນ",
+          "rom": "hěn",
+          "mean": "to see",
+          "note": "High cons + dead syllable"
+        }
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "tone-4",
+      "num": 4,
+      "name": {
+        "en": "Tone 4: High-Level",
+        "lo": "ສຽງຕີ (ສຽງສູງລອຍ)",
+        "zh": "第四声：高平调"
+      },
+      "contour": "55 / 45",
+      "color": "#7c3aed",
+      "desc": {
+        "en": "High, clear, sustained pitch contour without falling. Common with low consonants without tone marks.",
+        "lo": "ສຽງສູງລອຍ ບໍ່ຫຼຸດລົງ. ພົບເລື້ອຍໃນອັກສອນຕ່ຳທີ່ບໍ່ມີວັນນະຍຸດ."
+      },
+      "pathD": "M 10 14 Q 50 13 90 12",
+      "examples": [
+        {
+          "lao": "ມາ",
+          "rom": "máa",
+          "mean": "to come",
+          "note": "Low cons + long vowel"
+        },
+        {
+          "lao": "ມີ",
+          "rom": "míi",
+          "mean": "to have",
+          "note": "Low cons + long vowel"
+        },
+        {
+          "lao": "ເຮືອນ",
+          "rom": "hɯ́an",
+          "mean": "house / home",
+          "note": "Low cons + live vowel"
+        },
+        {
+          "lao": "ນ້ຳ",
+          "rom": "nâm",
+          "mean": "water",
+          "note": "Low cons + ໄມ້ໂທ"
+        }
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "tone-5",
+      "num": 5,
+      "name": {
+        "en": "Tone 5: High-Falling / Rising",
+        "lo": "ສຽງຈັດຕະວາ (ສຽງຂຶ້ນ)",
+        "zh": "第五声：高降/升调"
+      },
+      "contour": "35 / 24",
+      "color": "#db2777",
+      "desc": {
+        "en": "Begins low-mid and rises smoothly upward, similar to asking a question in English.",
+        "lo": "ເລີ່ມຈາກລະດັບກາງ ແລ້ວຜັນຂຶ້ນສູງ ຄ້າຍຄືກັບການຖາມຄຳຖາມ."
+      },
+      "pathD": "M 10 46 Q 50 32 90 14",
+      "examples": [
+        {
+          "lao": "ຂາ",
+          "rom": "khǎa",
+          "mean": "leg",
+          "note": "High cons + live vowel"
+        },
+        {
+          "lao": "ຫົວ",
+          "rom": "hǔa",
+          "mean": "head",
+          "note": "High cons + live vowel"
+        },
+        {
+          "lao": "ສອງ",
+          "rom": "sɔ̌ɔng",
+          "mean": "two (2)",
+          "note": "High cons + live final"
+        },
+        {
+          "lao": "ໝາ",
+          "rom": "mǎa",
+          "mean": "dog",
+          "note": "High cons compound + live vowel"
+        }
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "tone-6",
+      "num": 6,
+      "name": {
+        "en": "Tone 6: High Falling Peak",
+        "lo": "ສຽງໂທສູງ (ສຽງພິເສດ)",
+        "zh": "第六声：高降调"
+      },
+      "contour": "52 / 41",
+      "color": "#ea580c",
+      "desc": {
+        "en": "Soars up to maximum height before cutting or dropping down sharply.",
+        "lo": "ສຽງພຸ່ງຂຶ້ນສູງສຸດ ແລ້ວຕົກລົງຢ່າງໄວວາ."
+      },
+      "pathD": "M 10 18 Q 45 10 90 48",
+      "examples": [
+        {
+          "lao": "ມ້າ",
+          "rom": "mâa",
+          "mean": "horse",
+          "note": "Low cons + ໄມ້ໂທ"
+        },
+        {
+          "lao": "ຊື້",
+          "rom": "sɯ̂ɯ",
+          "mean": "to buy",
+          "note": "Low cons + ໄມ້ໂທ"
+        },
+        {
+          "lao": "ຮັກ",
+          "rom": "hák",
+          "mean": "to love",
+          "note": "Low cons + dead syllable"
+        },
+        {
+          "lao": "ນົກ",
+          "rom": "nók",
+          "mean": "bird",
+          "note": "Low cons + dead stop"
+        }
+      ],
+      "status": "published",
+      "access": "free"
+    }
+  ],
+  "culture": [
+    {
+      "id": "cul-alms",
+      "category": "traditions",
+      "title": {
+        "en": "Tak Bat: Morning Almsgiving in Luang Prabang",
+        "lo": "ພິທີໃສ່ບາດເຂົ້າໜຽວຍາມເຊົ້າ ຢູ່ຫຼວງພະບາງ",
+        "zh": "琅勃拉邦清晨布施仪式"
+      },
+      "desc": {
+        "en": "A centuries-old spiritual tradition where saffron-robed monks walk silently through town collecting warm sticky rice.",
+        "lo": "ຮີດຄອງປະເພນີອັນດີງາມທີ່ສືບທອດກັນມາຫຼາຍຮ້ອຍປີ ໂດຍພຣະສົງຍ່າງບິນທະບາດຮັບເຂົ້າໜຽວ."
+      },
+      "content": {
+        "en": "Tak Bat is one of the most sacred Buddhist rituals in Laos. Every morning at dawn, hundreds of monks walk barefoot through the streets. Locals kneel respectfully on mats and place small handfuls of freshly steamed sticky rice into each alms bowl.",
+        "lo": "ການໃສ່ບາດຍາມເຊົ້າ ເປັນວັດທະນະທຳທາງພຸດທະສາດສະໜາທີ່ສຳຄັນທີ່ສຸດຂອງລາວ. ຊາວບ້ານຈະຕື່ນແຕ່ເຊົ້າເພື່ອນຶ້ງເຂົ້າໜຽວໃໝ່ໆ ແລ້ວນັ່ງຄຸເຂົ່າລໍຖ້າໃສ່ບາດດ້ວຍຄວາມສະຫງົບ."
+      },
+      "keyTips": [
+        {
+          "tip": "Wear respectful clothing covering your shoulders and knees (ຄຸມບ່າໄຫຼ່ ແລະ ຫົວເຂົ່າ)"
+        },
+        {
+          "tip": "Never touch the monks or hand anything directly into their hands (ຢ່າແຕະຕ້ອງພຣະສົງ)"
+        },
+        {
+          "tip": "Maintain quiet silence and keep cameras at a respectful distance (ຮັກສາຄວາມສະຫງົບ)"
+        },
+        {
+          "tip": "Take off your shoes when kneeling to place rice into the bowls (ຖອດເກີບເວລາໃສ່ບາດ)"
+        }
+      ],
+      "vocab": [
+        {
+          "lao": "ໃສ່ບາດ",
+          "rom": "sài-bàat",
+          "en": "give alms into monk bowl"
+        },
+        {
+          "lao": "ພຣະສົງ",
+          "rom": "phrá-sǒng",
+          "en": "Buddhist monks"
+        },
+        {
+          "lao": "ເຂົ້າໜຽວ",
+          "rom": "khào-nǐao",
+          "en": "sticky rice"
+        },
+        {
+          "lao": "ຄວາມສະຫງົບ",
+          "rom": "khwaam-sà-ngóp",
+          "en": "peace / silence"
+        }
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "cul-baci",
+      "category": "traditions",
+      "title": {
+        "en": "The Baci / Sou Khwan Calling Ceremony",
+        "lo": "ພິທີບາສີສູ່ຂວັນ (ພິທີຜູກແຂນ)",
+        "zh": "老挝栓线祈福仪式 (Baci)"
+      },
+      "desc": {
+        "en": "The premier Lao soul-calling ceremony for weddings, welcoming travelers, healing, and Lao New Year.",
+        "lo": "ພິທີອັນສັກສິດເພື່ອເອີ້ນຂວັນ, ຜູກແຂນອວຍພອນໃນໂອກາດສຳຄັນຕ່າງໆ."
+      },
+      "content": {
+        "en": "The Baci ceremony is central to Lao identity. Lao people believe that a person is composed of 32 kwan (spirits/souls). The Morphon (elder officiant) chants blessings around the Phakhwan floral centerpiece, and elders tie white cotton threads around wrists to bind good fortune.",
+        "lo": "ພິທີບາສີສູ່ຂວັນ ເປັນເອກະລັກຂອງຊາດລາວ. ເຊື່ອກັນວ່າຄົນເຮົາມີ 32 ຂວັນ. ໝໍພອນຈະສູດຂວັນ ແລະ ຜູກແຂນດ້ວຍຝ້າຍຂາວເພື່ອຄວາມເປັນສິริมົງຄົນ."
+      },
+      "keyTips": [
+        {
+          "tip": "Keep the white cotton threads on your wrists for at least 3 days for luck (ມັດໄວ້ຢ່າງໜ້ອຍ 3 ມື້)"
+        },
+        {
+          "tip": "Place your right elbow on your left knee and raise your hands in nop (ຍໍມືນົບເວລາຮັບພອນ)"
+        },
+        {
+          "tip": "Say 'Kop Chai' and 'Sabaidee' to elders who tie your strings (ຂອບໃຈຜູ້ເຖົ້າຜູ້ແກ່)"
+        }
+      ],
+      "vocab": [
+        {
+          "lao": "ບາສີ",
+          "rom": "baa-sǐi",
+          "en": "baci blessing ceremony"
+        },
+        {
+          "lao": "ສູ່ຂວັນ",
+          "rom": "sùu-khwǎn",
+          "en": "call the 32 souls back"
+        },
+        {
+          "lao": "ຜູກແຂນ",
+          "rom": "phùuk-khɛ̌ɛn",
+          "en": "tie cotton strings on wrist"
+        },
+        {
+          "lao": "ໝໍພອນ",
+          "rom": "mɔ̌ɔ-phɔɔn",
+          "en": "blessing master / elder officiant"
+        }
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "cul-khao-niao",
+      "category": "food",
+      "title": {
+        "en": "Lao Sticky Rice Dining Etiquette (ຕິບເຂົ້າ)",
+        "lo": "ມາລະຍາດການກິນເຂົ້າໜຽວ ແລະ ຕິບເຂົ້າ",
+        "zh": "老挝糯米饭就餐礼仪"
+      },
+      "desc": {
+        "en": "How to roll sticky rice with your right hand, dip into jeow sauces, and share from the wicker tip khao basket.",
+        "lo": "ວິທີການປັ້ນເຂົ້າໜຽວດ້ວຍມືຂວາ, ຈ້ຳແຈ່ວ ແລະ ການກິນຮ່ວມກັນ."
+      },
+      "content": {
+        "en": "Sticky rice (ເຂົ້າໜຽວ, khao niao) is the heartbeat of Lao cuisine. It is served in woven bamboo containers called Tip Khao. You pinch a small portion with your right hand, knead it into a neat ball, and use it as a scoop for laap, tam mak hoong, or spicy jeow pastes.",
+        "lo": "ເຂົ້າໜຽວ ເປັນອາຫານຫຼັກຂອງຄົນລາວ. ເວລາກິນຈະໃຊ້ຕິບເຂົ້າ, ປັ້ນດ້ວຍມືຂວາໃຫ້ແໜ້ນ ແລ້ວຈ້ຳແຈ່ວ ຫຼື ກິນກັບລາບ."
+      },
+      "keyTips": [
+        {
+          "tip": "Always eat and pass food using your right hand (ໃຊ້ສະເພາະມືຂວາໃນການປັ້ນເຂົ້າ)"
+        },
+        {
+          "tip": "Close the lid of the Tip Khao basket when finished to show respect (ປິດຝາຕິບເຂົ້າເມື່ອກິນອີ່ມ)"
+        },
+        {
+          "tip": "Do not throw leftover rice onto the floor (ຢ່າຖິ້ມເຂົ້າລົງພື້ນ)"
+        }
+      ],
+      "vocab": [
+        {
+          "lao": "ເຂົ້າໜຽວ",
+          "rom": "khào-nǐao",
+          "en": "sticky rice"
+        },
+        {
+          "lao": "ຕິບເຂົ້າ",
+          "rom": "tìp-khào",
+          "en": "bamboo basket for rice"
+        },
+        {
+          "lao": "ປັ້ນເຂົ້າ",
+          "rom": "pân-khào",
+          "en": "knead rice into ball"
+        },
+        {
+          "lao": "ຈ້ຳແຈ່ວ",
+          "rom": "jâm-jɛ̀ɛo",
+          "en": "dip rice into chili paste"
+        }
+      ],
+      "status": "published",
+      "access": "free"
+    }
+  ],
+  "characters": [
+    {
+      "id": "char-ກ",
+      "char": "ກ",
+      "name": "ກ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ຂ",
+      "char": "ຂ",
+      "name": "ຂ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ຄ",
+      "char": "ຄ",
+      "name": "ຄ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ງ",
+      "char": "ງ",
+      "name": "ງ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ຈ",
+      "char": "ຈ",
+      "name": "ຈ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ສ",
+      "char": "ສ",
+      "name": "ສ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ຊ",
+      "char": "ຊ",
+      "name": "ຊ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ຍ",
+      "char": "ຍ",
+      "name": "ຍ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ດ",
+      "char": "ດ",
+      "name": "ດ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ຕ",
+      "char": "ຕ",
+      "name": "ຕ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ຖ",
+      "char": "ຖ",
+      "name": "ຖ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ທ",
+      "char": "ທ",
+      "name": "ທ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ນ",
+      "char": "ນ",
+      "name": "ນ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ບ",
+      "char": "ບ",
+      "name": "ບ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ປ",
+      "char": "ປ",
+      "name": "ປ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ຜ",
+      "char": "ຜ",
+      "name": "ຜ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ຝ",
+      "char": "ຝ",
+      "name": "ຝ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ພ",
+      "char": "ພ",
+      "name": "ພ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ຟ",
+      "char": "ຟ",
+      "name": "ຟ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ມ",
+      "char": "ມ",
+      "name": "ມ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ຢ",
+      "char": "ຢ",
+      "name": "ຢ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ຣ",
+      "char": "ຣ",
+      "name": "ຣ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ລ",
+      "char": "ລ",
+      "name": "ລ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ວ",
+      "char": "ວ",
+      "name": "ວ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ຫ",
+      "char": "ຫ",
+      "name": "ຫ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ອ",
+      "char": "ອ",
+      "name": "ອ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ຮ",
+      "char": "ຮ",
+      "name": "ຮ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ະ",
+      "char": "ະ",
+      "name": "ະ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-າ",
+      "char": "າ",
+      "name": "າ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ິ",
+      "char": "ິ",
+      "name": "ິ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ີ",
+      "char": "ີ",
+      "name": "ີ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ຶ",
+      "char": "ຶ",
+      "name": "ຶ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ື",
+      "char": "ື",
+      "name": "ື",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ຸ",
+      "char": "ຸ",
+      "name": "ຸ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-ູ",
+      "char": "ູ",
+      "name": "ູ",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-່",
+      "char": "່",
+      "name": "່",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "char-້",
+      "char": "້",
+      "name": "້",
+      "meaning": "",
+      "ipa": "",
+      "class": "middle",
+      "strokeCount": 1,
+      "medial": "",
+      "final": "",
+      "status": "published",
+      "access": "free"
+    }
+  ],
+  "dictionary": [
+    {
+      "id": "ສະບາຍດີ",
+      "hz": "ສະບາຍດີ",
+      "p": "sà-bāi-dī",
+      "pos": "ph",
+      "level": 1,
+      "en": "hello; good day; how are you",
+      "lo": "ສະບາຍດີ (ທັກທາຍ)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຂອບໃຈ",
+      "hz": "ຂອບໃຈ",
+      "p": "khɔ̀ɔp-jái",
+      "pos": "ph",
+      "level": 1,
+      "en": "thank you; thanks",
+      "lo": "ຂອບໃຈ (ສະແດງຄວາມຂອບໃຈ)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຂອບໃຈຫຼາຍໆ",
+      "hz": "ຂອບໃຈຫຼາຍໆ",
+      "p": "khɔ̀ɔp-jái lǎai lǎai",
+      "pos": "ph",
+      "level": 1,
+      "en": "thank you very much",
+      "lo": "ຂອບໃຈຫຼາຍໆ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຂໍໂທດ",
+      "hz": "ຂໍໂທດ",
+      "p": "khɔ̌ɔ-thôot",
+      "pos": "ph",
+      "level": 1,
+      "en": "excuse me; sorry; pardon me",
+      "lo": "ຂໍໂທດ (ຂໍອະໄພ)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ບໍ່ເປັນຫຍັງ",
+      "hz": "ບໍ່ເປັນຫຍັງ",
+      "p": "bɔ̀ɔ pen nyǎng",
+      "pos": "ph",
+      "level": 1,
+      "en": "you're welcome; never mind; it's okay; no problem",
+      "lo": "ບໍ່ເປັນຫຍັງ (ບໍ່ມີບັນຫາ)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ແມ່ນ",
+      "hz": "ແມ່ນ",
+      "p": "mâaen",
+      "pos": "v",
+      "level": 1,
+      "en": "to be; is, are, correct, yes",
+      "lo": "ແມ່ນ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ບໍ່ແມ່ນ",
+      "hz": "ບໍ່ແມ່ນ",
+      "p": "bɔ̀ɔ mâaen",
+      "pos": "ph",
+      "level": 1,
+      "en": "is not; are not; no (negation)",
+      "lo": "ບໍ່ແມ່ນ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ບໍ່",
+      "hz": "ບໍ່",
+      "p": "bɔ̀ɔ",
+      "pos": "adv",
+      "level": 1,
+      "en": "no, not; question tag (or not)",
+      "lo": "ບໍ່",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ບໍ",
+      "hz": "ບໍ",
+      "p": "bɔ̀ɔ",
+      "pos": "part",
+      "level": 1,
+      "en": "question particle (yes/no)",
+      "lo": "ບໍ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເຈົ້າ",
+      "hz": "ເຈົ້າ",
+      "p": "jâo",
+      "pos": "pron",
+      "level": 1,
+      "en": "you; yes, polite acknowledgment",
+      "lo": "ເຈົ້າ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໂດຍ",
+      "hz": "ໂດຍ",
+      "p": "dōoei",
+      "pos": "part",
+      "level": 1,
+      "en": "yes (formal polite response / agreement)",
+      "lo": "ໂດຍ (ຕອບຮັບຢ່າງສຸພາບ)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຂ້ອຍ",
+      "hz": "ຂ້ອຍ",
+      "p": "khɔ̀ɔi",
+      "pos": "pron",
+      "level": 1,
+      "en": "I, me (everyday polite)",
+      "lo": "ຂ້ອຍ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ລາວ",
+      "hz": "ລາວ",
+      "p": "láao",
+      "pos": "pron",
+      "level": 1,
+      "en": "he, she, they; Lao person",
+      "lo": "ລາວ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ພວກເຮົາ",
+      "hz": "ພວກເຮົາ",
+      "p": "phùak-háo",
+      "pos": "pron",
+      "level": 1,
+      "en": "we, us",
+      "lo": "ພວກເຮົາ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ພວກເຈົ້າ",
+      "hz": "ພວກເຈົ້າ",
+      "p": "phùak-jâo",
+      "pos": "pron",
+      "level": 1,
+      "en": "you all, you (plural)",
+      "lo": "ພວກເຈົ້າ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ພວກເຂົາ",
+      "hz": "ພວກເຂົາ",
+      "p": "phùak-khǎo",
+      "pos": "pron",
+      "level": 1,
+      "en": "they, them",
+      "lo": "ພວກເຂົາ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຊື່",
+      "hz": "ຊື່",
+      "p": "sɯ̂ɯ",
+      "pos": "n",
+      "level": 1,
+      "en": "name; to be named / called",
+      "lo": "ຊື່ (ຊື່ສຽງ)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຮຽນ",
+      "hz": "ຮຽນ",
+      "p": "híian",
+      "pos": "v",
+      "level": 1,
+      "en": "to study, learn",
+      "lo": "ຮຽນ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ພາສາ",
+      "hz": "ພາສາ",
+      "p": "phāa-sǎa",
+      "pos": "n",
+      "level": 1,
+      "en": "language",
+      "lo": "ພາສາ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ພາສາລາວ",
+      "hz": "ພາສາລາວ",
+      "p": "phāa-sǎa láao",
+      "pos": "n",
+      "level": 1,
+      "en": "Lao language",
+      "lo": "ພາສາລາວ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ພາສາອັງກິດ",
+      "hz": "ພາສາອັງກິດ",
+      "p": "phāa-sǎa ang-kìt",
+      "pos": "n",
+      "level": 1,
+      "en": "English language",
+      "lo": "ພາສາອັງກິດ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ກິນ",
+      "hz": "ກິນ",
+      "p": "kin",
+      "pos": "v",
+      "level": 1,
+      "en": "to eat, consume",
+      "lo": "ກິນ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ດື່ມ",
+      "hz": "ດື່ມ",
+      "p": "dɯ̀ɯm",
+      "pos": "v",
+      "level": 1,
+      "en": "to drink",
+      "lo": "ດື່ມ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເຂົ້າ",
+      "hz": "ເຂົ້າ",
+      "p": "khào",
+      "pos": "n",
+      "level": 1,
+      "en": "rice, meal; to enter",
+      "lo": "ເຂົ້າ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເຂົ້າໜຽວ",
+      "hz": "ເຂົ້າໜຽວ",
+      "p": "khào-nǐao",
+      "pos": "n",
+      "level": 1,
+      "en": "sticky rice (Lao staple)",
+      "lo": "ເຂົ້າໜຽວ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເຂົ້າຈ້າວ",
+      "hz": "ເຂົ້າຈ້າວ",
+      "p": "khào-jâao",
+      "pos": "n",
+      "level": 1,
+      "en": "steamed jasmine rice (non-glutinous rice)",
+      "lo": "ເຂົ້າຈ້າວ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ລາບ",
+      "hz": "ລາບ",
+      "p": "lâap",
+      "pos": "n",
+      "level": 1,
+      "en": "laap (traditional minced meat salad with herbs)",
+      "lo": "ລາບ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຕຳໝາກຫຸ່ງ",
+      "hz": "ຕຳໝາກຫຸ່ງ",
+      "p": "dtam-màak-hūng",
+      "pos": "n",
+      "level": 1,
+      "en": "spicy green papaya salad",
+      "lo": "ຕຳໝາກຫຸ່ງ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເຝີ",
+      "hz": "ເຝີ",
+      "p": "fə̌ə",
+      "pos": "n",
+      "level": 1,
+      "en": "pho noodle soup",
+      "lo": "ເຝີ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ນ້ຳ",
+      "hz": "ນ້ຳ",
+      "p": "nâm",
+      "pos": "n",
+      "level": 1,
+      "en": "water, liquid",
+      "lo": "ນ້ຳ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ກາເຟ",
+      "hz": "ກາເຟ",
+      "p": "kāa-féh",
+      "pos": "n",
+      "level": 1,
+      "en": "coffee",
+      "lo": "ກາເຟ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ກາເຟລາວ",
+      "hz": "ກາເຟລາວ",
+      "p": "kaa-fée-láao",
+      "pos": "n",
+      "level": 1,
+      "en": "traditional strong Lao drip coffee",
+      "lo": "ກາເຟລາວ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຊາ",
+      "hz": "ຊາ",
+      "p": "xāa",
+      "pos": "n",
+      "level": 1,
+      "en": "tea",
+      "lo": "ຊາ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເບຍລາວ",
+      "hz": "ເບຍລາວ",
+      "p": "bia-láao",
+      "pos": "n",
+      "level": 1,
+      "en": "Beerlao",
+      "lo": "ເບຍລາວ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ແຊບ",
+      "hz": "ແຊບ",
+      "p": "sàaep",
+      "pos": "adj",
+      "level": 1,
+      "en": "delicious, tasty",
+      "lo": "ແຊບ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ແຊບຫຼາຍ",
+      "hz": "ແຊບຫຼາຍ",
+      "p": "sàaep lǎai",
+      "pos": "ph",
+      "level": 1,
+      "en": "very delicious",
+      "lo": "ແຊບຫຼາຍ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຫຼາຍ",
+      "hz": "ຫຼາຍ",
+      "p": "lǎai",
+      "pos": "adv",
+      "level": 1,
+      "en": "many, much, very, a lot",
+      "lo": "ຫຼາຍ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໜ້ອຍໜຶ່ງ",
+      "hz": "ໜ້ອຍໜຶ່ງ",
+      "p": "nɔ̂ɔi nɯ̀ng",
+      "pos": "adv",
+      "level": 1,
+      "en": "a little bit, slightly",
+      "lo": "ໜ້ອຍໜຶ່ງ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໄປ",
+      "hz": "ໄປ",
+      "p": "pái",
+      "pos": "v",
+      "level": 1,
+      "en": "to go, travel",
+      "lo": "ໄປ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ມາ",
+      "hz": "ມາ",
+      "p": "maa",
+      "pos": "v",
+      "level": 1,
+      "en": "to come, arrive",
+      "lo": "ມາ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຮອດ",
+      "hz": "ຮອດ",
+      "p": "hɔ̂ɔt",
+      "pos": "v",
+      "level": 1,
+      "en": "to reach, arrive at",
+      "lo": "ຮອດ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຢູ່",
+      "hz": "ຢູ່",
+      "p": "yùu",
+      "pos": "v",
+      "level": 1,
+      "en": "to be at, live, stay; continuous action marker",
+      "lo": "ຢູ່",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໃສ",
+      "hz": "ໃສ",
+      "p": "sǎi",
+      "pos": "pron",
+      "level": 1,
+      "en": "where?",
+      "lo": "ໃສ (ບ່ອນໃດ)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຫຍັງ",
+      "hz": "ຫຍັງ",
+      "p": "nyǎng",
+      "pos": "pron",
+      "level": 1,
+      "en": "what?",
+      "lo": "ຫຍັງ (ສິ່ງໃດ)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໃຜ",
+      "hz": "ໃຜ",
+      "p": "phǎi",
+      "pos": "pron",
+      "level": 1,
+      "en": "who?",
+      "lo": "ໃຜ (ຜູ້ໃດ)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເມື່ອໃດ",
+      "hz": "ເມື່ອໃດ",
+      "p": "mɯ̀a-dài",
+      "pos": "pron",
+      "level": 1,
+      "en": "when?",
+      "lo": "ເມື່ອໃດ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເປັນຫຍັງ",
+      "hz": "ເປັນຫຍັງ",
+      "p": "pen nyǎng",
+      "pos": "ph",
+      "level": 1,
+      "en": "why? what is the reason?",
+      "lo": "ເປັນຫຍັງ (ຍ້ອນຫຍັງ)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ແນວໃດ",
+      "hz": "ແນວໃດ",
+      "p": "náaew-dài",
+      "pos": "ph",
+      "level": 1,
+      "en": "how? in what manner?",
+      "lo": "ແນວໃດ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເທົ່າໃດ",
+      "hz": "ເທົ່າໃດ",
+      "p": "thào-dài",
+      "pos": "ph",
+      "level": 1,
+      "en": "how much? how many?",
+      "lo": "ເທົ່າໃດ (ລາຄາ / ຈຳນວນ)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ລາຄາ",
+      "hz": "ລາຄາ",
+      "p": "laa-khaa",
+      "pos": "n",
+      "level": 1,
+      "en": "price, cost",
+      "lo": "ລາຄາ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເງິນ",
+      "hz": "ເງິນ",
+      "p": "ngə́n",
+      "pos": "n",
+      "level": 1,
+      "en": "money, currency; silver",
+      "lo": "ເງິນ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ກີບ",
+      "hz": "ກີບ",
+      "p": "kìip",
+      "pos": "n",
+      "level": 1,
+      "en": "Kip (Lao currency unit)",
+      "lo": "ກີບ (ສະກຸນເງິນລາວ)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ແພງ",
+      "hz": "ແພງ",
+      "p": "phɛ́ɛng",
+      "pos": "adj",
+      "level": 1,
+      "en": "expensive, precious",
+      "lo": "ແພງ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຖືກ",
+      "hz": "ຖືກ",
+      "p": "thɯ̀ɯk",
+      "pos": "adj",
+      "level": 1,
+      "en": "cheap; correct, hit, touch",
+      "lo": "ຖືກ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໂພດ",
+      "hz": "ໂພດ",
+      "p": "phôot",
+      "pos": "adv",
+      "level": 1,
+      "en": "too much, exceedingly",
+      "lo": "ໂພດ (ເກີນໄປ)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຫຼຸດ",
+      "hz": "ຫຼຸດ",
+      "p": "lùt",
+      "pos": "v",
+      "level": 1,
+      "en": "to reduce, lower, discount",
+      "lo": "ຫຼຸດ (ຫຼຸດລາຄາ)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຫຼຸດໄດ້ບໍ",
+      "hz": "ຫຼຸດໄດ້ບໍ",
+      "p": "lùt dài bɔ̀ɔ",
+      "pos": "ph",
+      "level": 1,
+      "en": "Can you give a discount?",
+      "lo": "ຫຼຸດໄດ້ບໍ (ຖາມຫຼຸດລາຄາ)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໄດ້",
+      "hz": "ໄດ້",
+      "p": "dài",
+      "pos": "aux",
+      "level": 1,
+      "en": "can, able to; past marker (did); receive",
+      "lo": "ໄດ້",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ບໍ່ໄດ້",
+      "hz": "ບໍ່ໄດ້",
+      "p": "bɔ̀ɔ dài",
+      "pos": "ph",
+      "level": 1,
+      "en": "cannot, unable to; didn't",
+      "lo": "ບໍ່ໄດ້",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ມີ",
+      "hz": "ມີ",
+      "p": "mii",
+      "pos": "v",
+      "level": 1,
+      "en": "to have, there is, there are",
+      "lo": "ມີ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ບໍ່ມີ",
+      "hz": "ບໍ່ມີ",
+      "p": "bɔ̀ɔ mīi",
+      "pos": "ph",
+      "level": 1,
+      "en": "don't have, there is not",
+      "lo": "ບໍ່ມີ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຢາກ",
+      "hz": "ຢາກ",
+      "p": "yàak",
+      "pos": "aux",
+      "level": 1,
+      "en": "to want to (before verb)",
+      "lo": "ຢາກ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຕ້ອງການ",
+      "hz": "ຕ້ອງການ",
+      "p": "dtɔ̂ɔng kāan",
+      "pos": "v",
+      "level": 1,
+      "en": "to need, require (noun or verb)",
+      "lo": "ຕ້ອງການ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ມັກ",
+      "hz": "ມັກ",
+      "p": "mák",
+      "pos": "v",
+      "level": 1,
+      "en": "to like, be fond of",
+      "lo": "ມັກ (ພໍໃຈ)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຮັກ",
+      "hz": "ຮັກ",
+      "p": "hák",
+      "pos": "v",
+      "level": 1,
+      "en": "to love",
+      "lo": "ຮັກ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ດີ",
+      "hz": "ດີ",
+      "p": "dīi",
+      "pos": "adj",
+      "level": 1,
+      "en": "good, fine, well",
+      "lo": "ດີ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ບໍ່ດີ",
+      "hz": "ບໍ່ດີ",
+      "p": "bɔ̀ɔ dīi",
+      "pos": "adj",
+      "level": 1,
+      "en": "bad, not good",
+      "lo": "ບໍ່ດີ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໃຫຍ່",
+      "hz": "ໃຫຍ່",
+      "p": "nyǎi",
+      "pos": "adj",
+      "level": 1,
+      "en": "big, large",
+      "lo": "ໃຫຍ່",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ນ້ອຍ",
+      "hz": "ນ້ອຍ",
+      "p": "nɔ̂ɔi",
+      "pos": "adj",
+      "level": 1,
+      "en": "small, little",
+      "lo": "ນ້ອຍ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ງາມ",
+      "hz": "ງາມ",
+      "p": "ngáam",
+      "pos": "adj",
+      "level": 1,
+      "en": "beautiful, pretty, lovely",
+      "lo": "ງາມ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຮ້ອນ",
+      "hz": "ຮ້ອນ",
+      "p": "hɔ̂ɔn",
+      "pos": "adj",
+      "level": 1,
+      "en": "hot (temperature)",
+      "lo": "ຮ້ອນ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໜາວ",
+      "hz": "ໜາວ",
+      "p": "nǎao",
+      "pos": "adj",
+      "level": 1,
+      "en": "cold (weather / feeling cold)",
+      "lo": "ໜາວ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເຢັນ",
+      "hz": "ເຢັນ",
+      "p": "yén",
+      "pos": "adj",
+      "level": 1,
+      "en": "cool, cold (drinks/weather)",
+      "lo": "ເຢັນ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ມື້ນີ້",
+      "hz": "ມື້ນີ້",
+      "p": "mɯ̂ɯ-nîi",
+      "pos": "n",
+      "level": 1,
+      "en": "today",
+      "lo": "ມື້ນີ້",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ມື້ອື່ນ",
+      "hz": "ມື້ອື່ນ",
+      "p": "mɯ̂ɯ-ɯ̀ɯn",
+      "pos": "n",
+      "level": 1,
+      "en": "tomorrow",
+      "lo": "ມື້ອື່ນ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ມື້ວານນີ້",
+      "hz": "ມື້ວານນີ້",
+      "p": "mɯ̂ɯ-wáan-nîi",
+      "pos": "n",
+      "level": 1,
+      "en": "yesterday",
+      "lo": "ມື້ວານນີ້",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຕອນເຊົ້າ",
+      "hz": "ຕອນເຊົ້າ",
+      "p": "dtɔɔn sào",
+      "pos": "n",
+      "level": 1,
+      "en": "morning time",
+      "lo": "ຕອນເຊົ້າ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຕອນສວາຍ",
+      "hz": "ຕອນສວາຍ",
+      "p": "dtɔɔn swǎai",
+      "pos": "n",
+      "level": 1,
+      "en": "afternoon time",
+      "lo": "ຕອນສວາຍ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຕອນແລງ",
+      "hz": "ຕອນແລງ",
+      "p": "dtɔɔn láaeng",
+      "pos": "n",
+      "level": 1,
+      "en": "evening time",
+      "lo": "ຕອນແລງ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ກາງຄືນ",
+      "hz": "ກາງຄືນ",
+      "p": "kāang khɯ́ɯn",
+      "pos": "n",
+      "level": 1,
+      "en": "night time",
+      "lo": "ກາງຄືນ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໂມງ",
+      "hz": "ໂມງ",
+      "p": "mōong",
+      "pos": "n",
+      "level": 1,
+      "en": "o'clock, hour; clock/watch",
+      "lo": "ໂມງ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ນາທີ",
+      "hz": "ນາທີ",
+      "p": "nāa-thīi",
+      "pos": "n",
+      "level": 1,
+      "en": "minute",
+      "lo": "ນາທີ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເຮືອນ",
+      "hz": "ເຮືອນ",
+      "p": "hɯ́an",
+      "pos": "n",
+      "level": 1,
+      "en": "house, home",
+      "lo": "ເຮືອນ (ບ້ານເຮືອນ)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຫ້ອງການ",
+      "hz": "ຫ້ອງການ",
+      "p": "hɔ̂ɔng kāan",
+      "pos": "n",
+      "level": 1,
+      "en": "office",
+      "lo": "ຫ້ອງການ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໂຮງຮຽນ",
+      "hz": "ໂຮງຮຽນ",
+      "p": "hōong-híian",
+      "pos": "n",
+      "level": 1,
+      "en": "school",
+      "lo": "ໂຮງຮຽນ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຕະຫຼາດ",
+      "hz": "ຕະຫຼາດ",
+      "p": "dtā-làat",
+      "pos": "n",
+      "level": 1,
+      "en": "market",
+      "lo": "ຕະຫຼາດ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຕະຫຼາດເຊົ້າ",
+      "hz": "ຕະຫຼາດເຊົ້າ",
+      "p": "dtā-làat sào",
+      "pos": "n",
+      "level": 1,
+      "en": "Morning Market (Talat Sao)",
+      "lo": "ຕະຫຼາດເຊົ້າ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຮ້ານອາຫານ",
+      "hz": "ຮ້ານອາຫານ",
+      "p": "hâan-aa-hǎan",
+      "pos": "n",
+      "level": 1,
+      "en": "restaurant",
+      "lo": "ຮ້ານອາຫານ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໂຮງໝໍ",
+      "hz": "ໂຮງໝໍ",
+      "p": "hōong-mɔ̌ɔ",
+      "pos": "n",
+      "level": 1,
+      "en": "hospital",
+      "lo": "ໂຮງໝໍ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ວັດ",
+      "hz": "ວັດ",
+      "p": "wát",
+      "pos": "n",
+      "level": 1,
+      "en": "Buddhist temple, monastery",
+      "lo": "ວັດ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ພະທາດຫຼວງ",
+      "hz": "ພະທາດຫຼວງ",
+      "p": "phā-thàat-lǔang",
+      "pos": "n",
+      "level": 1,
+      "en": "Pha That Luang Golden Stupa",
+      "lo": "ພະທາດຫຼວງ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ວຽງຈັນ",
+      "hz": "ວຽງຈັນ",
+      "p": "wíang-jan",
+      "pos": "n",
+      "level": 1,
+      "en": "Vientiane (capital of Laos)",
+      "lo": "ວຽງຈັນ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຫຼວງພະບາງ",
+      "hz": "ຫຼວງພະບາງ",
+      "p": "lǔang-pha-bāang",
+      "pos": "n",
+      "level": 1,
+      "en": "Luang Prabang (UNESCO heritage city)",
+      "lo": "ຫຼວງພະບາງ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ປາກເຊ",
+      "hz": "ປາກເຊ",
+      "p": "pàak-sée",
+      "pos": "n",
+      "level": 1,
+      "en": "Pakse (Southern Laos hub)",
+      "lo": "ປາກເຊ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ວັງວຽງ",
+      "hz": "ວັງວຽງ",
+      "p": "wāng-wīang",
+      "pos": "n",
+      "level": 1,
+      "en": "Vang Vieng",
+      "lo": "ວັງວຽງ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຄົນ",
+      "hz": "ຄົນ",
+      "p": "khon",
+      "pos": "clf",
+      "level": 1,
+      "en": "classifier for people, humans; person",
+      "lo": "ຄົນ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຄົນລາວ",
+      "hz": "ຄົນລາວ",
+      "p": "khon láao",
+      "pos": "n",
+      "level": 1,
+      "en": "Lao person / people",
+      "lo": "ຄົນລາວ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຄົນຕ່າງປະເທດ",
+      "hz": "ຄົນຕ່າງປະເທດ",
+      "p": "khon dtàang pā-thêet",
+      "pos": "n",
+      "level": 1,
+      "en": "foreigner, international visitor",
+      "lo": "ຄົນຕ່າງປະເທດ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໝູ່",
+      "hz": "ໝູ່",
+      "p": "mùu",
+      "pos": "n",
+      "level": 1,
+      "en": "friend, pal",
+      "lo": "ໝູ່ (ໝູ່ເພື່ອນ)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຄູ",
+      "hz": "ຄູ",
+      "p": "khūu",
+      "pos": "n",
+      "level": 1,
+      "en": "teacher",
+      "lo": "ຄູ (ຄູສອນ)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ອາຈານ",
+      "hz": "ອາຈານ",
+      "p": "āa-jāan",
+      "pos": "n",
+      "level": 1,
+      "en": "professor, master instructor",
+      "lo": "ອາຈານ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ນັກຮຽນ",
+      "hz": "ນັກຮຽນ",
+      "p": "nák-híian",
+      "pos": "n",
+      "level": 1,
+      "en": "student",
+      "lo": "ນັກຮຽນ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໝໍ",
+      "hz": "ໝໍ",
+      "p": "mɔ̌ɔ",
+      "pos": "n",
+      "level": 1,
+      "en": "doctor, physician",
+      "lo": "ໝໍ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ພໍ່",
+      "hz": "ພໍ່",
+      "p": "phɔ̂ɔ",
+      "pos": "n",
+      "level": 1,
+      "en": "father, dad",
+      "lo": "ພໍ່",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ແມ່",
+      "hz": "ແມ່",
+      "p": "mɛ̂ɛ",
+      "pos": "n",
+      "level": 1,
+      "en": "mother, mom",
+      "lo": "ແມ່",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ອ້າຍ",
+      "hz": "ອ້າຍ",
+      "p": "âai",
+      "pos": "pron",
+      "level": 1,
+      "en": "elder brother; older male address",
+      "lo": "ອ້າຍ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເອື້ອຍ",
+      "hz": "ເອື້ອຍ",
+      "p": "ɯ̂aai",
+      "pos": "pron",
+      "level": 1,
+      "en": "elder sister; older female address",
+      "lo": "ເອື້ອຍ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ນ້ອງ",
+      "hz": "ນ້ອງ",
+      "p": "nɔ̂ɔng",
+      "pos": "pron",
+      "level": 1,
+      "en": "younger sibling; junior address",
+      "lo": "ນ້ອງ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ລູກ",
+      "hz": "ລູກ",
+      "p": "lûuk",
+      "pos": "n",
+      "level": 1,
+      "en": "child, son, daughter",
+      "lo": "ລູກ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຄອບຄົວ",
+      "hz": "ຄອບຄົວ",
+      "p": "khɔ̂ɔp khūa",
+      "pos": "n",
+      "level": 1,
+      "en": "family, household",
+      "lo": "ຄອບຄົວ",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໜຶ່ງ",
+      "hz": "ໜຶ່ງ",
+      "p": "nɯ̀ng",
+      "pos": "num",
+      "level": 1,
+      "en": "one (1)",
+      "lo": "ໜຶ່ງ (໑)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ສອງ",
+      "hz": "ສອງ",
+      "p": "sɔ̌ɔng",
+      "pos": "num",
+      "level": 1,
+      "en": "two (2)",
+      "lo": "ສອງ (໒)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ສາມ",
+      "hz": "ສາມ",
+      "p": "sǎam",
+      "pos": "num",
+      "level": 1,
+      "en": "three (3)",
+      "lo": "ສາມ (໓)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ສີ່",
+      "hz": "ສີ່",
+      "p": "sīi",
+      "pos": "num",
+      "level": 1,
+      "en": "four (4)",
+      "lo": "ສີ່ (໔)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຫ້າ",
+      "hz": "ຫ້າ",
+      "p": "hâa",
+      "pos": "num",
+      "level": 1,
+      "en": "five (5)",
+      "lo": "ຫ້າ (໕)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຫົກ",
+      "hz": "ຫົກ",
+      "p": "hók",
+      "pos": "num",
+      "level": 1,
+      "en": "six (6)",
+      "lo": "ຫົກ (໖)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເຈັດ",
+      "hz": "ເຈັດ",
+      "p": "jét",
+      "pos": "num",
+      "level": 1,
+      "en": "seven (7)",
+      "lo": "ເຈັດ (໗)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ແປດ",
+      "hz": "ແປດ",
+      "p": "pàaet",
+      "pos": "num",
+      "level": 1,
+      "en": "eight (8)",
+      "lo": "ແປດ (໘)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເກົ້າ",
+      "hz": "ເກົ້າ",
+      "p": "kâo",
+      "pos": "num",
+      "level": 1,
+      "en": "nine (9)",
+      "lo": "ເກົ້າ (໙)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ສິບ",
+      "hz": "ສິບ",
+      "p": "síp",
+      "pos": "num",
+      "level": 1,
+      "en": "ten (10)",
+      "lo": "ສິບ (໑໐)",
+      "zh": "",
+      "status": "published",
+      "access": "free"
+    }
+  ],
+  "vocabulary": [
+    {
+      "id": "ສະບາຍດີ",
+      "hz": "ສະບາຍດີ",
+      "py": "sà-bāi-dī",
+      "pos": "ph",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "hello; good day; how are you"
+        },
+        "lo": {
+          "meaning": "ສະບາຍດີ (ທັກທາຍ)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຂອບໃຈ",
+      "hz": "ຂອບໃຈ",
+      "py": "khɔ̀ɔp-jái",
+      "pos": "ph",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "thank you; thanks"
+        },
+        "lo": {
+          "meaning": "ຂອບໃຈ (ສະແດງຄວາມຂອບໃຈ)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຂອບໃຈຫຼາຍໆ",
+      "hz": "ຂອບໃຈຫຼາຍໆ",
+      "py": "khɔ̀ɔp-jái lǎai lǎai",
+      "pos": "ph",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "thank you very much"
+        },
+        "lo": {
+          "meaning": "ຂອບໃຈຫຼາຍໆ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຂໍໂທດ",
+      "hz": "ຂໍໂທດ",
+      "py": "khɔ̌ɔ-thôot",
+      "pos": "ph",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "excuse me; sorry; pardon me"
+        },
+        "lo": {
+          "meaning": "ຂໍໂທດ (ຂໍອະໄພ)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ບໍ່ເປັນຫຍັງ",
+      "hz": "ບໍ່ເປັນຫຍັງ",
+      "py": "bɔ̀ɔ pen nyǎng",
+      "pos": "ph",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "you're welcome; never mind; it's okay; no problem"
+        },
+        "lo": {
+          "meaning": "ບໍ່ເປັນຫຍັງ (ບໍ່ມີບັນຫາ)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ແມ່ນ",
+      "hz": "ແມ່ນ",
+      "py": "mâaen",
+      "pos": "v",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "to be; is, are, correct, yes"
+        },
+        "lo": {
+          "meaning": "ແມ່ນ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ບໍ່ແມ່ນ",
+      "hz": "ບໍ່ແມ່ນ",
+      "py": "bɔ̀ɔ mâaen",
+      "pos": "ph",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "is not; are not; no (negation)"
+        },
+        "lo": {
+          "meaning": "ບໍ່ແມ່ນ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ບໍ່",
+      "hz": "ບໍ່",
+      "py": "bɔ̀ɔ",
+      "pos": "adv",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "no, not; question tag (or not)"
+        },
+        "lo": {
+          "meaning": "ບໍ່"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ບໍ",
+      "hz": "ບໍ",
+      "py": "bɔ̀ɔ",
+      "pos": "part",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "question particle (yes/no)"
+        },
+        "lo": {
+          "meaning": "ບໍ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເຈົ້າ",
+      "hz": "ເຈົ້າ",
+      "py": "jâo",
+      "pos": "pron",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "you; yes, polite acknowledgment"
+        },
+        "lo": {
+          "meaning": "ເຈົ້າ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໂດຍ",
+      "hz": "ໂດຍ",
+      "py": "dōoei",
+      "pos": "part",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "yes (formal polite response / agreement)"
+        },
+        "lo": {
+          "meaning": "ໂດຍ (ຕອບຮັບຢ່າງສຸພາບ)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຂ້ອຍ",
+      "hz": "ຂ້ອຍ",
+      "py": "khɔ̀ɔi",
+      "pos": "pron",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "I, me (everyday polite)"
+        },
+        "lo": {
+          "meaning": "ຂ້ອຍ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ລາວ",
+      "hz": "ລາວ",
+      "py": "láao",
+      "pos": "pron",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "he, she, they; Lao person"
+        },
+        "lo": {
+          "meaning": "ລາວ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ພວກເຮົາ",
+      "hz": "ພວກເຮົາ",
+      "py": "phùak-háo",
+      "pos": "pron",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "we, us"
+        },
+        "lo": {
+          "meaning": "ພວກເຮົາ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ພວກເຈົ້າ",
+      "hz": "ພວກເຈົ້າ",
+      "py": "phùak-jâo",
+      "pos": "pron",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "you all, you (plural)"
+        },
+        "lo": {
+          "meaning": "ພວກເຈົ້າ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ພວກເຂົາ",
+      "hz": "ພວກເຂົາ",
+      "py": "phùak-khǎo",
+      "pos": "pron",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "they, them"
+        },
+        "lo": {
+          "meaning": "ພວກເຂົາ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຊື່",
+      "hz": "ຊື່",
+      "py": "sɯ̂ɯ",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "name; to be named / called"
+        },
+        "lo": {
+          "meaning": "ຊື່ (ຊື່ສຽງ)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຮຽນ",
+      "hz": "ຮຽນ",
+      "py": "híian",
+      "pos": "v",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "to study, learn"
+        },
+        "lo": {
+          "meaning": "ຮຽນ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ພາສາ",
+      "hz": "ພາສາ",
+      "py": "phāa-sǎa",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "language"
+        },
+        "lo": {
+          "meaning": "ພາສາ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ພາສາລາວ",
+      "hz": "ພາສາລາວ",
+      "py": "phāa-sǎa láao",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "Lao language"
+        },
+        "lo": {
+          "meaning": "ພາສາລາວ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ພາສາອັງກິດ",
+      "hz": "ພາສາອັງກິດ",
+      "py": "phāa-sǎa ang-kìt",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "English language"
+        },
+        "lo": {
+          "meaning": "ພາສາອັງກິດ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ກິນ",
+      "hz": "ກິນ",
+      "py": "kin",
+      "pos": "v",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "to eat, consume"
+        },
+        "lo": {
+          "meaning": "ກິນ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ດື່ມ",
+      "hz": "ດື່ມ",
+      "py": "dɯ̀ɯm",
+      "pos": "v",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "to drink"
+        },
+        "lo": {
+          "meaning": "ດື່ມ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເຂົ້າ",
+      "hz": "ເຂົ້າ",
+      "py": "khào",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "rice, meal; to enter"
+        },
+        "lo": {
+          "meaning": "ເຂົ້າ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເຂົ້າໜຽວ",
+      "hz": "ເຂົ້າໜຽວ",
+      "py": "khào-nǐao",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "sticky rice (Lao staple)"
+        },
+        "lo": {
+          "meaning": "ເຂົ້າໜຽວ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເຂົ້າຈ້າວ",
+      "hz": "ເຂົ້າຈ້າວ",
+      "py": "khào-jâao",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "steamed jasmine rice (non-glutinous rice)"
+        },
+        "lo": {
+          "meaning": "ເຂົ້າຈ້າວ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ລາບ",
+      "hz": "ລາບ",
+      "py": "lâap",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "laap (traditional minced meat salad with herbs)"
+        },
+        "lo": {
+          "meaning": "ລາບ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຕຳໝາກຫຸ່ງ",
+      "hz": "ຕຳໝາກຫຸ່ງ",
+      "py": "dtam-màak-hūng",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "spicy green papaya salad"
+        },
+        "lo": {
+          "meaning": "ຕຳໝາກຫຸ່ງ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເຝີ",
+      "hz": "ເຝີ",
+      "py": "fə̌ə",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "pho noodle soup"
+        },
+        "lo": {
+          "meaning": "ເຝີ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ນ້ຳ",
+      "hz": "ນ້ຳ",
+      "py": "nâm",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "water, liquid"
+        },
+        "lo": {
+          "meaning": "ນ້ຳ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ກາເຟ",
+      "hz": "ກາເຟ",
+      "py": "kāa-féh",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "coffee"
+        },
+        "lo": {
+          "meaning": "ກາເຟ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ກາເຟລາວ",
+      "hz": "ກາເຟລາວ",
+      "py": "kaa-fée-láao",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "traditional strong Lao drip coffee"
+        },
+        "lo": {
+          "meaning": "ກາເຟລາວ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຊາ",
+      "hz": "ຊາ",
+      "py": "xāa",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "tea"
+        },
+        "lo": {
+          "meaning": "ຊາ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເບຍລາວ",
+      "hz": "ເບຍລາວ",
+      "py": "bia-láao",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "Beerlao"
+        },
+        "lo": {
+          "meaning": "ເບຍລາວ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ແຊບ",
+      "hz": "ແຊບ",
+      "py": "sàaep",
+      "pos": "adj",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "delicious, tasty"
+        },
+        "lo": {
+          "meaning": "ແຊບ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ແຊບຫຼາຍ",
+      "hz": "ແຊບຫຼາຍ",
+      "py": "sàaep lǎai",
+      "pos": "ph",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "very delicious"
+        },
+        "lo": {
+          "meaning": "ແຊບຫຼາຍ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຫຼາຍ",
+      "hz": "ຫຼາຍ",
+      "py": "lǎai",
+      "pos": "adv",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "many, much, very, a lot"
+        },
+        "lo": {
+          "meaning": "ຫຼາຍ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໜ້ອຍໜຶ່ງ",
+      "hz": "ໜ້ອຍໜຶ່ງ",
+      "py": "nɔ̂ɔi nɯ̀ng",
+      "pos": "adv",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "a little bit, slightly"
+        },
+        "lo": {
+          "meaning": "ໜ້ອຍໜຶ່ງ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໄປ",
+      "hz": "ໄປ",
+      "py": "pái",
+      "pos": "v",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "to go, travel"
+        },
+        "lo": {
+          "meaning": "ໄປ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ມາ",
+      "hz": "ມາ",
+      "py": "maa",
+      "pos": "v",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "to come, arrive"
+        },
+        "lo": {
+          "meaning": "ມາ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຮອດ",
+      "hz": "ຮອດ",
+      "py": "hɔ̂ɔt",
+      "pos": "v",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "to reach, arrive at"
+        },
+        "lo": {
+          "meaning": "ຮອດ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຢູ່",
+      "hz": "ຢູ່",
+      "py": "yùu",
+      "pos": "v",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "to be at, live, stay; continuous action marker"
+        },
+        "lo": {
+          "meaning": "ຢູ່"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໃສ",
+      "hz": "ໃສ",
+      "py": "sǎi",
+      "pos": "pron",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "where?"
+        },
+        "lo": {
+          "meaning": "ໃສ (ບ່ອນໃດ)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຫຍັງ",
+      "hz": "ຫຍັງ",
+      "py": "nyǎng",
+      "pos": "pron",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "what?"
+        },
+        "lo": {
+          "meaning": "ຫຍັງ (ສິ່ງໃດ)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໃຜ",
+      "hz": "ໃຜ",
+      "py": "phǎi",
+      "pos": "pron",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "who?"
+        },
+        "lo": {
+          "meaning": "ໃຜ (ຜູ້ໃດ)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເມື່ອໃດ",
+      "hz": "ເມື່ອໃດ",
+      "py": "mɯ̀a-dài",
+      "pos": "pron",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "when?"
+        },
+        "lo": {
+          "meaning": "ເມື່ອໃດ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເປັນຫຍັງ",
+      "hz": "ເປັນຫຍັງ",
+      "py": "pen nyǎng",
+      "pos": "ph",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "why? what is the reason?"
+        },
+        "lo": {
+          "meaning": "ເປັນຫຍັງ (ຍ້ອນຫຍັງ)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ແນວໃດ",
+      "hz": "ແນວໃດ",
+      "py": "náaew-dài",
+      "pos": "ph",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "how? in what manner?"
+        },
+        "lo": {
+          "meaning": "ແນວໃດ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເທົ່າໃດ",
+      "hz": "ເທົ່າໃດ",
+      "py": "thào-dài",
+      "pos": "ph",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "how much? how many?"
+        },
+        "lo": {
+          "meaning": "ເທົ່າໃດ (ລາຄາ / ຈຳນວນ)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ລາຄາ",
+      "hz": "ລາຄາ",
+      "py": "laa-khaa",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "price, cost"
+        },
+        "lo": {
+          "meaning": "ລາຄາ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເງິນ",
+      "hz": "ເງິນ",
+      "py": "ngə́n",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "money, currency; silver"
+        },
+        "lo": {
+          "meaning": "ເງິນ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ກີບ",
+      "hz": "ກີບ",
+      "py": "kìip",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "Kip (Lao currency unit)"
+        },
+        "lo": {
+          "meaning": "ກີບ (ສະກຸນເງິນລາວ)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ແພງ",
+      "hz": "ແພງ",
+      "py": "phɛ́ɛng",
+      "pos": "adj",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "expensive, precious"
+        },
+        "lo": {
+          "meaning": "ແພງ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຖືກ",
+      "hz": "ຖືກ",
+      "py": "thɯ̀ɯk",
+      "pos": "adj",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "cheap; correct, hit, touch"
+        },
+        "lo": {
+          "meaning": "ຖືກ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໂພດ",
+      "hz": "ໂພດ",
+      "py": "phôot",
+      "pos": "adv",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "too much, exceedingly"
+        },
+        "lo": {
+          "meaning": "ໂພດ (ເກີນໄປ)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຫຼຸດ",
+      "hz": "ຫຼຸດ",
+      "py": "lùt",
+      "pos": "v",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "to reduce, lower, discount"
+        },
+        "lo": {
+          "meaning": "ຫຼຸດ (ຫຼຸດລາຄາ)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຫຼຸດໄດ້ບໍ",
+      "hz": "ຫຼຸດໄດ້ບໍ",
+      "py": "lùt dài bɔ̀ɔ",
+      "pos": "ph",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "Can you give a discount?"
+        },
+        "lo": {
+          "meaning": "ຫຼຸດໄດ້ບໍ (ຖາມຫຼຸດລາຄາ)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໄດ້",
+      "hz": "ໄດ້",
+      "py": "dài",
+      "pos": "aux",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "can, able to; past marker (did); receive"
+        },
+        "lo": {
+          "meaning": "ໄດ້"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ບໍ່ໄດ້",
+      "hz": "ບໍ່ໄດ້",
+      "py": "bɔ̀ɔ dài",
+      "pos": "ph",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "cannot, unable to; didn't"
+        },
+        "lo": {
+          "meaning": "ບໍ່ໄດ້"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ມີ",
+      "hz": "ມີ",
+      "py": "mii",
+      "pos": "v",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "to have, there is, there are"
+        },
+        "lo": {
+          "meaning": "ມີ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ບໍ່ມີ",
+      "hz": "ບໍ່ມີ",
+      "py": "bɔ̀ɔ mīi",
+      "pos": "ph",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "don't have, there is not"
+        },
+        "lo": {
+          "meaning": "ບໍ່ມີ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຢາກ",
+      "hz": "ຢາກ",
+      "py": "yàak",
+      "pos": "aux",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "to want to (before verb)"
+        },
+        "lo": {
+          "meaning": "ຢາກ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຕ້ອງການ",
+      "hz": "ຕ້ອງການ",
+      "py": "dtɔ̂ɔng kāan",
+      "pos": "v",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "to need, require (noun or verb)"
+        },
+        "lo": {
+          "meaning": "ຕ້ອງການ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ມັກ",
+      "hz": "ມັກ",
+      "py": "mák",
+      "pos": "v",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "to like, be fond of"
+        },
+        "lo": {
+          "meaning": "ມັກ (ພໍໃຈ)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຮັກ",
+      "hz": "ຮັກ",
+      "py": "hák",
+      "pos": "v",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "to love"
+        },
+        "lo": {
+          "meaning": "ຮັກ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ດີ",
+      "hz": "ດີ",
+      "py": "dīi",
+      "pos": "adj",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "good, fine, well"
+        },
+        "lo": {
+          "meaning": "ດີ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ບໍ່ດີ",
+      "hz": "ບໍ່ດີ",
+      "py": "bɔ̀ɔ dīi",
+      "pos": "adj",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "bad, not good"
+        },
+        "lo": {
+          "meaning": "ບໍ່ດີ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໃຫຍ່",
+      "hz": "ໃຫຍ່",
+      "py": "nyǎi",
+      "pos": "adj",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "big, large"
+        },
+        "lo": {
+          "meaning": "ໃຫຍ່"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ນ້ອຍ",
+      "hz": "ນ້ອຍ",
+      "py": "nɔ̂ɔi",
+      "pos": "adj",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "small, little"
+        },
+        "lo": {
+          "meaning": "ນ້ອຍ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ງາມ",
+      "hz": "ງາມ",
+      "py": "ngáam",
+      "pos": "adj",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "beautiful, pretty, lovely"
+        },
+        "lo": {
+          "meaning": "ງາມ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຮ້ອນ",
+      "hz": "ຮ້ອນ",
+      "py": "hɔ̂ɔn",
+      "pos": "adj",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "hot (temperature)"
+        },
+        "lo": {
+          "meaning": "ຮ້ອນ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໜາວ",
+      "hz": "ໜາວ",
+      "py": "nǎao",
+      "pos": "adj",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "cold (weather / feeling cold)"
+        },
+        "lo": {
+          "meaning": "ໜາວ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເຢັນ",
+      "hz": "ເຢັນ",
+      "py": "yén",
+      "pos": "adj",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "cool, cold (drinks/weather)"
+        },
+        "lo": {
+          "meaning": "ເຢັນ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ມື້ນີ້",
+      "hz": "ມື້ນີ້",
+      "py": "mɯ̂ɯ-nîi",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "today"
+        },
+        "lo": {
+          "meaning": "ມື້ນີ້"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ມື້ອື່ນ",
+      "hz": "ມື້ອື່ນ",
+      "py": "mɯ̂ɯ-ɯ̀ɯn",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "tomorrow"
+        },
+        "lo": {
+          "meaning": "ມື້ອື່ນ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ມື້ວານນີ້",
+      "hz": "ມື້ວານນີ້",
+      "py": "mɯ̂ɯ-wáan-nîi",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "yesterday"
+        },
+        "lo": {
+          "meaning": "ມື້ວານນີ້"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຕອນເຊົ້າ",
+      "hz": "ຕອນເຊົ້າ",
+      "py": "dtɔɔn sào",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "morning time"
+        },
+        "lo": {
+          "meaning": "ຕອນເຊົ້າ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຕອນສວາຍ",
+      "hz": "ຕອນສວາຍ",
+      "py": "dtɔɔn swǎai",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "afternoon time"
+        },
+        "lo": {
+          "meaning": "ຕອນສວາຍ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຕອນແລງ",
+      "hz": "ຕອນແລງ",
+      "py": "dtɔɔn láaeng",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "evening time"
+        },
+        "lo": {
+          "meaning": "ຕອນແລງ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ກາງຄືນ",
+      "hz": "ກາງຄືນ",
+      "py": "kāang khɯ́ɯn",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "night time"
+        },
+        "lo": {
+          "meaning": "ກາງຄືນ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໂມງ",
+      "hz": "ໂມງ",
+      "py": "mōong",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "o'clock, hour; clock/watch"
+        },
+        "lo": {
+          "meaning": "ໂມງ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ນາທີ",
+      "hz": "ນາທີ",
+      "py": "nāa-thīi",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "minute"
+        },
+        "lo": {
+          "meaning": "ນາທີ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເຮືອນ",
+      "hz": "ເຮືອນ",
+      "py": "hɯ́an",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "house, home"
+        },
+        "lo": {
+          "meaning": "ເຮືອນ (ບ້ານເຮືອນ)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຫ້ອງການ",
+      "hz": "ຫ້ອງການ",
+      "py": "hɔ̂ɔng kāan",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "office"
+        },
+        "lo": {
+          "meaning": "ຫ້ອງການ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໂຮງຮຽນ",
+      "hz": "ໂຮງຮຽນ",
+      "py": "hōong-híian",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "school"
+        },
+        "lo": {
+          "meaning": "ໂຮງຮຽນ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຕະຫຼາດ",
+      "hz": "ຕະຫຼາດ",
+      "py": "dtā-làat",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "market"
+        },
+        "lo": {
+          "meaning": "ຕະຫຼາດ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຕະຫຼາດເຊົ້າ",
+      "hz": "ຕະຫຼາດເຊົ້າ",
+      "py": "dtā-làat sào",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "Morning Market (Talat Sao)"
+        },
+        "lo": {
+          "meaning": "ຕະຫຼາດເຊົ້າ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຮ້ານອາຫານ",
+      "hz": "ຮ້ານອາຫານ",
+      "py": "hâan-aa-hǎan",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "restaurant"
+        },
+        "lo": {
+          "meaning": "ຮ້ານອາຫານ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໂຮງໝໍ",
+      "hz": "ໂຮງໝໍ",
+      "py": "hōong-mɔ̌ɔ",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "hospital"
+        },
+        "lo": {
+          "meaning": "ໂຮງໝໍ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ວັດ",
+      "hz": "ວັດ",
+      "py": "wát",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "Buddhist temple, monastery"
+        },
+        "lo": {
+          "meaning": "ວັດ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ພະທາດຫຼວງ",
+      "hz": "ພະທາດຫຼວງ",
+      "py": "phā-thàat-lǔang",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "Pha That Luang Golden Stupa"
+        },
+        "lo": {
+          "meaning": "ພະທາດຫຼວງ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ວຽງຈັນ",
+      "hz": "ວຽງຈັນ",
+      "py": "wíang-jan",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "Vientiane (capital of Laos)"
+        },
+        "lo": {
+          "meaning": "ວຽງຈັນ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຫຼວງພະບາງ",
+      "hz": "ຫຼວງພະບາງ",
+      "py": "lǔang-pha-bāang",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "Luang Prabang (UNESCO heritage city)"
+        },
+        "lo": {
+          "meaning": "ຫຼວງພະບາງ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ປາກເຊ",
+      "hz": "ປາກເຊ",
+      "py": "pàak-sée",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "Pakse (Southern Laos hub)"
+        },
+        "lo": {
+          "meaning": "ປາກເຊ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ວັງວຽງ",
+      "hz": "ວັງວຽງ",
+      "py": "wāng-wīang",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "Vang Vieng"
+        },
+        "lo": {
+          "meaning": "ວັງວຽງ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຄົນ",
+      "hz": "ຄົນ",
+      "py": "khon",
+      "pos": "clf",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "classifier for people, humans; person"
+        },
+        "lo": {
+          "meaning": "ຄົນ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຄົນລາວ",
+      "hz": "ຄົນລາວ",
+      "py": "khon láao",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "Lao person / people"
+        },
+        "lo": {
+          "meaning": "ຄົນລາວ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຄົນຕ່າງປະເທດ",
+      "hz": "ຄົນຕ່າງປະເທດ",
+      "py": "khon dtàang pā-thêet",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "foreigner, international visitor"
+        },
+        "lo": {
+          "meaning": "ຄົນຕ່າງປະເທດ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໝູ່",
+      "hz": "ໝູ່",
+      "py": "mùu",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "friend, pal"
+        },
+        "lo": {
+          "meaning": "ໝູ່ (ໝູ່ເພື່ອນ)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຄູ",
+      "hz": "ຄູ",
+      "py": "khūu",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "teacher"
+        },
+        "lo": {
+          "meaning": "ຄູ (ຄູສອນ)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ອາຈານ",
+      "hz": "ອາຈານ",
+      "py": "āa-jāan",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "professor, master instructor"
+        },
+        "lo": {
+          "meaning": "ອາຈານ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ນັກຮຽນ",
+      "hz": "ນັກຮຽນ",
+      "py": "nák-híian",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "student"
+        },
+        "lo": {
+          "meaning": "ນັກຮຽນ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໝໍ",
+      "hz": "ໝໍ",
+      "py": "mɔ̌ɔ",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "doctor, physician"
+        },
+        "lo": {
+          "meaning": "ໝໍ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ພໍ່",
+      "hz": "ພໍ່",
+      "py": "phɔ̂ɔ",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "father, dad"
+        },
+        "lo": {
+          "meaning": "ພໍ່"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ແມ່",
+      "hz": "ແມ່",
+      "py": "mɛ̂ɛ",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "mother, mom"
+        },
+        "lo": {
+          "meaning": "ແມ່"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ອ້າຍ",
+      "hz": "ອ້າຍ",
+      "py": "âai",
+      "pos": "pron",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "elder brother; older male address"
+        },
+        "lo": {
+          "meaning": "ອ້າຍ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເອື້ອຍ",
+      "hz": "ເອື້ອຍ",
+      "py": "ɯ̂aai",
+      "pos": "pron",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "elder sister; older female address"
+        },
+        "lo": {
+          "meaning": "ເອື້ອຍ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ນ້ອງ",
+      "hz": "ນ້ອງ",
+      "py": "nɔ̂ɔng",
+      "pos": "pron",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "younger sibling; junior address"
+        },
+        "lo": {
+          "meaning": "ນ້ອງ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ລູກ",
+      "hz": "ລູກ",
+      "py": "lûuk",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "child, son, daughter"
+        },
+        "lo": {
+          "meaning": "ລູກ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຄອບຄົວ",
+      "hz": "ຄອບຄົວ",
+      "py": "khɔ̂ɔp khūa",
+      "pos": "n",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "family, household"
+        },
+        "lo": {
+          "meaning": "ຄອບຄົວ"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ໜຶ່ງ",
+      "hz": "ໜຶ່ງ",
+      "py": "nɯ̀ng",
+      "pos": "num",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "one (1)"
+        },
+        "lo": {
+          "meaning": "ໜຶ່ງ (໑)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ສອງ",
+      "hz": "ສອງ",
+      "py": "sɔ̌ɔng",
+      "pos": "num",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "two (2)"
+        },
+        "lo": {
+          "meaning": "ສອງ (໒)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ສາມ",
+      "hz": "ສາມ",
+      "py": "sǎam",
+      "pos": "num",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "three (3)"
+        },
+        "lo": {
+          "meaning": "ສາມ (໓)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ສີ່",
+      "hz": "ສີ່",
+      "py": "sīi",
+      "pos": "num",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "four (4)"
+        },
+        "lo": {
+          "meaning": "ສີ່ (໔)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຫ້າ",
+      "hz": "ຫ້າ",
+      "py": "hâa",
+      "pos": "num",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "five (5)"
+        },
+        "lo": {
+          "meaning": "ຫ້າ (໕)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ຫົກ",
+      "hz": "ຫົກ",
+      "py": "hók",
+      "pos": "num",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "six (6)"
+        },
+        "lo": {
+          "meaning": "ຫົກ (໖)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເຈັດ",
+      "hz": "ເຈັດ",
+      "py": "jét",
+      "pos": "num",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "seven (7)"
+        },
+        "lo": {
+          "meaning": "ເຈັດ (໗)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ແປດ",
+      "hz": "ແປດ",
+      "py": "pàaet",
+      "pos": "num",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "eight (8)"
+        },
+        "lo": {
+          "meaning": "ແປດ (໘)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ເກົ້າ",
+      "hz": "ເກົ້າ",
+      "py": "kâo",
+      "pos": "num",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "nine (9)"
+        },
+        "lo": {
+          "meaning": "ເກົ້າ (໙)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "ສິບ",
+      "hz": "ສິບ",
+      "py": "síp",
+      "pos": "num",
+      "level": 1,
+      "tr": {
+        "en": {
+          "meaning": "ten (10)"
+        },
+        "lo": {
+          "meaning": "ສິບ (໑໐)"
+        },
+        "zh": {
+          "meaning": ""
+        }
+      },
+      "examples": [],
+      "tags": [
+        "core",
+        "daily"
+      ],
+      "status": "published",
+      "access": "free"
+    }
+  ],
+  "audio": [
+    {
+      "id": "a-sabaidee",
+      "text": "ສະບາຍດີ",
+      "lang": "lo",
+      "type": "word",
+      "speaker": "native-female",
+      "speed": "normal",
+      "url": "",
+      "relatedType": "vocabulary",
+      "relatedId": "ສະບາຍດີ",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "a-khopchai",
+      "text": "ຂອບໃຈ",
+      "lang": "lo",
+      "type": "word",
+      "speaker": "native-female",
+      "speed": "normal",
+      "url": "",
+      "relatedType": "vocabulary",
+      "relatedId": "ຂອບໃຈ",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "a-kin",
+      "text": "ກິນ",
+      "lang": "lo",
+      "type": "word",
+      "speaker": "native-male",
+      "speed": "normal",
+      "url": "",
+      "relatedType": "vocabulary",
+      "relatedId": "ກິນ",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "a-deum",
+      "text": "ດື່ມ",
+      "lang": "lo",
+      "type": "word",
+      "speaker": "native-male",
+      "speed": "normal",
+      "url": "",
+      "relatedType": "vocabulary",
+      "relatedId": "ດື່ມ",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "a-khao",
+      "text": "ເຂົ້າ",
+      "lang": "lo",
+      "type": "word",
+      "speaker": "native-female",
+      "speed": "normal",
+      "url": "",
+      "relatedType": "vocabulary",
+      "relatedId": "ເຂົ້າ",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "a-nam",
+      "text": "ນ້ຳ",
+      "lang": "lo",
+      "type": "word",
+      "speaker": "native-female",
+      "speed": "normal",
+      "url": "",
+      "relatedType": "vocabulary",
+      "relatedId": "ນ້ຳ",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "a-pai",
+      "text": "ໄປ",
+      "lang": "lo",
+      "type": "word",
+      "speaker": "native-male",
+      "speed": "normal",
+      "url": "",
+      "relatedType": "vocabulary",
+      "relatedId": "ໄປ",
+      "status": "published",
+      "access": "free"
+    },
+    {
+      "id": "a-maa",
+      "text": "ມາ",
+      "lang": "lo",
+      "type": "word",
+      "speaker": "native-male",
+      "speed": "normal",
+      "url": "",
+      "relatedType": "vocabulary",
+      "relatedId": "ມາ",
+      "status": "published",
+      "access": "free"
+    }
+  ]
 }
