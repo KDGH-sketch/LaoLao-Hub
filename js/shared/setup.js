@@ -33,7 +33,19 @@ export const DEMO = { admin:{ email:"admin@demo.laolao", pw:"demo1234", name:"De
   premium:{ email:"learner@demo.laolao", pw:"demo1234", name:"Noy Phommachanh" },
   free:{ email:"free@demo.laolao", pw:"demo1234", name:"Somsack Inthavong" } };
 export async function ensureDemo(api, onStep=()=>{}){
-  if (api.mode !== "demo" || !api._isEmpty()) return false;
+  if (api.mode !== "demo") return false;
+  if (!api._isEmpty()) {
+    // If database exists but lacks newer collections, seamlessly populate them
+    const [vCount, cCount, dCount] = await Promise.all([
+      api.db.count("videos").catch(()=>0),
+      api.db.count("culture").catch(()=>0),
+      api.db.count("dictionary").catch(()=>0)
+    ]);
+    if (vCount === 0 || cCount === 0 || dCount === 0) {
+      await importSeed(api, "admin-demo-owner", onStep);
+    }
+    return false;
+  }
   onStep("demo");
   const adminUid = await api.auth.createAccount(DEMO.admin.email, DEMO.admin.pw);
   await bootstrapOwner(api, { uid: adminUid, email: DEMO.admin.email }, DEMO.admin.name);

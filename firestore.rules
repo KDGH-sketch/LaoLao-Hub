@@ -16,9 +16,9 @@ service cloud.firestore {
     function adminDoc() { return /databases/$(database)/documents/admins/$(uid()); }
     function isAdmin() { return signedIn() && exists(adminDoc()); }
     function role() { return get(adminDoc()).data.role; }
-    function isSuper() { return isAdmin() && role() == 'super'; }
-    function canContent() { return isAdmin() && role() in ['super', 'content']; }
-    function canSupport() { return isAdmin() && role() in ['super', 'support']; }
+    function isSuper() { return isAdmin() && role() in ['super', 'owner']; }
+    function canContent() { return isAdmin() && role() in ['super', 'content', 'owner', 'admin']; }
+    function canSupport() { return isAdmin() && role() in ['super', 'support', 'owner', 'admin']; }
 
     function userDoc() { return /databases/$(database)/documents/users/$(uid()); }
     function accessDoc() { return /databases/$(database)/documents/access/$(uid()); }
@@ -84,8 +84,8 @@ service cloud.firestore {
 
     // ---------- content (admins only; learners use bundles) ----------
     match /{col}/{docId} {
-      allow read: if isAdmin() && col in ['patterns','lessons','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon','characters'];
-      allow write: if canContent() && col in ['patterns','lessons','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon','characters'];
+      allow read: if isAdmin() && col in ['patterns','lessons','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon','characters','videos','tones','culture','dictionary'];
+      allow write: if canContent() && col in ['patterns','lessons','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon','characters','videos','tones','culture','dictionary'];
       match /versions/{v} {
         allow read: if isAdmin();
         allow write: if canContent();
