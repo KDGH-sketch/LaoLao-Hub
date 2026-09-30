@@ -102,30 +102,96 @@ function langSwitch(){
 }
 
 // ---------- shell ----------
-const NAV = [
-  ["dashboard","adm_dashboard","chart"],
-  ["learners","adm_learners","users"],
-  ["content","adm_content","content"],
-  ["audioStudio","adm_audio_studio","mic"],
-  ["excelImport","adm_excel_import","upload"],
-  ["videoManager","adm_videos","video"],
-  ["promotions","adm_promotions","gift"],
-  ["contentHealth","adm_content_health","spark"],
-  ["plans","adm_plans","plan"],
-  ["activity","adm_activity","clock"],
-  ["admins","adm_admins","shield"],
-  ["settings","adm_settings","settings"]
+const NAV_SECTIONS = [
+  {
+    title: ["Overview", "ພາບລວມ"],
+    items: [
+      { id:"dashboard", label:["Dashboard", "ໜ້າຫຼັກ"], icon:"chart", view:"dashboard" },
+      { id:"learners", label:["Learners", "ຜູ້ຮຽນ"], icon:"users", view:"learners" }
+    ]
+  },
+  {
+    title: ["Curriculum Content (CMS)", "ຈັດການເນື້ອຫາ (CMS)"],
+    items: [
+      { id:"content", label:["All Content", "ເນື້ອຫາທັງໝົດ"], icon:"content", view:"content" },
+      { id:"lessons", label:["Lessons", "ບົດຮຽນ"], icon:"learn", view:"contentList", params:{ type:"lessons" } },
+      { id:"patterns", label:["Sentence Patterns", "ໂຄງສ້າງປະໂຫຍກ"], icon:"gen", view:"contentList", params:{ type:"patterns" } },
+      { id:"grammar", label:["Grammar Points", "ໄວຍາກອນ"], icon:"layers", view:"contentList", params:{ type:"grammar" } },
+      { id:"vocabulary", label:["Vocabulary", "ຄຳສັບ"], icon:"dict", view:"contentList", params:{ type:"vocabulary" } },
+      { id:"dialogues", label:["Dialogues", "ບົດສົນທະນາ"], icon:"users", view:"contentList", params:{ type:"dialogues" } },
+      { id:"quizzes", label:["Quizzes & Tests", "ແບບທົດສອບ"], icon:"practice", view:"contentList", params:{ type:"quizzes" } },
+      { id:"videos", label:["Video Manager", "ຈັດການວິດີໂອ"], icon:"video", view:"videoManager" },
+      { id:"tones", label:["Tone Lab", "ສຽງວັນນະຍຸດ"], icon:"sound", view:"contentList", params:{ type:"tones" } },
+      { id:"culture", label:["Culture & Context", "ວັດທະນະທຳ"], icon:"culture", view:"contentList", params:{ type:"culture" } },
+      { id:"characters", label:["Lao Script & Handwriting", "ອັກສອນ ແລະ ລາຍມື"], icon:"chars", view:"contentList", params:{ type:"characters" } },
+      { id:"dictionary", label:["Dictionary Database", "ວັດຈະນານຸກົມ"], icon:"dict", view:"contentList", params:{ type:"dictionary" } }
+    ]
+  },
+  {
+    title: ["Studio & Operations", "ເຄື່ອງມື ແລະ ສະຕູດິໂອ"],
+    items: [
+      { id:"audioStudio", label:["Voice Studio", "ສະຕູດິໂອບັນທຶກສຽງ"], icon:"mic", view:"audioStudio" },
+      { id:"excelImport", label:["Excel / CSV Importer", "ນຳເຂົ້າ Excel/CSV"], icon:"upload", view:"excelImport" },
+      { id:"promotions", label:["Promotions & Feed", "ໂປຣໂມຊັ່ນ ແລະ ຂ່າວ"], icon:"gift", view:"promotions" },
+      { id:"contentHealth", label:["Content Health Audit", "ກວດສອບຄວາມສົມບູນ"], icon:"spark", view:"contentHealth" }
+    ]
+  },
+  {
+    title: ["Platform & System", "ລະບົບ ແລະ ການຕັ້ງຄ່າ"],
+    items: [
+      { id:"plans", label:["Pricing Plans", "ແຜນການຮຽນ"], icon:"plan", view:"plans" },
+      { id:"activity", label:["Activity Audit Log", "ປະຫວັດການໃຊ້ງານ"], icon:"clock", view:"activity" },
+      { id:"admins", label:["Administrators", "ຜູ້ດູແລລະບົບ"], icon:"shield", view:"admins", superOnly:true },
+      { id:"settings", label:["Settings", "ຕັ້ງຄ່າລະບົບ"], icon:"settings", view:"settings" }
+    ]
+  }
 ];
+
+function isItemActive(item) {
+  if (item.view === "contentList") {
+    if (S.view === "contentList") {
+      return (S.params && S.params.type) === (item.params && item.params.type);
+    }
+    if (S.view === "editor") {
+      return (S.params && S.params.type) === (item.params && item.params.type);
+    }
+    return false;
+  }
+  if (item.view === "content") {
+    return S.view === "content";
+  }
+  if (item.view === "learners") {
+    return S.view === "learners" || S.view === "learner";
+  }
+  return S.view === item.view;
+}
+
 function renderShell(){
   root.innerHTML = "";
-  const side = h("nav",{class:"side","aria-label":"Admin"},
+  const side = h("nav",{class:"side","aria-label":"Admin",style:"overflow-y:auto;max-height:100vh"},
     h("div",{class:"brand"}, h("div",{class:"seal lo"},"ລ"), h("div",null, h("b",null,"LaoLao"), h("small",null,t("adm_title")+" · "+t("role_"+S.me.role)))));
-  const activeTop = ["learner"].includes(S.view) ? "learners" : ["contentList","editor"].includes(S.view) ? "content" : S.view;
-  NAV.forEach(([id,k,ic]) => { if (id==="admins" && !isSuper()) return; if (id==="content" && !canContent()) return;
-    side.append(h("button",{class:"nav-btn","aria-current":activeTop===id?"page":null,onclick:()=>go(id)}, icon(ic), t(k))); });
+
+  NAV_SECTIONS.forEach(sec => {
+    const secItems = sec.items.filter(it => !(it.superOnly && !isSuper()));
+    if (!secItems.length) return;
+    side.append(h("div",{class:"side-group-label",style:"padding:14px 12px 4px 12px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)"}, lang()==="lo" ? sec.title[1] : sec.title[0]));
+    secItems.forEach(it => {
+      const active = isItemActive(it);
+      side.append(h("button",{
+        class: "nav-btn",
+        "aria-current": active ? "page" : null,
+        onclick: () => go(it.view, it.params || {})
+      },
+        icon(it.icon),
+        lang() === "lo" ? it.label[1] : it.label[0]
+      ));
+    });
+  });
+
   side.append(h("div",{class:"sep"}), h("a",{class:"nav-btn",href:"../",style:"text-decoration:none"}, icon("home"), t("adm_open_learner")),
     h("button",{class:"nav-btn",onclick:()=>S.api.auth.signOut()}, icon("logout"), t("sign_out")),
     h("div",{class:"side-foot"}, S.me.email));
+
   const top = h("header",{class:"topbar"},
     h("div",{class:"mbrand"}, h("span",{class:"seal lo"},"ລ"), h("b",null,t("adm_title"))),
     h("div",{style:"flex:1"}),
@@ -135,9 +201,17 @@ function renderShell(){
     langSwitch(),
     h("select",{class:"input hide-desk",style:"width:auto","aria-label":"Menu",onchange:e=>{
       if (e.target.value === "__learner__") location.href = "../";
-      else go(e.target.value);
+      else {
+        const [view, type] = e.target.value.split(":");
+        go(view, type ? { type } : {});
+      }
     }},
-      NAV.filter(([id])=>!(id==="admins"&&!isSuper())).map(([id,k]) => h("option",{value:id,selected:activeTop===id},t(k))),
+      NAV_SECTIONS.map(sec => h("optgroup",{label: lang()==="lo"?sec.title[1]:sec.title[0]},
+        sec.items.filter(it=>!(it.superOnly&&!isSuper())).map(it => h("option",{
+          value: it.params ? `${it.view}:${it.params.type}` : it.view,
+          selected: isItemActive(it)
+        }, lang()==="lo"?it.label[1]:it.label[0]))
+      )),
       h("option",{value:"__learner__"}, "↗ " + t("adm_open_learner"))
     ));
   const main = h("main",{id:"main"});
