@@ -269,7 +269,7 @@ function render(){
     h("div",{class:"brand"}, h("div",{class:"seal lo"},"ລ"), h("div",null, h("b",null,A.settings.appName||"LaoLao"), h("small",null,t("tagline")))));
   NAV.forEach(n => { if (!n){ side.append(h("div",{class:"sep"})); return; } const [id,k,ic] = n; const due = id==="review" ? srsDue().length : 0;
     side.append(h("button",{class:"nav-btn","aria-current":cur===id?"page":null,onclick:()=>go(id)}, icon(ic), t(k), due ? h("span",{class:"count"},due) : null)); });
-  if (A.isAdmin) side.append(h("div",{class:"sep"}), h("a",{class:"nav-btn",href:"admin/",style:"text-decoration:none"}, icon("shield"), t("adm_title")));
+  side.append(h("div",{class:"sep"}), h("a",{class:"nav-btn",href:"admin/",style:"text-decoration:none;color:var(--accent);font-weight:600"}, icon("shield"), (lang()==="lo"?"ຈັດການລະບົບ ":"Admin Backend ")+"(CMS)"));
   netEl = h("span",{class:"netdot"}, h("i"), " ");
   side.append(h("div",{class:"side-foot"}, netEl));
   const search = h("input",{id:"search",type:"search",autocomplete:"off","aria-label":t("search_ph"),placeholder:t("search_ph")});
@@ -279,12 +279,24 @@ function render(){
     h("button",{class:"mbrand",style:"border:0;background:none;padding:0",onclick:()=>go("home")}, h("span",{class:"seal lo"},"ລ"), h("span",null,A.settings.appName||"LaoLao")),
     h("div",{class:"search",role:"search"}, icon("dict"), search, searchPop),
     h("div",{class:"toggles"},
+      h("a",{class:"btn sm ghost",href:"admin/",style:"text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;font-weight:600;color:var(--accent);border:1px solid var(--accent)",title:"Content Management Portal"}, icon("shield"), h("span",{class:"hide-sm"}, lang()==="lo"?"ຈັດການເນື້ອຫາ":"Admin CMS")),
       h("button",{class:"tg","aria-pressed":String(p.showPy),onclick:e=>{ setPref("showPy",!prefs().showPy); e.currentTarget.setAttribute("aria-pressed",String(prefs().showPy)); }}, t("show_pinyin")),
       h("button",{class:"tg","aria-pressed":String(p.showTr),onclick:e=>{ setPref("showTr",!prefs().showTr); e.currentTarget.setAttribute("aria-pressed",String(prefs().showTr)); }}, t("show_trans")),
       h("div",{class:"langsw",role:"group","aria-label":t("ui_lang")}, [["en","EN"],["lo","ລາວ"],["zh","中"]].map(([l,n]) => h("button",{"aria-pressed":String(lang()===l),lang:l==="zh"?"zh-CN":l,onclick:()=>{ setPref("uiLang",l); try{ localStorage.setItem("xuelu.lang",l); }catch(e){} render(); }}, n)))));
   const main = h("main",{id:"main",tabindex:"-1"});
   const tabs = h("nav",{class:"tabbar","aria-label":"Tabs"}, TABS.map(([id,k,ic]) => h("button",{"aria-current":(id==="more" ? !TABS.some(x=>x[0]===cur) : cur===id)?"page":null,onclick:()=>go(id)}, icon(ic), t(k))));
-  root.append(A.api.mode==="demo" ? h("div",{class:"demo-bar"}, t("demo_banner")) : "", h("div",{class:"app"}, side, h("div",{class:"mainwrap"}, top, main)), tabs);
+  const demoBarEl = A.api.mode==="demo" ? h("div",{class:"demo-bar",style:"display:flex;justify-content:space-between;align-items:center;padding:4px 14px;flex-wrap:wrap;gap:8px"},
+    h("span",null, t("demo_banner")),
+    h("div",{class:"row",style:"gap:8px"},
+      h("button",{class:"btn sm",style:"padding:2px 10px;font-size:.78rem;background:var(--accent);color:#fff",onclick:async()=>{
+        try {
+          await A.api.auth.signIn(DEMO.admin.email, DEMO.admin.pw);
+          location.href = "admin/";
+        } catch(e){ location.href = "admin/"; }
+      }}, icon("shield"), "Open Admin CMS (admin@demo.laolao) →")
+    )
+  ) : "";
+  root.append(demoBarEl, h("div",{class:"app"}, side, h("div",{class:"mainwrap"}, top, main)), tabs);
   setupSearch(search);
   updateNet();
   const fn = VIEWS[A.view.name] || VIEWS.home;

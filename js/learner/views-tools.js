@@ -501,6 +501,16 @@ VIEWS.account = () => {
   root.append(h("section",{class:"card stack"}, h("h2",null,t("change_pw")), h("div",{class:"field-row"}, h("div",{class:"field"},h("label",null,t("current_pw")),oldPw), h("div",{class:"field"},h("label",null,t("new_pw")),newPw)),
     h("div",{class:"row"}, h("button",{class:"btn",onclick:async()=>{ try { await A.api.auth.changePassword(oldPw.value, newPw.value); toast(t("pw_changed")); oldPw.value=newPw.value=""; } catch(e){ toast(errText(e),"err"); } }}, t("change_pw")),
       h("button",{class:"btn ghost",onclick:()=>A.api.auth.signOut()}, icon("logout"), t("sign_out")))));
+
+  root.append(h("section",{class:"card stack",style:"background:var(--surface-2);border:1px solid var(--border);margin-top:14px"},
+    h("div",{class:"spread",style:"align-items:center;flex-wrap:wrap;gap:10px"},
+      h("div",null,
+        h("h3",{style:"margin:0;display:flex;align-items:center;gap:6px"}, icon("shield"), lang()==="lo"?"ລະບົບຈັດການເນື້ອຫາຫຼັງບ້ານ":"Content Management Backend (Admin)"),
+        h("p",{class:"small muted",style:"margin:4px 0 0 0"}, "Add, edit, duplicate, and delete curriculum lessons, vocabulary, grammar, videos, tones, and dictionary.")
+      ),
+      h("a",{class:"btn primary sm",href:"admin/",style:"text-decoration:none"}, icon("shield"), "Open Admin CMS →")
+    )
+  ));
   return root;
 };
 
@@ -508,4 +518,4 @@ VIEWS.account = () => {
 VIEWS.more = () => h("div",null, pageHead(t("nav_more")), h("div",{class:"stack",style:"gap:10px"},
   [["lessons","nav_lessons","learn"],["videos","nav_videos","video"],["handwriting","nav_handwriting","pen"],["tone_lab","nav_tone_lab","spark"],["pronounce_lab","nav_pronounce","speaker"],["particle_lab","nav_particles","flame"],["kinship_lab","nav_kinship","users"],["classifiers_lab","nav_classifiers","layers"],["culture_lab","nav_culture","globe"],["patterns","nav_patterns","gen"],["gen","gen_title","spark"],["vocab","nav_vocab","dict"],["grammar","nav_grammar","layers"],["dict","nav_dict","dict"],["pinyin","nav_pinyin","pinyin"],["speak","nav_speak","mic"],["saved","nav_saved","bookmark"],["notes","nav_notes","note"],["progress","nav_progress","chart"],["downloads","nav_offline","download"],["account","nav_account","user"]]
     .map(([id,k,ic]) => h("button",{class:"qs",onclick:()=>go(id)}, h("span",{class:"qi",style:"background:var(--surface-2)"},icon(ic)), h("b",null,t(k))))),
-  A.isAdmin ? h("a",{class:"qs",href:"admin/",style:"margin-top:10px;text-decoration:none;color:inherit"}, h("span",{class:"qi",style:"background:var(--surface-2)"},icon("shield")), h("b",null,t("adm_title"))) : null);
+  h("a",{class:"qs",href:"admin/",style:"margin-top:10px;text-decoration:none;color:var(--accent);border:1px solid var(--accent)"}, h("span",{class:"qi",style:"background:var(--surface-2);color:var(--accent)"},icon("shield")), h("b",null,lang()==="lo"?"ລະບົບຈັດການເນື້ອຫາ (Admin CMS)":"Admin & Content Management Portal (CMS)")));

@@ -55,15 +55,36 @@ function renderLogin(){
   const pwWrap = h("div",{class:"input-wrap"}, pw, pwToggle);
   const msg = h("p",{class:"small",style:"color:var(--bad)"});
   const go_ = async e => { e && e.preventDefault(); msg.textContent=""; try { await S.api.auth.signIn(email.value.trim(), pw.value); } catch(err){ msg.textContent = errText(err); } };
+
+  const demoCard = S.api.mode==="demo" ? h("div",{class:"banner info stack",style:"gap:8px;margin-bottom:16px"},
+    h("div",{class:"spread",style:"align-items:center"},
+      h("div",null,
+        h("b",null,t("demo_accounts")),
+        h("div",{class:"small mono"}, DEMO.admin.email + " / " + DEMO.admin.pw)
+      ),
+      h("button",{class:"btn primary sm",type:"button",onclick:()=>{ email.value=DEMO.admin.email; pw.value=DEMO.admin.pw; go_(); }}, icon("shield"), "1-Click Admin Sign In")
+    )
+  ) : null;
+
   authFrame(h("h1",null,t("sign_in")),
+    demoCard,
     h("form",{class:"stack",onsubmit:go_}, h("div",{class:"field"}, h("label",{for:"em"},t("email")), email), h("div",{class:"field"}, h("label",{for:"pw"},t("password")), pwWrap), msg,
       h("button",{class:"btn primary",type:"submit"}, t("sign_in"))),
     h("button",{class:"linkbtn",onclick:async()=>{ if(!email.value) { msg.textContent=t("email")+"?"; return; } try{ await S.api.auth.resetPassword(email.value.trim()); toast(t("reset_sent")); }catch(err){ msg.textContent=errText(err); } }}, t("forgot")),
-    S.api.mode==="demo" ? h("div",{class:"banner info"}, h("div",null, h("b",null,t("demo_accounts")), h("div",{class:"small mono"}, DEMO.admin.email+" / "+DEMO.admin.pw)), h("button",{class:"btn sm",onclick:()=>{ email.value=DEMO.admin.email; pw.value=DEMO.admin.pw; go_(); }}, t("sign_in"))) : null,
     h("div",{class:"row"}, langSwitch(), h("a",{href:"../",class:"small"}, t("adm_open_learner"))));
 }
 function renderNoAccess(user){
-  authFrame(h("h1",null,t("adm_title")), h("p",null, t("adm_no_access")), h("p",{class:"muted small"}, user.email),
+  authFrame(h("h1",null,t("adm_title")),
+    h("p",null, t("adm_no_access")),
+    h("p",{class:"muted small"}, user.email),
+    S.api.mode==="demo" ? h("div",{class:"banner info stack",style:"gap:8px;margin:14px 0"},
+      h("b",null,"Demo Administrator Access:"),
+      h("p",{class:"small"}, "You are currently signed in with a learner account (" + user.email + "). Click below to switch to the administrator account:"),
+      h("button",{class:"btn primary sm",onclick:async()=>{
+        await S.api.auth.signIn(DEMO.admin.email, DEMO.admin.pw);
+        location.reload();
+      }}, icon("shield"), "Switch to Admin (" + DEMO.admin.email + ")")
+    ) : null,
     h("div",{class:"row"}, h("button",{class:"btn",onclick:()=>S.api.auth.signOut()}, icon("logout"), t("sign_out")), h("a",{href:"../",class:"btn ghost"}, t("adm_open_learner"))));
 }
 function renderSetup(user){
