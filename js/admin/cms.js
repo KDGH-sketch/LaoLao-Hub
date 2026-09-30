@@ -252,40 +252,95 @@ export async function viewContentList({ type, q="", status="", level="" }){
   return wrap;
 }
 async function newItem(type){
-  const s = SCHEMAS[type];
-  const id = h("input",{class:"input mono",placeholder:s.idHint||""});
-  if (s.idFrom) return go("editor",{ type, id:"", isNew:true });
-  if (type==="patterns"){ const all = await rows("patterns"); id.value = "p"+String(Math.max(0,...all.map(p=>p.n||0))+1).padStart(3,"0"); }
-  const r = await dialog({ title:t("new_item")+" · "+(t("type_"+type)||type), body:h("div",{class:"stack"}, fld(t("id_f"), id, t("id_d"))),
-    actions:[{label:t("cancel"),value:false},{label:t("create"),primary:true,onClick:async()=>{ const v = id.value.trim().replace(/[^A-Za-z0-9_\-一-鿿]/g,"-"); if (!v) return false; if (await S.api.db.get(`${type}/${v}`)){ toast("That ID already exists.","err"); return false; } return v; }}] });
-  if (r) go("editor",{ type, id:r, isNew:true });
+  const s = SCHEMAS[type] || {};
+  let defaultId = "";
+  if (type === "patterns"){
+    const all = await rows("patterns");
+    defaultId = "p" + String(Math.max(0, ...all.map(p => p.n || 0)) + 1).padStart(3, "0");
+  } else if (type === "tones"){
+    const all = await rows("tones");
+    defaultId = "tone-" + String(Math.max(0, ...all.map(p => p.num || 0)) + 1);
+  } else if (type === "lessons"){
+    defaultId = "lesson-" + Date.now().toString(36).slice(-4);
+  } else if (type === "characters"){
+    defaultId = "char-new";
+  } else if (s.idFrom){
+    return go("editor", { type, id: "", isNew: true });
+  } else {
+    defaultId = (s.idHint || type) + "-" + Date.now().toString(36).slice(-4);
+  }
+
+  const idInp = h("input", { class: "input mono", value: defaultId, placeholder: s.idHint || "unique-id" });
+  const r = await dialog({
+    title: t("new_item") + " · " + (t("type_" + type) || type),
+    body: h("div", { class: "stack" }, fld(t("id_f"), idInp, "Unique record ID (Letters, numbers, hyphens, or Lao text)")),
+    actions: [
+      { label: t("cancel"), value: false },
+      {
+        label: t("create"),
+        primary: true,
+        onClick: async () => {
+          let v = idInp.value.trim().replace(/[\s\/#?]/g, "-");
+          if (!v) { toast("Please provide an ID", "bad"); return false; }
+          const existing = await S.api.db.get(`${type}/${v}`).catch(() => null);
+          if (existing) { toast("That ID already exists. Please choose a different one.", "bad"); return false; }
+          return v;
+        }
+      }
+    ]
+  });
+  if (r) go("editor", { type, id: r, isNew: true });
 }
 
 // ---------- editor ----------
 export async function viewEditor({ type, id, isNew }){
-  const s = SCHEMAS[type];
-  let doc = !isNew && id ? await S.api.db.get(`${type}/${id}`) : null;
-  let draft = JSON.parse(JSON.stringify(doc || Object.assign({ status:"draft", access:"free", order:0 }, s.defaults)));
+  const s = SCHEMAS[type] || {};
+  let doc = !isNew && id ? await S.api.db.get(`${type}/${id}`).catch(()=>null) : null;
+  let draft = JSON.parse(JSON.stringify(doc || Object.assign({ status:"draft", access:"free", order:0 }, s.defaults || {})));
   if (type==="patterns" && isNew && id) draft.n = parseInt(id.replace(/\D/g,""))||0;
+
+  const idInput = h("input", { class: "input mono", value: id || "", placeholder: s.idHint || "unique-id", oninput: e => { id = e.target.value.trim(); } });
+
   const form = h("div",{class:"stack"});
-  const renderForm = () => { form.innerHTML=""; s.fields.forEach(f => form.append(renderField(f, draft, type))); };
+  const renderForm = () => {
+    form.innerHTML="";
+    if (isNew && !s.idFrom) {
+      form.append(fld(t("id_f") + " (Record ID)", idInput, "Unique identifier in database"));
+    }
+    (s.fields || []).forEach(f => form.append(renderField(f, draft, type)));
+  };
   renderForm();
+
   const statusSel = h("select",{class:"input",onchange:e=>draft.status=e.target.value}, STATUS_KEYS.map(k=>h("option",{value:k,selected:draft.status===k},t("status_"+k))));
   const accessSel = h("select",{class:"input",onchange:e=>draft.access=e.target.value}, ACCESS_KEYS.map(k=>h("option",{value:k,selected:draft.access===k},t("acc_"+k))));
   const orderIn = h("input",{class:"input",type:"number",value:draft.order??0,oninput:e=>draft.order=+e.target.value});
+
   const save = async publishToo => {
     try {
       if (publishToo) draft.status = "published";
       const clean = await normalize(type, draft);
-      const docId = s.idFrom ? (clean[s.idFrom]||"").trim() : id;
-      if (!docId){ toast(t("id_f")+"?","err"); return; }
+      let docId = (id || (idInput ? idInput.value : "") || "").trim();
+      if (s.idFrom) {
+        const fromField = (clean[s.idFrom] || "").trim();
+        if (fromField) docId = fromField;
+      }
+      if (!docId) {
+        const autoName = (clean.title && (clean.title.lo || clean.title.en)) || clean.hz || clean.char || "";
+        docId = autoName.toLowerCase().replace(/[\s\/#?]/g, "-").slice(0, 32) || (type + "-" + Date.now().toString(36).slice(-6));
+      }
+      clean.id = docId;
       await saveContent(S.api, type, docId, clean, S.me.uid);
-      delete cache[type]; if (type==="lexicon"){ LEXICON=null; ENGINE=null; }
-      toast(t("saved_ok"));
+      delete cache[type];
+      if (type === "lexicon") { LEXICON = null; ENGINE = null; }
+      toast(t("saved_ok"), "ok");
       if (publishToo) await publishFlow();
-      go("editor",{ type, id:docId });
-    } catch(e){ console.error(e); toast(errText(e),"err"); }
+      go("editor", { type, id: docId });
+    } catch(e) {
+      console.error(e);
+      toast(errText(e), "bad");
+    }
   };
+
   const side = h("aside",{class:"editor-side"},
     h("div",{class:"panel"},
       s.noAccess ? null : fld(t("status"), statusSel), s.noAccess ? null : fld(t("access"), accessSel), fld(t("order"), orderIn),
@@ -296,22 +351,55 @@ export async function viewEditor({ type, id, isNew }){
     previewPanel(type, draft),
     doc ? versionsPanel(type, id, v => { draft = JSON.parse(JSON.stringify(Object.assign({}, v, { status: draft.status }))); renderForm(); toast("v"+v.version+" → "+t("save")); }) : null,
     doc ? h("div",{class:"row"},
-      h("button",{class:"btn sm",onclick:async()=>{ const nid = id+"-copy"; await saveContent(S.api, type, nid, Object.assign({}, draft, { status:"draft" }), S.me.uid); go("editor",{type,id:nid}); }}, icon("copy"), t("duplicate")),
+      h("button",{class:"btn sm",onclick:async()=>{ const nid = id+"-copy-" + Date.now().toString(36).slice(-4); await saveContent(S.api, type, nid, Object.assign({}, draft, { status:"draft" }), S.me.uid); go("editor",{type,id:nid}); }}, icon("copy"), t("duplicate")),
       h("button",{class:"btn sm ghost",style:"color:var(--bad)",onclick:async()=>{ if(await confirmDialog(t("delete_item"),t("confirm_delete"),t("delete_item"),t("cancel"),true)){ await S.api.db.del(`${type}/${id}`); await S.api.db.set("settings/bundle",{dirty:true},true); delete cache[type]; go("contentList",{type}); } }}, icon("trash"), t("delete_item"))) : null);
+
   return h("div",null,
-    h("div",{class:"crumb"}, h("button",{onclick:()=>go("content")}, t("adm_content")), "›", h("button",{onclick:()=>go("contentList",{type})}, t("type_"+type)), "›", h("span",{class:"mono"}, id || t("new_item"))),
+    h("div",{class:"crumb"}, h("button",{onclick:()=>go("content")}, t("adm_content")), "›", h("button",{onclick:()=>go("contentList",{type})}, t("type_"+type)||type), "›", h("span",{class:"mono"}, id || t("new_item"))),
     h("div",{class:"pagehead"}, h("h1",null, doc ? titleOf(type, doc) : t("new_item"))),
     h("div",{class:"editor"}, form, side));
 }
+
 async function normalize(type, d){
-  const eng = await engine();
+  let eng = null;
+  try { eng = await engine(); } catch(e){}
   const o = JSON.parse(JSON.stringify(d));
-  const fixSentence = snt => { if (!snt || !snt.zh) return snt; const a = autoPinyin(eng, snt.zh.trim()); snt.zh = snt.zh.trim(); snt.tokens = a.tokens; if (!snt.py) snt.py = a.py; return snt; };
-  ["examples","lines"].forEach(k => { if (Array.isArray(o[k])) o[k] = o[k].filter(x=>x && x.zh).map(fixSentence); });
-  if (type==="vocabulary"){ o.hz = (o.hz||"").trim(); if (!o.py) o.py = autoPinyin(eng, o.hz).py.toLowerCase(); }
-  if (type==="patterns"){ o.markers = undefined; (o.gen||[]).forEach(g => { if (g.slots){ JSON.parse(g.slots); } }); if (!o.hz) throw new Error("Pattern (Lao) is required."); }
-  if (type==="lexicon" && typeof o.data==="string") o.data = JSON.parse(o.data);
-  if (type==="quizzes") (o.questions||[]).forEach(q => { if (q.prompt && q.prompt.zh && !q.prompt.py && !["listen_select","listen_type"].includes(q.type)) q.prompt.py = autoPinyin(eng, q.prompt.zh).py; if (q.type==="order" && q.tokens && !q.answer) q.answer = q.tokens.join(""); });
+  const fixSentence = snt => {
+    if (!snt) return snt;
+    if (eng && snt.zh && !snt.py) {
+      try {
+        const a = autoPinyin(eng, snt.zh.trim());
+        snt.tokens = a.tokens;
+        snt.py = a.py;
+      } catch(e){}
+    }
+    return snt;
+  };
+  ["examples","lines"].forEach(k => {
+    if (Array.isArray(o[k])) o[k] = o[k].filter(x => x && (x.zh || x.lo || x.en || x.speaker)).map(fixSentence);
+  });
+  if (type==="vocabulary"){
+    o.hz = (o.hz||"").trim();
+    if (eng && o.hz && !o.py) {
+      try { o.py = autoPinyin(eng, o.hz).py.toLowerCase(); } catch(e){}
+    }
+  }
+  if (type==="patterns"){
+    o.markers = undefined;
+    (o.gen||[]).forEach(g => { if (g.slots){ try { JSON.parse(g.slots); }catch(e){} } });
+    if (!o.hz && !o.formula) o.hz = "Pattern-" + (o.n || "new");
+  }
+  if (type==="lexicon" && typeof o.data==="string") {
+    try { o.data = JSON.parse(o.data); } catch(e){}
+  }
+  if (type==="quizzes") {
+    (o.questions||[]).forEach(q => {
+      if (eng && q.prompt && q.prompt.zh && !q.prompt.py && !["listen_select","listen_type"].includes(q.type)) {
+        try { q.prompt.py = autoPinyin(eng, q.prompt.zh).py; } catch(e){}
+      }
+      if (q.type==="order" && q.tokens && !q.answer) q.answer = q.tokens.join("");
+    });
+  }
   Object.keys(o).forEach(k => o[k]===undefined && delete o[k]);
   return o;
 }
