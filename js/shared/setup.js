@@ -29,20 +29,42 @@ export async function importSeed(api, who, onStep=()=>{}){
 }
 
 // Demo mode: one-time sample platform in this browser
-export const DEMO = { admin:{ email:"admin@demo.laolao", pw:"demo1234", name:"Demo Owner" },
-  premium:{ email:"learner@demo.laolao", pw:"demo1234", name:"Noy Phommachanh" },
-  free:{ email:"free@demo.laolao", pw:"demo1234", name:"Somsack Inthavong" } };
+export const DEMO = {
+  admin: { email: "admin@demo.laolao", pw: "demo1234", name: "Demo Super Admin", role: "super" },
+  reviewer: { email: "reviewer@demo.laolao", pw: "demo1234", name: "Aloun Reviewer", role: "reviewer" },
+  editor: { email: "editor@demo.laolao", pw: "demo1234", name: "Khamphanh Editor", role: "editor" },
+  support: { email: "support@demo.laolao", pw: "demo1234", name: "Vilay Support", role: "support" },
+  premium: { email: "learner@demo.laolao", pw: "demo1234", name: "Noy Phommachanh" },
+  free: { email: "free@demo.laolao", pw: "demo1234", name: "Somsack Inthavong" }
+};
 export async function ensureDemo(api, onStep=()=>{}){
   if (api.mode !== "demo") return false;
   if (!api._isEmpty()) {
-    // If database exists but lacks newer collections, seamlessly populate them
-    const [vCount, cCount, dCount] = await Promise.all([
+    // If database exists but lacks newer collections or demo admins, seamlessly populate them
+    const [vCount, cCount, dCount, revCount] = await Promise.all([
       api.db.count("videos").catch(()=>0),
       api.db.count("culture").catch(()=>0),
-      api.db.count("dictionary").catch(()=>0)
+      api.db.count("dictionary").catch(()=>0),
+      api.db.list("admins", { where: [["email", "==", DEMO.reviewer.email]] }).catch(()=>[])
     ]);
     if (vCount === 0 || cCount === 0 || dCount === 0) {
       await importSeed(api, "admin-demo-owner", onStep);
+    }
+    if (!revCount.length) {
+      for (const roleKey of ["reviewer", "editor", "support"]) {
+        const acc = DEMO[roleKey];
+        try {
+          let uList = await api.db.list("users", { where: [["email", "==", acc.email]] }).catch(()=>[]);
+          let uid = uList[0]?.id;
+          if (!uid) {
+            uid = await api.auth.createAccount(acc.email, acc.pw).catch(() => "admin-" + roleKey);
+          }
+          await api.db.batch([
+            { op: "set", path: `admins/${uid}`, data: { id: uid, email: acc.email, name: acc.name, role: acc.role, status: "active", createdAt: new Date(), addedBy: "demo-admin" } },
+            { op: "set", path: `users/${uid}`, data: { id: uid, email: acc.email, name: acc.name, status: "active", level: 1, role: "admin", prefs: {}, createdAt: new Date(), lastActive: new Date() } }
+          ]);
+        } catch(e){}
+      }
     }
     return false;
   }
@@ -50,6 +72,18 @@ export async function ensureDemo(api, onStep=()=>{}){
   const adminUid = await api.auth.createAccount(DEMO.admin.email, DEMO.admin.pw);
   await bootstrapOwner(api, { uid: adminUid, email: DEMO.admin.email }, DEMO.admin.name);
   await importSeed(api, adminUid, onStep);
+
+  // Seed demo reviewer, editor, and support admin accounts
+  for (const roleKey of ["reviewer", "editor", "support"]) {
+    const acc = DEMO[roleKey];
+    try {
+      const uid = await api.auth.createAccount(acc.email, acc.pw);
+      await api.db.batch([
+        { op: "set", path: `admins/${uid}`, data: { id: uid, email: acc.email, name: acc.name, role: acc.role, status: "active", createdAt: new Date(), addedBy: adminUid } },
+        { op: "set", path: `users/${uid}`, data: { id: uid, email: acc.email, name: acc.name, status: "active", level: 1, role: "admin", prefs: {}, createdAt: new Date(), lastActive: new Date() } }
+      ]);
+    } catch(e){}
+  }
   const now = Date.now(), year = 365*86400000;
   for (const [key, plan, tier, level, days] of [["premium","premium",3,2,Math.round(400)],["free","free",1,1,0]]){
     const d = DEMO[key]; const uid = await api.auth.createAccount(d.email, d.pw);

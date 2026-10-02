@@ -4,6 +4,16 @@ import { lang } from "../shared/i18n.js";
 import { S, t, isSuper, refreshPlans, planName, fld } from "./state.js";
 
 export async function viewPlans(){
+  if (!isSuper()) {
+    return h("div", { class: "panel stack", style: "text-align:center;padding:48px 24px;max-width:540px;margin:40px auto" },
+      h("div", { style: "font-size:3rem;margin-bottom:8px" }, "🔒"),
+      h("h2", null, t("only_super")),
+      h("p", { class: "muted" }, t("credential_menu_restricted")),
+      h("div", { class: "row", style: "justify-content:center;margin-top:16px" },
+        h("button", { class: "btn primary", onclick: () => { S.view = "dashboard"; S.render(); } }, "← " + t("adm_dashboard"))
+      )
+    );
+  }
   await refreshPlans();
   const access = await S.api.db.list("access").catch(()=>[]);
   const count = id => access.filter(a=>a.planId===id && a.status==="active" && (a.expiresAt==null||a.expiresAt>Date.now())).length;

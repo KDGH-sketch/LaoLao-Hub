@@ -7,7 +7,7 @@ import { makeEngine } from "../shared/engine.js";
 import { runQuiz, QTYPES, QTYPE_SKILL } from "../shared/quiz.js";
 import { sentenceEl, ctx } from "../shared/widgets.js";
 import { SKILLS } from "../shared/content.js";
-import { S, L, t, go, canContent, fld } from "./state.js";
+import { S, L, t, go, canContent, canViewMenu, canEditMenu, fld } from "./state.js";
 import { SCHEMAS, STEP_TYPE_TO_COL, APP_PAGES } from "./schemas.js";
 import { publishFlow } from "./main.js";
 
@@ -34,6 +34,7 @@ export async function viewContentHome(){
 export async function viewContentList({ type, q="", status="", level="" }){
   const all = await rows(type, true);
   const s = SCHEMAS[type] || {};
+  const canEdit = canEditMenu(type);
   const selected = new Set();
   let page = 1;
   const pageSize = 30;
@@ -41,12 +42,12 @@ export async function viewContentList({ type, q="", status="", level="" }){
   const body = h("tbody");
   const bulkBar = h("div",{class:"bulk-bar",style:"display:none;padding:12px 16px;background:var(--surface-2);border-radius:10px;margin-bottom:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px"});
   const selCountLabel = h("span",{style:"font-weight:600"});
-  const selectAllBox = h("input",{type:"checkbox","aria-label":"Select all"});
+  const selectAllBox = h("input",{type:"checkbox","aria-label":"Select all",disabled:!canEdit});
 
   const paginator = h("div",{class:"row",style:"justify-content:space-between;align-items:center;margin-top:14px;padding:8px 0"});
 
   const updateBulkBar = () => {
-    if (selected.size > 0) {
+    if (canEdit && selected.size > 0) {
       bulkBar.style.display = "flex";
       selCountLabel.textContent = `${selected.size} item${selected.size > 1 ? "s" : ""} selected`;
     } else {
@@ -72,7 +73,7 @@ export async function viewContentList({ type, q="", status="", level="" }){
 
     pageItems.forEach(d => {
       const isSel = selected.has(d.id);
-      const rowBox = h("input",{type:"checkbox",checked:isSel,onclick:e=>{
+      const rowBox = h("input",{type:"checkbox",checked:isSel,disabled:!canEdit,onclick:e=>{
         e.stopPropagation();
         if (e.target.checked) selected.add(d.id); else selected.delete(d.id);
         updateBulkBar();
@@ -110,15 +111,17 @@ export async function viewContentList({ type, q="", status="", level="" }){
         }
       }}, icon("trash"));
 
+      const viewBtn = h("button",{class:"btn sm ghost",title:"View and preview item",onclick:()=>go("editor",{type,id:d.id})}, icon("eye"), "View");
+
       body.append(h("tr",{class:isSel?"active-row":"",onclick:()=>go("editor",{type,id:d.id})},
-        h("td",{onclick:e=>e.stopPropagation(),style:"width:36px;text-align:center"}, rowBox),
+        h("td",{onclick:e=>e.stopPropagation(),style:"width:36px;text-align:center"}, canEdit ? rowBox : ""),
         h("td",{class:"mono small"}, d.id),
         h("td",{class:/[\u0E80-\u0EFF]/.test(titleOf(type,d).slice(0,2))?"hz lo":""}, titleOf(type,d)),
         h("td",null, d.level ? "Stage "+d.level : "—"),
         h("td",null, s.noAccess ? "—" : h("span",{class:"chip"}, t("acc_"+(d.access||"free")))),
         h("td",null, s.noAccess ? "" : h("span",{class:"pill "+(d.status||"draft")}, t("status_"+(d.status||"draft")))),
         h("td",{class:"small muted"}, fmtDate(d.updatedAt, lang())),
-        h("td",{onclick:e=>e.stopPropagation(),style:"text-align:right;white-space:nowrap"}, h("div",{class:"row",style:"gap:4px;justify-content:flex-end"}, dupBtn, delBtn))));
+        h("td",{onclick:e=>e.stopPropagation(),style:"text-align:right;white-space:nowrap"}, canEdit ? h("div",{class:"row",style:"gap:4px;justify-content:flex-end"}, dupBtn, delBtn) : viewBtn)));
     });
 
     if (!pageItems.length) body.append(h("tr",null,h("td",{colspan:"8",class:"muted",style:"text-align:center;padding:24px"},t("no_rows"))));
@@ -224,10 +227,11 @@ export async function viewContentList({ type, q="", status="", level="" }){
         h("h1",null,(t("type_"+type)||type)+" ("+all.length+")"),
         h("div",{class:"row",style:"gap:8px"},
           h("button",{class:"btn ghost sm",onclick:bulkExport}, icon("download"), "Export All"),
-          canContent() ? h("button",{class:"btn primary",onclick:()=>newItem(type)}, icon("plus"), t("new_item")) : null
+          canEdit ? h("button",{class:"btn primary",onclick:()=>newItem(type)}, icon("plus"), t("new_item")) : h("span",{class:"pill muted",style:"display:inline-flex;align-items:center;gap:4px"}, icon("eye"), t("read_only_mode"))
         )
       )
     ),
+    !canEdit ? h("div",{class:"banner ok",style:"background:var(--surface-2);border-left:4px solid #7c3aed;margin-bottom:12px;display:flex;align-items:center;gap:8px"}, icon("eye"), h("span",null,t("read_only_banner"))) : null,
     bulkBar,
     h("div",{class:"toolbar"},
       h("input",{class:"input grow",placeholder:t("filter_ph"),value:q,oninput:debounce(e=>{ q=e.target.value; page=1; draw(); },120)}),
@@ -295,11 +299,21 @@ async function newItem(type){
 // ---------- editor ----------
 export async function viewEditor({ type, id, isNew }){
   const s = SCHEMAS[type] || {};
+  const canEdit = canEditMenu(type);
+  if (!canEdit && isNew) {
+    return h("div",{class:"panel stack",style:"text-align:center;padding:32px;margin:24px auto;max-width:500px"},
+      h("div",{style:"font-size:2.5rem"}, "🔒"),
+      h("h3",null,"Creating Items Restricted"),
+      h("p",{class:"muted"}, "You have read-only permissions for this collection. Creating new items is reserved for Editors & Super Admins."),
+      h("button",{class:"btn primary",style:"align-self:center",onclick:()=>go("contentList",{type})},"← Return to List")
+    );
+  }
+
   let doc = !isNew && id ? await S.api.db.get(`${type}/${id}`).catch(()=>null) : null;
   let draft = JSON.parse(JSON.stringify(doc || Object.assign({ status:"draft", access:"free", order:0 }, s.defaults || {})));
   if (type==="patterns" && isNew && id) draft.n = parseInt(id.replace(/\D/g,""))||0;
 
-  const idInput = h("input", { class: "input mono", value: id || "", placeholder: s.idHint || "unique-id", oninput: e => { id = e.target.value.trim(); } });
+  const idInput = h("input", { class: "input mono", value: id || "", disabled: !canEdit, placeholder: s.idHint || "unique-id", oninput: e => { id = e.target.value.trim(); } });
 
   const form = h("div",{class:"stack"});
   const renderForm = () => {
@@ -308,14 +322,24 @@ export async function viewEditor({ type, id, isNew }){
       form.append(fld(t("id_f") + " (Record ID)", idInput, "Unique identifier in database"));
     }
     (s.fields || []).forEach(f => form.append(renderField(f, draft, type)));
+    if (!canEdit) {
+      setTimeout(() => {
+        form.querySelectorAll("input, textarea, select, button").forEach(el => {
+          if (!el.classList.contains("preview-btn") && !el.closest(".preview-btn")) {
+            el.disabled = true;
+          }
+        });
+      }, 0);
+    }
   };
   renderForm();
 
-  const statusSel = h("select",{class:"input",onchange:e=>draft.status=e.target.value}, STATUS_KEYS.map(k=>h("option",{value:k,selected:draft.status===k},t("status_"+k))));
-  const accessSel = h("select",{class:"input",onchange:e=>draft.access=e.target.value}, ACCESS_KEYS.map(k=>h("option",{value:k,selected:draft.access===k},t("acc_"+k))));
-  const orderIn = h("input",{class:"input",type:"number",value:draft.order??0,oninput:e=>draft.order=+e.target.value});
+  const statusSel = h("select",{class:"input",disabled:!canEdit,onchange:e=>draft.status=e.target.value}, STATUS_KEYS.map(k=>h("option",{value:k,selected:draft.status===k},t("status_"+k))));
+  const accessSel = h("select",{class:"input",disabled:!canEdit,onchange:e=>draft.access=e.target.value}, ACCESS_KEYS.map(k=>h("option",{value:k,selected:draft.access===k},t("acc_"+k))));
+  const orderIn = h("input",{class:"input",type:"number",disabled:!canEdit,value:draft.order??0,oninput:e=>draft.order=+e.target.value});
 
   const save = async publishToo => {
+    if (!canEdit) { toast("You have read-only permissions", "bad"); return; }
     try {
       if (publishToo) draft.status = "published";
       const clean = await normalize(type, draft);
@@ -344,19 +368,21 @@ export async function viewEditor({ type, id, isNew }){
   const side = h("aside",{class:"editor-side"},
     h("div",{class:"panel"},
       s.noAccess ? null : fld(t("status"), statusSel), s.noAccess ? null : fld(t("access"), accessSel), fld(t("order"), orderIn),
-      h("div",{class:"stack",style:"gap:8px"},
+      canEdit ? h("div",{class:"stack",style:"gap:8px"},
         h("button",{class:"btn primary",onclick:()=>save(false)}, t("save")),
-        s.noAccess ? null : h("button",{class:"btn jade",onclick:()=>save(true)}, icon("upload"), t("status_published")+" + "+t("publish_now"))),
+        s.noAccess ? null : h("button",{class:"btn jade",onclick:()=>save(true)}, icon("upload"), t("status_published")+" + "+t("publish_now")))
+      : h("div",{class:"pill muted",style:"text-align:center;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"}, icon("lock"), " Editing Restricted (Read-Only)"),
       doc ? h("p",{class:"small muted"}, "v"+(doc.version||1)+" · "+t("updated")+" "+fmtDate(doc.updatedAt, lang(), true)) : null),
     previewPanel(type, draft),
-    doc ? versionsPanel(type, id, v => { draft = JSON.parse(JSON.stringify(Object.assign({}, v, { status: draft.status }))); renderForm(); toast("v"+v.version+" → "+t("save")); }) : null,
-    doc ? h("div",{class:"row"},
+    doc ? versionsPanel(type, id, v => { if (!canEdit) return; draft = JSON.parse(JSON.stringify(Object.assign({}, v, { status: draft.status }))); renderForm(); toast("v"+v.version+" → "+t("save")); }) : null,
+    (doc && canEdit) ? h("div",{class:"row"},
       h("button",{class:"btn sm",onclick:async()=>{ const nid = id+"-copy-" + Date.now().toString(36).slice(-4); await saveContent(S.api, type, nid, Object.assign({}, draft, { status:"draft" }), S.me.uid); go("editor",{type,id:nid}); }}, icon("copy"), t("duplicate")),
       h("button",{class:"btn sm ghost",style:"color:var(--bad)",onclick:async()=>{ if(await confirmDialog(t("delete_item"),t("confirm_delete"),t("delete_item"),t("cancel"),true)){ await S.api.db.del(`${type}/${id}`); await S.api.db.set("settings/bundle",{dirty:true},true); delete cache[type]; go("contentList",{type}); } }}, icon("trash"), t("delete_item"))) : null);
 
   return h("div",null,
     h("div",{class:"crumb"}, h("button",{onclick:()=>go("content")}, t("adm_content")), "›", h("button",{onclick:()=>go("contentList",{type})}, t("type_"+type)||type), "›", h("span",{class:"mono"}, id || t("new_item"))),
     h("div",{class:"pagehead"}, h("h1",null, doc ? titleOf(type, doc) : t("new_item"))),
+    !canEdit ? h("div",{class:"banner",style:"background:var(--surface-2);border-left:4px solid #7c3aed;margin-bottom:14px;display:flex;align-items:center;gap:8px"}, icon("eye"), h("b",null,t("read_only_mode")+":"), h("span",null," Form fields are read-only and modifications cannot be saved.")) : null,
     h("div",{class:"editor"}, form, side));
 }
 

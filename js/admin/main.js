@@ -6,11 +6,12 @@ import { setLang, lang } from "../shared/i18n.js";
 import { buildBundles, CONTENT_TYPES } from "../shared/content.js";
 import { bootstrapOwner, importSeed, ensureDemo, DEMO } from "../shared/setup.js";
 import { loadDict } from "../shared/dict.js";
-import { S, L, t, go, isSuper, canContent, canSupport, refreshPlans, fld } from "./state.js";
+import { S, L, t, go, isSuper, isOwner, getActiveRole, canContent, canSupport, canViewMenu, canEditMenu, canManageAdmins, canManageSettings, refreshPlans, fld } from "./state.js";
 import { viewLearners, viewLearner } from "./learners.js";
 import { viewPlans } from "./plans.js";
 import { viewContentHome, viewContentList, viewEditor } from "./cms.js";
 import { EXT_VIEWS } from "./cms-extended.js";
+import { viewAdmins } from "./admins.js";
 
 const root = document.getElementById("root");
 const pref = (() => { try { return localStorage.getItem("xuelu.admin.lang") || "en"; } catch(e){ return "en"; } })();
@@ -27,7 +28,7 @@ async function boot(){
       if (!boot) return renderSetup(user);
       return renderNoAccess(user);
     }
-    S.me = { uid:user.uid, email:user.email, role:adm.role, name:adm.name||user.email };
+    S.me = { uid:user.uid, email:user.email, role:adm.role, name:adm.name||user.email, permissions:adm.permissions, allowedMenus:adm.allowedMenus };
     await Promise.all([refreshPlans().catch(()=>[]), api.db.get("settings/app").then(s=>S.settings=s||{}).catch(()=>{}), refreshBundleState()]);
     loadDict();
     S.render = renderShell; renderShell();
@@ -56,14 +57,15 @@ function renderLogin(){
   const msg = h("p",{class:"small",style:"color:var(--bad)"});
   const go_ = async e => { e && e.preventDefault(); msg.textContent=""; try { await S.api.auth.signIn(email.value.trim(), pw.value); } catch(err){ msg.textContent = errText(err); } };
 
-  const demoCard = S.api.mode==="demo" ? h("div",{class:"banner info stack",style:"gap:8px;margin-bottom:16px"},
-    h("div",{class:"spread",style:"align-items:center"},
-      h("div",null,
-        h("b",null,t("demo_accounts")),
-        h("div",{class:"small mono"}, DEMO.admin.email + " / " + DEMO.admin.pw)
-      ),
-      h("button",{class:"btn primary sm",type:"button",onclick:()=>{ email.value=DEMO.admin.email; pw.value=DEMO.admin.pw; go_(); }}, icon("shield"), "1-Click Admin Sign In")
-    )
+  const demoCard = S.api.mode==="demo" ? h("div",{class:"banner info stack",style:"gap:10px;margin-bottom:16px"},
+    h("b",null,t("demo_accounts") + " · One-Click Role Sign In:"),
+    h("div",{class:"grid2",style:"gap:8px"},
+      h("button",{class:"btn primary sm",type:"button",onclick:()=>{ email.value=DEMO.admin.email; pw.value=DEMO.admin.pw; go_(); }}, icon("shield"), "👑 Super Admin"),
+      h("button",{class:"btn sm",type:"button",onclick:()=>{ email.value=DEMO.editor.email; pw.value=DEMO.editor.pw; go_(); }}, icon("edit"), "✍️ Content Editor"),
+      h("button",{class:"btn sm",type:"button",onclick:()=>{ email.value=DEMO.reviewer.email; pw.value=DEMO.reviewer.pw; go_(); }}, icon("eye"), "👁️ Content Reviewer"),
+      h("button",{class:"btn sm",type:"button",onclick:()=>{ email.value=DEMO.support.email; pw.value=DEMO.support.pw; go_(); }}, icon("users"), "🎧 Support Admin")
+    ),
+    h("div",{class:"small muted mono"}, "Password for all demo accounts: demo1234")
   ) : null;
 
   authFrame(h("h1",null,t("sign_in")),
@@ -166,13 +168,48 @@ function isItemActive(item) {
   return S.view === item.view;
 }
 
+function rolePreviewSwitch(){
+  if (!isOwner() && !["super", "owner"].includes(S.me?.role)) return "";
+  if (S.simulatedRole) {
+    return h("button", {
+      class: "btn sm",
+      style: "background:rgba(217,119,6,0.18);color:var(--accent);border:1px solid var(--accent);display:inline-flex;align-items:center;gap:6px;font-weight:600",
+      title: "Click to exit simulation and restore Super Admin",
+      onclick: () => {
+        S.simulatedRole = null;
+        S.simulatedPermissions = null;
+        toast("Restored full Super Admin privileges", "ok");
+        S.render();
+      }
+    }, icon("spark"), "Simulating: " + (t("role_" + S.simulatedRole) || S.simulatedRole), h("span", { class: "mono small" }, "✕"));
+  }
+  return h("select", {
+    class: "input hide-sm",
+    style: "width:auto;padding:3px 8px;font-size:.78rem;color:var(--ink-2);background:var(--surface)",
+    "aria-label": "Preview role permissions",
+    onchange: e => {
+      if (e.target.value) {
+        S.simulatedRole = e.target.value;
+        toast(`Simulating as ${t("role_" + e.target.value)}... Check sidebar & CMS!`, "ok");
+        S.render();
+      }
+    }
+  },
+    h("option", { value: "" }, "👑 Super Admin (Live)"),
+    h("option", { value: "reviewer" }, "👁️ Content Reviewer (Read-Only)"),
+    h("option", { value: "editor" }, "✍️ Content Editor (No Credentials)"),
+    h("option", { value: "support" }, "🎧 Support Admin (Learners Only)")
+  );
+}
+
 function renderShell(){
   root.innerHTML = "";
+  const effectiveRole = getActiveRole() || S.me.role;
   const side = h("nav",{class:"side","aria-label":"Admin",style:"overflow-y:auto;max-height:100vh"},
-    h("div",{class:"brand"}, h("div",{class:"seal lo"},"ລ"), h("div",null, h("b",null,"LaoLao"), h("small",null,t("adm_title")+" · "+t("role_"+S.me.role)))));
+    h("div",{class:"brand"}, h("div",{class:"seal lo"},"ລ"), h("div",null, h("b",null,"LaoLao"), h("small",null,t("adm_title")+" · "+t("role_"+effectiveRole)))));
 
   NAV_SECTIONS.forEach(sec => {
-    const secItems = sec.items.filter(it => !(it.superOnly && !isSuper()));
+    const secItems = sec.items.filter(it => canViewMenu(it.id));
     if (!secItems.length) return;
     side.append(h("div",{class:"side-group-label",style:"padding:14px 12px 4px 12px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)"}, lang()==="lo" ? sec.title[1] : sec.title[0]));
     secItems.forEach(it => {
@@ -195,6 +232,7 @@ function renderShell(){
   const top = h("header",{class:"topbar"},
     h("div",{class:"mbrand"}, h("span",{class:"seal lo"},"ລ"), h("b",null,t("adm_title"))),
     h("div",{style:"flex:1"}),
+    rolePreviewSwitch(),
     h("a",{class:"btn sm ghost",href:"../",style:"text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:5px 9px",title:t("adm_open_learner")}, icon("home"), h("span",{class:"hide-sm"}, t("adm_open_learner"))),
     publishChip(),
     themeSwitcher(),
@@ -206,22 +244,49 @@ function renderShell(){
         go(view, type ? { type } : {});
       }
     }},
-      NAV_SECTIONS.map(sec => h("optgroup",{label: lang()==="lo"?sec.title[1]:sec.title[0]},
-        sec.items.filter(it=>!(it.superOnly&&!isSuper())).map(it => h("option",{
-          value: it.params ? `${it.view}:${it.params.type}` : it.view,
-          selected: isItemActive(it)
-        }, lang()==="lo"?it.label[1]:it.label[0]))
-      )),
+      NAV_SECTIONS.map(sec => {
+        const secItems = sec.items.filter(it => canViewMenu(it.id));
+        if (!secItems.length) return null;
+        return h("optgroup",{label: lang()==="lo"?sec.title[1]:sec.title[0]},
+          secItems.map(it => h("option",{
+            value: it.params ? `${it.view}:${it.params.type}` : it.view,
+            selected: isItemActive(it)
+          }, lang()==="lo"?it.label[1]:it.label[0]))
+        );
+      }).filter(Boolean),
       h("option",{value:"__learner__"}, "↗ " + t("adm_open_learner"))
     ));
+
   const main = h("main",{id:"main"});
   root.append(demoBar(), h("div",{class:"app adm"}, side, h("div",{class:"mainwrap"}, top, main)));
+
+  let allowed = canViewMenu(S.view);
+  if (S.view === "contentList" || S.view === "editor") {
+    allowed = canViewMenu(S.params?.type || "content");
+  } else if (S.view === "learner") {
+    allowed = canViewMenu("learners");
+  }
+
+  if (!allowed) {
+    main.innerHTML = "";
+    main.append(h("div", { class: "panel stack", style: "text-align:center;padding:48px 24px;max-width:540px;margin:40px auto" },
+      h("div", { style: "font-size:3rem;margin-bottom:8px" }, "🔒"),
+      h("h2", null, t("only_super")),
+      h("p", { class: "muted" }, t("credential_menu_restricted")),
+      h("div", { class: "row", style: "justify-content:center;margin-top:16px" },
+        h("button", { class: "btn primary", onclick: () => go("dashboard") }, "← " + t("adm_dashboard"))
+      )
+    ));
+    return;
+  }
+
   const V = Object.assign({ dashboard:viewDashboard, learners:viewLearners, learner:viewLearner, plans:viewPlans, content:viewContentHome, contentList:viewContentList, editor:viewEditor, activity:viewActivity, admins:viewAdmins, settings:viewSettings }, EXT_VIEWS);
   const fn = V[S.view] || viewDashboard;
   Promise.resolve(fn(S.params||{})).then(el => { main.innerHTML=""; main.append(el); }).catch(err => { console.error(err); main.innerHTML=""; main.append(h("div",{class:"banner"}, errText(err))); });
 }
+
 function publishChip(){
-  if (!canContent()) return "";
+  if (!canContent() || !canEditMenu("lessons")) return "";
   const dirty = !!S.bundle.dirty || !S.bundle.builtAt;
   return h("button",{class:"btn sm"+(dirty?" primary":""),title: dirty ? t("unpublished_changes") : t("up_to_date"),onclick:publishFlow}, icon(dirty?"upload":"check"), dirty ? t("publish_now") : t("up_to_date"));
 }
@@ -278,40 +343,19 @@ async function viewActivity(){
   return h("div",null, h("div",{class:"pagehead"}, h("h1",null,t("adm_activity"))), h("div",{class:"panel"}, activityFeed(rows)));
 }
 
-// ---------- administrators ----------
-async function viewAdmins(){
-  if (!isSuper()) return h("div",{class:"banner"}, t("only_super"));
-  const admins = await S.api.db.list("admins");
-  const wrap = h("div");
-  const table = h("div",{class:"tbl-wrap"}, h("table",{class:"tbl"}, h("thead",null,h("tr",null,h("th",null,t("email")),h("th",null,t("name")),h("th",null,t("role")),h("th",null,""))),
-    h("tbody",null, admins.map(a => h("tr",{style:"cursor:default"}, h("td",null,a.email), h("td",null,a.name||""),
-      h("td",null, h("select",{class:"input",style:"width:auto",disabled:a.id===S.me.uid,onchange:async e=>{ await S.api.db.update(`admins/${a.id}`,{role:e.target.value}); toast(t("saved_ok")); }}, ["super","content","support"].map(r=>h("option",{value:r,selected:a.role===r},t("role_"+r))))),
-      h("td",null, a.id===S.me.uid ? "" : h("button",{class:"btn sm ghost",onclick:async()=>{ if(await confirmDialog(t("remove"), a.email, t("remove"), t("cancel"), true)){ await S.api.db.del(`admins/${a.id}`); S.render(); } }}, t("remove"))))))));
-  wrap.append(h("div",{class:"pagehead"}, h("div",{class:"spread"}, h("h1",null,t("adm_admins")), h("button",{class:"btn primary",onclick:addAdmin}, icon("plus"), t("add_admin")))),
-    h("p",{class:"muted",style:"margin-bottom:14px"}, "Super Admin: everything · Content Admin: lessons and content · Support Admin: learners and access."), table);
-  return wrap;
-}
-async function addAdmin(){
-  const email = h("input",{class:"input",type:"email"}), name = h("input",{class:"input"}), pw = h("input",{class:"input",type:"text",placeholder:"(only for a new account)"});
-  const role = h("select",{class:"input"}, ["content","support","super"].map(r=>h("option",{value:r},t("role_"+r))));
-  const msg = h("p",{class:"small",style:"color:var(--bad)"});
-  await dialog({ title:t("add_admin"), body:h("div",{class:"stack"}, h("p",{class:"muted small"},t("admin_email_d")), fld(t("email"),email), fld(t("name"),name), fld(t("password"),pw), fld(t("role"),role), msg),
-    actions:[{label:t("cancel"),value:false},{label:t("add"),primary:true,onClick:async()=>{
-      try {
-        const e = email.value.trim().toLowerCase(); if (!e) return false;
-        let u = (await S.api.db.list("users",{ where:[["email","==",e]] }))[0];
-        let uid = u && u.id;
-        if (!uid){ if (!pw.value) { msg.textContent="No account with that email. Enter a password to create one."; return false; }
-          uid = await S.api.auth.createAccount(e, pw.value);
-          await S.api.db.set(`users/${uid}`, { email:e, name:name.value.trim(), status:"active", level:1, role:"admin", prefs:{}, createdAt:new Date() }); }
-        await S.api.db.set(`admins/${uid}`, { role:role.value, email:e, name:name.value.trim() || (u&&u.name) || "", createdAt:new Date(), addedBy:S.me.uid });
-        toast(t("saved_ok")); S.render(); return true;
-      } catch(err){ msg.textContent = errText(err); return false; }
-    }}] });
-}
-
 // ---------- settings ----------
 async function viewSettings(){
+  if (!isSuper()) {
+    return h("div", { class: "panel stack", style: "text-align:center;padding:48px 24px;max-width:540px;margin:40px auto" },
+      h("div", { style: "font-size:3rem;margin-bottom:8px" }, "🔒"),
+      h("h2", null, t("only_super")),
+      h("p", { class: "muted" }, t("credential_menu_restricted")),
+      h("div", { class: "row", style: "justify-content:center;margin-top:16px" },
+        h("button", { class: "btn primary", onclick: () => go("dashboard") }, "← " + t("adm_dashboard"))
+      )
+    );
+  }
+
   const s = Object.assign({ appName:"Xuélù", allowRegistration:false, defaultPlanId:"free", supportContact:"" }, await S.api.db.get("settings/app").catch(()=>null)||{});
   const name = h("input",{class:"input",value:s.appName}), reg = h("input",{type:"checkbox",class:"switch",checked:!!s.allowRegistration,"aria-label":t("allow_reg")});
   const plan = h("select",{class:"input"}, S.plans.map(p=>h("option",{value:p.id,selected:p.id===s.defaultPlanId},(p.name&&p.name.en)||p.id)));
@@ -322,8 +366,32 @@ async function viewSettings(){
   // Learner & Admin Test Accounts Card
   wrap.append(h("section",{class:"panel",style:"background:var(--surface-2);border:1px solid var(--accent)"},
     h("h3",{style:"color:var(--accent);display:flex;align-items:center;gap:6px"}, icon("users"), "Learner & Admin Login Credentials"),
-    h("p",{class:"small muted"}, "Use these pre-configured user credentials to sign in and test the learner experience and permissions:"),
+    h("p",{class:"small muted"}, "Pre-configured user accounts with distinct roles to test permissions, read-only modes, and access tiers:"),
     h("div",{class:"grid3",style:"gap:10px;margin-top:8px"},
+      h("div",{class:"card",style:"padding:10px;background:var(--surface)"},
+        h("b",{style:"color:var(--accent)"}, "🛡️ Super Admin / Owner"),
+        h("div",{class:"small mono",style:"margin-top:4px"}, "admin@demo.laolao"),
+        h("div",{class:"small muted"}, "Password: ", h("b",{class:"mono"}, "demo1234")),
+        h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Full privileges: Credentials, settings & admin CRUD")
+      ),
+      h("div",{class:"card",style:"padding:10px;background:var(--surface)"},
+        h("b",{style:"color:var(--jade)"}, "✍️ Content Editor"),
+        h("div",{class:"small mono",style:"margin-top:4px"}, "editor@demo.laolao"),
+        h("div",{class:"small muted"}, "Password: ", h("b",{class:"mono"}, "demo1234")),
+        h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Full edit on curriculum & studio. No credentials.")
+      ),
+      h("div",{class:"card",style:"padding:10px;background:var(--surface)"},
+        h("b",{style:"color:#7c3aed"}, "👁️ Content Reviewer (Read-Only)"),
+        h("div",{class:"small mono",style:"margin-top:4px"}, "reviewer@demo.laolao"),
+        h("div",{class:"small muted"}, "Password: ", h("b",{class:"mono"}, "demo1234")),
+        h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Can view and preview curriculum, CANNOT edit or delete")
+      ),
+      h("div",{class:"card",style:"padding:10px;background:var(--surface)"},
+        h("b",{style:"color:#2563eb"}, "🎧 Support Admin"),
+        h("div",{class:"small mono",style:"margin-top:4px"}, "support@demo.laolao"),
+        h("div",{class:"small muted"}, "Password: ", h("b",{class:"mono"}, "demo1234")),
+        h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Can manage learners and view activity only")
+      ),
       h("div",{class:"card",style:"padding:10px;background:var(--surface)"},
         h("b",{style:"color:var(--jade)"}, "🎓 Learner (Premium)"),
         h("div",{class:"small mono",style:"margin-top:4px"}, "learner@demo.laolao"),
@@ -335,16 +403,11 @@ async function viewSettings(){
         h("div",{class:"small mono",style:"margin-top:4px"}, "free@demo.laolao"),
         h("div",{class:"small muted"}, "Password: ", h("b",{class:"mono"}, "demo1234")),
         h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Free tier access for testing paywalls")
-      ),
-      h("div",{class:"card",style:"padding:10px;background:var(--surface)"},
-        h("b",{style:"color:var(--accent)"}, "🛡️ Admin / Owner"),
-        h("div",{class:"small mono",style:"margin-top:4px"}, "admin@demo.laolao"),
-        h("div",{class:"small muted"}, "Password: ", h("b",{class:"mono"}, "demo1234")),
-        h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Full Super Admin & CMS privileges")
       )
     ),
-    h("div",{class:"row",style:"margin-top:10px"},
-      h("a",{href:"../",target:"_blank",class:"btn sm",style:"text-decoration:none"}, icon("home"), "Open Learner App (New Tab) ↗")
+    h("div",{class:"row",style:"margin-top:10px;gap:8px"},
+      h("a",{href:"../",target:"_blank",class:"btn sm",style:"text-decoration:none"}, icon("home"), "Open Learner App (New Tab) ↗"),
+      h("button",{class:"btn sm ghost",onclick:()=>go("admins")}, icon("shield"), "Manage Admins & Custom Roles →")
     )
   ));
 

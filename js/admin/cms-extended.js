@@ -2,7 +2,7 @@
 import { h, $$, icon, toast, tr, dialog, confirmDialog, errText } from "../shared/ui.js";
 import { t, lang } from "../shared/i18n.js";
 import { speak } from "../shared/speech.js";
-import { S, isSuper, canContent } from "./state.js";
+import { S, isSuper, canContent, canEditMenu } from "./state.js";
 
 export const EXT_VIEWS = {};
 
@@ -11,6 +11,7 @@ export const EXT_VIEWS = {};
 // =========================================================================
 EXT_VIEWS.audioStudio = async () => {
   const root = h("div",{class:"stack-l"});
+  const canEdit = canEditMenu("audioStudio");
   root.append(h("div",{class:"pagehead"},
     h("div",{class:"spread"},
       h("h1",null, lang()==="lo" ? "ຫ້ອງສະຕູດີໂອບັນທຶກສຽງ (Lao Voice Studio)" : "Lao Voice Recording Studio"),
@@ -18,6 +19,10 @@ EXT_VIEWS.audioStudio = async () => {
     ),
     h("p",null, "Record native Lao pronunciations directly with your microphone, preview audio, and manage Quality Control statuses.")
   ));
+
+  if (!canEdit) {
+    root.append(h("div",{class:"banner ok",style:"background:var(--surface-2);border-left:4px solid #7c3aed;margin-bottom:12px;display:flex;align-items:center;gap:8px"}, icon("eye"), h("span",null,t("read_only_banner"))));
+  }
 
   let mediaRecorder = null;
   let audioChunks = [];
@@ -452,6 +457,7 @@ EXT_VIEWS.excelImport = () => {
 // =========================================================================
 EXT_VIEWS.videoManager = async () => {
   const root = h("div",{class:"stack-l"});
+  const canEdit = canEditMenu("videos");
   root.append(h("div",{class:"pagehead"},
     h("div",{class:"spread"},
       h("h1",null, lang()==="lo" ? "ຈັດການວິດີໂອບົດຮຽນ (Video Manager)" : "Video Content Manager"),
@@ -462,6 +468,10 @@ EXT_VIEWS.videoManager = async () => {
     ),
     h("p",null, "Database-backed video curriculum. Any video added, updated, or deleted here immediately updates the database and learner feed.")
   ));
+
+  if (!canEdit) {
+    root.append(h("div",{class:"banner ok",style:"background:var(--surface-2);border-left:4px solid #7c3aed;margin-bottom:12px;display:flex;align-items:center;gap:8px"}, icon("eye"), h("span",null,t("read_only_banner"))));
+  }
 
   let videos = await S.api.db.list("videos").catch(()=>[]);
 
@@ -493,8 +503,9 @@ EXT_VIEWS.videoManager = async () => {
           v.embedUrl ? h("a",{href:v.embedUrl,target:"_blank",class:"small",style:"color:var(--accent);word-break:break-all"}, v.embedUrl) : null
         ),
         h("div",{class:"row",style:"gap:6px"},
-          h("button",{class:"btn sm ghost",title:"Edit in CMS",onclick:()=>S.go("editor",{type:"videos",id:v.id})}, icon("edit"), "Edit"),
-          h("button",{class:"btn sm ghost",title:"Duplicate",onclick:async()=>{
+          canEdit ? h("button",{class:"btn sm ghost",title:"Edit in CMS",onclick:()=>S.go("editor",{type:"videos",id:v.id})}, icon("edit"), "Edit")
+                  : h("button",{class:"btn sm ghost",title:"View & Preview",onclick:()=>S.go("editor",{type:"videos",id:v.id})}, icon("eye"), "View"),
+          canEdit ? h("button",{class:"btn sm ghost",title:"Duplicate",onclick:async()=>{
             const nid = v.id + "-copy-" + Date.now().toString(36).slice(-4);
             const copy = JSON.parse(JSON.stringify(v));
             copy.id = nid; copy.status = "draft";
@@ -503,8 +514,8 @@ EXT_VIEWS.videoManager = async () => {
             toast("Duplicated as " + nid, "ok");
             videos = await S.api.db.list("videos").catch(()=>[]);
             renderVideos();
-          }}, icon("copy")),
-          h("button",{class:"btn sm ghost",style:"color:var(--bad)",title:"Delete",onclick:async()=>{
+          }}, icon("copy")) : null,
+          canEdit ? h("button",{class:"btn sm ghost",style:"color:var(--bad)",title:"Delete",onclick:async()=>{
             if (await confirmDialog("Delete Video", `Delete "${vTitle}"?`, "Delete", t("cancel"), true)){
               await S.api.db.del("videos/" + v.id);
               await S.api.db.set("settings/bundle", { dirty:true }, true);
@@ -512,7 +523,7 @@ EXT_VIEWS.videoManager = async () => {
               videos = videos.filter(x=>x.id!==v.id);
               renderVideos();
             }
-          }}, icon("trash"))
+          }}, icon("trash")) : null
         )
       ));
     });
@@ -559,7 +570,8 @@ EXT_VIEWS.videoManager = async () => {
   );
 
   renderVideos();
-  root.append(formCard, h("h3",{style:"margin-top:10px"},"Current Video Library ("+videos.length+"):"), listCard);
+  if (canEdit) root.append(formCard);
+  root.append(h("h3",{style:"margin-top:10px"},"Current Video Library ("+videos.length+"):"), listCard);
   return root;
 };
 
