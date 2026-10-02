@@ -29,6 +29,51 @@ export async function createSupabaseApi(supabaseUrl, supabaseAnonKey){
     return { table: parts[0], id: parts.slice(1).join("__") };
   }
 
+  function isMissingTableError(error) {
+    if (!error) return false;
+    const msg = String(error.message || error.details || error.hint || error).toLowerCase();
+    const code = String(error.code || "").toUpperCase();
+    return (
+      code === "PGRST205" ||
+      code === "PGRST200" ||
+      code === "42P01" ||
+      msg.includes("schema cache") ||
+      msg.includes("could not find the table") ||
+      (msg.includes("relation") && msg.includes("does not exist"))
+    );
+  }
+
+  const FALLBACK_KEY = "laolao_supabase_fallback_v1";
+  let fallbackStore = {};
+  try {
+    const raw = localStorage.getItem(FALLBACK_KEY);
+    if (raw) fallbackStore = JSON.parse(raw);
+  } catch(e){}
+
+  function saveFallback(){
+    try {
+      localStorage.setItem(FALLBACK_KEY, JSON.stringify(fallbackStore));
+    } catch(e){}
+  }
+
+  async function ensureSeedFallback(table){
+    if (fallbackStore[table] && Object.keys(fallbackStore[table]).length > 0) return;
+    try {
+      const res = await fetch("data/seed.json");
+      if (res.ok) {
+        const seed = await res.json();
+        const list = seed[table] || (table==="vocabulary"?seed.vocab:null);
+        if (Array.isArray(list)) {
+          fallbackStore[table] = fallbackStore[table] || {};
+          list.forEach(item => {
+            if (item && item.id) fallbackStore[table][item.id] = item;
+          });
+          saveFallback();
+        }
+      }
+    } catch(e){}
+  }
+
   let currentUser = null;
 
   const api = {
@@ -52,12 +97,8 @@ export async function createSupabaseApi(supabaseUrl, supabaseAnonKey){
       signIn: async (email, password) => {
         const { data, error } = await client.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        return { uid: data.user.id, email: data.user.email };
-      },
-      signUp: async (email, password) => {
-        const { data, error } = await client.auth.signUp({ email, password });
-        if (error) throw error;
-        return { uid: data.user.id, email: data.user.email };
+        currentUser = { uid: data.user.id, email: data.user.email };
+        return currentUser;
       },
       signOut: async () => {
         const { error } = await client.auth.signOut();
@@ -83,15 +124,39 @@ export async function createSupabaseApi(supabaseUrl, supabaseAnonKey){
     db: {
       get: async path => {
         const { table, id } = parsePath(path);
-        if (!id){
-          const { data, error } = await client.from(table).select("*").limit(1);
-          if (error) throw error;
-          return data?.[0] ? Object.assign({ id: data[0].id }, data[0].data || data[0]) : null;
+        try {
+          if (!id){
+            const { data, error } = await client.from(table).select("*").limit(1);
+            if (error) {
+              if (isMissingTableError(error)) {
+                await ensureSeedFallback(table);
+                const items = Object.values(fallbackStore[table] || {});
+                return items[0] || null;
+              }
+              throw error;
+            }
+            return data?.[0] ? Object.assign({ id: data[0].id }, data[0].data || data[0]) : null;
+          }
+          const { data, error } = await client.from(table).select("*").eq("id", id).maybeSingle();
+          if (error) {
+            if (isMissingTableError(error)) {
+              await ensureSeedFallback(table);
+              return fallbackStore[table]?.[id] || null;
+            }
+            throw error;
+          }
+          if (!data) {
+            if (fallbackStore[table]?.[id]) return fallbackStore[table][id];
+            return null;
+          }
+          return Object.assign({ id: data.id }, data.data || data);
+        } catch(err) {
+          if (isMissingTableError(err)) {
+            await ensureSeedFallback(table);
+            return (id ? fallbackStore[table]?.[id] : Object.values(fallbackStore[table] || {})[0]) || null;
+          }
+          throw err;
         }
-        const { data, error } = await client.from(table).select("*").eq("id", id).maybeSingle();
-        if (error) throw error;
-        if (!data) return null;
-        return Object.assign({ id: data.id }, data.data || data);
       },
       set: async (path, val, merge=false) => {
         const { table, id } = parsePath(path);
@@ -101,49 +166,149 @@ export async function createSupabaseApi(supabaseUrl, supabaseAnonKey){
           const existing = await api.db.get(path);
           if (existing) payload = Object.assign({}, existing, val);
         }
-        const { error } = await client.from(table).upsert({ id, data: payload, updated_at: new Date() });
-        if (error) throw error;
+        try {
+          const { error } = await client.from(table).upsert({ id, data: payload, updated_at: new Date() });
+          if (error) {
+            if (isMissingTableError(error)) {
+              fallbackStore[table] = fallbackStore[table] || {};
+              fallbackStore[table][id] = Object.assign({ id }, payload);
+              saveFallback();
+              return;
+            }
+            throw error;
+          }
+          fallbackStore[table] = fallbackStore[table] || {};
+          fallbackStore[table][id] = Object.assign({ id }, payload);
+          saveFallback();
+        } catch(err) {
+          if (isMissingTableError(err)) {
+            fallbackStore[table] = fallbackStore[table] || {};
+            fallbackStore[table][id] = Object.assign({ id }, payload);
+            saveFallback();
+            return;
+          }
+          throw err;
+        }
       },
       update: async (path, val) => {
         const { table, id } = parsePath(path);
         const existing = await api.db.get(path) || {};
         const merged = Object.assign({}, existing, val);
-        const { error } = await client.from(table).upsert({ id, data: merged, updated_at: new Date() });
-        if (error) throw error;
+        try {
+          const { error } = await client.from(table).upsert({ id, data: merged, updated_at: new Date() });
+          if (error) {
+            if (isMissingTableError(error)) {
+              fallbackStore[table] = fallbackStore[table] || {};
+              fallbackStore[table][id] = Object.assign({ id }, merged);
+              saveFallback();
+              return;
+            }
+            throw error;
+          }
+          fallbackStore[table] = fallbackStore[table] || {};
+          fallbackStore[table][id] = Object.assign({ id }, merged);
+          saveFallback();
+        } catch(err) {
+          if (isMissingTableError(err)) {
+            fallbackStore[table] = fallbackStore[table] || {};
+            fallbackStore[table][id] = Object.assign({ id }, merged);
+            saveFallback();
+            return;
+          }
+          throw err;
+        }
       },
       del: async path => {
         const { table, id } = parsePath(path);
         if (!id) return;
-        const { error } = await client.from(table).delete().eq("id", id);
-        if (error) throw error;
+        try {
+          const { error } = await client.from(table).delete().eq("id", id);
+          if (error && !isMissingTableError(error)) throw error;
+        } catch(err) {
+          if (!isMissingTableError(err)) throw err;
+        }
+        if (fallbackStore[table]?.[id]) {
+          delete fallbackStore[table][id];
+          saveFallback();
+        }
       },
       add: async (path, val) => {
         const { table } = parsePath(path);
         const id = crypto.randomUUID ? crypto.randomUUID() : "id_" + Math.random().toString(36).slice(2, 10);
-        const { error } = await client.from(table).insert({ id, data: val, created_at: new Date() });
-        if (error) throw error;
+        try {
+          const { error } = await client.from(table).insert({ id, data: val, created_at: new Date() });
+          if (error) {
+            if (isMissingTableError(error)) {
+              fallbackStore[table] = fallbackStore[table] || {};
+              fallbackStore[table][id] = Object.assign({ id }, val);
+              saveFallback();
+              return id;
+            }
+            throw error;
+          }
+        } catch(err) {
+          if (isMissingTableError(err)) {
+            fallbackStore[table] = fallbackStore[table] || {};
+            fallbackStore[table][id] = Object.assign({ id }, val);
+            saveFallback();
+            return id;
+          }
+          throw err;
+        }
         return id;
       },
       list: async (path, o={}) => {
         const { table } = parsePath(path);
-        let q = client.from(table).select("*");
-        if (o.where){
-          o.where.forEach(([field, op, val]) => {
-            if (op === "==") q = q.eq(`data->>${field}`, String(val));
-            else if (op === ">") q = q.gt(`data->>${field}`, val);
-            else if (op === "<") q = q.lt(`data->>${field}`, val);
-            else if (op === ">=") q = q.gte(`data->>${field}`, val);
-            else if (op === "<=") q = q.lte(`data->>${field}`, val);
-          });
+        try {
+          let q = client.from(table).select("*");
+          if (o.where){
+            o.where.forEach(([field, op, val]) => {
+              if (op === "==") q = q.eq(`data->>${field}`, String(val));
+              else if (op === ">") q = q.gt(`data->>${field}`, val);
+              else if (op === "<") q = q.lt(`data->>${field}`, val);
+              else if (op === ">=") q = q.gte(`data->>${field}`, val);
+              else if (op === "<=") q = q.lte(`data->>${field}`, val);
+            });
+          }
+          if (o.orderBy){
+            const [field, dir] = o.orderBy;
+            q = q.order(`data->>${field}`, { ascending: dir !== "desc" });
+          }
+          if (o.limit) q = q.limit(o.limit);
+          const { data, error } = await q;
+          if (error) {
+            if (isMissingTableError(error)) {
+              await ensureSeedFallback(table);
+              let rows = Object.values(fallbackStore[table] || {});
+              if (o.where) {
+                o.where.forEach(([f, op, v]) => {
+                  if (op === "==") rows = rows.filter(r => String(r[f]) === String(v));
+                });
+              }
+              if (o.limit) rows = rows.slice(0, o.limit);
+              return rows;
+            }
+            throw error;
+          }
+          const mapped = (data || []).map(r => Object.assign({ id: r.id }, r.data || r));
+          if (!mapped.length && fallbackStore[table] && Object.keys(fallbackStore[table]).length > 0) {
+            return Object.values(fallbackStore[table]);
+          }
+          return mapped;
+        } catch(err) {
+          if (isMissingTableError(err)) {
+            await ensureSeedFallback(table);
+            let rows = Object.values(fallbackStore[table] || {});
+            if (o.where) {
+              o.where.forEach(([f, op, v]) => {
+                if (op === "==") rows = rows.filter(r => String(r[f]) === String(v));
+              });
+            }
+            if (o.limit) rows = rows.slice(0, o.limit);
+            return rows;
+          }
+          throw err;
         }
-        if (o.orderBy){
-          const [field, dir] = o.orderBy;
-          q = q.order(`data->>${field}`, { ascending: dir !== "desc" });
-        }
-        if (o.limit) q = q.limit(o.limit);
-        const { data, error } = await q;
-        if (error) throw error;
-        return (data || []).map(r => Object.assign({ id: r.id }, r.data || r));
       },
       count: async (path, o={}) => {
         const list = await api.db.list(path, o);

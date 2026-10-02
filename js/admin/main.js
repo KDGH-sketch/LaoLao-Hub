@@ -317,11 +317,62 @@ async function viewSettings(){
   const plan = h("select",{class:"input"}, S.plans.map(p=>h("option",{value:p.id,selected:p.id===s.defaultPlanId},(p.name&&p.name.en)||p.id)));
   const contact = h("input",{class:"input",value:s.supportContact,placeholder:"WhatsApp / email / Facebook page"});
   const wrap = h("div",{class:"stack-l"});
-  wrap.append(h("div",{class:"pagehead"}, h("h1",null,t("adm_settings"))));
+  wrap.append(h("div",{class:"pagehead"}, h("h1",null,t("adm_settings")), h("p",null,"Configure platform settings, database schema, and test accounts.")));
+
+  // Learner & Admin Test Accounts Card
+  wrap.append(h("section",{class:"panel",style:"background:var(--surface-2);border:1px solid var(--accent)"},
+    h("h3",{style:"color:var(--accent);display:flex;align-items:center;gap:6px"}, icon("users"), "Learner & Admin Login Credentials"),
+    h("p",{class:"small muted"}, "Use these pre-configured user credentials to sign in and test the learner experience and permissions:"),
+    h("div",{class:"grid3",style:"gap:10px;margin-top:8px"},
+      h("div",{class:"card",style:"padding:10px;background:var(--surface)"},
+        h("b",{style:"color:var(--jade)"}, "🎓 Learner (Premium)"),
+        h("div",{class:"small mono",style:"margin-top:4px"}, "learner@demo.laolao"),
+        h("div",{class:"small muted"}, "Password: ", h("b",{class:"mono"}, "demo1234")),
+        h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Full access to all stages & lessons")
+      ),
+      h("div",{class:"card",style:"padding:10px;background:var(--surface)"},
+        h("b",{style:"color:var(--ink-2)"}, "🆓 Learner (Free Tier)"),
+        h("div",{class:"small mono",style:"margin-top:4px"}, "free@demo.laolao"),
+        h("div",{class:"small muted"}, "Password: ", h("b",{class:"mono"}, "demo1234")),
+        h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Free tier access for testing paywalls")
+      ),
+      h("div",{class:"card",style:"padding:10px;background:var(--surface)"},
+        h("b",{style:"color:var(--accent)"}, "🛡️ Admin / Owner"),
+        h("div",{class:"small mono",style:"margin-top:4px"}, "admin@demo.laolao"),
+        h("div",{class:"small muted"}, "Password: ", h("b",{class:"mono"}, "demo1234")),
+        h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Full Super Admin & CMS privileges")
+      )
+    ),
+    h("div",{class:"row",style:"margin-top:10px"},
+      h("a",{href:"../",target:"_blank",class:"btn sm",style:"text-decoration:none"}, icon("home"), "Open Learner App (New Tab) ↗")
+    )
+  ));
+
+  // Supabase PostgreSQL Schema Integration Card
+  wrap.append(h("section",{class:"panel"},
+    h("h3",{style:"display:flex;align-items:center;gap:6px"}, icon("content"), "Supabase PostgreSQL Database Schema (29 Tables)"),
+    h("p",{class:"small muted"}, "Current Mode: ", h("span",{class:"chip ok mono"}, S.api.mode.toUpperCase()), " · All 15 curriculum collections (lessons, patterns, grammar, vocabulary, dialogues, quizzes, videos, tones, culture, characters, dictionary, audio, lexicon, paths, releases) have dedicated tables."),
+    h("p",{class:"small muted"}, "If your Supabase project displays 'Could not find the table ... in the schema cache', run the complete SQL script in your Supabase SQL Editor:"),
+    h("div",{class:"row",style:"gap:8px"},
+      h("button",{class:"btn sm primary",onclick:async()=>{
+        try {
+          const res = await fetch("../supabase-schema.sql");
+          const sql = await res.text();
+          await navigator.clipboard.writeText(sql);
+          toast("Supabase SQL Schema copied to clipboard!", "ok");
+        } catch(e){
+          window.open("../supabase-schema.sql", "_blank");
+        }
+      }}, icon("copy"), "Copy Supabase SQL Schema (29 Tables)"),
+      h("a",{href:"../supabase-schema.sql",target:"_blank",download:"supabase-schema.sql",class:"btn sm ghost",style:"text-decoration:none"}, icon("download"), "Download supabase-schema.sql")
+    )
+  ));
+
   wrap.append(h("section",{class:"panel"},
     fld(t("app_name"), name), h("div",{class:"set-row"}, h("div",null,h("label",null,t("allow_reg")),h("p",null,t("allow_reg_d"))), reg),
     fld(t("support_contact"), contact),
     h("div",{class:"row"}, h("button",{class:"btn primary",disabled:!isSuper(),onclick:async()=>{ await S.api.db.set("settings/app",{appName:name.value.trim(),allowRegistration:reg.checked,defaultPlanId:plan.value,supportContact:contact.value.trim()},true); S.settings = await S.api.db.get("settings/app"); toast(t("saved_ok")); }}, t("save")), isSuper()?null:h("span",{class:"muted small"},t("only_super")))));
+
   wrap.append(h("section",{class:"panel"}, h("h3",null,t("adm_import")), h("p",{class:"muted"},t("adm_import_d")),
     h("div",{class:"row"}, h("button",{class:"btn",disabled:!isSuper(),onclick:async()=>{
       if (!await confirmDialog(t("adm_import"), t("confirm_import"), t("adm_import"), t("cancel"))) return;
@@ -330,6 +381,7 @@ async function viewSettings(){
       catch(e){ st.textContent = errText(e); }
     }}, icon("download"), t("adm_import")),
     h("button",{class:"btn",onclick:exportAll}, icon("copy"), t("export")))));
+
   if (S.api.mode==="demo") wrap.append(h("section",{class:"panel"}, h("h3",null,t("danger")), h("button",{class:"btn danger",style:"align-self:flex-start",onclick:async()=>{ if(await confirmDialog(t("reset_demo"),"Delete all demo data in this browser?",t("reset_demo"),t("cancel"),true)){ await S.api._reset(); location.reload(); } }}, t("reset_demo"))));
   return wrap;
 }
