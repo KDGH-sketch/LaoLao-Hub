@@ -1,313 +1,260 @@
 -- ========================================================
---  LaoLao (ຮຽນພາສາລາວ) - Complete Supabase PostgreSQL Schema
---  Run this SQL in your Supabase Dashboard:
---  SQL Editor -> New query -> Paste & Run
+--  LaoLao (ຮຽນພາສາລາວ) - Supabase schema, security policies and storage
+--
+--  Run in the Supabase Dashboard: SQL Editor -> New query -> paste everything -> Run.
+--  Safe to run again: tables are only created when missing (existing rows are kept),
+--  and ALL existing policies on these tables are replaced by the ones below.
+--
+--  Owner (always full access): change the email in ll_owner_email() if needed.
 -- ========================================================
 
--- Enable UUID extension
-create extension if not exists "uuid-ossp";
+begin;
 
--- 1. Core User & Identity Management
-create table if not exists public.users (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- --------------------------------------------------------
+-- 1. Tables (every table: id text, data jsonb)
+-- --------------------------------------------------------
+do $$
+declare t text;
+begin
+  foreach t in array array[
+    'users','admins','adminNotes','access','plans','subscriptions','settings',
+    'lessons','patterns','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon',
+    'videos','tones','culture','characters','dictionary',
+    'bundles','progress','reviews','bookmarks','notes','activity',
+    'vocab','saved'  -- legacy, unused by the app
+  ] loop
+    execute format('create table if not exists public.%I (
+      id text primary key,
+      data jsonb not null default ''{}''::jsonb,
+      created_at timestamptz default now(),
+      updated_at timestamptz default now()
+    )', t);
+    execute format('alter table public.%I enable row level security', t);
+  end loop;
+end $$;
 
-create table if not exists public.admins (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- --------------------------------------------------------
+-- 2. Helper functions (security definer: they read admins/users/access without RLS recursion)
+-- --------------------------------------------------------
+create or replace function public.ll_owner_email() returns text
+language sql immutable as $$ select 'kindathanomsuck@gmail.com'::text $$;
 
-create table if not exists public.adminNotes (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+create or replace function public.ll_is_owner() returns boolean
+language sql stable as $$
+  select coalesce(lower(auth.jwt() ->> 'email') = lower(public.ll_owner_email()), false)
+$$;
 
--- 2. Subscription, Plans & Access Entitlements
-create table if not exists public.access (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- Role of the signed-in admin (null when not an admin or disabled)
+create or replace function public.ll_admin_role() returns text
+language sql stable security definer set search_path = public as $$
+  select a.data ->> 'role' from public.admins a
+  where a.id = auth.uid()::text and coalesce(a.data ->> 'status', 'active') <> 'disabled'
+$$;
 
-create table if not exists public.plans (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+create or replace function public.ll_is_admin() returns boolean
+language sql stable as $$ select public.ll_is_owner() or public.ll_admin_role() is not null $$;
 
-create table if not exists public.subscriptions (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+create or replace function public.ll_is_super() returns boolean
+language sql stable as $$ select public.ll_is_owner() or coalesce(public.ll_admin_role() in ('super','owner'), false) $$;
 
--- 3. Application Settings & Configuration
-create table if not exists public.settings (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+create or replace function public.ll_can_support() returns boolean
+language sql stable as $$ select public.ll_is_super() or coalesce(public.ll_admin_role() in ('support','admin'), false) $$;
 
--- 4. Curriculum Content Tables (Dedicated Table for Every Menu Item)
-create table if not exists public.lessons (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- Mirrors canEditMenu() in js/admin/state.js
+create or replace function public.ll_can_edit(menu text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select public.ll_is_super()
+    or coalesce(public.ll_admin_role() in ('editor','content','admin'), false)
+    or exists (select 1 from public.admins a
+               where a.id = auth.uid()::text and a.data ->> 'role' = 'custom'
+                 and coalesce(a.data ->> 'status', 'active') <> 'disabled'
+                 and a.data -> 'permissions' -> menu ->> 'edit' = 'true')
+$$;
 
-create table if not exists public.patterns (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- Any admin who may change content somewhere (publishing, uploads)
+create or replace function public.ll_can_publish() returns boolean
+language sql stable as $$
+  select public.ll_is_super() or coalesce(public.ll_admin_role() in ('editor','content','admin','custom'), false)
+$$;
 
-create table if not exists public.grammar (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+create or replace function public.ll_registration_open() returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce((select data ->> 'allowRegistration' from public.settings where id = 'app') = 'true', false)
+$$;
 
-create table if not exists public.vocabulary (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- Effective tier (mirrors tierFor() in js/shared/content.js): 0 public, 1 free, 2+ paid, 99 admin
+create or replace function public.ll_my_tier() returns int
+language plpgsql stable security definer set search_path = public as $$
+declare u jsonb; a jsonb; exp_ms numeric;
+begin
+  if auth.uid() is null then return 0; end if;
+  if public.ll_is_admin() then return 99; end if;
+  select data into u from public.users where id = auth.uid()::text;
+  if u is not null and coalesce(u ->> 'status', 'active') <> 'active' then return 0; end if;
+  select data into a from public.access where id = auth.uid()::text;
+  if a is null or coalesce(a ->> 'status', '') <> 'active' then return 1; end if;
+  if jsonb_typeof(a -> 'expiresAt') = 'number' then
+    exp_ms := (a ->> 'expiresAt')::numeric;
+  elsif jsonb_typeof(a -> 'expiresAt') = 'string' then
+    exp_ms := extract(epoch from (a ->> 'expiresAt')::timestamptz) * 1000;
+  end if;
+  if exp_ms is not null and exp_ms <= extract(epoch from now()) * 1000 then return 1; end if;
+  return greatest(1, coalesce((a ->> 'tier')::int, 1));
+exception when others then
+  return 1;
+end $$;
 
--- Maintain backward-compatible alias for vocab table
-create table if not exists public.vocab (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- Learners may edit their own profile, but not status / role / level / email
+create or replace function public.ll_users_protect() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare k text;
+begin
+  if public.ll_can_support() then return new; end if;
+  foreach k in array array['status','role','level','email'] loop
+    if old.data ? k then new.data := jsonb_set(new.data, array[k], old.data -> k);
+    else new.data := new.data - k; end if;
+  end loop;
+  return new;
+end $$;
+drop trigger if exists ll_users_protect on public.users;
+create trigger ll_users_protect before update on public.users
+  for each row execute function public.ll_users_protect();
 
-create table if not exists public.dialogues (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- --------------------------------------------------------
+-- 3. Remove every existing policy on these tables
+-- --------------------------------------------------------
+do $$
+declare r record;
+begin
+  for r in select tablename, policyname from pg_policies
+           where schemaname = 'public' and tablename = any (array[
+             'users','admins','adminNotes','access','plans','subscriptions','settings',
+             'lessons','patterns','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon',
+             'videos','tones','culture','characters','dictionary',
+             'bundles','progress','reviews','bookmarks','notes','activity','vocab','saved'])
+  loop
+    execute format('drop policy %I on public.%I', r.policyname, r.tablename);
+  end loop;
+end $$;
 
-create table if not exists public.quizzes (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- --------------------------------------------------------
+-- 4. Policies
+-- --------------------------------------------------------
 
-create table if not exists public.videos (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- Content: admins read, editors write (per menu). Learners never read these; they read bundles.
+do $$
+declare t text;
+begin
+  foreach t in array array['lessons','patterns','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon',
+                           'videos','tones','culture','characters','dictionary'] loop
+    execute format('create policy "ll admin read" on public.%I for select using (public.ll_is_admin())', t);
+    execute format('create policy "ll edit insert" on public.%I for insert with check (public.ll_can_edit(%L))', t, t);
+    execute format('create policy "ll edit update" on public.%I for update using (public.ll_can_edit(%L)) with check (public.ll_can_edit(%L))', t, t, t);
+    execute format('create policy "ll edit delete" on public.%I for delete using (public.ll_can_edit(%L))', t, t);
+  end loop;
+end $$;
 
-create table if not exists public.tones (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- Published bundles: everyone reads "meta"; parts only up to the reader's tier
+create policy "ll read meta or own tier" on public.bundles for select
+  using (id = 'meta' or coalesce((data ->> 'tier')::int, 0) <= public.ll_my_tier());
+create policy "ll publish insert" on public.bundles for insert with check (public.ll_can_publish());
+create policy "ll publish update" on public.bundles for update using (public.ll_can_publish()) with check (public.ll_can_publish());
+create policy "ll publish delete" on public.bundles for delete using (public.ll_can_publish());
 
-create table if not exists public.culture (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- Plans: public read, Super Admin writes
+create policy "ll public read" on public.plans for select using (true);
+create policy "ll super insert" on public.plans for insert with check (public.ll_is_super());
+create policy "ll super update" on public.plans for update using (public.ll_is_super()) with check (public.ll_is_super());
+create policy "ll super delete" on public.plans for delete using (public.ll_is_super());
 
-create table if not exists public.characters (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- Settings: public read (app name, registration, promotions); Super Admin writes; editors may update the publish state
+create policy "ll public read" on public.settings for select using (true);
+create policy "ll write insert" on public.settings for insert
+  with check (public.ll_is_super() or (id = 'bundle' and public.ll_can_publish()));
+create policy "ll write update" on public.settings for update
+  using (public.ll_is_super() or (id = 'bundle' and public.ll_can_publish()))
+  with check (public.ll_is_super() or (id = 'bundle' and public.ll_can_publish()));
+create policy "ll super delete" on public.settings for delete using (public.ll_is_super());
 
-create table if not exists public.dictionary (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- Users: own row or admins; self-registration only as an active learner while registration is open
+create policy "ll own or admin read" on public.users for select using (id = auth.uid()::text or public.ll_is_admin());
+create policy "ll insert" on public.users for insert with check (
+  public.ll_can_support()
+  or (id = auth.uid()::text and (
+        exists (select 1 from public.users u where u.id = auth.uid()::text)   -- upsert of an existing own row
+        or (data ->> 'role' = 'learner' and data ->> 'status' = 'active' and public.ll_registration_open()))));
+create policy "ll own or support update" on public.users for update
+  using (id = auth.uid()::text or public.ll_can_support())
+  with check (id = auth.uid()::text or public.ll_can_support());
+create policy "ll support delete" on public.users for delete using (public.ll_can_support());
 
-create table if not exists public.audio (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- Admins: any admin reads; Super Admin writes (the owner bootstraps as Super Admin)
+create policy "ll own or admin read" on public.admins for select using (id = auth.uid()::text or public.ll_is_admin());
+create policy "ll super insert" on public.admins for insert with check (public.ll_is_super());
+create policy "ll super update" on public.admins for update using (public.ll_is_super()) with check (public.ll_is_super());
+create policy "ll super delete" on public.admins for delete using (public.ll_is_super());
 
-create table if not exists public.lexicon (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- Private notes about learners
+create policy "ll support all" on public."adminNotes" for all using (public.ll_can_support()) with check (public.ll_can_support());
 
-create table if not exists public.paths (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- Access: learner reads own; support writes; self-registration may create a free entitlement once
+create policy "ll own or admin read" on public.access for select using (id = auth.uid()::text or public.ll_is_admin());
+create policy "ll insert" on public.access for insert with check (
+  public.ll_can_support()
+  or (id = auth.uid()::text and public.ll_registration_open()
+      and data ->> 'tier' = '1' and data ->> 'source' = 'registration'
+      and not exists (select 1 from public.access x where x.id = auth.uid()::text)));
+create policy "ll support update" on public.access for update using (public.ll_can_support()) with check (public.ll_can_support());
+create policy "ll support delete" on public.access for delete using (public.ll_can_support());
 
-create table if not exists public.releases (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- Subscription history
+create policy "ll own or admin read" on public.subscriptions for select using (public.ll_is_admin() or data ->> 'uid' = auth.uid()::text);
+create policy "ll support insert" on public.subscriptions for insert with check (public.ll_can_support());
+create policy "ll support update" on public.subscriptions for update using (public.ll_can_support()) with check (public.ll_can_support());
+create policy "ll support delete" on public.subscriptions for delete using (public.ll_can_support());
 
-create table if not exists public.bundles (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- Progress: own rows ("{uid}" and "{uid}__events__{id}"); admins read
+create policy "ll own or admin read" on public.progress for select
+  using (split_part(id, '__', 1) = auth.uid()::text or public.ll_is_admin());
+create policy "ll own insert" on public.progress for insert with check (split_part(id, '__', 1) = auth.uid()::text);
+create policy "ll own update" on public.progress for update
+  using (split_part(id, '__', 1) = auth.uid()::text) with check (split_part(id, '__', 1) = auth.uid()::text);
+create policy "ll own or super delete" on public.progress for delete
+  using (split_part(id, '__', 1) = auth.uid()::text or public.ll_is_super());
 
--- 5. Learner Tracking, Progress & Spaced Repetition (SRS)
-create table if not exists public.progress (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- Review cards, bookmarks, learner notes: own rows only ("{uid}__items__{id}")
+do $$
+declare t text;
+begin
+  foreach t in array array['reviews','bookmarks','notes'] loop
+    execute format('create policy "ll own all" on public.%I for all using (split_part(id, ''__'', 1) = auth.uid()::text) with check (split_part(id, ''__'', 1) = auth.uid()::text)', t);
+  end loop;
+end $$;
 
-create table if not exists public.reviews (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- Activity feed: anyone signed in adds entries about themselves; admins read
+create policy "ll admin read" on public.activity for select using (public.ll_is_admin());
+create policy "ll own insert" on public.activity for insert with check (auth.uid() is not null and data ->> 'uid' = auth.uid()::text);
+create policy "ll super delete" on public.activity for delete using (public.ll_is_super());
 
-create table if not exists public.saved (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- Legacy tables: Super Admin only
+create policy "ll super all" on public.vocab for all using (public.ll_is_super()) with check (public.ll_is_super());
+create policy "ll super all" on public.saved for all using (public.ll_is_super()) with check (public.ll_is_super());
 
-create table if not exists public.notes (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+-- --------------------------------------------------------
+-- 5. Storage: public bucket for audio / images, uploads by content admins
+-- --------------------------------------------------------
+insert into storage.buckets (id, name, public) values ('laolao-assets', 'laolao-assets', true)
+  on conflict (id) do update set public = true;
 
-create table if not exists public.activity (
-  id text primary key,
-  data jsonb not null default '{}'::jsonb,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
+drop policy if exists "ll assets insert" on storage.objects;
+drop policy if exists "ll assets update" on storage.objects;
+drop policy if exists "ll assets delete" on storage.objects;
+create policy "ll assets insert" on storage.objects for insert to authenticated
+  with check (bucket_id = 'laolao-assets' and public.ll_can_publish());
+create policy "ll assets update" on storage.objects for update to authenticated
+  using (bucket_id = 'laolao-assets' and public.ll_can_publish())
+  with check (bucket_id = 'laolao-assets' and public.ll_can_publish());
+create policy "ll assets delete" on storage.objects for delete to authenticated
+  using (bucket_id = 'laolao-assets' and public.ll_can_publish());
 
--- ========================================================
---  Row Level Security (RLS) Policies
--- ========================================================
-
--- Enable RLS on all tables
-alter table public.users enable row level security;
-alter table public.admins enable row level security;
-alter table public.adminNotes enable row level security;
-alter table public.access enable row level security;
-alter table public.plans enable row level security;
-alter table public.subscriptions enable row level security;
-alter table public.settings enable row level security;
-alter table public.lessons enable row level security;
-alter table public.patterns enable row level security;
-alter table public.grammar enable row level security;
-alter table public.vocabulary enable row level security;
-alter table public.vocab enable row level security;
-alter table public.dialogues enable row level security;
-alter table public.quizzes enable row level security;
-alter table public.videos enable row level security;
-alter table public.tones enable row level security;
-alter table public.culture enable row level security;
-alter table public.characters enable row level security;
-alter table public.dictionary enable row level security;
-alter table public.audio enable row level security;
-alter table public.lexicon enable row level security;
-alter table public.paths enable row level security;
-alter table public.releases enable row level security;
-alter table public.bundles enable row level security;
-alter table public.progress enable row level security;
-alter table public.reviews enable row level security;
-alter table public.saved enable row level security;
-alter table public.notes enable row level security;
-alter table public.activity enable row level security;
-
--- Public Read for Published Content and Plans
-create policy "Public read lessons" on public.lessons for select using (true);
-create policy "Public read patterns" on public.patterns for select using (true);
-create policy "Public read grammar" on public.grammar for select using (true);
-create policy "Public read vocabulary" on public.vocabulary for select using (true);
-create policy "Public read vocab" on public.vocab for select using (true);
-create policy "Public read dialogues" on public.dialogues for select using (true);
-create policy "Public read quizzes" on public.quizzes for select using (true);
-create policy "Public read videos" on public.videos for select using (true);
-create policy "Public read tones" on public.tones for select using (true);
-create policy "Public read culture" on public.culture for select using (true);
-create policy "Public read characters" on public.characters for select using (true);
-create policy "Public read dictionary" on public.dictionary for select using (true);
-create policy "Public read audio" on public.audio for select using (true);
-create policy "Public read lexicon" on public.lexicon for select using (true);
-create policy "Public read paths" on public.paths for select using (true);
-create policy "Public read releases" on public.releases for select using (true);
-create policy "Public read bundles" on public.bundles for select using (true);
-create policy "Public read plans" on public.plans for select using (true);
-create policy "Public read settings" on public.settings for select using (true);
-
--- User-scoped CRUD
-create policy "Users manage own profile" on public.users for all using (auth.uid()::text = id);
-create policy "Users read own access" on public.access for select using (auth.uid()::text = id);
-create policy "Users manage own progress" on public.progress for all using (auth.uid()::text = id or auth.uid()::text = split_part(id, '__', 1));
-create policy "Users manage own reviews" on public.reviews for all using (auth.uid()::text = id or auth.uid()::text = split_part(id, '__', 1));
-create policy "Users manage own saved" on public.saved for all using (auth.uid()::text = id or auth.uid()::text = split_part(id, '__', 1));
-create policy "Users manage own notes" on public.notes for all using (auth.uid()::text = id or auth.uid()::text = split_part(id, '__', 1));
-
--- Platform Owner / Super Admin Full Access Policy
--- Replace 'kindathanomsuck@gmail.com' with your admin email
-create policy "Admin full access users" on public.users for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access admins" on public.admins for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access adminNotes" on public.adminNotes for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access access" on public.access for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access plans" on public.plans for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access subscriptions" on public.subscriptions for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access settings" on public.settings for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access lessons" on public.lessons for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access patterns" on public.patterns for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access grammar" on public.grammar for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access vocabulary" on public.vocabulary for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access vocab" on public.vocab for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access dialogues" on public.dialogues for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access quizzes" on public.quizzes for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access videos" on public.videos for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access tones" on public.tones for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access culture" on public.culture for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access characters" on public.characters for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access dictionary" on public.dictionary for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access audio" on public.audio for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access lexicon" on public.lexicon for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access paths" on public.paths for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access releases" on public.releases for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access bundles" on public.bundles for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access progress" on public.progress for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access reviews" on public.reviews for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access saved" on public.saved for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access notes" on public.notes for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
-create policy "Admin full access activity" on public.activity for all using ((auth.jwt() ->> 'email') = 'kindathanomsuck@gmail.com');
+commit;

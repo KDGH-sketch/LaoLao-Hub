@@ -1,8 +1,11 @@
 // Extended Admin Features: Voice Recording Studio, Excel Import Wizard, Video Manager, Promotions & Feed, Content Health
-import { h, $$, icon, toast, tr, dialog, confirmDialog, errText } from "../shared/ui.js";
+import { h, $$, icon, toast, tr, dialog, confirmDialog, errText, debounce, videoSource } from "../shared/ui.js";
+import { parseTranscript, mergeTranslation, transcriptOf, recapOf, formatTime } from "../shared/video.js";
 import { t, lang } from "../shared/i18n.js";
 import { speak } from "../shared/speech.js";
-import { S, isSuper, canContent, canEditMenu } from "./state.js";
+import { S, go, fld, isSuper, canContent, canEditMenu } from "./state.js";
+import { saveContent } from "../shared/content.js";
+import { refreshBundleState } from "./main.js";
 
 export const EXT_VIEWS = {};
 
@@ -410,7 +413,7 @@ EXT_VIEWS.excelImport = () => {
       }
       await S.api.db.set("settings/bundle", { dirty:true }, true);
       toast(`Successfully saved ${ops.length} items to database!`, "ok");
-      setTimeout(() => S.go("contentList", { type: importType }), 1200);
+      setTimeout(() => go("contentList", { type: importType }), 1200);
     } catch(err) {
       console.error(err);
       toast("Import error: " + (err.message || String(err)), "bad");
@@ -462,22 +465,112 @@ EXT_VIEWS.videoManager = async () => {
     h("div",{class:"spread"},
       h("h1",null, lang()==="lo" ? "ຈັດການວິດີໂອບົດຮຽນ (Video Manager)" : "Video Content Manager"),
       h("div",{class:"row",style:"gap:8px"},
-        h("button",{class:"btn ghost sm",onclick:()=>S.go("contentList",{type:"videos"})}, icon("content"), "Open in Universal CMS"),
+        h("button",{class:"btn ghost sm",onclick:()=>go("contentList",{type:"videos"})}, icon("content"), "Open in Universal CMS"),
         h("a",{href:"../",class:"btn ghost sm"}, icon("home"), t("adm_open_learner"))
       )
     ),
-    h("p",null, "Database-backed video curriculum. Any video added, updated, or deleted here immediately updates the database and learner feed.")
+    h("p",null, "Paste any YouTube link (watch, youtu.be, shorts or embed) or a direct .mp4 / .webm file link. Changes are saved to the database right away; learners see them after you click Publish now.")
   ));
 
   if (!canEdit) {
     root.append(h("div",{class:"banner ok",style:"background:var(--surface-2);border-left:4px solid #7c3aed;margin-bottom:12px;display:flex;align-items:center;gap:8px"}, icon("eye"), h("span",null,t("read_only_banner"))));
   }
 
-  let videos = await S.api.db.list("videos").catch(()=>[]);
+  let videos = [], loadError = null;
+  const load = async () => { try { videos = await S.api.db.list("videos"); loadError = null; } catch(e){ videos = []; loadError = e; } };
+  await load();
+
+  // Turns what the admin pasted into a stored, playable URL (null when invalid)
+  const toStored = url => { const s = videoSource(url); return s.kind === "invalid" ? null : s.src; };
+  const preview = (url, big) => {
+    const s = videoSource(url);
+    if (s.kind === "invalid") return h("div",{class:"small",style:"color:var(--bad)"}, url ? "Not a valid YouTube or video link." : "");
+    if (!big && s.kind === "youtube") return h("img",{src:s.thumb,alt:"",loading:"lazy",style:"width:132px;aspect-ratio:16/9;object-fit:cover;border-radius:8px;flex:none"});
+    if (!big) return h("span",{class:"pill"}, s.kind === "file" ? "video file" : "embed");
+    const player = s.kind === "file" ? h("video",{src:s.src,controls:true,preload:"metadata"})
+      : h("iframe",{src:s.src,title:"Preview",referrerpolicy:"strict-origin-when-cross-origin",allow:"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",allowfullscreen:true});
+    return h("div",{class:"video-embed-wrap",style:"border-radius:10px"}, player);
+  };
+  const saved = async msg => {
+    await refreshBundleState();
+    toast(msg + " Click “Publish now” so learners see it.", "ok");
+    S.render();   // redraws the page and the header publish button
+  };
+
+  const changeLink = async v => {
+    const inp = h("input",{class:"input",value:v.embedUrl||"",placeholder:"https://www.youtube.com/watch?v=…"});
+    const box = h("div",null, preview(v.embedUrl, true));
+    inp.addEventListener("input", () => box.replaceChildren(preview(inp.value.trim(), true)));
+    await dialog({ title:"Change video link · " + ((v.title && (v.title.en || v.title.lo)) || v.id), wide:true,
+      body:h("div",{class:"stack"}, fld("Video link (YouTube or .mp4)", inp), box),
+      actions:[{label:t("cancel"),value:false},{label:t("save"),primary:true,onClick:async()=>{
+        const url = toStored(inp.value);
+        if (!url){ toast("Not a valid YouTube or video link", "bad"); return false; }
+        try { await saveContent(S.api, "videos", v.id, Object.assign({}, v, { embedUrl:url }), S.me.uid); }
+        catch(e){ toast(errText(e), "bad"); return false; }
+        await saved("Video link updated.");
+        return true;
+      }}] });
+  };
+
+  // Import a timed transcript: pasted from YouTube's "Show transcript" panel, or an .srt / .vtt file
+  const transcriptDialog = async v => {
+    const src = videoSource(v.embedUrl), current = transcriptOf(v);
+    const ta = h("textarea",{class:"input mono",style:"min-height:200px",placeholder:"0:00\nສະບາຍດີ ທຸກຄົນ\n0:04\nມື້ນີ້ພວກເຮົາຈະຮຽນ…"});
+    const taTr = h("textarea",{class:"input",style:"min-height:90px",placeholder:"Optional: an English translation with the same timestamps (pasted the same way)"});
+    const fileIn = h("input",{type:"file",accept:".srt,.vtt,.txt,text/plain,text/vtt",onchange:async e=>{ const fl = e.target.files[0]; if (fl){ ta.value = await fl.text(); update(); } }});
+    const out = h("div",{class:"stack",style:"gap:8px"});
+    let parsed = null;
+    const update = () => {
+      parsed = ta.value.trim() ? parseTranscript(ta.value) : null;
+      out.replaceChildren();
+      if (!parsed) return;
+      let matched = 0;
+      if (parsed.timed && taTr.value.trim()){ const p2 = parseTranscript(taTr.value); if (p2.timed) matched = mergeTranslation(parsed.segments, p2.segments, "en"); }
+      const segs = parsed.segments, last = segs[segs.length - 1];
+      out.append(h("div",{class:"banner "+(parsed.timed && segs.length ? "ok" : "")},
+        parsed.timed && segs.length
+          ? `✓ ${segs.length} timed lines (${parsed.format === "youtube" ? "YouTube transcript" : parsed.format.toUpperCase()}), 0:00 – ${formatTime(last.end)}${taTr.value.trim() ? " · translation matched on " + matched + " lines" : ""}`
+          : "✗ No timestamps found. Copy the transcript from YouTube with its timestamps, or upload an .srt / .vtt file."));
+      parsed.warnings.forEach(w => out.append(h("p",{class:"small muted",style:"margin:0"}, w)));
+      if (parsed.timed && segs.length) out.append(h("div",{class:"tbl-wrap",style:"max-height:220px;overflow:auto"}, h("table",{class:"tbl"},
+        h("tbody",null, segs.slice(0, 50).map(x => h("tr",null, h("td",{class:"mono small",style:"white-space:nowrap"}, formatTime(x.start)), h("td",null, x.text, x.en ? h("div",{class:"small muted"}, x.en) : null)))))));
+    };
+    ta.addEventListener("input", debounce(update, 200));
+    taTr.addEventListener("input", debounce(update, 200));
+    const steps = h("ol",{class:"small",style:"margin:0;padding-left:18px;line-height:1.7"},
+      h("li",null, "Open the video on YouTube", src.watch ? [" (", h("a",{href:src.watch,target:"_blank",rel:"noopener"}, "open ↗"), ")"] : "", "."),
+      h("li",null, "Under the video, click “…more”, then “Show transcript”."),
+      h("li",null, "Select all the lines in the transcript panel (drag from the first to the last line) and copy."),
+      h("li",null, "Paste here. Timestamps are kept, so each line will follow the video."));
+    await dialog({ title:"Transcript · " + ((v.title && (v.title.en || v.title.lo)) || v.id), wide:true,
+      body:h("div",{class:"stack"},
+        h("p",{class:"small muted",style:"margin:0"}, current.timed ? `This video has ${current.lines.length} transcript lines. Importing replaces them.` : "This video has no synced transcript yet."),
+        steps,
+        fld("Transcript (YouTube copy, .srt or .vtt)", ta),
+        h("label",{class:"btn sm",style:"align-self:flex-start"}, icon("upload"), "Upload .srt / .vtt file", h("span",{hidden:true}, fileIn)),
+        fld("English translation (optional)", taTr),
+        out),
+      actions:[
+        { label:t("cancel"), value:false },
+        current.timed ? { label:"Remove transcript", onClick:async()=>{
+          if (!await confirmDialog("Remove transcript", "Delete all transcript lines of this video?", "Remove", t("cancel"), true)) return false;
+          try { await saveContent(S.api, "videos", v.id, Object.assign({}, v, { transcript:[] }), S.me.uid); } catch(e){ toast(errText(e), "bad"); return false; }
+          await saved("Transcript removed."); return true; } } : null,
+        { label:"Save transcript", primary:true, onClick:async()=>{
+          update();
+          if (!parsed || !parsed.timed || !parsed.segments.length){ toast("Nothing to save: the transcript needs timestamps.", "bad"); return false; }
+          const lines = parsed.segments.map(x => Object.assign({ start:x.start, end:x.end, text:x.text }, x.en ? { en:x.en } : {}));
+          try { await saveContent(S.api, "videos", v.id, Object.assign({}, v, { transcript:lines }), S.me.uid); } catch(e){ toast(errText(e), "bad"); return false; }
+          await saved(`Transcript saved (${lines.length} lines).`); return true; } }
+      ].filter(Boolean) });
+  };
 
   const titleEn = h("input",{class:"input",placeholder:"Title in English (e.g. Shopping at Talat Sao)"});
   const titleLo = h("input",{class:"input",placeholder:"Title in Lao (e.g. ການໄປຊື້ເຄື່ອງຢູ່ຕະຫຼາດ)"});
-  const urlInp = h("input",{class:"input",placeholder:"YouTube Embed URL (e.g. https://www.youtube.com/embed/5a4x3w8k9fA)"});
+  const urlInp = h("input",{class:"input",placeholder:"https://www.youtube.com/watch?v=… or https://youtu.be/…"});
+  const urlPreview = h("div");
+  urlInp.addEventListener("input", () => urlPreview.replaceChildren(urlInp.value.trim() ? preview(urlInp.value.trim(), true) : ""));
   const catInp = h("select",{class:"input"},
     h("option",{value:"beginner"},"Beginner & Survival"),
     h("option",{value:"conversation"},"Daily Conversations"),
@@ -487,41 +580,51 @@ EXT_VIEWS.videoManager = async () => {
   const diffInp = h("input",{class:"input",placeholder:"Difficulty label (e.g. Stage 1 · Beginner)"});
 
   const listCard = h("div",{class:"stack",style:"gap:10px"});
+  const countEl = h("span");
 
   const renderVideos = () => {
     listCard.innerHTML = "";
+    countEl.textContent = String(videos.length);
+    if (loadError){
+      listCard.append(h("div",{class:"banner"}, "Could not load videos from the database: " + errText(loadError)));
+      return;
+    }
     if (!videos.length){
       listCard.append(h("div",{class:"empty",style:"padding:20px;text-align:center"}, "No video resources found in database. Add one below."));
       return;
     }
     videos.forEach(v => {
       const vTitle = (v.title && (v.title.en || v.title.lo)) || v.id;
-      listCard.append(h("div",{class:"card row",style:"justify-content:space-between;align-items:center;padding:14px"},
-        h("div",null,
-          h("b",{style:"font-size:1.05rem"}, vTitle),
-          h("div",{class:"small muted"}, `${v.category || "video"} · ID: ${v.id} · Level ${v.level || 1} · ${v.status || "published"}`),
-          v.embedUrl ? h("a",{href:v.embedUrl,target:"_blank",class:"small",style:"color:var(--accent);word-break:break-all"}, v.embedUrl) : null
+      const src = videoSource(v.embedUrl);
+      listCard.append(h("div",{class:"card row",style:"justify-content:space-between;align-items:center;padding:14px;gap:14px;flex-wrap:wrap"},
+        h("div",{class:"row",style:"gap:14px;align-items:center;min-width:0;flex:1"},
+          preview(v.embedUrl, false),
+          h("div",{style:"min-width:0"},
+            h("b",{style:"font-size:1.05rem"}, vTitle),
+            h("div",{class:"small muted"}, `${v.category || "video"} · ID: ${v.id} · Level ${v.level || 1} · ${v.status || "published"}`),
+            h("div",{class:"row",style:"gap:6px;margin:4px 0"},
+              transcriptOf(v).timed ? h("span",{class:"pill ok"}, "Transcript · " + transcriptOf(v).lines.length + " lines") : h("span",{class:"pill"}, "No transcript"),
+              recapOf(v).empty ? h("span",{class:"pill"}, "No recap") : h("span",{class:"pill ok"}, "Recap · " + recapOf(v).points.length + " phrases")),
+            src.kind !== "invalid"
+              ? h("a",{href:src.watch || src.src,target:"_blank",rel:"noopener",class:"small",style:"color:var(--accent);word-break:break-all"}, v.embedUrl)
+              : h("div",{class:"small",style:"color:var(--bad)"}, "⚠ Link missing or invalid: " + (v.embedUrl || "(empty)"))
+          )
         ),
         h("div",{class:"row",style:"gap:6px"},
-          canEdit ? h("button",{class:"btn sm ghost",title:"Edit in CMS",onclick:()=>S.go("editor",{type:"videos",id:v.id})}, icon("edit"), "Edit")
-                  : h("button",{class:"btn sm ghost",title:"View & Preview",onclick:()=>S.go("editor",{type:"videos",id:v.id})}, icon("eye"), "View"),
+          canEdit ? h("button",{class:"btn sm primary",title:"Change video link",onclick:()=>changeLink(v)}, icon("edit"), "Change link") : null,
+          canEdit ? h("button",{class:"btn sm",title:"Import or replace the synced transcript",onclick:()=>transcriptDialog(v)}, icon("note"), "Transcript") : null,
+          h("button",{class:"btn sm",title:canEdit?"Edit the recap and all other fields":"View",onclick:()=>go("editor",{type:"videos",id:v.id})}, icon(canEdit?"review":"eye"), canEdit ? "Recap & details" : "View"),
           canEdit ? h("button",{class:"btn sm ghost",title:"Duplicate",onclick:async()=>{
             const nid = v.id + "-copy-" + Date.now().toString(36).slice(-4);
-            const copy = JSON.parse(JSON.stringify(v));
-            copy.id = nid; copy.status = "draft";
-            await S.api.db.set("videos/" + nid, copy);
-            await S.api.db.set("settings/bundle", { dirty:true }, true);
-            toast("Duplicated as " + nid, "ok");
-            videos = await S.api.db.list("videos").catch(()=>[]);
-            renderVideos();
+            try { await saveContent(S.api, "videos", nid, Object.assign({}, v, { status:"draft" }), S.me.uid); }
+            catch(e){ toast(errText(e), "bad"); return; }
+            await saved("Duplicated as " + nid + " (draft).");
           }}, icon("copy")) : null,
           canEdit ? h("button",{class:"btn sm ghost",style:"color:var(--bad)",title:"Delete",onclick:async()=>{
             if (await confirmDialog("Delete Video", `Delete "${vTitle}"?`, "Delete", t("cancel"), true)){
-              await S.api.db.del("videos/" + v.id);
-              await S.api.db.set("settings/bundle", { dirty:true }, true);
-              toast("Deleted video " + v.id, "ok");
-              videos = videos.filter(x=>x.id!==v.id);
-              renderVideos();
+              try { await S.api.db.del("videos/" + v.id); await S.api.db.set("settings/bundle", { dirty:true }, true); }
+              catch(e){ toast(errText(e), "bad"); return; }
+              await saved("Deleted video " + v.id + ".");
             }
           }}, icon("trash")) : null
         )
@@ -535,18 +638,19 @@ EXT_VIEWS.videoManager = async () => {
       h("div",{class:"field"}, h("label",null,"English Title:"), titleEn),
       h("div",{class:"field"}, h("label",null,"Lao Title:"), titleLo)
     ),
-    h("div",{class:"field"}, h("label",null,"YouTube Embed URL:"), urlInp),
+    h("div",{class:"field"}, h("label",null,"Video link (YouTube or .mp4):"), urlInp),
+    urlPreview,
     h("div",{class:"grid2"},
       h("div",{class:"field"}, h("label",null,"Category:"), catInp),
       h("div",{class:"field"}, h("label",null,"Difficulty Badge:"), diffInp)
     ),
     h("button",{class:"btn primary",style:"align-self:flex-start",onclick:async()=>{
       const en = titleEn.value.trim();
-      const url = urlInp.value.trim();
-      if (!en || !url){ toast("Title and Embed URL are required", "bad"); return; }
+      const url = toStored(urlInp.value);
+      if (!en){ toast("Title is required", "bad"); return; }
+      if (!url){ toast("Not a valid YouTube or video link", "bad"); return; }
       const id = "v-" + en.toLowerCase().replace(/[^a-z0-9]/g,"-").slice(0, 24) + "-" + Date.now().toString(36).slice(-4);
       const data = {
-        id,
         level: 1,
         title: { en, lo: titleLo.value.trim() || en, zh:"" },
         desc: { en: "Lao video lesson", lo: "ວິດີໂອບົດຮຽນພາສາລາວ", zh:"" },
@@ -556,22 +660,18 @@ EXT_VIEWS.videoManager = async () => {
         transcript: [],
         vocab: [],
         status: "published",
-        access: "free",
-        createdAt: new Date(),
-        updatedAt: new Date()
+        access: "free"
       };
-      await S.api.db.set("videos/" + id, data);
-      await S.api.db.set("settings/bundle", { dirty:true }, true);
-      toast("Video created and saved to database!", "ok");
-      titleEn.value = ""; titleLo.value = ""; urlInp.value = ""; diffInp.value = "";
-      videos = await S.api.db.list("videos").catch(()=>[]);
-      renderVideos();
+      try { await saveContent(S.api, "videos", id, data, S.me.uid); }
+      catch(e){ toast(errText(e), "bad"); return; }
+      titleEn.value = ""; titleLo.value = ""; urlInp.value = ""; diffInp.value = ""; urlPreview.replaceChildren();
+      await saved("Video saved to the database.");
     }}, icon("plus"), "Save Video to Database")
   );
 
   renderVideos();
+  root.append(h("h3",{style:"margin-top:4px"},"Current Video Library (", countEl, "):"), listCard);
   if (canEdit) root.append(formCard);
-  root.append(h("h3",{style:"margin-top:10px"},"Current Video Library ("+videos.length+"):"), listCard);
   return root;
 };
 

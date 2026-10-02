@@ -1,5 +1,6 @@
 // Content schemas drive the admin editor: add a field here and it appears in the CMS.
 // Labels are [English, Lao].
+const fmtT = v => { const n = +v; if (!Number.isFinite(n)) return String(v); return Math.floor(n/60)+":"+String(Math.floor(n%60)).padStart(2,"0"); };
 export const SECS = "ABCDEFGHIJKLMNOPQRS".split("");
 const lv = { key:"level", type:"select", label:["Stage / Level","ລະດັບ"], options:[1,2,3,4,5,6].map(n=>[n,"Stage "+n]), num:true };
 const sentence = (key, label) => ({ key, type:"list", label, itemLabel:["Sentence","ປະໂຫຍກ"], item:[{ key:"", type:"sentence" }], summary: s => s.zh || "" });
@@ -71,17 +72,26 @@ export const SCHEMAS = {
   lexicon: { title: d => ({ en: d.cat || d.id }), idHint:"FRUIT", defaults:{ cat:"", data:[] }, noAccess:true,
     fields:[ { key:"cat", type:"text", label:["Slot name (use in templates as {NAME})","ຊື່ Slot"], cls:"mono" },
       { key:"data", type:"json", label:["Items (JSON)","ລາຍການ (JSON)"], help:["Array of objects like {\"z\":\"ກາເຟ\",\"e\":\"coffee\"}. People need e (subject), o (object), s (1 = he/she).","ອາເຣຂອງອອບເຈັກ ເຊັ່ນ {\"z\":\"ກາເຟ\",\"e\":\"coffee\"}."] } ] },
-  videos: { title: d => d.title, idHint:"v01-greetings", defaults:{ level:1, category:"beginner", title:{en:"",lo:"",zh:""}, desc:{en:"",lo:"",zh:""}, embedUrl:"", difficulty:"Stage 1 · Beginner", transcript:[], vocab:[] },
+  videos: { title: d => d.title, idHint:"v01-greetings", defaults:{ level:1, category:"beginner", title:{en:"",lo:"",zh:""}, desc:{en:"",lo:"",zh:""}, embedUrl:"", difficulty:"Stage 1 · Beginner", recap:{ summary:{en:"",lo:"",zh:""}, points:[] }, vocab:[], transcript:[] },
     fields:[
       { key:"title", type:"tr", label:["Title","ຫົວຂໍ້"] },
       { key:"desc", type:"tr", multiline:true, label:["Description","ຄຳອະທິບາຍ"] },
       { row:[ lv, { key:"category", type:"select", label:["Category","ໝວດໝູ່"], options:[["beginner","Beginner"],["conversation","Conversation"],["pronunciation","Pronunciation"],["culture","Culture"]] }, { key:"difficulty", type:"text", label:["Difficulty badge","ລະດັບ"], placeholder:"Stage 1 · Beginner" } ] },
-      { key:"embedUrl", type:"text", label:["Video Embed URL (YouTube embed or MP4)","ລິ້ງວິດີໂອ Embed"], placeholder:"https://www.youtube.com/embed/..." },
-      { key:"transcript", type:"list", label:["Transcript lines","ບົດສົນທະນາໃນວິດີໂອ"], itemLabel:["Line","ແຖວ"], summary: l => (l.sp?l.sp+": ":"")+(l.lo||""),
-        item:[ { row:[ { key:"sp", type:"text", label:["Speaker","ຜູ້ເວົ້າ"], placeholder:"Somxai" }, { key:"lo", type:"text", label:["Lao text","ຂໍ້ຄວາມລາວ"], cls:"hz" } ] },
-               { row:[ { key:"rom", type:"text", label:["Romanization","ຄຳອ່ານ"] }, { key:"en", type:"text", label:["English meaning","ຄວາມໝາຍອັງກິດ"] } ] } ] },
+      { key:"embedUrl", type:"text", label:["Video link (any YouTube link, or an .mp4 file)","ລິ້ງວິດີໂອ (YouTube ຫຼື .mp4)"], placeholder:"https://www.youtube.com/watch?v=..." },
+      { key:"recap", type:"object", label:["Recap (shown under the video)","ສະຫຼຸບ (ສະແດງໃຕ້ວິດີໂອ)"], fields:[
+        { key:"summary", type:"tr", multiline:true, label:["Summary of the clip","ສະຫຼຸບເນື້ອຫາຂອງຄລິບ"] },
+        { key:"points", type:"list", label:["Key phrases (each gets a play button)","ປະໂຫຍກສຳຄັນ (ມີປຸ່ມຫຼິ້ນສຽງ)"], itemLabel:["Phrase","ປະໂຫຍກ"], summary: p => p.lo || p.en || "",
+          help:["Without a recording, the learner's device reads the Lao text aloud.","ຖ້າບໍ່ມີສຽງບັນທຶກ, ອຸປະກອນຈະອ່ານຂໍ້ຄວາມລາວອອກສຽງ."],
+          item:[ { row:[ { key:"lo", type:"text", label:["Lao","ພາສາລາວ"], cls:"hz" }, { key:"rom", type:"text", label:["Romanization","ຄຳອ່ານ"] } ] },
+                 { row:[ { key:"en", type:"text", label:["English","ອັງກິດ"] }, { key:"at", type:"time", label:["Jump to time (optional)","ເວລາໃນວິດີໂອ"], placeholder:"m:ss" } ] },
+                 { key:"audio", type:"audio", label:["Recorded audio (optional)","ສຽງບັນທຶກ (ບໍ່ບັງຄັບ)"] } ] } ] },
       { key:"vocab", type:"list", label:["Key vocabulary featured","ຄຳສັບສຳຄັນ"], itemLabel:["Word","ຄຳສັບ"], summary: v => (v.lo||"")+" ("+(v.en||"")+")",
-        item:[ { row:[ { key:"lo", type:"text", label:["Lao word","ຄຳສັບລາວ"], cls:"hz" }, { key:"rom", type:"text", label:["Romanization","ຄຳອ່ານ"] }, { key:"en", type:"text", label:["English","ອັງກິດ"] } ] } ] } ] },
+        item:[ { row:[ { key:"lo", type:"text", label:["Lao word","ຄຳສັບລາວ"], cls:"hz" }, { key:"rom", type:"text", label:["Romanization","ຄຳອ່ານ"] }, { key:"en", type:"text", label:["English","ອັງກິດ"] } ] } ] },
+      { key:"transcript", type:"list", label:["Transcript lines (synced to the video)","ບົດຖອດຄວາມ (ເລື່ອນຕາມວິດີໂອ)"], itemLabel:["Line","ແຖວ"], summary: l => (l.start!=null && l.start!=="" ? "["+fmtT(l.start)+"] " : "")+(l.text||l.lo||""),
+        help:["Tip: import a whole transcript at once in Video Manager → Transcript.","ແນະນຳ: ນຳເຂົ້າບົດຖອດຄວາມທັງໝົດໃນ Video Manager → Transcript."],
+        item:[ { row:[ { key:"start", type:"time", label:["Start","ເລີ່ມ"], placeholder:"m:ss" }, { key:"sp", type:"text", label:["Speaker (optional)","ຜູ້ເວົ້າ"] } ] },
+               { key:"text", type:"text", label:["Text as spoken","ຂໍ້ຄວາມທີ່ເວົ້າ"], cls:"hz" },
+               { row:[ { key:"rom", type:"text", label:["Romanization","ຄຳອ່ານ"] }, { key:"en", type:"text", label:["English","ອັງກິດ"] } ] } ] } ] },
   tones: { title: d => ({ en: "Tone "+(d.num||"")+": "+((d.name&&d.name.en)||"") }), idHint:"tone-1", defaults:{ num:1, name:{en:"",lo:"",zh:""}, contour:"33", color:"#0284c7", desc:{en:"",lo:"",zh:""}, pathD:"M 10 32 Q 50 30 90 28", examples:[] },
     fields:[
       { row:[ { key:"num", type:"number", label:["Tone number (1-6)","ໝາຍເລກສຽງ (1-6)"] }, { key:"contour", type:"text", label:["Pitch contour (e.g. 33, 11, 31, 55, 35, 13)","ລະດັບສຽງ"] }, { key:"color", type:"text", label:["Color code (HEX)","ລະຫັດສີ"], placeholder:"#0284c7" } ] },

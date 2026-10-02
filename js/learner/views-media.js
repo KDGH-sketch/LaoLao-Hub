@@ -1,8 +1,9 @@
 // Learner Views: Video Learning Feed & Lao Script Handwriting Studio
-import { h, $$, icon, toast, tr, stripTone } from "../shared/ui.js";
+import { h, $$, icon, toast, tr, stripTone, videoSource } from "../shared/ui.js";
+import { transcriptOf, recapOf, mountPlayer, activeIndex, formatTime, parseTime } from "../shared/video.js";
 import { t, lang } from "../shared/i18n.js";
 import { speak } from "../shared/speech.js";
-import { A, T, expLang } from "./core.js";
+import { A, T, expLang, logEvent, touchDay } from "./core.js";
 
 export const MEDIA_VIEWS = {};
 const go = (...a) => A.go(...a);
@@ -14,11 +15,11 @@ const pageHead = (title, sub, extra) => h("div",{class:"pagehead"}, h("div",{cla
 const CURATED_VIDEOS = [
   {
     id: "v01-greetings",
-    title: { en:"Essential Lao Daily Greetings & Politeness", lo:"ການທັກທາຍ ແລະ ມາລະຍາດພາສາລາວໃນຊີວິດປະຈຳວັນ", zh:"老挝语日常问候与礼仪" },
+    title: { en:"Learn to Read and Speak Lao: Greetings", lo:"ຮຽນອ່ານ ແລະ ເວົ້າພາສາລາວ: ຄຳທັກທາຍ", zh:"学读说老挝语：问候语" },
     category: "beginner",
     difficulty: "Stage 1 · Survival",
-    embedUrl: "https://www.youtube.com/embed/fW_7e93H2_Y",
-    desc: { en:"Learn natural greetings, respectful hand nop gestures, and friendly everyday responses with native speakers.", lo:"ຮຽນຮູ້ການທັກທາຍແບບສຸພາບ, ການນົບ ແລະ ການຕອບຮັບທີ່ເປັນທຳມະຊາດ." },
+    embedUrl: "https://www.youtube.com/embed/j7TToA_jaMg",
+    desc: { en:"A short lesson on everyday Lao greetings (vaolao channel). Practise the phrases below after watching.", lo:"ບົດຮຽນສັ້ນໆກ່ຽວກັບຄຳທັກທາຍພາສາລາວໃນຊີວິດປະຈຳວັນ. ຝຶກປະໂຫຍກຂ້າງລຸ່ມນີ້ຫຼັງຈາກເບິ່ງ." },
     transcript: [
       { sp:"Somxai", lo:"ສະບາຍດີຕອນເຊົ້າເອື້ອຍ! ມື້ນີ້ສະບາຍດີບໍ່?", rom:"sà-bāi-dīi tɔɔn-sào ɯ̂aai! mɯ̂ɯ-nîi sà-bāi-dīi bɔ̀ɔ?", en:"Good morning older sister! How are you doing today?" },
       { sp:"Noy", lo:"ສະບາຍດີ! ເອື້ອຍສະບາຍດີ, ຂອບໃຈຫຼາຍໆເດີ້.", rom:"sà-bāi-dīi! ɯ̂aai sà-bāi-dīi, khɔ̌ɔp-jái lǎai-lǎai dêe.", en:"Hello! I am doing well, thank you so much!" },
@@ -34,11 +35,11 @@ const CURATED_VIDEOS = [
   },
   {
     id: "v02-vientiane-market",
-    title: { en:"Shopping & Ordering Food at Talat Sao Market", lo:"ການໄປຊື້ເຄື່ອງ ແລະ ສັ່ງອາຫານຢູ່ຕະຫຼາດເຊົ້າ", zh:"万象早市购物与点餐" },
+    title: { en:"Vientiane Night Market: Street Food at Sihom", lo:"ຕະຫຼາດກາງຄືນວຽງຈັນ: ອາຫານຢູ່ສີຫອມ", zh:"万象夜市：西洪街头美食" },
     category: "conversation",
     difficulty: "Stage 2 · Everyday",
-    embedUrl: "https://www.youtube.com/embed/5a4x3w8k9fA",
-    desc: { en:"Real conversations for ordering fresh fruit, sticky rice, and asking prices politely.", lo:"ການສົນທະນາຕົວຈິງໃນການຊື້ໝາກໄມ້, ເຂົ້າໜຽວ ແລະ ຖາມລາຄາ." },
+    embedUrl: "https://www.youtube.com/embed/L3sLXhhtwK0",
+    desc: { en:"A walk through the Sihom night market in Vientiane (Lao Ocean channel). Use the phrases below to order food and ask prices.", lo:"ຍ່າງຊົມຕະຫຼາດກາງຄືນສີຫອມ ນະຄອນຫຼວງວຽງຈັນ. ໃຊ້ປະໂຫຍກຂ້າງລຸ່ມນີ້ເພື່ອສັ່ງອາຫານ ແລະ ຖາມລາຄາ." },
     transcript: [
       { sp:"Customer", lo:"ເອື້ອຍ, ໝາກກ້ວຍໜ່ວຍນີ້ຂາຍແນວໃດ?", rom:"ɯ̂aai, màak-kùay nùay nîi khǎai nɛ́ɛo-dǎi?", en:"Older sister, how do you sell these bananas?" },
       { sp:"Vendor", lo:"ຫວີລະ 15,000 ກີບເດີ້. ຫວານຫຼາຍ!", rom:"wǐi la sìp-hâa phan kìip dêe. wǎan lǎai!", en:"15,000 Kip per bunch. They are very sweet!" },
@@ -54,10 +55,10 @@ const CURATED_VIDEOS = [
   },
   {
     id: "v03-tone-mastery",
-    title: { en:"How Native Lao Speakers Shape the 6 Tones", lo:"ວິທີການຜັນສຽງວັນນະຍຸດ 6 ສຽງ ໂດຍຄົນລາວແທ້", zh:"老挝语6个声调的发音秘诀" },
+    title: { en:"Learn to Read and Speak Lao: Tones", lo:"ຮຽນອ່ານ ແລະ ເວົ້າພາສາລາວ: ວັນນະຍຸດ", zh:"学读说老挝语：声调" },
     category: "pronunciation",
     difficulty: "Stage 0 · Foundation",
-    embedUrl: "https://www.youtube.com/embed/3v7X8k0w4mE",
+    embedUrl: "https://www.youtube.com/embed/DSuQu7yWirU",
     desc: { en:"Mouth shapes, pitch curves, and muscle memory for mid, falling, rising, and checked tones.", lo:"ການວາງຮູບປາກ, ເສັ້ນສຽງ ແລະ ການຝຶກກ້າມຊີ້ນສຽງ." },
     transcript: [
       { sp:"Teacher", lo:"ຟັງສຽງປຽບທຽບ: ປາ, ປ່າ, ປ້າ.", rom:"fāng sǐang pìap-thìap: paa, pàa, pâa.", en:"Listen to the contrast: Fish (mid), Forest (low), Aunt (falling)." },
@@ -71,11 +72,11 @@ const CURATED_VIDEOS = [
   },
   {
     id: "v04-baci-ceremony",
-    title: { en:"The Sacred Baci Ceremony & White String Blessings", lo:"ພິທີບາສີສູ່ຂວັນ ແລະ ການຜູກແຂນເອົາພອນ", zh:"老挝传统栓线祈福仪式 (Baci)" },
+    title: { en:"The Baci (Sou Khuan) Ceremony", lo:"ພິທີບາສີສູ່ຂວັນ", zh:"老挝传统拴线祈福仪式 (Baci)" },
     category: "culture",
     difficulty: "Stage 3 · Conversational",
-    embedUrl: "https://www.youtube.com/embed/9bX8m4k01vP",
-    desc: { en:"Cultural documentary exploring the call of 32 khwan spirits, marigold towers, and sacred wishes.", lo:"ສາລະຄະດີວັດທະນະທຳການເອີ້ນຂວັນ 32 ຂວັນ ແລະ ຄຳອວຍພອນອັນສັກສິດ." },
+    embedUrl: "https://www.youtube.com/embed/ZABBTXMXfAI",
+    desc: { en:"UNESCO ICHCAP documentary on the Baci-Soukhouane ceremony, where white strings are tied on the wrist as a blessing.", lo:"ສາລະຄະດີຂອງ UNESCO ICHCAP ກ່ຽວກັບພິທີບາສີສູ່ຂວັນ ແລະ ການຜູກແຂນເອົາພອນ." },
     transcript: [
       { sp:"Elder", lo:"ມານີ້ເດີ້ລູກຫຼານ, ມາຜູກແຂນເອົາພອນໄຊ.", rom:"maa nîi dêe lûuk-lǎan, maa phùuk-khɛ̌ɛn ao phɔɔn-sái.", en:"Come here children, let us tie the white threads and receive blessings." },
       { sp:"Guest", lo:"ສາທຸ! ຂໍໃຫ້ມີສຸຂະພາບແຂງແຮງ, ໂຊກດີຕະຫຼອດໄປ.", rom:"sǎa-thú! khɔ̌ɔ hài mii sú-kha-phâap khɛ̌ɛng-hɛ́ɛng, sôok-dīi dtā-lɔ̀ɔt pái.", en:"Satu! May we be blessed with great health and continuous good fortune." }
@@ -89,93 +90,174 @@ const CURATED_VIDEOS = [
   }
 ];
 
+const LL = (en, lo) => lang()==="lo" ? lo : en;
+const CATS = [["all","All videos","ວິດີໂອທັງໝົດ"],["beginner","Beginner","ເລີ່ມຕົ້ນ"],["conversation","Conversation","ການສົນທະນາ"],["pronunciation","Pronunciation","ການອອກສຽງ"],["culture","Culture","ວັດທະນະທຳ"]];
+const catLabel = c => { const x = CATS.find(k => k[0]===c); return x ? LL(x[1], x[2]) : (c || ""); };
+const hasLao = s => /[຀-໿]/.test(String(s||""));
+const videoList = () => {
+  const fromB = (A.B && Array.isArray(A.B.videos) && A.B.videos.length) ? A.B.videos : CURATED_VIDEOS;
+  return fromB.slice().sort((a,b) => ((a.level||1)-(b.level||1)) || ((a.order||0)-(b.order||0)));
+};
+const findVideo = id => videoList().find(v => String(v.id) === String(id));
+const waitConnected = el => new Promise(res => { const t0 = Date.now(); const tick = () => (el.isConnected || Date.now()-t0 > 4000) ? res() : requestAnimationFrame(tick); tick(); });
+const pref = (k, d) => { try { const v = localStorage.getItem("laolao.video."+k); return v==null ? d : v==="1"; } catch(e){ return d; } };
+const setPref_ = (k, v) => { try { localStorage.setItem("laolao.video."+k, v?"1":"0"); } catch(e){} };
+
+// ---------- video library ----------
 MEDIA_VIEWS.videos = () => {
   const root = h("div",{class:"stack-l"});
   root.append(pageHead(
-    lang()==="lo" ? "ວິດີໂອບົດຮຽນພາສາ ແລະ ວັດທະນະທຳລາວ" : "Lao Video Learning Feed",
-    lang()==="lo" ? "ຮຽນຮູ້ຜ່ານວິດີໂອຕົວຈິງ: ການອອກສຽງ, ການສົນທະນາ, ວັດທະນະທຳ ແລະ ຄຳສັບສຳຄັນພ້ອມຄຳແປ" : "Immerse yourself in authentic spoken Lao: video lessons with synchronized transcripts, vocabulary notes, and culture insights."
-  ));
-
-  let filter = "all";
-  const videoGrid = h("div",{class:"stack",style:"gap:24px"});
-
-  const getVideoItems = () => {
-    const fromB = (A.B && A.B.videos && A.B.videos.length) ? A.B.videos : [];
-    const fromBT = (A.byType && A.byType.videos) ? Object.values(A.byType.videos) : [];
-    return fromB.length ? fromB : fromBT.length ? fromBT : CURATED_VIDEOS;
+    LL("Lao Video Lessons", "ວິດີໂອບົດຮຽນພາສາລາວ"),
+    LL("Watch real Lao videos with a transcript that follows along, then review the recap and practise the key phrases.",
+       "ເບິ່ງວິດີໂອພາສາລາວ ພ້ອມບົດຖອດຄວາມທີ່ເລື່ອນຕາມ, ແລ້ວທົບທວນສະຫຼຸບ ແລະ ຝຶກປະໂຫຍກສຳຄັນ.")));
+  let cat = "all", q = "";
+  const grid = h("div",{class:"vlib"});
+  const draw = () => {
+    const f = q.trim().toLowerCase();
+    const items = videoList().filter(v => (cat==="all" || v.category===cat) &&
+      (!f || [tr(v.title, lang()), v.title && v.title.en, v.title && v.title.lo, tr(v.desc, lang())].some(s => String(s||"").toLowerCase().includes(f))));
+    grid.replaceChildren(...(items.length ? items.map(videoCard) : [h("div",{class:"empty"}, LL("No videos match.", "ບໍ່ພົບວິດີໂອ."))]));
   };
+  const seg = h("div",{class:"seg",role:"tablist"}, CATS.map(([k]) => h("button",{"aria-pressed":String(k===cat),onclick:e=>{ cat=k; $$("button",seg).forEach(b=>b.setAttribute("aria-pressed","false")); e.currentTarget.setAttribute("aria-pressed","true"); draw(); }}, catLabel(k))));
+  const search = h("input",{class:"input",type:"search",placeholder:LL("Search videos…","ຄົ້ນຫາວິດີໂອ…"),"aria-label":LL("Search videos","ຄົ້ນຫາວິດີໂອ"),oninput:e=>{ q=e.target.value; draw(); }});
+  root.append(h("div",{class:"vlib-tools"}, seg, search), grid);
+  draw();
+  return root;
+};
 
-  function drawVideos(){
-    videoGrid.innerHTML = "";
-    const list = getVideoItems();
-    const items = filter==="all" ? list : list.filter(v => v.category === filter);
-    if (!items.length){
-      videoGrid.append(h("div",{class:"empty"}, "No videos found in this category."));
-      return;
-    }
-    items.forEach(v => {
-      // Transcript cards
-      const tLines = h("div",{class:"stack",style:"gap:8px;margin-top:12px;max-height:220px;overflow-y:auto;padding-right:6px"},
-        v.transcript.map(l => h("button",{class:"tone-ex-btn",style:"text-align:left;display:flex;flex-direction:column;gap:3px",onclick:()=>speak(l.lo)},
-          h("div",{class:"spread",style:"width:100%"},
-            h("span",{class:"speaker",style:"color:var(--accent)"}, l.sp),
-            icon("speaker")
-          ),
-          h("div",{class:"lo",style:"font-size:1.15rem;font-weight:700;color:var(--ink)"}, l.lo),
-          h("div",{class:"mono",style:"font-size:.82rem;color:var(--ink-2)"}, l.rom),
-          h("div",{class:"small muted"}, l.en)
-        ))
-      );
+function videoCard(v){
+  const s = videoSource(v.embedUrl), tx = transcriptOf(v), rc = recapOf(v);
+  return h("button",{class:"vcard2",onclick:()=>go("video",{ id:v.id })},
+    h("div",{class:"vthumb"},
+      s.thumb ? h("img",{src:s.thumb,alt:"",loading:"lazy"}) : h("div",{class:"vthumb-ph"}, icon("video")),
+      h("span",{class:"vplay"}, icon("play")),
+      v.level ? h("span",{class:"vlevel"}, "Stage "+v.level) : null),
+    h("div",{class:"vbody"},
+      h("b",{class:"vtitle"+(lang()==="lo"&&v.title&&v.title.lo?" lo":"")}, tr(v.title, lang())),
+      v.desc ? h("p",{class:"vdesc"}, tr(v.desc, lang())) : null,
+      h("div",{class:"vmeta"},
+        v.category ? h("span",{class:"chip"}, catLabel(v.category)) : null,
+        tx.timed ? h("span",{class:"chip acc"}, icon("note"), LL("Transcript","ບົດຖອດຄວາມ")) : null,
+        !rc.empty ? h("span",{class:"chip lv"}, icon("review"), LL("Recap","ສະຫຼຸບ")) : null)));
+}
 
-      // Vocab chips
-      const vChips = h("div",{class:"row",style:"gap:8px;flex-wrap:wrap;margin-top:10px"},
-        v.vocab.map(w => h("button",{class:"btn sm ghost",onclick:()=>speak(w.lo)},
-          h("b",{class:"lo",style:"font-size:1rem;color:var(--accent)"}, w.lo),
-          h("span",{class:"small muted"}, " (" + w.en + ")")
-        ))
-      );
+// ---------- one video: player · synced transcript · recap ----------
+MEDIA_VIEWS.video = ({ id }) => {
+  const v = findVideo(id);
+  if (!v) return h("div",{class:"stack"}, h("button",{class:"btn ghost sm",style:"align-self:flex-start",onclick:()=>go("videos")}, icon("left"), LL("All videos","ວິດີໂອທັງໝົດ")), h("div",{class:"empty"}, LL("This video is not available.","ບໍ່ພົບວິດີໂອນີ້.")));
+  const src = videoSource(v.embedUrl), tx = transcriptOf(v), rc = recapOf(v), lines = tx.lines;
+  const hasEn = lines.some(l => l.en), hasRom = lines.some(l => l.rom);
+  let ctl = null, cur = -1, follow = pref("follow", true), userScrolled = false, logged = false;
 
-      videoGrid.append(h("div",{class:"video-card"},
-        h("div",{class:"video-embed-wrap"},
-          h("iframe",{
-            src: v.embedUrl,
-            title: tr(v.title, lang()),
-            allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
-            allowFullscreen: true
-          })
-        ),
-        h("div",{class:"video-info"},
-          h("div",{class:"spread"},
-            h("b",{style:"font-size:1.2rem"}, tr(v.title, lang())),
-            h("span",{class:"chip lv"}, v.difficulty)
-          ),
-          h("p",{class:"small muted",style:"margin:6px 0 10px 0"}, tr(v.desc, lang())),
-          h("b",{style:"font-size:.85rem;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em"}, "Interactive Video Transcript (Tap to Listen):"),
-          tLines,
-          h("b",{style:"font-size:.85rem;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em;margin-top:12px"}, "Key Lesson Vocabulary:"),
-          vChips
-        )
-      ));
-    });
+  // --- header ---
+  const head = h("div",{class:"vd-head"},
+    h("button",{class:"btn ghost sm vd-back",onclick:()=>go("videos")}, icon("left"), LL("All videos","ວິດີໂອທັງໝົດ")),
+    h("h1",{class:lang()==="lo"&&v.title&&v.title.lo?"lo":""}, tr(v.title, lang())),
+    h("div",{class:"vmeta"},
+      v.category ? h("span",{class:"chip"}, catLabel(v.category)) : null,
+      v.difficulty ? h("span",{class:"chip lv"}, v.difficulty) : null,
+      src.watch ? h("a",{class:"small",href:src.watch,target:"_blank",rel:"noopener"}, LL("Open on YouTube ↗","ເປີດໃນ YouTube ↗")) : null));
+
+  // --- 1. player + live caption ---
+  const host = h("div",{class:"vd-host"});
+  const capText = h("div",{class:"vd-cap-text"}), capSub = h("div",{class:"vd-cap-sub"});
+  const caption = tx.timed ? h("div",{class:"vd-caption","aria-live":"polite"}, capText, capSub) : null;
+  const stage = h("section",{class:"vd-stage","aria-label":LL("Video player","ເຄື່ອງຫຼິ້ນວິດີໂອ")}, h("div",{class:"video-embed-wrap"}, host), caption);
+  const setCaption = l => { if (!caption) return;
+    capText.textContent = l ? l.text : LL("Press play — the transcript follows the video.","ກົດຫຼິ້ນ — ບົດຖອດຄວາມຈະເລື່ອນຕາມວິດີໂອ.");
+    capText.className = "vd-cap-text"+(l && hasLao(l.text) ? " lo" : "") + (l ? "" : " muted");
+    capSub.textContent = l ? [l.rom, l.en].filter(Boolean).join("  ·  ") : ""; };
+  setCaption(null);
+
+  // --- 2. transcript ---
+  const linesBox = h("div",{class:"vd-lines",tabindex:"0","aria-label":LL("Transcript","ບົດຖອດຄວາມ")});
+  const resume = h("button",{class:"btn sm primary vd-resume",hidden:true,onclick:()=>{ userScrolled=false; resume.hidden=true; scrollToActive(true); }}, LL("↓ Back to current line","↓ ກັບໄປແຖວປັດຈຸບັນ"));
+  const lineEls = lines.map((l, i) => {
+    const say = hasLao(l.text) ? h("button",{class:"ib vd-say-sm",title:LL("Listen","ຟັງ"),"aria-label":LL("Listen","ຟັງ"),onclick:e=>{ e.stopPropagation(); speak(l.text); }}, icon("speaker")) : null;
+    const el = h("div",{class:"vd-line",role:"button",tabindex:"0","data-i":String(i),
+        onclick:()=>seekTo(l.start), onkeydown:e=>{ if (e.key==="Enter"||e.key===" "){ e.preventDefault(); seekTo(l.start); } }},
+      h("span",{class:"vd-ts"}, formatTime(l.start)),
+      h("div",{class:"vd-tx"},
+        h("div",{class:"vd-text"+(hasLao(l.text)?" lo":"")}, l.sp ? h("b",{class:"vd-sp"}, l.sp+": ") : null, l.text),
+        l.rom ? h("div",{class:"vd-rom"}, l.rom) : null,
+        l.en ? h("div",{class:"vd-en"}, l.en) : null),
+      say);
+    return el;
+  });
+  linesBox.append(...lineEls);
+  ["wheel","touchmove","keydown"].forEach(ev => linesBox.addEventListener(ev, e => {
+    if (ev==="keydown" && !/^(Arrow|Page|Home|End)/.test(e.key)) return;
+    if (follow && cur >= 0){ userScrolled = true; resume.hidden = false; } }, { passive:true }));
+  const toggle = (label, key, on, apply) => { const cb = h("input",{type:"checkbox",class:"switch",checked:on,"aria-label":label,onchange:e=>{ setPref_(key, e.target.checked); apply(e.target.checked); }}); apply(on); return h("label",{class:"vd-toggle"}, cb, h("span",null,label)); };
+  const transcriptPanel = h("section",{class:"vd-panel vd-transcript","data-panel":"transcript"},
+    h("div",{class:"vd-panel-head"},
+      h("h2",null, icon("note"), LL("Transcript","ບົດຖອດຄວາມ"), lines.length ? h("span",{class:"chip"}, String(lines.length)) : null),
+      lines.length ? h("div",{class:"vd-toggles"},
+        toggle(LL("Follow video","ເລື່ອນຕາມວິດີໂອ"), "follow", follow, on => { follow = on; userScrolled = false; resume.hidden = true; if (on) scrollToActive(true); }),
+        hasRom ? toggle(LL("Romanization","ຄຳອ່ານ"), "rom", pref("rom", true), on => linesBox.classList.toggle("no-rom", !on)) : null,
+        hasEn ? toggle(LL("Translation","ຄຳແປ"), "en", pref("en", true), on => { linesBox.classList.toggle("no-en", !on); stage.classList.toggle("no-en", !on); }) : null) : null),
+    lines.length ? h("div",{class:"vd-lines-wrap"}, linesBox, resume)
+      : h("div",{class:"empty vd-empty"}, LL("No transcript for this video yet.","ວິດີໂອນີ້ຍັງບໍ່ມີບົດຖອດຄວາມ.")));
+
+  // --- 3. recap ---
+  const playPoint = p => { if (p.audio){ const a = new Audio(p.audio); a.play().catch(() => speak(p.lo)); } else speak(p.lo || p.en); };
+  const recapPanel = h("section",{class:"vd-panel vd-recap","data-panel":"recap"},
+    h("div",{class:"vd-panel-head"}, h("h2",null, icon("review"), LL("Recap","ສະຫຼຸບ"))),
+    rc.empty ? h("div",{class:"empty vd-empty"}, LL("No recap for this video yet.","ວິດີໂອນີ້ຍັງບໍ່ມີບົດສະຫຼຸບ.")) : null,
+    rc.summary ? h("p",{class:"vd-summary"+(expLang()==="lo"&&rc.summary.lo?" lo":"")}, tr(rc.summary, expLang())) : null,
+    rc.points.length ? h("h3",{class:"vd-sub"}, LL("Key phrases","ປະໂຫຍກສຳຄັນ")) : null,
+    rc.points.length ? h("ol",{class:"vd-points"}, rc.points.map(p => h("li",{class:"vd-point"},
+      h("button",{class:"vd-say",title:LL("Play","ຫຼິ້ນສຽງ"),"aria-label":LL("Play","ຫຼິ້ນສຽງ")+" "+(p.lo||p.en||""),onclick:()=>playPoint(p)}, icon("speaker")),
+      h("div",{class:"vd-point-tx"},
+        p.lo ? h("div",{class:"vd-point-lo lo"}, p.lo) : null,
+        p.rom ? h("div",{class:"vd-rom"}, p.rom) : null,
+        p.en ? h("div",{class:"vd-en"}, p.en) : null),
+      parseTime(p.at) != null ? h("button",{class:"btn sm ghost vd-jump",title:LL("Watch this part","ເບິ່ງຕອນນີ້"),onclick:()=>seekTo(parseTime(p.at))}, icon("play"), formatTime(parseTime(p.at))) : null))) : null,
+    rc.vocab.length ? h("h3",{class:"vd-sub"}, LL("Key vocabulary","ຄຳສັບສຳຄັນ")) : null,
+    rc.vocab.length ? h("div",{class:"vd-vocab"}, rc.vocab.map(w => h("button",{class:"btn sm ghost",onclick:()=>speak(w.lo)}, icon("speaker"), h("b",{class:"lo"}, w.lo), w.rom ? h("span",{class:"vd-rom"}, w.rom) : null, w.en ? h("span",{class:"small muted"}, w.en) : null))) : null);
+
+  // --- tabs (phones show one panel at a time) ---
+  const tabs = h("div",{class:"seg vd-tabs",role:"tablist"}, [["transcript", LL("Transcript","ບົດຖອດຄວາມ")], ["recap", LL("Recap","ສະຫຼຸບ")]].map(([k, label]) =>
+    h("button",{role:"tab","aria-pressed":String(k==="transcript"),onclick:e=>{ root.dataset.tab = k; $$("button",tabs).forEach(b=>b.setAttribute("aria-pressed","false")); e.currentTarget.setAttribute("aria-pressed","true"); if (k==="transcript") scrollToActive(true); }}, label)));
+
+  // --- sync ---
+  function scrollToActive(force){
+    const el = lineEls[cur]; if (!el || !follow || (userScrolled && !force)) return;
+    if (!linesBox.offsetParent) return;                          // hidden tab
+    const top = el.offsetTop - linesBox.clientHeight * 0.3;
+    linesBox.scrollTo({ top: Math.max(0, top), behavior: force ? "auto" : "smooth" });
+  }
+  function onTime(t){
+    const i = activeIndex(lines, t);
+    if (i === cur) return;
+    if (lineEls[cur]) lineEls[cur].classList.remove("on");
+    cur = i;
+    lineEls.forEach((el, k) => el.classList.toggle("past", k < i));
+    if (lineEls[i]){ lineEls[i].classList.add("on"); lineEls[i].setAttribute("aria-current","true"); }
+    setCaption(lines[i] || null);
+    scrollToActive(false);
+  }
+  function seekTo(t){
+    if (t == null) return;
+    userScrolled = false; resume.hidden = true;
+    if (ctl && ctl.sync){ ctl.seek(t, true); onTime(t); }
+    else if (src.watch) window.open(src.watch + "&t=" + Math.floor(t) + "s", "_blank", "noopener");
   }
 
-  const catSeg = h("div",{class:"seg",style:"overflow-x:auto;margin-bottom:16px"},
-    [["all","All Videos"],["beginner","Beginner & Greetings"],["conversation","Conversations"],["pronunciation","Pronunciation"],["culture","Culture & Traditions"]]
-      .map(([cat, label]) => h("button",{"aria-pressed":String(filter===cat),onclick:e=>{
-        filter = cat;
-        $$("button",catSeg).forEach(b => b.setAttribute("aria-pressed","false"));
-        e.currentTarget.setAttribute("aria-pressed","true");
-        drawVideos();
-      }}, label))
-  );
-
-  drawVideos();
-
-  root.append(
-    catSeg,
-    videoGrid
-  );
-
+  // wide screens: transcript beside the player (same height); narrower: below it; recap underneath
+  const root = h("div",{class:"vd","data-tab":"transcript"}, head,
+    h("div",{class:"vd-watch"}, stage, h("div",{class:"vd-side"}, transcriptPanel)),
+    tabs, recapPanel);
+  waitConnected(host).then(async () => {
+    ctl = await mountPlayer(host, v.embedUrl, { onTime, onState: st => {
+      if (st !== "playing") return;
+      if (!logged){ logged = true; logEvent("video", { ref:v.id }); touchDay(); }
+      // phones: bring the player to the top so the transcript has room below it
+      if (matchMedia("(max-width:700px)").matches){ const top = stage.getBoundingClientRect().top; if (top > 4) window.scrollTo({ top: window.scrollY + top, behavior: "smooth" }); }
+    } });
+    root.__player = ctl;
+    if (!ctl.sync && lines.length) transcriptPanel.querySelector(".vd-panel-head").append(h("p",{class:"small muted vd-nosync"}, LL("Live sync is unavailable here — tap a line to open YouTube at that moment.","ບໍ່ສາມາດເລື່ອນຕາມໄດ້ — ແຕະແຖວເພື່ອເປີດ YouTube ທີ່ເວລານັ້ນ.")));
+  });
   return root;
 };
 

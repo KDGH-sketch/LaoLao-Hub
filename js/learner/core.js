@@ -75,7 +75,7 @@ async function loadProgress(){
   A.saved = Object.fromEntries(saved.map(x=>[x.id,x]));
 }
 
-// ---------- tracking (Firestore queues these writes while offline and syncs later) ----------
+// ---------- tracking ----------
 const safeId = id => String(id).replace(/\//g,"∕").slice(0,300);
 function progUpdate(data){ if (A.profile.status!=="active") return; A.api.db.update(`progress/${A.user.uid}`, Object.assign(data, { updatedAt:new Date() })).catch(()=>{}); }
 export function touchDay(){ const k = todayKey(); if (!A.prog.days[k]){ A.prog.days[k]=1; progUpdate({ ["days."+k]:1 }); } }

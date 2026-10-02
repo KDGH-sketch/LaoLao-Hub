@@ -94,7 +94,7 @@ function renderSetup(user){
   const ok = S.api.mode==="demo" || user.email.toLowerCase()===String(OWNER_EMAIL).toLowerCase();
   const msg = h("p",{class:"small",style:"color:var(--bad)"});
   authFrame(h("h1",null,t("adm_setup_title")), h("p",{class:"muted"}, t("adm_setup_d")), h("p",{class:"small"}, user.email),
-    ok ? h("div",{class:"field"}, h("label",{for:"nm"},t("name")), name) : h("div",{class:"banner"}, "This email doesn't match OWNER_EMAIL in js/config.js and firestore.rules."),
+    ok ? h("div",{class:"field"}, h("label",{for:"nm"},t("name")), name) : h("div",{class:"banner"}, "This email doesn't match the owner email in env-config.js."),
     msg,
     h("div",{class:"row"}, ok ? h("button",{class:"btn primary",onclick:async e=>{ e.currentTarget.disabled=true; try{ await bootstrapOwner(S.api, user, name.value.trim()); location.reload(); }catch(err){ msg.textContent=errText(err); e.currentTarget.disabled=false; } }}, icon("shield"), t("adm_become_super")) : null,
       h("button",{class:"btn ghost",onclick:()=>S.api.auth.signOut()}, t("sign_out"))));
@@ -413,7 +413,7 @@ async function viewSettings(){
 
   // Supabase PostgreSQL Schema Integration Card
   wrap.append(h("section",{class:"panel"},
-    h("h3",{style:"display:flex;align-items:center;gap:6px"}, icon("content"), "Supabase PostgreSQL Database Schema (29 Tables)"),
+    h("h3",{style:"display:flex;align-items:center;gap:6px"}, icon("content"), "Supabase PostgreSQL Database Schema (30 Tables)"),
     h("p",{class:"small muted"}, "Current Mode: ", h("span",{class:"chip ok mono"}, S.api.mode.toUpperCase()), " · All 15 curriculum collections (lessons, patterns, grammar, vocabulary, dialogues, quizzes, videos, tones, culture, characters, dictionary, audio, lexicon, paths, releases) have dedicated tables."),
     h("p",{class:"small muted"}, "If your Supabase project displays 'Could not find the table ... in the schema cache', run the complete SQL script in your Supabase SQL Editor:"),
     h("div",{class:"row",style:"gap:8px"},
@@ -426,7 +426,7 @@ async function viewSettings(){
         } catch(e){
           window.open("../supabase-schema.sql", "_blank");
         }
-      }}, icon("copy"), "Copy Supabase SQL Schema (29 Tables)"),
+      }}, icon("copy"), "Copy Supabase SQL Schema (30 Tables)"),
       h("a",{href:"../supabase-schema.sql",target:"_blank",download:"supabase-schema.sql",class:"btn sm ghost",style:"text-decoration:none"}, icon("download"), "Download supabase-schema.sql")
     )
   ));

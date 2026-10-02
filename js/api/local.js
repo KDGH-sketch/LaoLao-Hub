@@ -1,5 +1,5 @@
-// Demo implementation of the data layer: same interface as Firebase, stored in this browser.
-// Used automatically while js/config.js has no firebaseConfig.
+// Demo implementation of the data layer: same interface as js/api/supabase.js, stored in this browser.
+// Used automatically while env-config.js has no Supabase config.
 const DBKEY = "laolao.demo.db", AUTHKEY = "laolao.demo.auth", SESSKEY = "laolao.demo.session";
 const load = k => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch(e){ return null; } };
 const store = (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){ console.warn("Demo storage full", e); } };

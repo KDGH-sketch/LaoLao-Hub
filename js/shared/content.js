@@ -11,7 +11,7 @@ export const SKILLS = ["vocabulary","grammar","reading","listening","writing","s
 
 export const minTier = item => TIERS[item.access] ?? TIERS.free;
 
-// Effective tier of an account (mirrors myTier() in firestore.rules)
+// Effective tier of an account (computed in the browser)
 export function tierFor({ isAdmin, user, access }){
   if (isAdmin) return 99;
   if (!user || user.status !== "active") return 0;
@@ -49,7 +49,7 @@ export async function listVersions(api, type, id){
 
 // ---------- publishing ----------
 // Learners never read raw content. Admins "publish" = build one bundle per tier containing only
-// published items that tier may see. Bundles are split into parts under Firestore's 1 MB doc limit.
+// published items that tier may see. Bundles are split into parts to keep each row a manageable size.
 const PART = 280000; // characters; Chinese text is 3 bytes each, so this stays under 1 MB
 function publicView(type, doc){
   const o = {}; for (const k in doc) if (!["createdBy","updatedBy","createdAt","version"].includes(k)) o[k] = doc[k];
@@ -102,12 +102,16 @@ export async function loadBundle(api, tier){
   const cached = await cacheGet("bundle");
   if (!meta){ return cached ? JSON.parse(cached.json) : null; }
   const avail = Object.keys(meta.tiers).map(Number).filter(t => t <= tier).sort((a,b)=>b-a);
-  const T = avail.length ? avail[0] : 0;
-  if (cached && cached.version === meta.version && cached.tier === T) return JSON.parse(cached.json);
-  const parts = meta.tiers[T]; let json = "";
-  try {
-    for (let i=0;i<parts;i++){ const p = await api.db.get(`bundles/t${T}_p${i}`); json += p.json; }
-  } catch(e){ return cached ? JSON.parse(cached.json) : null; }
-  await cacheSet("bundle", { version: meta.version, tier: T, json });
-  return JSON.parse(json);
+  if (!avail.length) avail.push(0);
+  if (cached && cached.version === meta.version && cached.tier === avail[0]) return JSON.parse(cached.json);
+  // The database decides which tiers this account may read; if a part is refused, try the next lower tier.
+  for (const T of avail){
+    const parts = meta.tiers[T]; let json = "";
+    try {
+      for (let i=0;i<parts;i++){ const p = await api.db.get(`bundles/t${T}_p${i}`); if (!p) throw new Error("not readable"); json += p.json; }
+    } catch(e){ continue; }
+    await cacheSet("bundle", { version: meta.version, tier: T, json });
+    return JSON.parse(json);
+  }
+  return cached ? JSON.parse(cached.json) : null;
 }

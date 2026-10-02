@@ -7,7 +7,10 @@
     "dev": "node server.js",
     "build": "node -e \"console.log('Build successful')\"",
     "lint": "node -e \"console.log('No lint issues')\"",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node scripts/test_supabase_adapter.mjs && node scripts/test_video_links.mjs && node scripts/test_video_transcript.mjs",
+    "test:e2e": "node scripts/e2e_video.mjs",
+    "check:live": "node scripts/check_supabase_live.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",

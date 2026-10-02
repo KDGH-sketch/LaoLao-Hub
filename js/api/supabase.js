@@ -1,319 +1,261 @@
 // Supabase implementation of the LaoLao data layer.
-// Connects to Supabase Auth & PostgreSQL database with JSONB document support.
-// You can use standard Supabase cloud credentials (URL + anon key).
+// Every table has the shape (id text primary key, data jsonb, created_at, updated_at) — see supabase-schema.sql.
+//
+// Paths are mapped onto tables like this:
+//   "users/abc"                  → table users,    row "abc"
+//   "progress/abc/events/xyz"    → table progress, row "abc__events__xyz"   (sub-collections share the parent table)
+//   list("progress/abc/events")  → rows of progress whose id starts with "abc__events__"
+//   list("lessons")              → rows of lessons whose id has no "__" (sub-collection rows are excluded)
+//
+// The app was written against a Firestore-like API, so this adapter also supports:
+//   - dotted field paths in update()/set()  e.g. { "skills.reading.t": 3 }
+//   - db.inc(n) counters and db.delField()
+//   - Date values, stored as milliseconds (ISO date strings written by older versions are read back as milliseconds)
 
-export async function createSupabaseApi(supabaseUrl, supabaseAnonKey){
-  let createClient;
-  try {
-    const mod = await import("@supabase/supabase-js");
-    createClient = mod.createClient;
-  } catch(e){
-    const mod = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
-    createClient = mod.createClient;
+const SUB = "__";
+const INC = "__inc__", DELF = "__delete__";
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
+
+// Dates → ms on the way in
+function toStore(v){
+  if (v instanceof Date) return v.getTime();
+  if (Array.isArray(v)) return v.map(toStore);
+  if (v && typeof v === "object"){ const o = {}; for (const k in v) o[k] = toStore(v[k]); return o; }
+  return v;
+}
+// ISO strings → ms on the way out (rows written before dates were stored as ms)
+function fromStore(v){
+  if (typeof v === "string" && ISO_DATE.test(v)) return Date.parse(v);
+  if (Array.isArray(v)) return v.map(fromStore);
+  if (v && typeof v === "object"){ const o = {}; for (const k in v) o[k] = fromStore(v[k]); return o; }
+  return v;
+}
+const isInc = v => v && typeof v === "object" && v[INC] !== undefined;
+// Apply { "a.b.c": value } style fields (with inc / delete markers) onto a plain object.
+function applyFields(target, data){
+  for (const [k, v] of Object.entries(data)){
+    const parts = k.split("."); let t = target;
+    for (let i = 0; i < parts.length - 1; i++){ if (typeof t[parts[i]] !== "object" || t[parts[i]] === null) t[parts[i]] = {}; t = t[parts[i]]; }
+    const last = parts[parts.length - 1];
+    if (isInc(v)) t[last] = (typeof t[last] === "number" ? t[last] : 0) + v[INC];
+    else if (v === DELF) delete t[last];
+    else if (v !== undefined) t[last] = toStore(v);
+  }
+  return target;
+}
+function deepMerge(a, b){
+  for (const k in b){
+    const v = b[k];
+    if (v && typeof v === "object" && !Array.isArray(v) && !(v instanceof Date) && !isInc(v) && a[k] && typeof a[k] === "object" && !Array.isArray(a[k])) deepMerge(a[k], v);
+    else if (isInc(v)) a[k] = (typeof a[k] === "number" ? a[k] : 0) + v[INC];
+    else if (v === DELF) delete a[k];
+    else if (v !== undefined) a[k] = toStore(v);
+  }
+  return a;
+}
+// LIKE pattern for a literal id prefix ("_" and "%" are wildcards in LIKE)
+const likePrefix = s => s.replace(/[\\%_]/g, c => "\\" + c) + "%";
+
+export async function createSupabaseApi(supabaseUrl, supabaseAnonKey, opts = {}){
+  let createClient = opts.createClient;
+  if (!createClient){
+    try {
+      createClient = (await import("@supabase/supabase-js")).createClient;
+    } catch(e){
+      createClient = (await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm")).createClient;
+    }
   }
 
   const client = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true
-    }
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
+  // Separate client without a stored session, so an admin can create another person's login
+  // without being signed out (signUp would otherwise replace the admin's session).
+  let signupClient = null;
+  const getSignupClient = () => signupClient || (signupClient = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: "laolao-signup" }
+  }));
 
-  // Map collection paths (e.g. "users/abc" -> table "users", id "abc")
+  // "a/b" → { table:"a", id:"b" }, "a/b/c/d" → { table:"a", id:"b__c__d" }, "a/b/c" → { table:"a", prefix:"b__c__" }
   function parsePath(path){
-    const parts = path.replace(/^\/+|\/+$/g, "").split("/");
-    if (parts.length === 1) return { table: parts[0], id: null };
-    if (parts.length === 2) return { table: parts[0], id: parts[1] };
-    // For nested paths (e.g. a/b/c/d)
-    return { table: parts[0], id: parts.slice(1).join("__") };
+    const parts = String(path).replace(/^\/+|\/+$/g, "").split("/");
+    const table = parts[0], rest = parts.slice(1);
+    if (!rest.length) return { table, id: null, prefix: null };
+    if (rest.length % 2 === 1) return { table, id: rest.join(SUB), prefix: null };
+    return { table, id: null, prefix: rest.join(SUB) + SUB };
   }
 
-  function isMissingTableError(error) {
+  function isMissingTableError(error){
     if (!error) return false;
     const msg = String(error.message || error.details || error.hint || error).toLowerCase();
     const code = String(error.code || "").toUpperCase();
-    return (
-      code === "PGRST205" ||
-      code === "PGRST200" ||
-      code === "42P01" ||
-      msg.includes("schema cache") ||
-      msg.includes("could not find the table") ||
-      (msg.includes("relation") && msg.includes("does not exist"))
-    );
+    return code === "PGRST205" || code === "42P01" || msg.includes("could not find the table") || (msg.includes("relation") && msg.includes("does not exist"));
+  }
+  function check(error, table){
+    if (!error) return;
+    if (isMissingTableError(error)){
+      const e = new Error(`Supabase table "${table}" does not exist. Run supabase-schema.sql in the Supabase SQL Editor.`);
+      e.code = "missing-table"; e.cause = error; throw e;
+    }
+    throw error;
   }
 
-  const FALLBACK_KEY = "laolao_supabase_fallback_v1";
-  let fallbackStore = {};
-  try {
-    const raw = localStorage.getItem(FALLBACK_KEY);
-    if (raw) fallbackStore = JSON.parse(raw);
-  } catch(e){}
-
-  function saveFallback(){
+  // Read-only fallback: a missing content table shows the starter content from data/seed.json instead of crashing.
+  // Writes to a missing table always throw, so nothing is silently kept only in this browser.
+  const seedCache = {};
+  async function seedRows(table){
+    if (seedCache[table]) return seedCache[table];
+    let rows = [];
     try {
-      localStorage.setItem(FALLBACK_KEY, JSON.stringify(fallbackStore));
+      const res = await fetch(new URL("../../data/seed.json", import.meta.url));
+      if (res.ok){ const seed = await res.json(); const list = seed[table]; if (Array.isArray(list)) rows = list.filter(x => x && x.id); }
     } catch(e){}
+    console.warn(`LaoLao: Supabase table "${table}" is missing; showing ${rows.length} starter rows from data/seed.json (read-only).`);
+    return (seedCache[table] = rows);
   }
 
-  async function ensureSeedFallback(table){
-    if (fallbackStore[table] && Object.keys(fallbackStore[table]).length > 0) return;
-    try {
-      const res = await fetch("data/seed.json");
-      if (res.ok) {
-        const seed = await res.json();
-        const list = seed[table] || (table==="vocabulary"?seed.vocab:null);
-        if (Array.isArray(list)) {
-          fallbackStore[table] = fallbackStore[table] || {};
-          list.forEach(item => {
-            if (item && item.id) fallbackStore[table][item.id] = item;
-          });
-          saveFallback();
-        }
-      }
-    } catch(e){}
+  const rowToDoc = (r, prefix="") => Object.assign({ id: prefix ? r.id.slice(prefix.length) : r.id }, fromStore(r.data || {}));
+  const scope = (q, prefix) => prefix ? q.like("id", likePrefix(prefix)) : q.not("id", "like", "%\\_\\_%");
+
+  async function getRow(table, id){
+    const { data, error } = await client.from(table).select("id,data").eq("id", id).maybeSingle();
+    if (error && isMissingTableError(error)){ const r = (await seedRows(table)).find(x => x.id === id); return r ? Object.assign({}, r) : null; }
+    check(error, table);
+    return data ? rowToDoc(data) : null;
+  }
+  async function putRow(table, id, doc){
+    const { error } = await client.from(table).upsert({ id, data: doc, updated_at: new Date().toISOString() });
+    check(error, table);
   }
 
   let currentUser = null;
+  const toUser = u => u ? { uid: u.id, email: u.email } : null;
 
   const api = {
     mode: "supabase",
     client,
     auth: {
       current: () => currentUser,
+      // Calls cb only when the signed-in user changes (Supabase also emits token refreshes and
+      // repeated SIGNED_IN events, which would otherwise re-render the whole app).
       onChange: cb => {
-        client.auth.getSession().then(({ data: { session } }) => {
-          const u = session?.user;
-          currentUser = u ? { uid: u.id, email: u.email } : null;
-          cb(currentUser);
-        });
-        const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
-          const u = session?.user;
-          currentUser = u ? { uid: u.id, email: u.email } : null;
-          cb(currentUser);
-        });
+        let last;
+        const deliver = session => {
+          const u = toUser(session?.user); currentUser = u;
+          const uid = u ? u.uid : null;
+          if (uid === last) return;
+          last = uid; cb(u);
+        };
+        client.auth.getSession().then(({ data: { session } }) => deliver(session));
+        const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => deliver(session));
         return () => subscription.unsubscribe();
       },
       signIn: async (email, password) => {
         const { data, error } = await client.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        currentUser = { uid: data.user.id, email: data.user.email };
-        return currentUser;
+        return toUser(data.user);
+      },
+      // Learner self-registration: signs the new user in
+      signUp: async (email, password) => {
+        const { data, error } = await client.auth.signUp({ email, password });
+        if (error) throw error;
+        if (!data.user) throw new Error("Sign-up failed.");
+        if (!data.session) throw new Error("Account created. Please confirm your email address, then sign in.");
+        return toUser(data.user);
       },
       signOut: async () => {
         const { error } = await client.auth.signOut();
         if (error) throw error;
       },
       resetPassword: async email => {
-        const { error } = await client.auth.resetPasswordForEmail(email, {
-          redirectTo: window.location.origin
-        });
+        const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: new URL(".", location.href).href });
         if (error) throw error;
       },
+      // Supabase does not check the old password; the user must already be signed in.
       changePassword: async (_oldPw, newPw) => {
+        if (!newPw) throw new Error("New password is required.");
         const { error } = await client.auth.updateUser({ password: newPw });
         if (error) throw error;
       },
+      // Creates another person's login without touching the current session
       createAccount: async (email, password) => {
-        // Creates a new user via standard signup
-        const { data, error } = await client.auth.signUp({ email, password });
+        const { data, error } = await getSignupClient().auth.signUp({ email, password });
         if (error) throw error;
-        return data.user?.id;
+        if (!data.user || (Array.isArray(data.user.identities) && data.user.identities.length === 0)){
+          const e = new Error("That email already has an account."); e.code = "auth/email-already-in-use"; throw e;
+        }
+        return data.user.id;
       }
     },
     db: {
       get: async path => {
         const { table, id } = parsePath(path);
-        try {
-          if (!id){
-            const { data, error } = await client.from(table).select("*").limit(1);
-            if (error) {
-              if (isMissingTableError(error)) {
-                await ensureSeedFallback(table);
-                const items = Object.values(fallbackStore[table] || {});
-                return items[0] || null;
-              }
-              throw error;
-            }
-            return data?.[0] ? Object.assign({ id: data[0].id }, data[0].data || data[0]) : null;
-          }
-          const { data, error } = await client.from(table).select("*").eq("id", id).maybeSingle();
-          if (error) {
-            if (isMissingTableError(error)) {
-              await ensureSeedFallback(table);
-              return fallbackStore[table]?.[id] || null;
-            }
-            throw error;
-          }
-          if (!data) {
-            if (fallbackStore[table]?.[id]) return fallbackStore[table][id];
-            return null;
-          }
-          return Object.assign({ id: data.id }, data.data || data);
-        } catch(err) {
-          if (isMissingTableError(err)) {
-            await ensureSeedFallback(table);
-            return (id ? fallbackStore[table]?.[id] : Object.values(fallbackStore[table] || {})[0]) || null;
-          }
-          throw err;
-        }
+        if (!id) throw new Error("get() needs a document path: " + path);
+        return getRow(table, id);
       },
       set: async (path, val, merge=false) => {
         const { table, id } = parsePath(path);
-        if (!id) throw new Error("Path must contain an ID for set()");
-        let payload = val;
-        if (merge){
-          const existing = await api.db.get(path);
-          if (existing) payload = Object.assign({}, existing, val);
-        }
-        try {
-          const { error } = await client.from(table).upsert({ id, data: payload, updated_at: new Date() });
-          if (error) {
-            if (isMissingTableError(error)) {
-              fallbackStore[table] = fallbackStore[table] || {};
-              fallbackStore[table][id] = Object.assign({ id }, payload);
-              saveFallback();
-              return;
-            }
-            throw error;
-          }
-          fallbackStore[table] = fallbackStore[table] || {};
-          fallbackStore[table][id] = Object.assign({ id }, payload);
-          saveFallback();
-        } catch(err) {
-          if (isMissingTableError(err)) {
-            fallbackStore[table] = fallbackStore[table] || {};
-            fallbackStore[table][id] = Object.assign({ id }, payload);
-            saveFallback();
-            return;
-          }
-          throw err;
-        }
+        if (!id) throw new Error("set() needs a document path: " + path);
+        let doc;
+        if (merge){ const existing = await getRow(table, id); doc = deepMerge(existing ? stripId(existing) : {}, val); }
+        else doc = applyFields({}, val);
+        await putRow(table, id, doc);
       },
       update: async (path, val) => {
         const { table, id } = parsePath(path);
-        const existing = await api.db.get(path) || {};
-        const merged = Object.assign({}, existing, val);
-        try {
-          const { error } = await client.from(table).upsert({ id, data: merged, updated_at: new Date() });
-          if (error) {
-            if (isMissingTableError(error)) {
-              fallbackStore[table] = fallbackStore[table] || {};
-              fallbackStore[table][id] = Object.assign({ id }, merged);
-              saveFallback();
-              return;
-            }
-            throw error;
-          }
-          fallbackStore[table] = fallbackStore[table] || {};
-          fallbackStore[table][id] = Object.assign({ id }, merged);
-          saveFallback();
-        } catch(err) {
-          if (isMissingTableError(err)) {
-            fallbackStore[table] = fallbackStore[table] || {};
-            fallbackStore[table][id] = Object.assign({ id }, merged);
-            saveFallback();
-            return;
-          }
-          throw err;
-        }
+        if (!id) throw new Error("update() needs a document path: " + path);
+        // Creates the row if it is missing (earlier versions of this adapter behaved the same way)
+        const existing = await getRow(table, id);
+        await putRow(table, id, applyFields(existing ? stripId(existing) : {}, val));
       },
       del: async path => {
         const { table, id } = parsePath(path);
         if (!id) return;
-        try {
-          const { error } = await client.from(table).delete().eq("id", id);
-          if (error && !isMissingTableError(error)) throw error;
-        } catch(err) {
-          if (!isMissingTableError(err)) throw err;
-        }
-        if (fallbackStore[table]?.[id]) {
-          delete fallbackStore[table][id];
-          saveFallback();
-        }
+        const { error } = await client.from(table).delete().eq("id", id);
+        check(error, table);
       },
       add: async (path, val) => {
-        const { table } = parsePath(path);
-        const id = crypto.randomUUID ? crypto.randomUUID() : "id_" + Math.random().toString(36).slice(2, 10);
-        try {
-          const { error } = await client.from(table).insert({ id, data: val, created_at: new Date() });
-          if (error) {
-            if (isMissingTableError(error)) {
-              fallbackStore[table] = fallbackStore[table] || {};
-              fallbackStore[table][id] = Object.assign({ id }, val);
-              saveFallback();
-              return id;
-            }
-            throw error;
-          }
-        } catch(err) {
-          if (isMissingTableError(err)) {
-            fallbackStore[table] = fallbackStore[table] || {};
-            fallbackStore[table][id] = Object.assign({ id }, val);
-            saveFallback();
-            return id;
-          }
-          throw err;
-        }
-        return id;
+        const { table, prefix } = parsePath(path);
+        const key = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+        const { error } = await client.from(table).insert({ id: (prefix || "") + key, data: applyFields({}, val) });
+        check(error, table);
+        return key;
       },
       list: async (path, o={}) => {
-        const { table } = parsePath(path);
-        try {
-          let q = client.from(table).select("*");
-          if (o.where){
-            o.where.forEach(([field, op, val]) => {
-              if (op === "==") q = q.eq(`data->>${field}`, String(val));
-              else if (op === ">") q = q.gt(`data->>${field}`, val);
-              else if (op === "<") q = q.lt(`data->>${field}`, val);
-              else if (op === ">=") q = q.gte(`data->>${field}`, val);
-              else if (op === "<=") q = q.lte(`data->>${field}`, val);
-            });
-          }
-          if (o.orderBy){
-            const [field, dir] = o.orderBy;
-            q = q.order(`data->>${field}`, { ascending: dir !== "desc" });
-          }
-          if (o.limit) q = q.limit(o.limit);
-          const { data, error } = await q;
-          if (error) {
-            if (isMissingTableError(error)) {
-              await ensureSeedFallback(table);
-              let rows = Object.values(fallbackStore[table] || {});
-              if (o.where) {
-                o.where.forEach(([f, op, v]) => {
-                  if (op === "==") rows = rows.filter(r => String(r[f]) === String(v));
-                });
-              }
-              if (o.limit) rows = rows.slice(0, o.limit);
-              return rows;
-            }
-            throw error;
-          }
-          const mapped = (data || []).map(r => Object.assign({ id: r.id }, r.data || r));
-          if (!mapped.length && fallbackStore[table] && Object.keys(fallbackStore[table]).length > 0) {
-            return Object.values(fallbackStore[table]);
-          }
-          return mapped;
-        } catch(err) {
-          if (isMissingTableError(err)) {
-            await ensureSeedFallback(table);
-            let rows = Object.values(fallbackStore[table] || {});
-            if (o.where) {
-              o.where.forEach(([f, op, v]) => {
-                if (op === "==") rows = rows.filter(r => String(r[f]) === String(v));
-              });
-            }
-            if (o.limit) rows = rows.slice(0, o.limit);
-            return rows;
-          }
-          throw err;
+        const { table, id, prefix } = parsePath(path);
+        if (id) throw new Error("list() needs a collection path: " + path);
+        let q = scope(client.from(table).select("id,data"), prefix);
+        (o.where || []).forEach(([field, op, val]) => {
+          const col = typeof val === "number" ? `data->${field}` : `data->>${field}`;
+          const v = val instanceof Date ? val.getTime() : val;
+          if (op === "==") q = q.eq(`data->>${field}`, String(v));
+          else if (op === "!=") q = q.neq(`data->>${field}`, String(v));
+          else if (op === ">") q = q.gt(col, v);
+          else if (op === "<") q = q.lt(col, v);
+          else if (op === ">=") q = q.gte(col, v);
+          else if (op === "<=") q = q.lte(col, v);
+          else throw new Error("Unsupported where operator: " + op);
+        });
+        if (o.orderBy){ const [field, dir] = o.orderBy; q = q.order(`data->${field}`, { ascending: dir !== "desc", nullsFirst: false }); }
+        if (o.limit) q = q.limit(o.limit);
+        const { data, error } = await q;
+        if (error && isMissingTableError(error) && !prefix){
+          let rows = (await seedRows(table)).map(r => Object.assign({}, r));
+          (o.where || []).forEach(([f, op, v]) => { if (op === "==") rows = rows.filter(r => String(r[f]) === String(v)); });
+          return o.limit ? rows.slice(0, o.limit) : rows;
         }
+        check(error, table);
+        return (data || []).map(r => rowToDoc(r, prefix || ""));
       },
       count: async (path, o={}) => {
-        const list = await api.db.list(path, o);
-        return list.length;
+        if (o.where) return (await api.db.list(path, o)).length;
+        const { table, prefix } = parsePath(path);
+        const { count, error } = await scope(client.from(table).select("id", { count: "exact", head: true }), prefix);
+        if (error && isMissingTableError(error)) return (await seedRows(table)).length;
+        check(error, table);
+        return count || 0;
       },
+      // Not atomic: operations run one after another.
       batch: async ops => {
         for (const op of ops){
           if (op.op === "del") await api.db.del(op.path);
@@ -321,19 +263,19 @@ export async function createSupabaseApi(supabaseUrl, supabaseAnonKey){
           else await api.db.set(op.path, op.data, op.merge);
         }
       },
-      inc: n => (curr=0) => (curr || 0) + n,
-      delField: () => undefined
+      inc: n => ({ [INC]: n }),
+      delField: () => DELF
     },
     storage: {
       upload: async (file, path) => {
         const bucket = "laolao-assets";
-        const { error } = await client.storage.from(bucket).upload(path, file, { upsert: true });
+        const { error } = await client.storage.from(bucket).upload(path, file, { upsert: true, contentType: file.type || undefined });
         if (error) throw error;
-        const { data } = client.storage.from(bucket).getPublicUrl(path);
-        return data.publicUrl;
+        return client.storage.from(bucket).getPublicUrl(path).data.publicUrl;
       }
     }
   };
-
   return api;
 }
+
+function stripId(doc){ const o = Object.assign({}, doc); delete o.id; return o; }

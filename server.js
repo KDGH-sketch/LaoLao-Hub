@@ -14,31 +14,8 @@ express.static.mime.define({
   'application/manifest+json': ['webmanifest']
 });
 
-// Endpoint for environment configuration
-app.get('/env-config.js', (req, res) => {
-  res.type('application/javascript');
-  let config = null;
-  if (process.env.FIREBASE_CONFIG) {
-    try {
-      config = JSON.parse(process.env.FIREBASE_CONFIG);
-    } catch (e) {
-      console.error('Failed to parse FIREBASE_CONFIG', e);
-    }
-  } else if (process.env.FIREBASE_API_KEY) {
-    config = {
-      apiKey: process.env.FIREBASE_API_KEY,
-      authDomain: process.env.FIREBASE_AUTH_DOMAIN || `${process.env.FIREBASE_PROJECT_ID}.firebaseapp.com`,
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-      appId: process.env.FIREBASE_APP_ID
-    };
-  }
-  const ownerEmail = process.env.OWNER_EMAIL || 'kindathanomsuck@gmail.com';
-  res.send(`window.__FIREBASE_CONFIG__ = ${JSON.stringify(config)}; window.__OWNER_EMAIL__ = ${JSON.stringify(ownerEmail)};`);
-});
-
-// Serve static assets from project root
+// Serve static assets from project root.
+// env-config.js (Supabase URL + anon key) is served as-is, same as on GitHub Pages.
 app.use(express.static(__dirname, {
   extensions: ['html'],
   index: 'index.html'

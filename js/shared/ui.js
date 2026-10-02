@@ -178,3 +178,31 @@ export function errText(e){
     "auth/too-many-requests":"Too many attempts. Wait a minute and try again.","auth/network-request-failed":"No internet connection.","permission-denied":"You don't have permission to do that."};
   return map[c] || (e && e.message) || String(e);
 }
+
+// ----- video links -----
+// YouTube only plays inside an iframe through its /embed/ URL; watch, youtu.be, shorts and live links are refused.
+// videoSource() turns any of those into a playable source:
+//   { kind:"youtube", id, src, watch } · { kind:"file", src } (mp4/webm/ogg) · { kind:"iframe", src } · { kind:"invalid" }
+export function videoSource(url){
+  const raw = String(url || "").trim();
+  if (!raw) return { kind: "invalid" };
+  if (/^[\w-]{11}$/.test(raw)) return ytSource(raw, 0);              // a bare video ID
+  let u; try { u = new URL(raw); } catch(e){ return { kind: "invalid" }; }
+  if (!/^https?:$/.test(u.protocol)) return { kind: "invalid" };
+  const host = u.hostname.replace(/^(www|m|music)\./, "");
+  const start = parseInt(u.searchParams.get("start") || u.searchParams.get("t") || "0", 10) || 0;
+  let id = null;
+  if (host === "youtu.be") id = u.pathname.slice(1).split("/")[0];
+  else if (host === "youtube.com" || host === "youtube-nocookie.com"){
+    if (u.pathname === "/watch") id = u.searchParams.get("v");
+    else { const m = u.pathname.match(/^\/(embed|shorts|live|v)\/([\w-]{11})/); if (m) id = m[2]; }
+  }
+  if (id && /^[\w-]{11}$/.test(id)) return ytSource(id, start);
+  if (host === "youtube.com" || host === "youtu.be") return { kind: "invalid" };
+  if (/\.(mp4|webm|ogg|ogv|m4v)$/i.test(u.pathname)) return { kind: "file", src: u.href };
+  return { kind: "iframe", src: u.href };
+}
+function ytSource(id, start){
+  return { kind: "youtube", id, src: `https://www.youtube.com/embed/${id}?rel=0${start ? "&start=" + start : ""}`,
+    watch: `https://www.youtube.com/watch?v=${id}`, thumb: `https://i.ytimg.com/vi/${id}/hqdefault.jpg` };
+}

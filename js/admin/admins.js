@@ -572,16 +572,12 @@ export async function openAddAdminModal() {
 
           try {
             errBox.textContent = "Creating administrator account...";
-            let user = (await S.api.db.list("users", { where: [["email", "==", email]] })).catch(() => [])[0];
+            let user = (await S.api.db.list("users", { where: [["email", "==", email]] }).catch(() => []))[0];
             let uid = user && user.id;
 
             if (!uid) {
-              try {
-                uid = await S.api.auth.createAccount(email, pw);
-              } catch (e) {
-                // If account exists in auth, find or create user record
-                uid = "admin-" + email.replace(/[^a-z0-9]/g, "-").slice(0, 24);
-              }
+              // Throws (e.g. "already has an account") instead of inventing an ID that could never sign in
+              uid = await S.api.auth.createAccount(email, pw);
 
               await S.api.db.set(`users/${uid}`, {
                 id: uid,
@@ -742,34 +738,26 @@ export async function openEditAdminModal(admin) {
 }
 
 // ---------- Reset Password Modal ----------
+// Another person's password can't be set from the browser (that needs the Supabase service key),
+// so this sends them a password-reset email instead.
 export async function openResetPasswordModal(admin) {
-  const pwInp = h("input", { class: "input", type: "text", value: "Admin" + Math.floor(1000 + Math.random() * 9000) + "!" });
   const msg = h("p", { class: "small", style: "color:var(--bad)" });
 
   await dialog({
     title: `Reset Password · ${admin.email}`,
     body: h("div", { class: "stack" },
-      h("p", { class: "small muted" }, `Set a new password for ${admin.email}. Share this securely with the administrator:`),
-      fld(t("password"), pwInp),
+      h("p", { class: "small muted" }, `Send a password-reset email to ${admin.email}. They choose their new password from the link in the email.`),
       msg
     ),
     actions: [
       { label: t("cancel"), value: false },
       {
-        label: "Update Password",
+        label: t("reset_pw"),
         primary: true,
         onClick: async () => {
-          const newPw = pwInp.value.trim();
-          if (!newPw) {
-            msg.textContent = "Please enter a password.";
-            return false;
-          }
           try {
-            // Update auth credential if supported
-            if (S.api.auth.changePassword) {
-              await S.api.auth.changePassword(newPw).catch(() => {});
-            }
-            toast(`Password updated for ${admin.email}`, "ok");
+            await S.api.auth.resetPassword(admin.email);
+            toast(t("reset_sent"), "ok");
             return true;
           } catch (err) {
             msg.textContent = errText(err);

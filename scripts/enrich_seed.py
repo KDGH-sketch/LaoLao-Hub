@@ -15,9 +15,9 @@ seed["videos"] = [
     "level": 1,
     "category": "beginner",
     "difficulty": "Stage 1 · Survival",
-    "embedUrl": "https://www.youtube.com/embed/fW_7e93H2_Y",
-    "title": { "en": "Essential Lao Daily Greetings & Politeness", "lo": "ການທັກທາຍ ແລະ ມາລະຍາດພາສາລາວໃນຊີວິດປະຈຳວັນ", "zh": "老挝语日常问候与礼仪" },
-    "desc": { "en": "Learn natural greetings, respectful hand nop gestures, and friendly everyday responses with native speakers.", "lo": "ຮຽນຮູ້ການທັກທາຍແບບສຸພາບ, ການນົບ ແລະ ການຕອບຮັບທີ່ເປັນທຳມະຊາດ." },
+    "embedUrl": "https://www.youtube.com/embed/j7TToA_jaMg",
+    "title": { "en": "Learn to Read and Speak Lao: Greetings", "lo": "ຮຽນອ່ານ ແລະ ເວົ້າພາສາລາວ: ຄຳທັກທາຍ", "zh": "学读说老挝语：问候语" },
+    "desc": { "en": "A short lesson on everyday Lao greetings (vaolao channel). Practise the phrases below after watching.", "lo": "ບົດຮຽນສັ້ນໆກ່ຽວກັບຄຳທັກທາຍພາສາລາວໃນຊີວິດປະຈຳວັນ. ຝຶກປະໂຫຍກຂ້າງລຸ່ມນີ້ຫຼັງຈາກເບິ່ງ." },
     "transcript": [
       { "sp": "Somxai", "lo": "ສະບາຍດີຕອນເຊົ້າເອື້ອຍ! ມື້ນີ້ສະບາຍດີບໍ່?", "rom": "sà-bāi-dīi tɔɔn-sào ɯ̂aai! mɯ̂ɯ-nîi sà-bāi-dīi bɔ̀ɔ?", "en": "Good morning older sister! How are you doing today?" },
       { "sp": "Noy", "lo": "ສະບາຍດີ! ເອື້ອຍສະບາຍດີ, ຂອບໃຈຫຼາຍໆເດີ້.", "rom": "sà-bāi-dīi! ɯ̂aai sà-bāi-dīi, khɔ̌ɔp-jái lǎai-lǎai dêe.", "en": "Hello! I am doing well, thank you so much!" },
@@ -38,9 +38,9 @@ seed["videos"] = [
     "level": 2,
     "category": "conversation",
     "difficulty": "Stage 2 · Everyday",
-    "embedUrl": "https://www.youtube.com/embed/5a4x3w8k9fA",
-    "title": { "en": "Shopping & Ordering Food at Talat Sao Market", "lo": "ການໄປຊື້ເຄື່ອງ ແລະ ສັ່ງອາຫານຢູ່ຕະຫຼາດເຊົ້າ", "zh": "万象早市购物与点餐" },
-    "desc": { "en": "Real conversations for ordering fresh fruit, sticky rice, and asking prices politely.", "lo": "ການສົນທະນາຕົວຈິງໃນການຊື້ໝາກໄມ້, ເຂົ້າໜຽວ ແລະ ຖາມລາຄາ." },
+    "embedUrl": "https://www.youtube.com/embed/L3sLXhhtwK0",
+    "title": { "en": "Vientiane Night Market: Street Food at Sihom", "lo": "ຕະຫຼາດກາງຄືນວຽງຈັນ: ອາຫານຢູ່ສີຫອມ", "zh": "万象夜市：西洪街头美食" },
+    "desc": { "en": "A walk through the Sihom night market in Vientiane (Lao Ocean channel). Use the phrases below to order food and ask prices.", "lo": "ຍ່າງຊົມຕະຫຼາດກາງຄືນສີຫອມ ນະຄອນຫຼວງວຽງຈັນ. ໃຊ້ປະໂຫຍກຂ້າງລຸ່ມນີ້ເພື່ອສັ່ງອາຫານ ແລະ ຖາມລາຄາ." },
     "transcript": [
       { "sp": "Customer", "lo": "ເອື້ອຍ, ໝາກກ້ວຍໜ່ວຍນີ້ຂາຍແນວໃດ?", "rom": "ɯ̂aai, màak-kùay nùay nîi khǎai nɛ́ɛo-dǎi?", "en": "Older sister, how do you sell these bananas?" },
       { "sp": "Vendor", "lo": "ຫວີລະ 15,000 ກີບເດີ້. ຫວານຫຼາຍ!", "rom": "wǐi la sìp-hâa phan kìip dêe. wǎan lǎai!", "en": "15,000 Kip per bunch. They are very sweet!" },
@@ -61,9 +61,9 @@ seed["videos"] = [
     "level": 1,
     "category": "pronunciation",
     "difficulty": "Stage 0 · Foundation",
-    "embedUrl": "https://www.youtube.com/embed/3v7X8k0w4mE",
-    "title": { "en": "How Native Lao Speakers Shape the 6 Tones", "lo": "ວິທີການຜັນສຽງວັນນະຍຸດ 6 ສຽງ ໂດຍຄົນລາວແທ້", "zh": "老挝语6个声调的发音秘诀" },
-    "desc": { "en": "A complete visual and audio breakdown of the 6 authentic Lao tone contours.", "lo": "ການອະທິບາຍລະດັບສຽງທັງ 6 ຢ່າງລະອຽດ ພ້ອມຕົວຢ່າງຄຳສັບ." },
+    "embedUrl": "https://www.youtube.com/embed/DSuQu7yWirU",
+    "title": { "en": "Learn to Read and Speak Lao: Tones", "lo": "ຮຽນອ່ານ ແລະ ເວົ້າພາສາລາວ: ວັນນະຍຸດ", "zh": "学读说老挝语：声调" },
+    "desc": { "en": "An introduction to Lao as a tonal language (vaolao channel).", "lo": "ແນະນຳພາສາລາວໃນຖານະພາສາທີ່ມີວັນນະຍຸດ." },
     "transcript": [
       { "sp": "Teacher", "lo": "ສະບາຍດີນັກຮຽນທຸກຄົນ. ມື້ນີ້ເຮົາຊິມາຮຽນເລື່ອງສຽງວັນນະຍຸດ 6 ສຽງ.", "rom": "sà-bāi-dīi nák-hían thúk khon. mɯ̂ɯ-nîi háo si maa hían lɯ̂ang sǐang wán-nà-yút hók sǐang.", "en": "Hello students! Today we will learn about the 6 tone contours in Lao." },
       { "sp": "Teacher", "lo": "ສຽງທີໜຶ່ງ ແມ່ນສຽງສາມັນ: ກາ, ດີ, ປາ.", "rom": "sǐang thīi nɯ̀ng mɛ̀ɛn sǐang sǎa-mán: kāa, dīi, paa.", "en": "The first tone is Mid-Level: kaa, dii, paa." }

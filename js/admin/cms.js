@@ -1,5 +1,5 @@
 // Content management: lists, schema-driven editor, versions, previews, quiz builder
-import { h, $$, icon, toast, dialog, confirmDialog, fmtDate, errText, debounce, tr, pyHTML, isHan } from "../shared/ui.js";
+import { h, $$, icon, toast, dialog, confirmDialog, fmtDate, errText, debounce, tr, pyHTML, isHan, videoSource } from "../shared/ui.js";
 import { lang } from "../shared/i18n.js";
 import { CONTENT_TYPES, ACCESS_KEYS, STATUS_KEYS, saveContent, listVersions } from "../shared/content.js";
 import { loadDict, dict, chars, segment } from "../shared/dict.js";
@@ -9,6 +9,7 @@ import { sentenceEl, ctx } from "../shared/widgets.js";
 import { SKILLS } from "../shared/content.js";
 import { S, L, t, go, canContent, canViewMenu, canEditMenu, fld } from "./state.js";
 import { SCHEMAS, STEP_TYPE_TO_COL, APP_PAGES } from "./schemas.js";
+import { parseTime, formatTime, normalizeSegments } from "../shared/video.js";
 import { publishFlow } from "./main.js";
 
 const cache = {};   // collection → rows (for pickers)
@@ -404,6 +405,33 @@ async function normalize(type, d){
   ["examples","lines"].forEach(k => {
     if (Array.isArray(o[k])) o[k] = o[k].filter(x => x && (x.zh || x.lo || x.en || x.speaker)).map(fixSentence);
   });
+  if (type==="videos"){
+    // Store the playable form (YouTube watch / youtu.be / shorts links → /embed/ URL)
+    const src = videoSource(o.embedUrl);
+    if (src.kind === "invalid") throw new Error("Video link is not a valid YouTube or video file link.");
+    o.embedUrl = src.src;
+    // Transcript: timed lines only, sorted, each with an end time
+    const lines = Array.isArray(o.transcript) ? o.transcript.filter(l => l && (l.text || l.lo)) : [];
+    const legacy = lines.filter(l => l.start == null || l.start === "");
+    const timed = lines.filter(l => !legacy.includes(l)).map((l, i) => {
+      const start = parseTime(l.start);
+      if (start == null) throw new Error(`Transcript line ${i+1}: "${l.start}" is not a valid time (use m:ss).`);
+      const line = { start, text: String(l.text || l.lo).trim() };
+      ["sp","rom","en"].forEach(k => { if (l[k]) line[k] = String(l[k]).trim(); });
+      return line;
+    });
+    o.transcript = normalizeSegments(timed);
+    // Recap: summary + key phrases; older untimed "transcript" phrases become recap phrases
+    const r = o.recap && typeof o.recap === "object" ? o.recap : {};
+    let points = (Array.isArray(r.points) ? r.points : []).filter(p => p && (p.lo || p.en)).map((p, i) => {
+      const q = { lo: String(p.lo || "").trim(), rom: String(p.rom || "").trim(), en: String(p.en || "").trim() };
+      if (p.audio) q.audio = String(p.audio).trim();
+      if (p.at != null && p.at !== ""){ const at = parseTime(p.at); if (at == null) throw new Error(`Recap phrase ${i+1}: "${p.at}" is not a valid time (use m:ss).`); q.at = at; }
+      return q;
+    });
+    if (!points.length && legacy.length) points = legacy.map(l => ({ lo: String(l.lo || l.text || "").trim(), rom: l.rom || "", en: l.en || "" }));
+    o.recap = { summary: Object.assign({ en:"", lo:"", zh:"" }, r.summary || {}), points };
+  }
   if (type==="vocabulary"){
     o.hz = (o.hz||"").trim();
     if (eng && o.hz && !o.py) {
@@ -442,6 +470,8 @@ function renderField(f, obj, type){
     case "textarea": return fld(label, input(get(), set, { multi:true }), help);
     case "number": return fld(label, input(get(), v=>set(+v), { type:"number" }), help);
     case "date": return fld(label, input(get(), set, { type:"date" }), help);
+    // shown as m:ss, stored as seconds
+    case "time": return fld(label, input(get()==null ? "" : formatTime(get()), x => set(x.trim()==="" ? null : (parseTime(x) ?? x.trim())), { cls:"mono", placeholder:f.placeholder||"0:00" }), help);
     case "select": return fld(label, h("select",{class:"input",onchange:e=>set(f.num?+e.target.value:e.target.value)}, f.options.map(([v,l])=>h("option",{value:v,selected:String(get())===String(v)},l))), help);
     case "pinyin": { const inp = input(get(), set); return fld(label, h("div",{class:"row",style:"flex-wrap:nowrap"}, inp, h("button",{class:"btn sm",type:"button",onclick:async()=>{ const e = await engine(); const v = autoPinyin(e, obj[f.from]||"").py.toLowerCase(); set(v); inp.value = v; }}, t("auto_pinyin"))), help); }
     case "tr": { const v = get() || {}; set(v); return fld(label, h("div",{class:f.multiline?"stack":"field-row",style:f.multiline?"gap:6px":""}, LANGS.map(([l,n]) => h("div",{class:"field"}, h("span",{class:"help"},n), input(v[l], x=>v[l]=x, { multi:f.multiline, cls:l==="lo"?"lo":"" })))), help); }
@@ -513,7 +543,7 @@ function renderField(f, obj, type){
       const url = input(get(), set, { placeholder:"https://…/nihao.mp3" });
       const file = h("input",{type:"file",accept:"audio/*",onchange:async e=>{ const fl = e.target.files[0]; if (!fl) return; try { toast(t("importing")); const u = await S.api.storage.upload(fl, `audio/${Date.now()}-${fl.name.replace(/[^\w.\-]/g,"_")}`); set(u); url.value = u; toast(t("saved_ok")); } catch(err){ toast(errText(err),"err"); } }});
       return fld(label, h("div",{class:"stack",style:"gap:8px"}, h("label",{class:"btn sm",style:"align-self:flex-start"}, icon("upload"), t("upload_audio"), h("span",{hidden:true}, file)), h("span",{class:"help"}, t("or_url")), url,
-        h("button",{class:"btn sm",type:"button",style:"align-self:flex-start",onclick:()=>{ if (obj.url) new Audio(obj.url).play().catch(e=>toast(errText(e),"err")); }}, icon("play"), t("play"))), "Uploads need Firebase Storage (Blaze plan). On the free plan, paste a link to an audio file hosted anywhere.");
+        h("button",{class:"btn sm",type:"button",style:"align-self:flex-start",onclick:()=>{ if (get()) new Audio(get()).play().catch(e=>toast(errText(e),"err")); }}, icon("play"), t("play"))), "Uploads go to the Supabase Storage bucket \"laolao-assets\" (it must exist and allow uploads). Or paste a link to an audio file hosted anywhere.");
     }
     case "questions": return questionsBuilder(obj, f.key);
   }
@@ -533,6 +563,18 @@ function previewPanel(type, draft){
   }
   if (type==="quizzes") return h("div",{class:"panel"}, h("h3",null,t("preview")), h("button",{class:"btn sm",onclick:async()=>{ const c = await normalize(type, draft); const box = h("div",{class:"quiz"}); dialog({ title:t("preview"), wide:true, body:box }); runQuiz(box, c.questions||[], {}); }}, icon("eye"), t("preview")));
   if (["dialogues","grammar","vocabulary"].includes(type)) return h("div",{class:"panel"}, h("h3",null,t("preview")), h("button",{class:"btn sm",onclick:async()=>{ const c = await normalize(type, draft); const box = h("div"); (c.lines||c.examples||[]).forEach(sn => box.append(sentenceEl(sn,{ speaker:sn.speaker, noSave:true }))); dialog({ title:t("preview"), wide:true, body: box.childElementCount ? box : h("p",{class:"muted"},t("no_rows")) }); }}, icon("eye"), t("preview")));
+  if (type==="videos"){
+    const box = h("div",{class:"stack",style:"gap:8px"});
+    const show = () => {
+      const s = videoSource(draft.embedUrl);
+      if (s.kind === "invalid"){ box.replaceChildren(h("p",{class:"small",style:"color:var(--bad)"}, draft.embedUrl ? "Not a valid YouTube or video link." : "Paste a video link to preview it.")); return; }
+      const player = s.kind === "file" ? h("video",{src:s.src,controls:true,preload:"metadata"})
+        : h("iframe",{src:s.src,title:t("preview"),referrerpolicy:"strict-origin-when-cross-origin",allow:"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",allowfullscreen:true});
+      box.replaceChildren(h("div",{class:"video-embed-wrap",style:"border-radius:10px"}, player));
+    };
+    show();
+    return h("div",{class:"panel"}, h("h3",null,t("preview")), box, h("button",{class:"btn sm",onclick:show}, icon("play"), "Refresh preview"));
+  }
   return null;
 }
 function versionsPanel(type, id, onRestore){
