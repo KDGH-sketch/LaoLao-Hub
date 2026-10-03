@@ -11,6 +11,7 @@ import { S, L, t, go, canContent, canViewMenu, canEditMenu, fld, markUnpublished
 import { SCHEMAS, STEP_TYPE_TO_COL, APP_PAGES } from "./schemas.js";
 import { parseTime, formatTime, normalizeSegments } from "../shared/video.js";
 import { publishFlow } from "./main.js";
+import { strokeEditorField } from "./handwriting.js";
 
 const cache = {};   // collection → rows (for pickers)
 async function rows(col, force){ if (force || !cache[col]) cache[col] = await S.api.db.list(col); return cache[col]; }
@@ -549,6 +550,7 @@ function renderField(f, obj, type){
       draw(); return h("div",{class:"field"}, h("span",{class:"lbl"},label), help ? h("span",{class:"help"},help) : null, box);
     }
     case "json": { const ta = h("textarea",{class:"input mono",style:"min-height:260px"}); ta.value = typeof get()==="string" ? get() : JSON.stringify(get(), null, 1); ta.addEventListener("input", () => set(ta.value)); return fld(label, ta, help); }
+    case "strokes": return fld(label, strokeEditorField(obj), help);
     case "audio": {
       const url = input(get(), set, { placeholder:"https://…/nihao.mp3" });
       const file = h("input",{type:"file",accept:"audio/*",onchange:async e=>{ const fl = e.target.files[0]; if (!fl) return; try { toast(t("importing")); const u = await S.api.storage.upload(fl, `audio/${Date.now()}-${fl.name.replace(/[^\w.\-]/g,"_")}`); set(u); url.value = u; toast(t("saved_ok")); } catch(err){ toast(errText(err),"err"); } }});

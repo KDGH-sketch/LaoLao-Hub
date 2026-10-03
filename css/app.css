@@ -557,15 +557,21 @@ textarea.input{min-height:80px;resize:vertical;line-height:1.45}
 .themesw button:hover{color:var(--ink)}
 .themesw button[aria-pressed="true"]{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.08)}
 
-/* Lao Handwriting & Canvas */
+/* Lao Handwriting & Canvas -- sized by CSS (aspect-ratio square, percentage width), never fixed
+   pixels, so the same normalized [0,1] stroke data looks right at any viewport size. */
 .hw-container{display:flex;flex-direction:column;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px}
-.hw-canvas-wrap{position:relative;width:260px;height:260px;background:var(--surface-2);border:2px dashed var(--line-2);border-radius:14px;overflow:hidden;touch-action:none;user-select:none}
-.hw-canvas-bg{position:absolute;inset:0;display:grid;place-items:center;font-size:160px;color:rgba(2,132,199,.15);pointer-events:none;font-family:var(--f-lo);font-weight:700}
-.hw-canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;z-index:2}
+.hw-canvas-wrap{position:relative;width:min(320px,100%);aspect-ratio:1/1;background:var(--surface-2);border:2px dashed var(--line-2);border-radius:14px;overflow:hidden;touch-action:none;user-select:none}
+.hw-canvas-bg{position:absolute;inset:0;display:grid;place-items:center;font-size:min(45vw,160px);color:rgba(2,132,199,.15);pointer-events:none;font-family:var(--f-lo);font-weight:700}
+.hw-canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;z-index:2;touch-action:none}
 .hw-grid-lines{position:absolute;inset:0;pointer-events:none}
 .hw-grid-lines::before{content:"";position:absolute;top:50%;left:0;right:0;border-top:1px dashed var(--line);transform:translateY(-50%)}
 .hw-grid-lines::after{content:"";position:absolute;left:50%;top:0;bottom:0;border-left:1px dashed var(--line);transform:translateX(-50%)}
 .hw-controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.hw-studio{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:start}
+@media (max-width:640px){.hw-studio{grid-template-columns:1fr;justify-items:center;text-align:center}}
+.hw-feedback{display:flex;flex-direction:column;gap:4px;width:100%;max-width:320px}
+.hw-feedback p{margin:0;font-size:.86rem}
+.hw-score-ring{font-size:2.2rem;font-weight:800;line-height:1}
 
 /* Video Feed */
 .video-card{border:1px solid var(--line);background:var(--surface);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}

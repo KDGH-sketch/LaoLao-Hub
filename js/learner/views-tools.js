@@ -8,9 +8,10 @@ import { sentenceEl, openWord, entryEl, ensureTokens } from "../shared/widgets.j
 import { runQuiz, toneSVG } from "../shared/quiz.js";
 import { SKILLS, accessState, cacheGet } from "../shared/content.js";
 import { A, T, expLang, prefs, setPref, srsDue, srsGrade, streak, skillPct, genSentence, genMany, exampleOf, recordAnswer, quizDone, logEvent, touchDay,
-  tierName, isSaved, toggleSave, wordsMastered, srsAdd } from "./core.js";
+  tierName, isSaved, toggleSave, wordsMastered, srsAdd, recordHandwritingAttempt } from "./core.js";
 import { achievementsEl, xpCard, masteryRow } from "./views-learn.js";
 import { openUpgradeFlow, fetchMyPendingOrder } from "./payments.js";
+import { scoreAttempt, feedbackFor } from "../shared/handwriting-engine.js";
 
 export const VIEWS = {};
 const go = (...a) => A.go(...a);
@@ -242,136 +243,160 @@ VIEWS.pinyin = () => {
 };
 
 // ---------- Lao Script & Handwriting (ການຂຽນອັກສອນລາວ) ----------
+// Quick picker of all 27 consonants with their mnemonic names; the subset that has real stroke
+// data (authored in Admin -> characters -> Stroke order) gets real demo+recognition below, the
+// rest fall back to a "not ready yet" message rather than a silently-broken canvas.
+const ALL_CHARS = [
+  ["ກ","ໄກ່ (chicken)"],["ຂ","ໄຂ່ (egg)"],["ຄ","ຄວາຍ (buffalo)"],["ງ","ງົວ (cow)"],
+  ["ຈ","ຈອກ (cup)"],["ສ","ເສືອ (tiger)"],["ຊ","ຊ້າງ (elephant)"],["ຍ","ຍຸງ (mosquito)"],
+  ["ດ","ເດັກ (child)"],["ຕ","ຕາ (eye)"],["ຖ","ຖົງ (bag)"],["ທ","ທຸງ (flag)"],
+  ["ນ","ນົກ (bird)"],["ບ","ບົ້ງ (caterpillar)"],["ປ","ປາ (fish)"],["ຜ","ເຜິ້ງ (bee)"],
+  ["ຝ","ຝົນ (rain)"],["ພ","ພູ (mountain)"],["ຟ","ໄຟ (fire)"],["ມ","ມ້າ (horse)"],
+  ["ຢ","ຢາ (medicine)"],["ຣ","ຣະຄັງ (bell)"],["ລ","ລີງ (monkey)"],["ວ","ວີ (fan)"],
+  ["ຫ","ຫ່ານ (goose)"],["ອ","ໂອ (bowl)"],["ຮ","ເຮືອນ (house)"]
+];
+const STROKE_COLORS = ["#0284C7","#059669","#D97706","#E11D48","#7C3AED","#0D9488"];
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const clamp01 = x => Math.max(0, Math.min(1, x));
+
 VIEWS.chars = () => {
   const root = h("div",{class:"stack-l"});
-  root.append(pageHead(t("chars_title"), "Learn the art of writing Lao script: stroke orders, letter anatomy, and interactive handwriting canvas."));
+  root.append(pageHead(t("chars_title"), "Learn the art of writing Lao script: watch the official stroke order, then draw it yourself."));
 
-  // Interactive Handwriting Canvas Studio
-  let currentLetter = "ກ";
-  const canvas = h("canvas",{width:240, height:240, style:"border:2px solid var(--line);border-radius:12px;background:#fff;touch-action:none;cursor:crosshair;box-shadow:var(--shadow)"});
+  const byChar = c => Object.values(A.byType.characters||{}).find(x=>x.char===c);
+  const startChar = (Object.values(A.byType.characters||{}).find(c=>c.strokes && c.strokes.length) || {}).char || "ກ";
+  let currentLetter = startChar, currentDoc = byChar(startChar);
+  let drawnStrokes = [], liveStroke = null, animating = false;
+
+  // ---- responsive, normalized canvas (devicePixelRatio-aware; never fixed pixel dimensions) ----
+  const wrap = h("div",{class:"hw-canvas-wrap"});
+  const bg = h("div",{class:"hw-canvas-bg lo"}, currentLetter);
+  const canvas = h("canvas",{class:"hw-canvas"});
+  wrap.append(bg, canvas, h("div",{class:"hw-grid-lines"}));
   const ctx2 = canvas.getContext("2d");
-  let drawing = false, lastX=0, lastY=0;
 
-  function clearCanvas(){
-    ctx2.clearRect(0,0,240,240);
-    // Draw grid lines
-    ctx2.save();
-    ctx2.strokeStyle = "#e2e8f0";
-    ctx2.lineWidth = 1;
-    ctx2.setLineDash([4, 4]);
+  function sizeCanvas(){
+    const rect = wrap.getBoundingClientRect(); if (!rect.width) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.round(rect.width*dpr));
+    canvas.height = Math.max(1, Math.round(rect.height*dpr));
+    ctx2.setTransform(dpr,0,0,dpr,0,0);
+    redraw();
+  }
+  function paintStroke(points, color){
+    if (!points || points.length < 2) return;
+    const rect = wrap.getBoundingClientRect();
+    ctx2.save(); ctx2.strokeStyle = color; ctx2.lineWidth = Math.max(3, rect.width*0.028); ctx2.lineCap = "round"; ctx2.lineJoin = "round";
     ctx2.beginPath();
-    ctx2.moveTo(120, 0); ctx2.lineTo(120, 240);
-    ctx2.moveTo(0, 120); ctx2.lineTo(240, 120);
-    ctx2.stroke();
-    // Draw faint background guide letter
-    ctx2.font = "bold 140px 'Noto Sans Lao', sans-serif";
-    ctx2.fillStyle = "rgba(2, 132, 199, 0.16)";
-    ctx2.textAlign = "center";
-    ctx2.textBaseline = "middle";
-    ctx2.fillText(currentLetter, 120, 130);
-    ctx2.restore();
+    points.forEach((p,i) => { const x=p.x*rect.width, y=p.y*rect.height; i===0?ctx2.moveTo(x,y):ctx2.lineTo(x,y); });
+    ctx2.stroke(); ctx2.restore();
+  }
+  function redraw(){
+    const rect = wrap.getBoundingClientRect();
+    ctx2.clearRect(0,0,rect.width,rect.height);
+    drawnStrokes.forEach((s,i) => paintStroke(s.points, STROKE_COLORS[i%STROKE_COLORS.length]));
+    if (liveStroke) paintStroke(liveStroke, "#0284C7");
+  }
+  const toNorm = (clientX, clientY) => { const r = wrap.getBoundingClientRect(); return { x: clamp01((clientX-r.left)/r.width), y: clamp01((clientY-r.top)/r.height) }; };
+
+  canvas.addEventListener("pointerdown", e => { if (animating) return; e.preventDefault(); try { canvas.setPointerCapture(e.pointerId); } catch(err){ /* capture is a nice-to-have; drawing still works without it */ } liveStroke = [toNorm(e.clientX,e.clientY)]; });
+  canvas.addEventListener("pointermove", e => { if (!liveStroke) return; e.preventDefault(); liveStroke.push(toNorm(e.clientX,e.clientY)); redraw(); });
+  const endStroke = () => { if (liveStroke && liveStroke.length>1) drawnStrokes.push({ points: liveStroke }); liveStroke = null; redraw(); };
+  canvas.addEventListener("pointerup", endStroke);
+  canvas.addEventListener("pointercancel", () => { liveStroke = null; redraw(); });
+  window.addEventListener("resize", debounce(sizeCanvas, 150));
+
+  // ---- demonstration: replays the SAME stroke data used for scoring (never a separate asset that
+  // could drift out of sync) ----
+  async function playDemo(){
+    if (!currentDoc || !currentDoc.strokes || !currentDoc.strokes.length || animating) return;
+    animating = true; drawnStrokes = []; liveStroke = null; resultBox.innerHTML = "";
+    for (const s of currentDoc.strokes){
+      const pts = s.points, step = Math.max(1, Math.floor(pts.length/22));
+      for (let k=2;k<=pts.length;k+=step){ drawnStrokes.push({ points: pts.slice(0,k) }); redraw(); drawnStrokes.pop(); await sleep(16); }
+      drawnStrokes.push({ points: pts }); redraw();
+      await sleep(220);
+    }
+    await sleep(400);
+    drawnStrokes = []; redraw();
+    animating = false;
   }
 
-  function startPos(e){
-    drawing = true;
-    const rect = canvas.getBoundingClientRect();
-    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-    lastX = cx * (canvas.width / rect.width);
-    lastY = cy * (canvas.height / rect.height);
+  const resultBox = h("div",{class:"hw-feedback"});
+  const statsLine = h("div",{class:"small muted"});
+  function updateStats(){
+    const hw = A.prog.handwriting[currentLetter] || A.prog.handwriting[(currentDoc&&currentDoc.id)||""];
+    statsLine.textContent = hw ? `${t("hw_best")}: ${hw.bestScore} · ${t("hw_attempts")}: ${hw.attempts}` : "";
   }
-  function drawPos(e){
-    if (!drawing) return;
-    e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-    const nx = cx * (canvas.width / rect.width);
-    const ny = cy * (canvas.height / rect.height);
-
-    ctx2.save();
-    ctx2.strokeStyle = "#0284C7";
-    ctx2.lineWidth = 7;
-    ctx2.lineCap = "round";
-    ctx2.lineJoin = "round";
-    ctx2.beginPath();
-    ctx2.moveTo(lastX, lastY);
-    ctx2.lineTo(nx, ny);
-    ctx2.stroke();
-    ctx2.restore();
-
-    lastX = nx; lastY = ny;
+  function renderResult(result){
+    resultBox.innerHTML = "";
+    const fb = feedbackFor(result, lang());
+    resultBox.append(
+      h("div",{class:"row",style:"align-items:baseline;gap:10px"},
+        h("span",{class:"hw-score-ring",style:`color:${result.passed?"var(--jade)":"var(--warn)"}`}, result.total),
+        h("span",{class:"muted small"},"/ 100"),
+        h("span",{class:"chip"+(result.passed?" ok":"")}, result.passed ? t("hw_passed") : t("hw_keep_practicing"))),
+      ...fb.map(f => h("p",{style:`color:${f.kind==="ok"?"var(--jade)":f.kind==="bad"?"var(--bad)":"var(--warn)"}`}, f.text)));
   }
-  function endPos(){ drawing = false; }
+  function checkWriting(){
+    if (!currentDoc || !currentDoc.strokes || !currentDoc.strokes.length){ toast(t("hw_no_strokes"), "err"); return; }
+    if (!drawnStrokes.length){ toast(t("hw_your_turn")); return; }
+    const result = scoreAttempt(drawnStrokes, currentDoc.strokes, (A.rules && A.rules.handwriting));
+    renderResult(result);
+    recordHandwritingAttempt(currentDoc.id || currentLetter, result);
+    updateStats();
+    touchDay();
+  }
 
-  canvas.addEventListener("mousedown", startPos);
-  canvas.addEventListener("mousemove", drawPos);
-  window.addEventListener("mouseup", endPos);
-  canvas.addEventListener("touchstart", startPos, {passive:false});
-  canvas.addEventListener("touchmove", drawPos, {passive:false});
-  canvas.addEventListener("touchend", endPos);
-
-  const feedback = h("div",{class:"small muted",style:"min-height:22px;font-weight:600"});
   const charDisplay = h("div",{class:"lo",style:"font-size:3.5rem;font-weight:700;color:var(--accent);line-height:1"}, currentLetter);
-  const infoDisplay = h("div",{class:"muted small"}, "Lao Consonant · ກ ໄກ່ (ko kai)");
+  const infoDisplay = h("div",{class:"muted small"});
+  const demoBtn = h("button",{class:"btn sm primary",onclick:playDemo}, icon("play"), t("show_stroke_order"));
+  const readyBanner = h("div",{class:"banner",style:"font-size:.85rem"});
 
-  const selectLetter = (c, name) => {
-    currentLetter = c;
-    charDisplay.textContent = c;
-    infoDisplay.textContent = "Letter: " + c + " · " + (name || "");
-    clearCanvas();
-    feedback.textContent = "";
+  const selectLetter = c => {
+    currentLetter = c; currentDoc = byChar(c);
+    drawnStrokes = []; liveStroke = null; animating = false;
+    bg.textContent = c; charDisplay.textContent = c;
+    const meta = ALL_CHARS.find(([cc])=>cc===c);
+    infoDisplay.textContent = "Letter: " + c + (meta ? " · "+meta[1] : "");
+    const ready = currentDoc && currentDoc.strokes && currentDoc.strokes.length;
+    demoBtn.disabled = !ready;
+    // .banner sets its own "display", which silently overrides the native [hidden] rule's
+    // display:none (author CSS always beats the UA stylesheet) -- toggle an inline style instead.
+    readyBanner.style.display = ready ? "none" : "flex";
+    readyBanner.textContent = t("hw_no_strokes");
+    resultBox.innerHTML = ""; updateStats(); redraw();
     speak(c);
   };
 
-  const studio = h("div",{class:"card",style:"display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center;padding:24px"},
-    h("div",{style:"display:flex;flex-direction:column;align-items:center;gap:12px"},
-      canvas,
-      h("div",{class:"row",style:"gap:8px"},
-        h("button",{class:"btn sm",onclick:()=>clearCanvas()}, icon("x"), "Clear"),
-        h("button",{class:"btn sm",onclick:()=>{ speak(currentLetter); }}, icon("play"), "Audio"),
-        h("button",{class:"btn sm primary",onclick:()=>{
-          feedback.textContent = "✨ Great practice! Lao calligraphy rule: always draw the circular head loop first.";
-          toast("✓ Practice recorded!");
-          recordAnswer("writing", true);
-        }}, icon("check"), "Check")
-      ),
-      feedback
-    ),
+  const studio = h("div",{class:"card hw-studio"},
+    h("div",{class:"stack",style:"align-items:center;gap:12px"},
+      wrap,
+      h("div",{class:"hw-controls"},
+        demoBtn,
+        h("button",{class:"btn sm",onclick:()=>{ drawnStrokes=[]; liveStroke=null; resultBox.innerHTML=""; redraw(); }}, icon("x"), t("clear")),
+        h("button",{class:"btn sm",onclick:()=>speak(currentLetter)}, icon("speaker"), "Audio"),
+        h("button",{class:"btn sm primary",onclick:checkWriting}, icon("check"), t("hw_check"))),
+      statsLine, resultBox),
     h("div",{class:"stack",style:"gap:14px"},
-      h("div",{style:"display:flex;align-items:baseline;gap:12px"},
-        charDisplay,
-        h("div",null,
-          h("h3",null,"Handwriting Practice Studio"),
-          infoDisplay
-        )
-      ),
+      h("div",{style:"display:flex;align-items:baseline;gap:12px"}, charDisplay, h("div",null, h("h3",null,"Handwriting Practice Studio"), infoDisplay)),
+      h("p",{class:"small muted"}, t("hw_watch_first")),
+      readyBanner,
       h("div",{class:"banner info",style:"font-size:.9rem"},
         h("b",null,"Golden Rule of Lao Script: "),
-        "ຂຽນຫົວ ກ່ອນ (Always write the head loop first!). Unlike English letters which start top-down, most Lao consonants start with the small circle or spiral loop."
-      ),
-      h("p",{class:"small muted"},"Pick any letter below to practice on the tracing canvas:")
-    )
-  );
-
-  setTimeout(clearCanvas, 50);
-
-  // Quick picker of 27 consonants
-  const ALL_CHARS = [
-    ["ກ","ໄກ່ (chicken)"],["ຂ","ໄຂ່ (egg)"],["ຄ","ຄວາຍ (buffalo)"],["ງ","ງົວ (cow)"],
-    ["ຈ","ຈອກ (cup)"],["ສ","ເສືອ (tiger)"],["ຊ","ຊ້າງ (elephant)"],["ຍ","ຍຸງ (mosquito)"],
-    ["ດ","ເດັກ (child)"],["ຕ","ຕາ (eye)"],["ຖ","ຖົງ (bag)"],["ທ","ທຸງ (flag)"],
-    ["ນ","ນົກ (bird)"],["ບ","ບົ້ງ (caterpillar)"],["ປ","ປາ (fish)"],["ຜ","ເຜິ້ງ (bee)"],
-    ["ຝ","ຝົນ (rain)"],["ພ","ພູ (mountain)"],["ຟ","ໄຟ (fire)"],["ມ","ມ້າ (horse)"],
-    ["ຢ","ຢາ (medicine)"],["ຣ","ຣະຄັງ (bell)"],["ລ","ລີງ (monkey)"],["ວ","ວີ (fan)"],
-    ["ຫ","ຫ່ານ (goose)"],["ອ","ໂອ (bowl)"],["ຮ","ເຮືອນ (house)"]
-  ];
+        "ຂຽນຫົວ ກ່ອນ (Always write the head loop first!). Unlike English letters which start top-down, most Lao consonants start with the small circle or spiral loop."),
+      h("p",{class:"small muted"},"Pick any letter below to practice:")));
 
   const pickerGrid = h("div",{class:"cgrid",style:"margin-top:16px"},
-    ALL_CHARS.map(([c, n]) => h("button",{class:"lo",style:"font-size:1.6rem",onclick:()=>selectLetter(c, n)}, c))
-  );
+    ALL_CHARS.map(([c]) => {
+      const ready = Object.values(A.byType.characters||{}).some(x=>x.char===c && x.strokes && x.strokes.length);
+      return h("button",{class:"lo",style:"font-size:1.6rem;position:relative",onclick:()=>selectLetter(c)}, c,
+        ready ? h("span",{style:"position:absolute;top:3px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--jade)"}) : null);
+    }));
 
   root.append(studio, h("section",{class:"sect"}, h("h2",null,"Select Lao Consonant to Practice"), pickerGrid));
+  selectLetter(currentLetter);
+  requestAnimationFrame(sizeCanvas);
   return root;
 };
 

@@ -6,7 +6,7 @@ import { loadDict, dict, chars, mergeVocabulary } from "../shared/dict.js";
 import { makeEngine } from "../shared/engine.js";
 import { setSpeechSettings, setAudioLibrary } from "../shared/speech.js";
 import { ctx } from "../shared/widgets.js";
-import { mergeRules, lessonPoints, reviewPoints, dailyAward, levelFromXP, wilsonLower, skillMastery, earnedAchievements } from "../shared/scoring.js";
+import { mergeRules, lessonPoints, reviewPoints, handwritingPoints, dailyAward, levelFromXP, wilsonLower, skillMastery, earnedAchievements } from "../shared/scoring.js";
 
 export const A = {
   api:null, user:null, profile:null, access:null, isAdmin:false, tier:0, settings:{}, plans:[],
@@ -90,7 +90,8 @@ async function loadProgress(){
   const api = A.api, uid = A.user.uid;
   const [prog, srs, saved] = await Promise.all([
     api.db.get(`progress/${uid}`).catch(()=>null), api.db.list(`reviews/${uid}/items`).catch(()=>[]), api.db.list(`bookmarks/${uid}/items`).catch(()=>[]) ]);
-  A.prog = Object.assign({ skills:{}, lessons:{}, patterns:{}, days:{}, answers:{r:0,t:0}, last:null, xp:0, xpDays:{}, goalDays:{}, rounds:{}, stats:{ passed:0, threeStars:0 } }, prog||{});
+  A.prog = Object.assign({ skills:{}, lessons:{}, patterns:{}, days:{}, answers:{r:0,t:0}, last:null, xp:0, xpDays:{}, goalDays:{}, rounds:{}, stats:{ passed:0, threeStars:0 }, handwriting:{} }, prog||{});
+  if (!A.prog.handwriting || typeof A.prog.handwriting !== "object") A.prog.handwriting = {};
   ["xpDays","goalDays","rounds"].forEach(k => { if (!A.prog[k] || typeof A.prog[k] !== "object") A.prog[k] = {}; });
   A.prog.stats = Object.assign({ passed:0, threeStars:0 }, A.prog.stats || {});
   if (!prog && A.profile.status==="active") api.db.set(`progress/${uid}`, { skills:{}, lessons:{}, patterns:{}, days:{}, answers:{r:0,t:0}, createdAt:new Date() }).catch(()=>{});
@@ -126,6 +127,17 @@ export function completeLesson(id, score, total, stars){
   progUpdate({ ["lessons."+safeId(id)]: { done:true, at:new Date(), score:score||0, total:total||0, stars:stars||0, viaQuiz } });
   logEvent("lesson", { ref:id, score:score||0, total:total||0 }, true); touchDay();
   return award(lessonPoints({ viaQuiz }, A.rules), "lesson");
+}
+// result: a pre-computed js/shared/handwriting-engine.js scoreAttempt() output.
+export function recordHandwritingAttempt(charId, result){
+  const id = safeId(charId);
+  const prev = A.prog.handwriting[id] || { bestScore:0, lastScore:0, attempts:0 };
+  const next = { bestScore: Math.max(prev.bestScore, result.total), lastScore: result.total, attempts: (prev.attempts||0)+1, lastPracticedAt: Date.now() };
+  A.prog.handwriting[id] = next;
+  progUpdate({ ["handwriting."+id]: { bestScore:next.bestScore, lastScore:next.lastScore, attempts:next.attempts, lastPracticedAt:new Date() } });
+  recordAnswer("writing", result.passed);
+  logEvent("handwriting", { ref:charId, score:result.total, passed:result.passed }, true);
+  return award(handwritingPoints(result.total), "handwriting:"+charId);
 }
 
 // ---------- XP ----------

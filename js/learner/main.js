@@ -261,6 +261,10 @@ function renderDisabled(){
 
 // ---------- shell ----------
 const VIEWS = Object.assign({}, LV.VIEWS, TV.VIEWS, LAB_VIEWS, MEDIA_VIEWS, {
+  // The sidebar's "Script & Handwriting" item routes here (see NAV_GROUPS, id:"handwriting");
+  // MEDIA_VIEWS no longer defines its own "handwriting" view (see views-media.js) -- this real,
+  // stroke-recognition-backed one supersedes it at the same nav entry point.
+  handwriting: TV.VIEWS.chars,
   script_lab: TV.VIEWS.chars
 });
 // Grouped so the sidebar reads as sections instead of one long flat list.

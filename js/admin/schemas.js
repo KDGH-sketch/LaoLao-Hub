@@ -110,11 +110,12 @@ export const SCHEMAS = {
       { key:"keyTips", type:"list", label:["Key etiquette tips & cultural dos/don'ts","ຂໍ້ຄວນປະຕິບັດ"], itemLabel:["Tip","ຂໍ້ແນະນຳ"], summary: t => t.tip||"", item:[ { key:"tip", type:"text", label:["Tip rule","ຄຳແນະນຳ"] } ] },
       { key:"vocab", type:"list", label:["Associated Lao cultural words","ຄຳສັບວັດທະນະທຳທີ່ກ່ຽວຂ້ອງ"], itemLabel:["Word","ຄຳສັບ"], summary: v => (v.lao||"")+" ("+(v.en||"")+")",
         item:[ { row:[ { key:"lao", type:"text", label:["Lao word","ຄຳລາວ"], cls:"hz" }, { key:"rom", type:"text", label:["Romanization","ຄຳອ່ານ"] }, { key:"en", type:"text", label:["English","ອັງກິດ"] } ] } ] } ] },
-  characters: { title: d => ({ en: (d.char||d.id)+" ("+(d.name||"")+" — "+(d.meaning||"")+")" }), idHint:"char-ກ", defaults:{ char:"", name:"", meaning:"", ipa:"", class:"middle", strokeCount:1, medial:"", final:"" },
+  characters: { title: d => ({ en: (d.char||d.id)+" ("+(d.name||"")+" — "+(d.meaning||"")+")" }), idHint:"char-ກ", defaults:{ char:"", name:"", meaning:"", ipa:"", class:"middle", strokeCount:1, medial:"", final:"", strokes:[] },
     fields:[
       { row:[ { key:"char", type:"text", label:["Lao letter / symbol","ຕົວອັກສອນ"], cls:"hz" }, { key:"name", type:"text", label:["Traditional name (e.g. Kai, Khai)","ຊື່ຕົວອັກສອນ"] }, { key:"meaning", type:"text", label:["Meaning of name (e.g. Chicken)","ຄວາມໝາຍ"] } ] },
       { row:[ { key:"class", type:"select", label:["Consonant tone class / type","ໝວດອັກສອນ"], options:[["middle","Middle consonant (ອັກສອນກາງ)"],["high","High consonant (ອັກສອນສູງ)"],["low","Low consonant (ອັກສອນຕ່ຳ)"],["vowel","Vowel (ສະຫຼະ)"],["tone_mark","Tone mark (ວັນນະຍຸດ)"]] }, { key:"ipa", type:"text", label:["IPA pronunciation","ສຽງ IPA"] }, { key:"strokeCount", type:"number", label:["Stroke count","ຈຳນວນເສັ້ນຂີດ"] } ] },
-      { row:[ { key:"medial", type:"text", label:["Initial sound","ສຽງຕົ້ນ"] }, { key:"final", type:"text", label:["Final ending sound","ສຽງທ້າຍ"] } ] } ] },
+      { row:[ { key:"medial", type:"text", label:["Initial sound","ສຽງຕົ້ນ"] }, { key:"final", type:"text", label:["Final ending sound","ສຽງທ້າຍ"] } ] },
+      { key:"strokes", type:"strokes", label:["Stroke order (draw each stroke)","ລຳດັບເສັ້ນຂີດ (ແຕ້ມແຕ່ລະເສັ້ນ)"] } ] },
   dictionary: { title: d => ({ en: (d.hz||d.id)+" ["+(d.p||"")+"] — "+(d.en||"") }), idFrom:"hz", idHint:"ກິນ", defaults:{ hz:"", p:"", pos:"v", level:1, en:"", lo:"", zh:"", examples:[] },
     fields:[
       { row:[ { key:"hz", type:"text", label:["Word (Lao)","ຄຳສັບ (ພາສາລາວ)"], cls:"hz" }, { key:"p", type:"text", label:["Romanization (Phonetics)","ຄຳອ່ານໂຣມັນ"] }, { key:"pos", type:"select", label:["Part of speech","ປະເພດຄຳ"], options:["n","v","adj","adv","prep","conj","part","pron","num","m","t","prop","loc","mod","int","idiom","ph"].map(x=>[x,x]) }, lv ] },

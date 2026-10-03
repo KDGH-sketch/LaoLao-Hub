@@ -1,5 +1,6 @@
 // Scoring rules for LaoLao. Pure functions only (no database, no DOM) so every rule can be unit-tested.
 // Admins can override any number in Admin → Settings → Scoring rules (stored in settings/scoring).
+import { DEFAULT_HW_RULES } from "./handwriting-engine.js";
 
 export const DEFAULT_RULES = {
   // points for a correct answer, by question type (harder types earn more)
@@ -26,7 +27,10 @@ export const DEFAULT_RULES = {
   // skill mastery uses the lower bound of a 95% confidence interval: accuracy has to be proven over enough answers
   mastery: { minAnswers: 10, z: 1.96, levels: [[0.8, "mastered"], [0.65, "strong"], [0.4, "practicing"], [0, "learning"]] },
   // level n needs levelBase * n * (n+1) / 2 XP in total: 100, 300, 600, 1000, …
-  levelBase: 100
+  levelBase: 100,
+  // Handwriting stroke-order practice: weights (must sum to 100) and tolerances, used by
+  // js/shared/handwriting-engine.js. Same admin-override mechanism as everything else above.
+  handwriting: DEFAULT_HW_RULES
 };
 
 const isObj = v => v && typeof v === "object" && !Array.isArray(v);
@@ -74,6 +78,9 @@ export function roundResult(answers, { repeat = 0 } = {}, R = DEFAULT_RULES){
 
 export const lessonPoints = ({ viaQuiz }, R = DEFAULT_RULES) => viaQuiz ? R.lesson.quizComplete : R.lesson.manualComplete;
 export const reviewPoints = (grade, R = DEFAULT_RULES) => R.review[Math.max(0, Math.min(3, grade | 0))];
+// A handwriting attempt's XP is proportional to its 0-100 engine score (full credit = 20, comparable
+// to the "type"/"listen_type" quiz points, since reproducing a stroke sequence is real effort).
+export const handwritingPoints = scoreTotal => Math.round(Math.max(0, Math.min(100, scoreTotal)) / 100 * 20);
 
 // Applies the daily cap, the streak bonus (first XP of the day) and the daily-goal bonus (when crossing the goal).
 // Returns the XP to add and what it consists of.
