@@ -12,6 +12,28 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;500;600;700&family=Noto+Serif+Lao:wght@500;700&family=Source+Sans+3:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="../css/app.css">
 <link rel="stylesheet" href="../css/admin.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+// Map Tailwind utilities onto the app's existing CSS-variable design tokens (css/app.css :root),
+// so e.g. bg-surface / text-ink-2 / border-line automatically follow day/night theme switching
+// without a build step and without a second, conflicting color system.
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg: "var(--bg)", surface: "var(--surface)", "surface-2": "var(--surface-2)", "surface-3": "var(--surface-3)",
+        ink: "var(--ink)", "ink-2": "var(--ink-2)", "ink-3": "var(--ink-3)",
+        line: "var(--line)", "line-2": "var(--line-2)",
+        accent: "var(--accent)", "accent-hover": "var(--accent-hover)", "accent-2": "var(--accent-2)", "accent-3": "var(--accent-3)",
+        jade: "var(--jade)", "jade-2": "var(--jade-2)", warn: "var(--warn)", "warn-2": "var(--warn-2)", bad: "var(--bad)", "bad-2": "var(--bad-2)"
+      },
+      borderRadius: { DEFAULT: "var(--r)", s: "var(--r-s)" },
+      boxShadow: { card: "var(--shadow)", "card-lg": "var(--shadow-lg)" },
+      fontFamily: { ui: ["var(--f-ui)"] }
+    }
+  }
+};
+</script>
 <script type="importmap">
 {
   "imports": {
