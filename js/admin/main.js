@@ -12,6 +12,7 @@ import { viewPlans } from "./plans.js";
 import { viewContentHome, viewContentList, viewEditor } from "./cms.js";
 import { EXT_VIEWS } from "./cms-extended.js";
 import { viewAdmins } from "./admins.js";
+import { viewOrders } from "./orders.js";
 
 const root = document.getElementById("root");
 const pref = (() => { try { return localStorage.getItem("xuelu.admin.lang") || "en"; } catch(e){ return "en"; } })();
@@ -125,6 +126,7 @@ const NAV_SECTIONS = [
     items: [
       { id:"dashboard", label:["Dashboard", "ໜ້າຫຼັກ"], icon:"chart", view:"dashboard" },
       { id:"learners", label:["Learners", "ຜູ້ຮຽນ"], icon:"users", view:"learners" },
+      { id:"orders", label:["Payment Requests", "ຄຳຂໍຈ່າຍເງິນ"], icon:"receipt", view:"orders" },
       { id:"content", label:["All Content", "ເນື້ອຫາທັງໝົດ"], icon:"content", view:"content" }
     ]
   },
@@ -305,7 +307,7 @@ function renderShell(){
     return;
   }
 
-  const V = Object.assign({ dashboard:viewDashboard, learners:viewLearners, learner:viewLearner, plans:viewPlans, content:viewContentHome, contentList:viewContentList, editor:viewEditor, activity:viewActivity, admins:viewAdmins, settings:viewSettings }, EXT_VIEWS);
+  const V = Object.assign({ dashboard:viewDashboard, learners:viewLearners, learner:viewLearner, orders:viewOrders, plans:viewPlans, content:viewContentHome, contentList:viewContentList, editor:viewEditor, activity:viewActivity, admins:viewAdmins, settings:viewSettings }, EXT_VIEWS);
   const fn = V[S.view] || viewDashboard;
   Promise.resolve(fn(S.params||{})).then(el => { main.innerHTML=""; main.append(el); }).catch(err => { console.error(err); main.innerHTML=""; main.append(h("div",{class:"banner"}, errText(err))); });
 }
@@ -389,7 +391,7 @@ async function viewSettings(){
     );
   }
 
-  const s = Object.assign({ appName:"Xuélù", allowRegistration:false, defaultPlanId:"free", supportContact:"" }, await S.api.db.get("settings/app").catch(()=>null)||{});
+  const s = Object.assign({ appName:"Xuélù", allowRegistration:false, defaultPlanId:"free", supportContact:"", paymentQrUrl:"", paymentInstructions:"" }, await S.api.db.get("settings/app").catch(()=>null)||{});
   const name = h("input",{class:"input",value:s.appName}), reg = h("input",{type:"checkbox",class:"switch",checked:!!s.allowRegistration,"aria-label":t("allow_reg")});
   const plan = h("select",{class:"input"}, S.plans.map(p=>h("option",{value:p.id,selected:p.id===s.defaultPlanId},(p.name&&p.name.en)||p.id)));
   const contact = h("input",{class:"input",value:s.supportContact,placeholder:"WhatsApp / email / Facebook page"});
@@ -403,6 +405,18 @@ async function viewSettings(){
     fld(t("support_contact"), contact),
     h("div",{class:"row"}, h("button",{class:"btn primary",disabled:!isSuper(),onclick:async()=>{ await S.api.db.set("settings/app",{appName:name.value.trim(),allowRegistration:reg.checked,defaultPlanId:plan.value,supportContact:contact.value.trim()},true); S.settings = await S.api.db.get("settings/app"); toast(t("saved_ok")); }}, t("save")), isSuper()?null:h("span",{class:"muted small"},t("only_super")))));
 
+  // Payment settings: the QR image + instructions shown to learners when they request a plan upgrade.
+  let qrUrl = s.paymentQrUrl || "";
+  const qrPreview = h("div",{style:"max-width:220px"}, qrUrl ? h("img",{src:qrUrl,style:"width:100%;border-radius:10px;border:1px solid var(--line)"}) : h("p",{class:"small muted"},"—"));
+  const qrFile = h("input",{type:"file",accept:"image/*",onchange:async e=>{ const fl = e.target.files[0]; if (!fl) return; try { toast(t("importing")); qrUrl = await S.api.storage.upload(fl, `payment/qr-${Date.now()}-${fl.name.replace(/[^\w.\-]/g,"_")}`); qrPreview.replaceChildren(h("img",{src:qrUrl,style:"width:100%;border-radius:10px;border:1px solid var(--line)"})); toast(t("saved_ok")); } catch(err){ toast(errText(err),"err"); } }});
+  const instructions = h("textarea",{class:"input",style:"min-height:90px",value:s.paymentInstructions,placeholder:t("payment_instructions_ph")});
+  wrap.append(h("section",{class:"panel"},
+    h("h3",{style:"display:flex;align-items:center;gap:6px"}, icon("wallet","icn-sm"), " "+t("payment_settings")),
+    h("p",{class:"small muted"}, t("pay_qr_label")),
+    fld(t("payment_qr_image"), h("div",{class:"stack",style:"gap:8px"}, qrPreview, h("label",{class:"btn sm",style:"align-self:flex-start"}, icon("upload"), t("upload_image"), h("span",{hidden:true}, qrFile)))),
+    fld(t("payment_instructions"), instructions),
+    h("div",{class:"row"}, h("button",{class:"btn primary",disabled:!isSuper(),onclick:async()=>{ await S.api.db.set("settings/app",{paymentQrUrl:qrUrl,paymentInstructions:instructions.value.trim()},true); S.settings = await S.api.db.get("settings/app"); toast(t("saved_ok")); }}, t("save")), isSuper()?null:h("span",{class:"muted small"},t("only_super")))));
+
   wrap.append(h("section",{class:"panel"}, h("h3",null,t("adm_import")), h("p",{class:"muted"},t("adm_import_d")),
     h("div",{class:"row"}, h("button",{class:"btn",disabled:!isSuper(),onclick:async()=>{
       if (!await confirmDialog(t("adm_import"), t("confirm_import"), t("adm_import"), t("cancel"))) return;
@@ -414,7 +428,7 @@ async function viewSettings(){
 
   // Supabase schema is a one-time/troubleshooting tool, not something visited often — collapsed by default.
   wrap.append(h("details",{class:"panel"},
-    h("summary",null, h("b",null, icon("content","icn-sm"), " Supabase PostgreSQL Database Schema (30 Tables)")),
+    h("summary",null, h("b",null, icon("content","icn-sm"), " Supabase PostgreSQL Database Schema (31 Tables)")),
     h("p",{class:"small muted",style:"margin-top:10px"}, "Current Mode: ", h("span",{class:"chip ok mono"}, S.api.mode.toUpperCase()), " · All 15 curriculum collections (lessons, patterns, grammar, vocabulary, dialogues, quizzes, videos, tones, culture, characters, dictionary, audio, lexicon, paths, releases) have dedicated tables."),
     h("p",{class:"small muted"}, "If your Supabase project displays 'Could not find the table ... in the schema cache', run the complete SQL script in your Supabase SQL Editor:"),
     h("div",{class:"row",style:"gap:8px"},
@@ -427,7 +441,7 @@ async function viewSettings(){
         } catch(e){
           window.open("../supabase-schema.sql", "_blank");
         }
-      }}, icon("copy"), "Copy Supabase SQL Schema (30 Tables)"),
+      }}, icon("copy"), "Copy Supabase SQL Schema (31 Tables)"),
       h("a",{href:"../supabase-schema.sql",target:"_blank",download:"supabase-schema.sql",class:"btn sm ghost",style:"text-decoration:none"}, icon("download"), "Download supabase-schema.sql")
     )
   ));

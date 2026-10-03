@@ -10,6 +10,7 @@ import { SKILLS, accessState, cacheGet } from "../shared/content.js";
 import { A, T, expLang, prefs, setPref, srsDue, srsGrade, streak, skillPct, genSentence, genMany, exampleOf, recordAnswer, quizDone, logEvent, touchDay,
   tierName, isSaved, toggleSave, wordsMastered, srsAdd } from "./core.js";
 import { achievementsEl, xpCard, masteryRow } from "./views-learn.js";
+import { openUpgradeFlow, fetchMyPendingOrder } from "./payments.js";
 
 export const VIEWS = {};
 const go = (...a) => A.go(...a);
@@ -486,10 +487,17 @@ VIEWS.account = () => {
     row(t("email"), h("span",{class:"muted"}, A.user.email)),
     row(t("level_label"), h("span",{class:"chip lv"}, "Stage "+(A.profile.level||1))),
     row(t("member_since"), h("span",{class:"muted"}, fmtDate(A.profile.createdAt, lang())))));
+  const pendingBanner = h("div");
+  if (!A.isAdmin) fetchMyPendingOrder().then(o => { if (o) pendingBanner.replaceChildren(h("div",{class:"banner",style:"margin-top:10px"}, t("order_pending_banner", { s: tierName(o.tier || 2) }))); });
   root.append(h("section",{class:"card"}, h("h2",{style:"margin-bottom:6px"},t("current_plan")),
     h("div",{class:"spread"}, h("div",null, h("b",{style:"font-size:1.3rem"}, A.isAdmin ? t("adm_title") : tierName(A.tier)), a ? h("p",{class:"small muted"}, t("status")+": "+t(accessState(a))+" · "+t("expires")+": "+(a.expiresAt?fmtDate(a.expiresAt, lang()):t("no_expiry"))) : null),
       A.settings.supportContact ? h("span",{class:"small"}, t("contact")+": "+A.settings.supportContact) : null),
-    h("div",{class:"grid3",style:"margin-top:14px"}, A.plans.filter(pl=>pl.active!==false).map(pl => h("div",{class:"card",style:(a&&a.planId===pl.id)?"border-color:var(--jade)":""}, h("b",null,tr(pl.name, lang())), h("ul",{class:"obj small"+(lang()==="lo"?" lo":"")}, ((pl.features&&(pl.features[lang()]||pl.features.en))||[]).map(f=>h("li",null,f))))))));
+    pendingBanner,
+    h("div",{class:"grid3",style:"margin-top:14px"}, A.plans.filter(pl=>pl.active!==false).map(pl => h("div",{class:"card stack",style:"gap:8px"+((a&&a.planId===pl.id)?";border-color:var(--jade)":"")},
+      h("b",null,tr(pl.name, lang())),
+      h("p",{class:"small muted"}, (pl.price||0)+" "+(pl.currency||"")+(pl.durationDays?" · "+pl.durationDays+" "+t("days"):"")),
+      h("ul",{class:"obj small"+(lang()==="lo"?" lo":"")}, ((pl.features&&(pl.features[lang()]||pl.features.en))||[]).map(f=>h("li",null,f))),
+      (!A.isAdmin && (pl.tier||1) > A.tier) ? h("button",{class:"btn sm primary",onclick:()=>openUpgradeFlow(pl)}, t("upgrade")) : null)))));
   root.append(h("section",{class:"card"},
     row(t("ui_lang"), h("div",{class:"seg"}, [["en","English"],["lo","ລາວ"],["zh","中文"]].map(([l,n]) => h("button",{"aria-pressed":String(lang()===l),onclick:()=>{ setPref("uiLang",l); try{ localStorage.setItem("xuelu.lang",l); }catch(e){} A.render(); }}, n)))),
     row(t("explain_lang"), h("div",{class:"seg"}, [["","Auto"],["en","English"],["lo","ລາວ"],["zh","中文"]].map(([l,n]) => h("button",{"aria-pressed":String((p.explainLang||"")===l),onclick:()=>{ setPref("explainLang",l); A.render(); }}, n))), t("explain_lang_d")),

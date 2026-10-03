@@ -17,7 +17,7 @@ do $$
 declare t text;
 begin
   foreach t in array array[
-    'users','admins','adminNotes','access','plans','subscriptions','settings',
+    'users','admins','adminNotes','access','plans','subscriptions','orders','settings',
     'lessons','patterns','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon',
     'videos','tones','culture','characters','dictionary',
     'bundles','progress','reviews','bookmarks','notes','activity',
@@ -135,7 +135,7 @@ declare r record;
 begin
   for r in select tablename, policyname from pg_policies
            where schemaname = 'public' and tablename = any (array[
-             'users','admins','adminNotes','access','plans','subscriptions','settings',
+             'users','admins','adminNotes','access','plans','subscriptions','orders','settings',
              'lessons','patterns','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon',
              'videos','tones','culture','characters','dictionary',
              'bundles','progress','reviews','bookmarks','notes','activity','vocab','saved'])
@@ -219,6 +219,15 @@ create policy "ll own or admin read" on public.subscriptions for select using (p
 create policy "ll support insert" on public.subscriptions for insert with check (public.ll_can_support());
 create policy "ll support update" on public.subscriptions for update using (public.ll_can_support()) with check (public.ll_can_support());
 create policy "ll support delete" on public.subscriptions for delete using (public.ll_can_support());
+
+-- Orders: a learner's own plan-upgrade payment requests (manual QR transfer + proof screenshot).
+-- A learner may create and read their own; only support/admin may read all, decide (update) or delete.
+create policy "ll own or support read" on public.orders for select
+  using (data ->> 'uid' = auth.uid()::text or public.ll_can_support());
+create policy "ll own insert" on public.orders for insert
+  with check (data ->> 'uid' = auth.uid()::text and coalesce(data ->> 'status', 'pending') = 'pending');
+create policy "ll support update" on public.orders for update using (public.ll_can_support()) with check (public.ll_can_support());
+create policy "ll support delete" on public.orders for delete using (public.ll_can_support());
 
 -- Progress: own rows ("{uid}" and "{uid}__events__{id}"); admins read
 create policy "ll own or admin read" on public.progress for select

@@ -76,12 +76,12 @@ export function canViewMenu(menuId) {
 
   // Content Editors and Content Reviewers can view all curriculum and studio menus
   if (["content", "editor", "reviewer"].includes(role)) {
-    return menuId !== "learners"; // Learners view reserved for support/super
+    return !["learners", "orders"].includes(menuId); // Learners & payment data reserved for support/super
   }
 
-  // Support Admin can view dashboard, learners, and activity log
+  // Support Admin can view dashboard, learners, payment requests, and activity log
   if (role === "support") {
-    return ["dashboard", "learners", "activity"].includes(menuId);
+    return ["dashboard", "learners", "orders", "activity"].includes(menuId);
   }
 
   return true;
@@ -117,12 +117,12 @@ export function canEditMenu(menuId) {
 
   // Content Editor has full write access to curriculum & studio content
   if (["content", "editor"].includes(role)) {
-    return menuId !== "learners";
+    return !["learners", "orders"].includes(menuId);
   }
 
-  // Support Admin can edit learners/access
+  // Support Admin can edit learners/access and decide on payment requests
   if (role === "support") {
-    return menuId === "learners";
+    return ["learners", "orders"].includes(menuId);
   }
 
   return false;

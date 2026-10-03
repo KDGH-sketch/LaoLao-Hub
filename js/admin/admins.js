@@ -35,6 +35,7 @@ export const ALL_ADMIN_MENUS = [
     section: ["Learners & Activity", "ຜູ້ຮຽນ ແລະ ບັນທຶກ"],
     items: [
       { id: "learners", label: ["Learners & Subscriptions", "ຜູ້ຮຽນ ແລະ ແພັກເກດ"], icon: "users", type: "learners" },
+      { id: "orders", label: ["Payment Requests", "ຄຳຂໍຈ່າຍເງິນ"], icon: "receipt", type: "learners" },
       { id: "activity", label: ["Activity Audit Log", "ປະຫວັດການໃຊ້ງານ"], icon: "clock", type: "activity" }
     ]
   },
@@ -497,7 +498,7 @@ function buildPermissionsMatrix(initialPerms = {}, initialRole = "custom") {
           } else if (role === "reviewer") {
             perms[it.id] = { view: it.type !== "learners", edit: false };
           } else if (role === "support") {
-            perms[it.id] = { view: ["learners", "activity"].includes(it.id), edit: it.id === "learners" };
+            perms[it.id] = { view: ["learners", "orders", "activity"].includes(it.id), edit: ["learners", "orders"].includes(it.id) };
           }
         });
       });

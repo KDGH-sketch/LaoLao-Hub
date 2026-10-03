@@ -184,10 +184,12 @@ export function dialog({ title, body, actions=[], wide=false }){
     const onKey = e => { if (e.key==="Escape") close(null); };
     document.addEventListener("keydown", onKey);
     scrim.addEventListener("click", () => close(null));
-    box.append(
+    // Element.append() stringifies non-Node arguments (null -> the text "null"), so falsy parts are filtered out here.
+    box.append(...[
       title ? h("div",{class:"dialog-h"}, h("h2",null,title), h("button",{class:"ib","aria-label":"Close",onclick:()=>close(null)}, icon("x"))) : null,
       h("div",{class:"dialog-b"}, body),
-      actions.length ? h("div",{class:"dialog-f"}, actions.map(a => h("button",{class:"btn"+(a.primary?" primary":"")+(a.danger?" danger":""),onclick:async()=>{ const v = a.value!==undefined ? a.value : (a.onClick ? await a.onClick() : true); if (v!==false) close(v); }}, a.label))) : null);
+      actions.length ? h("div",{class:"dialog-f"}, actions.map(a => h("button",{class:"btn"+(a.primary?" primary":"")+(a.danger?" danger":""),onclick:async()=>{ const v = a.value!==undefined ? a.value : (a.onClick ? await a.onClick() : true); if (v!==false) close(v); }}, a.label))) : null
+    ].filter(Boolean));
     document.body.append(scrim, box);
     const f = box.querySelector("input,select,textarea,button.primary"); if (f) f.focus();
   });
