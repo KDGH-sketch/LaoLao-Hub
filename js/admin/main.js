@@ -169,6 +169,29 @@ const NAV_SECTIONS = [
   }
 ];
 
+// Mobile fallback: the sidebar hides below 900px, so this opens the same grouped
+// menu in a sheet (same pattern as the learner app's bottom-sheet "More" menu).
+function closeAdminSheet(){ $$(".scrim.sheet-scrim,.sheet").forEach(e => e.remove()); }
+function openAdminMenu(){
+  const scrim = h("div",{class:"scrim sheet-scrim",onclick:closeAdminSheet});
+  const sheet = h("aside",{class:"sheet",role:"dialog","aria-modal":"true","aria-label":t("adm_title")},
+    h("div",{class:"sheet-h"}, h("b",null,"LaoLao · "+t("adm_title")), h("span",{style:"flex:1"}),
+      h("button",{class:"ib","aria-label":t("close"),onclick:closeAdminSheet}, icon("x"))),
+    h("div",{class:"sheet-b"},
+      NAV_SECTIONS.map(sec => {
+        const secItems = sec.items.filter(it => canViewMenu(it.id));
+        if (!secItems.length) return null;
+        return h("div",{class:"stack",style:"gap:2px"},
+          h("div",{class:"side-group-label",style:"padding-left:0"}, lang()==="lo" ? sec.title[1] : sec.title[0]),
+          ...secItems.map(it => h("button",{class:"nav-btn","aria-current":isItemActive(it)?"page":null,
+            onclick:()=>{ closeAdminSheet(); go(it.view, it.params || {}); }}, icon(it.icon), lang()==="lo" ? it.label[1] : it.label[0])));
+      }).filter(Boolean),
+      h("div",{class:"sep"}),
+      h("a",{class:"nav-btn",href:"../",style:"text-decoration:none",onclick:closeAdminSheet}, icon("home"), t("adm_open_learner")),
+      h("button",{class:"nav-btn",onclick:()=>{ closeAdminSheet(); S.api.auth.signOut(); }}, icon("logout"), t("sign_out"))));
+  document.body.append(scrim, sheet);
+}
+
 function isItemActive(item) {
   if (item.view === "contentList") {
     if (S.view === "contentList") {
@@ -250,32 +273,14 @@ function renderShell(){
     h("div",{class:"side-foot"}, S.me.email));
 
   const top = h("header",{class:"topbar"},
+    h("button",{class:"ib hide-desk","aria-label":t("nav_more")||"Menu",onclick:openAdminMenu}, icon("menu")),
     h("div",{class:"mbrand"}, h("span",{class:"seal lo"},"ລ"), h("b",null,t("adm_title"))),
     h("div",{style:"flex:1"}),
     rolePreviewSwitch(),
     h("a",{class:"btn sm ghost",href:"../",style:"text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:5px 9px",title:t("adm_open_learner")}, icon("home"), h("span",{class:"hide-sm"}, t("adm_open_learner"))),
     publishChip(),
     themeSwitcher(),
-    langSwitch(),
-    h("select",{class:"input hide-desk",style:"width:auto","aria-label":"Menu",onchange:e=>{
-      if (e.target.value === "__learner__") location.href = "../";
-      else {
-        const [view, type] = e.target.value.split(":");
-        go(view, type ? { type } : {});
-      }
-    }},
-      NAV_SECTIONS.map(sec => {
-        const secItems = sec.items.filter(it => canViewMenu(it.id));
-        if (!secItems.length) return null;
-        return h("optgroup",{label: lang()==="lo"?sec.title[1]:sec.title[0]},
-          secItems.map(it => h("option",{
-            value: it.params ? `${it.view}:${it.params.type}` : it.view,
-            selected: isItemActive(it)
-          }, lang()==="lo"?it.label[1]:it.label[0]))
-        );
-      }).filter(Boolean),
-      h("option",{value:"__learner__"}, "↗ " + t("adm_open_learner"))
-    ));
+    langSwitch());
 
   const main = h("main",{id:"main"});
   root.append(demoBar(), h("div",{class:"app adm"}, side, h("div",{class:"mainwrap"}, top, main)));
