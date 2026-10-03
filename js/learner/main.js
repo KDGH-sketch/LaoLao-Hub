@@ -263,42 +263,67 @@ function renderDisabled(){
 const VIEWS = Object.assign({}, LV.VIEWS, TV.VIEWS, LAB_VIEWS, MEDIA_VIEWS, {
   script_lab: TV.VIEWS.chars
 });
-const NAV = [
-  ["home","nav_home","home"],
-  ["paths","nav_learn","path"],
-  ["handwriting","nav_script","pen"],
-  ["vocab","nav_vocab","cards"],
-  ["dict","nav_dict","dict"],
-  ["grammar","nav_grammar","structure"],
-  ["tone_lab","nav_tone_lab","sound"],
-  ["patterns","nav_patterns","gen"],
-  ["pronounce_lab","nav_pronounce","headphones"],
-  ["speak","nav_speak","mic"],
-  ["videos","nav_videos","video"],
-  ["practice","nav_practice","practice"],
-  ["review","nav_review","review"],
-  ["culture_lab","nav_culture","globe"],
-  ["progress","nav_progress","chart"],
-  null,
-  ["particle_lab","nav_particles","flame"],
-  ["kinship_lab","nav_kinship","users"],
-  ["classifiers_lab","nav_classifiers","layers"],
-  ["pinyin","nav_pinyin","book"],
-  null,
-  ["saved","nav_saved","bookmark"],
-  ["notes","nav_notes","note"],
-  ["downloads","nav_offline","download"],
-  ["account","nav_account","user"]];
+// Grouped so the sidebar reads as sections instead of one long flat list.
+const NAV_GROUPS = [
+  { title: "nav_group_overview", items: [
+    ["home","nav_home","home"],
+    ["progress","nav_progress","chart"]
+  ]},
+  { title: "nav_group_learn", items: [
+    ["paths","nav_learn","path"],
+    ["videos","nav_videos","video"],
+    ["dict","nav_dict","dict"],
+    ["vocab","nav_vocab","cards"],
+    ["grammar","nav_grammar","structure"],
+    ["patterns","nav_patterns","gen"],
+    ["handwriting","nav_script","pen"]
+  ]},
+  { title: "nav_group_practice", items: [
+    ["practice","nav_practice","practice"],
+    ["review","nav_review","review"],
+    ["speak","nav_speak","mic"],
+    ["pronounce_lab","nav_pronounce","headphones"],
+    ["tone_lab","nav_tone_lab","sound"]
+  ]},
+  { title: "nav_group_labs", items: [
+    ["culture_lab","nav_culture","globe"],
+    ["particle_lab","nav_particles","flame"],
+    ["kinship_lab","nav_kinship","users"],
+    ["classifiers_lab","nav_classifiers","layers"],
+    ["pinyin","nav_pinyin","book"]
+  ]},
+  { title: "nav_group_myspace", items: [
+    ["saved","nav_saved","bookmark"],
+    ["notes","nav_notes","note"],
+    ["downloads","nav_offline","download"],
+    ["account","nav_account","user"]
+  ]}
+];
 const TABS = [["home","nav_home","home"],["paths","nav_learn","path"],["dict","nav_dict","dict"],["videos","nav_videos","video"],["practice","nav_practice","practice"],["more","nav_more","more"]];
 const PARENT = { video:"videos", lesson:"paths", path:"paths", pattern:"patterns", grammarItem:"grammar", quiz:"practice", gen:"patterns", handwriting:"handwriting", videos:"videos", vocab:"vocab", grammar:"grammar", tone_lab:"tone_lab", pronounce_lab:"pronounce_lab", culture_lab:"culture_lab", particle_lab:"culture_lab", kinship_lab:"culture_lab", classifiers_lab:"culture_lab" };
+// Mobile bottom bar only pins 5 tabs; "More" opens the full grouped menu in a sheet.
+function openMoreMenu(){
+  const cur = PARENT[A.view.name] || A.view.name;
+  const scrim = h("div",{class:"scrim sheet-scrim",onclick:()=>closeSheet()});
+  const sheet = h("aside",{class:"sheet",role:"dialog","aria-modal":"true","aria-label":t("nav_more")},
+    h("div",{class:"sheet-h"}, h("b",null,t("nav_more")), h("span",{style:"flex:1"}),
+      h("button",{class:"ib","aria-label":t("close"),onclick:()=>closeSheet()}, icon("x"))),
+    h("div",{class:"sheet-b"}, NAV_GROUPS.map(g => h("div",{class:"stack",style:"gap:2px"},
+      h("div",{class:"side-group-label",style:"padding-left:0"}, t(g.title)),
+      ...g.items.map(([id,k,ic]) => h("button",{class:"nav-btn","aria-current":cur===id?"page":null,onclick:()=>go(id)}, icon(ic), t(k)))))));
+  document.body.append(scrim, sheet);
+}
 let searchPop, netEl;
 function render(){
   const cur = PARENT[A.view.name] || A.view.name;
   root.innerHTML = "";
   const side = h("nav",{class:"side","aria-label":"Main"},
     h("div",{class:"brand"}, h("div",{class:"seal lo"},"ລ"), h("div",null, h("b",null,A.settings.appName||"LaoLao"), h("small",null,t("tagline")))));
-  NAV.forEach(n => { if (!n){ side.append(h("div",{class:"sep"})); return; } const [id,k,ic] = n; const due = id==="review" ? srsDue().length : 0;
-    side.append(h("button",{class:"nav-btn","aria-current":cur===id?"page":null,onclick:()=>go(id)}, icon(ic), t(k), due ? h("span",{class:"count"},due) : null)); });
+  NAV_GROUPS.forEach(g => {
+    side.append(h("div",{class:"side-group-label"}, t(g.title)));
+    g.items.forEach(([id,k,ic]) => { const due = id==="review" ? srsDue().length : 0;
+      side.append(h("button",{class:"nav-btn","aria-current":cur===id?"page":null,onclick:()=>go(id)}, icon(ic), t(k), due ? h("span",{class:"count"},due) : null)); });
+  });
   // the admin link is only useful to administrators (access is still checked in the admin app and the database)
   if (A.isAdmin) side.append(h("div",{class:"sep"}), h("a",{class:"nav-btn",href:"admin/",style:"text-decoration:none;color:var(--accent);font-weight:600"}, icon("shield"), (lang()==="lo"?"ຈັດການລະບົບ ":"Admin Backend ")+"(CMS)"));
   netEl = h("span",{class:"netdot"}, h("i"), " ");
@@ -315,7 +340,7 @@ function render(){
       h("button",{class:"tg","aria-pressed":String(p.showTr),onclick:e=>{ setPref("showTr",!prefs().showTr); e.currentTarget.setAttribute("aria-pressed",String(prefs().showTr)); }}, t("show_trans")),
       h("div",{class:"langsw",role:"group","aria-label":t("ui_lang")}, [["en","EN"],["lo","ລາວ"],["zh","中"]].map(([l,n]) => h("button",{"aria-pressed":String(lang()===l),lang:l==="zh"?"zh-CN":l,onclick:()=>{ setPref("uiLang",l); try{ localStorage.setItem("xuelu.lang",l); }catch(e){} render(); }}, n)))));
   const main = h("main",{id:"main",tabindex:"-1"});
-  const tabs = h("nav",{class:"tabbar","aria-label":"Tabs"}, TABS.map(([id,k,ic]) => h("button",{"aria-current":(id==="more" ? !TABS.some(x=>x[0]===cur) : cur===id)?"page":null,onclick:()=>go(id)}, icon(ic), t(k))));
+  const tabs = h("nav",{class:"tabbar","aria-label":"Tabs"}, TABS.map(([id,k,ic]) => h("button",{"aria-current":(id==="more" ? !TABS.some(x=>x[0]===cur) : cur===id)?"page":null,onclick:()=>id==="more" ? openMoreMenu() : go(id)}, icon(ic), t(k))));
   const demoBarEl = A.api.mode==="demo" ? h("div",{class:"demo-bar",style:"display:flex;justify-content:space-between;align-items:center;padding:4px 14px;flex-wrap:wrap;gap:8px"},
     h("span",null, t("demo_banner")),
     h("div",{class:"row",style:"gap:8px"},

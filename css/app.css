@@ -74,6 +74,8 @@ p{margin:0}
 .nav-btn[aria-current="page"]{background:var(--accent-2);color:var(--accent);font-weight:700}
 .nav-btn .count{margin-left:auto;font-size:.75rem;background:var(--accent);color:var(--accent-ink);border-radius:99px;padding:1px 7px;font-weight:700}
 .side .sep{height:1px;background:var(--line);margin:10px 8px}
+.side-group-label{padding:14px 12px 4px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.side-group-label:first-child{padding-top:0}
 .side-foot{margin-top:auto;padding:10px 12px;font-size:.8rem;color:var(--ink-3);display:flex;align-items:center;gap:6px}
 .dot-ok{width:8px;height:8px;border-radius:50%;background:var(--jade)}
 

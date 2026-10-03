@@ -124,19 +124,24 @@ const NAV_SECTIONS = [
     title: ["Overview", "ພາບລວມ"],
     items: [
       { id:"dashboard", label:["Dashboard", "ໜ້າຫຼັກ"], icon:"chart", view:"dashboard" },
-      { id:"learners", label:["Learners", "ຜູ້ຮຽນ"], icon:"users", view:"learners" }
+      { id:"learners", label:["Learners", "ຜູ້ຮຽນ"], icon:"users", view:"learners" },
+      { id:"content", label:["All Content", "ເນື້ອຫາທັງໝົດ"], icon:"content", view:"content" }
     ]
   },
   {
-    title: ["Curriculum Content (CMS)", "ຈັດການເນື້ອຫາ (CMS)"],
+    title: ["Core Curriculum", "ຫຼັກສູດຫຼັກ"],
     items: [
-      { id:"content", label:["All Content", "ເນື້ອຫາທັງໝົດ"], icon:"content", view:"content" },
       { id:"lessons", label:["Lessons", "ບົດຮຽນ"], icon:"learn", view:"contentList", params:{ type:"lessons" } },
       { id:"patterns", label:["Sentence Patterns", "ໂຄງສ້າງປະໂຫຍກ"], icon:"gen", view:"contentList", params:{ type:"patterns" } },
       { id:"grammar", label:["Grammar Points", "ໄວຍາກອນ"], icon:"layers", view:"contentList", params:{ type:"grammar" } },
       { id:"vocabulary", label:["Vocabulary", "ຄຳສັບ"], icon:"dict", view:"contentList", params:{ type:"vocabulary" } },
       { id:"dialogues", label:["Dialogues", "ບົດສົນທະນາ"], icon:"users", view:"contentList", params:{ type:"dialogues" } },
-      { id:"quizzes", label:["Quizzes & Tests", "ແບບທົດສອບ"], icon:"practice", view:"contentList", params:{ type:"quizzes" } },
+      { id:"quizzes", label:["Quizzes & Tests", "ແບບທົດສອບ"], icon:"practice", view:"contentList", params:{ type:"quizzes" } }
+    ]
+  },
+  {
+    title: ["Media & Reference", "ມີເດຍ ແລະ ອ້າງອີງ"],
+    items: [
       { id:"videos", label:["Video Manager", "ຈັດການວິດີໂອ"], icon:"video", view:"videoManager" },
       { id:"tones", label:["Tone Lab", "ສຽງວັນນະຍຸດ"], icon:"sound", view:"contentList", params:{ type:"tones" } },
       { id:"culture", label:["Culture & Context", "ວັດທະນະທຳ"], icon:"culture", view:"contentList", params:{ type:"culture" } },
@@ -226,7 +231,7 @@ function renderShell(){
   NAV_SECTIONS.forEach(sec => {
     const secItems = sec.items.filter(it => canViewMenu(it.id));
     if (!secItems.length) return;
-    side.append(h("div",{class:"side-group-label",style:"padding:14px 12px 4px 12px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)"}, lang()==="lo" ? sec.title[1] : sec.title[0]));
+    side.append(h("div",{class:"side-group-label"}, lang()==="lo" ? sec.title[1] : sec.title[0]));
     secItems.forEach(it => {
       const active = isItemActive(it);
       side.append(h("button",{
