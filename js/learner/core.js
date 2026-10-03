@@ -1,5 +1,5 @@
 // Learner app state, data access and progress tracking
-import { h, icon, toast, todayKey, tr, rnd, shuffle, isHan, setTheme, getTheme } from "../shared/ui.js";
+import { h, icon, toast, todayKey, tr, rnd, shuffle, isHan, setTheme, getTheme, applyFont } from "../shared/ui.js";
 import { t, lang, setLang } from "../shared/i18n.js";
 import { tierFor, loadBundle, SKILLS, TIERS } from "../shared/content.js";
 import { loadDict, dict, chars, mergeVocabulary } from "../shared/dict.js";
@@ -63,6 +63,7 @@ export async function loadAccount(user){
   A.profile = prof || { email:user.email, name:"", status:"active", level:1, prefs:{} };
   A.rules = mergeRules(settings && settings.scoring);   // admin overrides from Settings → Scoring rules
   A.access = acc; A.isAdmin = !!adm; A.settings = settings || {}; A.plans = plans.sort((a,b)=>(a.order||0)-(b.order||0));
+  applyFont(A.settings);
   // without a profile the database gives public content only; match that here
   A.tier = tierFor({ isAdmin:A.isAdmin, user: prof ? A.profile : null, access: acc });
   const p = prefs(); setLang(p.uiLang || "en"); applyPrefs();

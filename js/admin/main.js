@@ -1,7 +1,7 @@
 // LaoLao Admin Backend
 import { getApi } from "../api/index.js";
 import { OWNER_EMAIL } from "../config.js";
-import { h, $, $$, icon, toast, dialog, confirmDialog, fmtDate, errText, themeSwitcher } from "../shared/ui.js";
+import { h, $, $$, icon, toast, dialog, confirmDialog, fmtDate, errText, themeSwitcher, applyFont, FONT_OPTIONS, FONT_STACKS } from "../shared/ui.js";
 import { setLang, lang } from "../shared/i18n.js";
 import { buildBundles, CONTENT_TYPES } from "../shared/content.js";
 import { bootstrapOwner, importSeed, ensureDemo, DEMO } from "../shared/setup.js";
@@ -35,6 +35,7 @@ async function boot(){
     }
     S.me = { uid:user.uid, email:user.email, role:adm.role, name:adm.name||user.email, permissions:adm.permissions, allowedMenus:adm.allowedMenus };
     await Promise.all([refreshPlans().catch(()=>[]), api.db.get("settings/app").then(s=>S.settings=s||{}).catch(()=>{}), refreshBundleState()]);
+    applyFont(S.settings);
     loadDict();
     S.render = renderShell; renderShell();
   });
@@ -391,7 +392,7 @@ async function viewSettings(){
     );
   }
 
-  const s = Object.assign({ appName:"Xuélù", allowRegistration:false, defaultPlanId:"free", supportContact:"", paymentQrUrl:"", paymentInstructions:"" }, await S.api.db.get("settings/app").catch(()=>null)||{});
+  const s = Object.assign({ appName:"Xuélù", allowRegistration:false, defaultPlanId:"free", supportContact:"", paymentQrUrl:"", paymentInstructions:"", uiFont:"default", customFontName:"", customFontUrl:"" }, await S.api.db.get("settings/app").catch(()=>null)||{});
   const name = h("input",{class:"input",value:s.appName}), reg = h("input",{type:"checkbox",class:"switch",checked:!!s.allowRegistration,"aria-label":t("allow_reg")});
   const plan = h("select",{class:"input"}, S.plans.map(p=>h("option",{value:p.id,selected:p.id===s.defaultPlanId},(p.name&&p.name.en)||p.id)));
   const contact = h("input",{class:"input",value:s.supportContact,placeholder:"WhatsApp / email / Facebook page"});
@@ -404,6 +405,37 @@ async function viewSettings(){
     fld(t("app_name"), name), h("div",{class:"set-row"}, h("div",null,h("label",null,t("allow_reg")),h("p",null,t("allow_reg_d"))), reg),
     fld(t("support_contact"), contact),
     h("div",{class:"row"}, h("button",{class:"btn primary",disabled:!isSuper(),onclick:async()=>{ await S.api.db.set("settings/app",{appName:name.value.trim(),allowRegistration:reg.checked,defaultPlanId:plan.value,supportContact:contact.value.trim()},true); S.settings = await S.api.db.get("settings/app"); toast(t("saved_ok")); }}, t("save")), isSuper()?null:h("span",{class:"muted small"},t("only_super")))));
+
+  // System Font: applies site-wide, to both learner and admin (var(--f-lo) -- see js/shared/ui.js
+  // applyFont()), not a per-user preference. Phetsarath OT / Saysettha OT aren't on Google Fonts, so
+  // "Custom" lets an admin upload a font file they've obtained themselves from a licensed source.
+  let fontId = s.uiFont || "default", customName = s.customFontName || "", customUrl = s.customFontUrl || "";
+  const fontSelect = h("select",{class:"input"}, FONT_OPTIONS.map(f => h("option",{value:f.id,selected:f.id===fontId}, f.label)));
+  const customNameInp = h("input",{class:"input",value:customName,placeholder:"e.g. Phetsarath OT"});
+  const customPreview = h("div",{style:"max-width:280px"}, customUrl ? h("p",{class:"small muted mono"}, customUrl.split("/").pop()) : h("p",{class:"small muted"},"—"));
+  const customFile = h("input",{type:"file",accept:".woff2,.woff,.ttf,.otf,font/*",onchange:async e=>{ const fl = e.target.files[0]; if (!fl) return; try { toast(t("importing")); customUrl = await S.api.storage.upload(fl, `fonts/${Date.now()}-${fl.name.replace(/[^\w.\-]/g,"_")}`); customPreview.replaceChildren(h("p",{class:"small muted mono"}, fl.name)); toast(t("saved_ok")); } catch(err){ toast(errText(err),"err"); } }});
+  const customBox = h("div",{class:"stack",style:"gap:8px",hidden:fontId!=="custom"},
+    fld("Font name (used in CSS, e.g. \"Phetsarath OT\")", customNameInp, "Must match the font's real internal name, or it won't render correctly."),
+    fld("Font file (.woff2, .woff, .ttf or .otf)", h("div",{class:"stack",style:"gap:8px"}, customPreview, h("label",{class:"btn sm",style:"align-self:flex-start"}, icon("upload"), t("upload_image"), h("span",{hidden:true}, customFile)))));
+  const fontPreview = h("div",{class:"lo",style:"font-size:1.8rem;margin-top:4px"}, "ສະບາຍດີ ຍິນດີຕ້ອນຮັບສູ່ລາວລາວ — ABC 123");
+  const updatePreview = () => { fontPreview.style.fontFamily = fontId==="custom" && customNameInp.value.trim() ? `"${customNameInp.value.trim()}",${FONT_STACKS.default}` : (FONT_STACKS[fontId] || ""); };
+  fontSelect.addEventListener("change", () => { fontId = fontSelect.value; customBox.hidden = fontId!=="custom"; updatePreview(); });
+  customNameInp.addEventListener("input", updatePreview);
+  updatePreview();
+  wrap.append(h("section",{class:"panel"},
+    h("h3",{style:"display:flex;align-items:center;gap:6px"}, icon("chars","icn-sm"), " System Font"),
+    h("p",{class:"small muted"}, "The Lao-script font used everywhere across both the learner app and this admin panel — not a personal preference, a site-wide setting."),
+    fld("Font", fontSelect),
+    customBox,
+    fld("Preview", fontPreview),
+    h("div",{class:"row"}, h("button",{class:"btn primary",disabled:!isSuper(),onclick:async()=>{
+      const patch = { uiFont:fontId, customFontName:customNameInp.value.trim(), customFontUrl:customUrl };
+      await S.api.db.set("settings/app", patch, true);
+      S.settings = await S.api.db.get("settings/app");
+      applyFont(S.settings);
+      fontPreview.style.fontFamily = "";
+      toast(t("saved_ok"));
+    }}, t("save")), isSuper()?null:h("span",{class:"muted small"},t("only_super")))));
 
   // Payment settings: the QR image + instructions shown to learners when they request a plan upgrade.
   let qrUrl = s.paymentQrUrl || "";

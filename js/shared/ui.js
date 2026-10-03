@@ -147,6 +147,42 @@ export function setTheme(mode="day"){
     document.documentElement.setAttribute("data-theme", "system");
   }
 }
+// ----- Lao UI font (system-wide; admin-controlled via Admin -> Settings -> System Font, not a
+// per-user preference like the theme above) -----
+// Phetsarath OT and Saysettha OT are the two fonts most requested by name, but neither is hosted
+// on Google Fonts -- they're only reliably available as desktop-installed fonts (the official Lao
+// government site distributes installers) or as files an admin downloads themselves from a
+// licensed source (e.g. the SIL-OFL-licensed laoscript.net) and uploads here. Rather than hotlink
+// a third-party font mirror of uncertain reliability/licensing, "custom" lets an admin upload the
+// exact file they've obtained. Both are also already last-resort fallbacks below, so if a visitor
+// happens to have either installed locally, it's already used automatically.
+export const FONT_OPTIONS = [
+  { id:"default", label:"Noto Sans Lao (default)" },
+  { id:"looped", label:"Noto Sans Lao Looped (traditional, rounded)" },
+  { id:"serif", label:"Noto Serif Lao (formal, serif)" },
+  { id:"custom", label:"Custom (upload a font file)" }
+];
+export const FONT_STACKS = {
+  default: `"Noto Sans Lao","Phetsarath OT","Saysettha OT","Lao UI","Noto Sans",sans-serif`,
+  looped: `"Noto Sans Lao Looped","Phetsarath OT","Saysettha OT","Noto Sans Lao","Lao UI",sans-serif`,
+  serif: `"Noto Serif Lao","Phetsarath OT","Saysettha OT","Noto Sans Lao",serif`
+};
+let customFontFace = null;
+// settings: the settings/app doc (uiFont, customFontName, customFontUrl). Overrides the --f-lo
+// custom property on <html> (inline style beats the :root rule in app.css), so every existing
+// var(--f-lo) usage across the app -- there's no shortage of them -- picks it up with no other change.
+export function applyFont(settings={}){
+  const id = FONT_OPTIONS.some(f=>f.id===settings.uiFont) ? settings.uiFont : "default";
+  let stack = FONT_STACKS[id] || FONT_STACKS.default;
+  if (id === "custom" && settings.customFontName && settings.customFontUrl){
+    if (!customFontFace){ customFontFace = document.createElement("style"); customFontFace.id = "custom-lao-font"; document.head.appendChild(customFontFace); }
+    const name = JSON.stringify(String(settings.customFontName));
+    customFontFace.textContent = `@font-face{font-family:${name};src:url(${JSON.stringify(settings.customFontUrl)});font-display:swap}`;
+    stack = `${name},"Noto Sans Lao","Phetsarath OT","Saysettha OT","Lao UI",sans-serif`;
+  }
+  document.documentElement.style.setProperty("--f-lo", stack);
+}
+
 export function themeSwitcher(onChange){
   let cur = getTheme();
   const wrap = h("div",{class:"themesw","aria-label":"Theme switcher"});

@@ -304,7 +304,10 @@ begin
 end $$;
 
 -- --------------------------------------------------------
--- 6. Storage: public bucket for audio / images, uploads by content admins
+-- 6. Storage: public bucket for audio / images, uploads by content admins, plus a narrow carve-out
+--    so any signed-in learner can upload their own plan-upgrade payment-proof image (js/learner/
+--    payments.js) without needing publish rights -- scoped to their own uid-prefixed filename, so
+--    they can't write anywhere else in the bucket or touch another learner's file.
 -- --------------------------------------------------------
 insert into storage.buckets (id, name, public) values ('laolao-assets', 'laolao-assets', true)
   on conflict (id) do update set public = true;
@@ -313,7 +316,10 @@ drop policy if exists "ll assets insert" on storage.objects;
 drop policy if exists "ll assets update" on storage.objects;
 drop policy if exists "ll assets delete" on storage.objects;
 create policy "ll assets insert" on storage.objects for insert to authenticated
-  with check (bucket_id = 'laolao-assets' and public.ll_can_publish());
+  with check (bucket_id = 'laolao-assets' and (
+    public.ll_can_publish()
+    or name like 'payment-proof/' || auth.uid()::text || '-%'
+  ));
 create policy "ll assets update" on storage.objects for update to authenticated
   using (bucket_id = 'laolao-assets' and public.ll_can_publish())
   with check (bucket_id = 'laolao-assets' and public.ll_can_publish());

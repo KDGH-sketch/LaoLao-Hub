@@ -154,6 +154,9 @@ main{padding-block:28px 96px;padding-inline:24px;width:100%;max-width:980px;marg
 .seg button{border:0;background:none;border-radius:8px;padding:6px 12px;font-weight:600;font-size:.88rem;color:var(--ink-2)}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .input{border:1px solid var(--line-2);background:var(--surface);border-radius:10px;padding:9px 12px;width:100%}
+/* Placeholder text at a consistent, legible size everywhere -- shared by both apps since this file
+   is the one stylesheet both load, so admin and learner inputs always match. */
+.input::placeholder,.search input::placeholder{font-size:1rem;opacity:.62}
 .empty{padding:28px;text-align:center;color:var(--ink-3);border:1px dashed var(--line-2);border-radius:var(--r)}
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:100;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
 .pagehead{display:flex;flex-direction:column;gap:6px;margin-bottom:22px}
