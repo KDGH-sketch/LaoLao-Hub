@@ -320,9 +320,19 @@ create policy "ll assets insert" on storage.objects for insert to authenticated
     public.ll_can_publish()
     or name like 'payment-proof/' || auth.uid()::text || '-%'
   ));
+-- Mirrors the insert policy's carve-out (defense in depth): an "insert ... on conflict do update"
+-- -- which is what upsert:true produces -- is checked against BOTH the insert and the update
+-- policy even when no conflict occurs, so if upsert is ever reintroduced for this path, it still
+-- won't silently break for learners the way it did before (see js/api/supabase.js storage.upload).
 create policy "ll assets update" on storage.objects for update to authenticated
-  using (bucket_id = 'laolao-assets' and public.ll_can_publish())
-  with check (bucket_id = 'laolao-assets' and public.ll_can_publish());
+  using (bucket_id = 'laolao-assets' and (
+    public.ll_can_publish()
+    or name like 'payment-proof/' || auth.uid()::text || '-%'
+  ))
+  with check (bucket_id = 'laolao-assets' and (
+    public.ll_can_publish()
+    or name like 'payment-proof/' || auth.uid()::text || '-%'
+  ));
 create policy "ll assets delete" on storage.objects for delete to authenticated
   using (bucket_id = 'laolao-assets' and public.ll_can_publish());
 

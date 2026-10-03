@@ -1,8 +1,11 @@
--- Isolated storage-policy check/fix. Safe to run on its own, separate from the full
--- supabase-schema.sql. Tells us immediately whether the full schema script has ever
--- successfully run: if this errors with "function public.ll_can_publish() does not exist",
--- that confirms the helper functions (and likely the rest of supabase-schema.sql) were
--- never applied, and the full script needs to be run instead -- this one won't work alone.
+-- Isolated storage-policy fix. Safe to run on its own, separate from the full supabase-schema.sql.
+--
+-- Root cause found: the app's upload helper passed upsert:true, which makes Postgres evaluate the
+-- write as "insert ... on conflict do update" -- checked against BOTH the insert AND the update
+-- policy even when no conflict actually happens. The insert policy already allowed a learner's own
+-- payment-proof upload, but the update policy (admin-publish-rights only) silently blocked it
+-- anyway. This version widens the update policy to match, and the app code has also been changed to
+-- stop passing upsert:true (it was never actually needed -- every upload path is already unique).
 
 insert into storage.buckets (id, name, public) values ('laolao-assets', 'laolao-assets', true)
   on conflict (id) do update set public = true;
@@ -16,8 +19,14 @@ create policy "ll assets insert" on storage.objects for insert to authenticated
     or name like 'payment-proof/' || auth.uid()::text || '-%'
   ));
 create policy "ll assets update" on storage.objects for update to authenticated
-  using (bucket_id = 'laolao-assets' and public.ll_can_publish())
-  with check (bucket_id = 'laolao-assets' and public.ll_can_publish());
+  using (bucket_id = 'laolao-assets' and (
+    public.ll_can_publish()
+    or name like 'payment-proof/' || auth.uid()::text || '-%'
+  ))
+  with check (bucket_id = 'laolao-assets' and (
+    public.ll_can_publish()
+    or name like 'payment-proof/' || auth.uid()::text || '-%'
+  ));
 create policy "ll assets delete" on storage.objects for delete to authenticated
   using (bucket_id = 'laolao-assets' and public.ll_can_publish());
 

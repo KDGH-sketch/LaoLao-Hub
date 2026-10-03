@@ -306,9 +306,15 @@ export async function createSupabaseApi(supabaseUrl, supabaseAnonKey, opts = {})
       delField: () => DELF
     },
     storage: {
+      // upsert:false (the default) on purpose: every caller already writes a Date.now()-based
+      // unique path, so there's never a real conflict to resolve -- and upsert:true makes Postgres
+      // evaluate the write as "insert ... on conflict do update", which means it checks BOTH the
+      // insert AND the update RLS policy even though no conflict ever actually happens. That silently
+      // blocked every learner's payment-proof upload (insert policy allows it, update policy -- admin
+      // publish rights only -- doesn't), while admin uploads kept working and masked the bug.
       upload: async (file, path) => {
         const bucket = "laolao-assets";
-        const { error } = await client.storage.from(bucket).upload(path, file, { upsert: true, contentType: file.type || undefined });
+        const { error } = await client.storage.from(bucket).upload(path, file, { contentType: file.type || undefined });
         if (error) throw error;
         return client.storage.from(bucket).getPublicUrl(path).data.publicUrl;
       }
