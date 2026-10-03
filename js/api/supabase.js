@@ -123,6 +123,27 @@ export async function createSupabaseApi(supabaseUrl, supabaseAnonKey, opts = {})
     check(error, table);
     return data ? rowToDoc(data) : null;
   }
+  // Changes to the same row run one after another: update() and set(merge) read the row and write it back,
+  // so overlapping calls (e.g. two progress updates fired by one quiz answer) would otherwise lose a change.
+  const queues = new Map();
+  function serial(key, fn){
+    const run = (queues.get(key) || Promise.resolve()).then(fn, fn);
+    const tail = run.catch(() => {});
+    queues.set(key, tail);
+    tail.then(() => { if (queues.get(key) === tail) queues.delete(key); });
+    return run;
+  }
+
+  // { "skills.reading.t": inc(1), "days.2026-10-02": 1, "patterns.5": delField() } → ll_apply operations
+  let rpcAvailable = true;
+  const isMissingFunctionError = e => { const c = String(e && e.code || ""); return c === "PGRST202" || c === "42883" || /could not find the function/i.test(String(e && e.message || "")); };
+  const toOps = val => Object.entries(val).filter(([, v]) => v !== undefined).map(([k, v]) => {
+    const path = k.split(".");
+    if (isInc(v)) return { path, inc: v[INC] };
+    if (v === DELF) return { path, del: true };
+    return { path, set: toStore(v) };
+  });
+
   async function putRow(table, id, doc){
     const { error } = await client.from(table).upsert({ id, data: doc, updated_at: new Date().toISOString() });
     check(error, table);
@@ -160,8 +181,15 @@ export async function createSupabaseApi(supabaseUrl, supabaseAnonKey, opts = {})
         const { data, error } = await client.auth.signUp({ email, password });
         if (error) throw error;
         if (!data.user) throw new Error("Sign-up failed.");
-        if (!data.session) throw new Error("Account created. Please confirm your email address, then sign in.");
+        if (!data.session){   // "Confirm email" is on in Supabase: the learner must click the link first
+          const e = new Error("Account created. Please open the confirmation email we sent you, then sign in."); e.code = "auth/confirm-email"; throw e;
+        }
         return toUser(data.user);
+      },
+      // Calls cb when the user arrives from a password-reset email (they are signed in and must choose a new password)
+      onRecovery: cb => {
+        const { data: { subscription } } = client.auth.onAuthStateChange(event => { if (event === "PASSWORD_RECOVERY") cb(); });
+        return () => subscription.unsubscribe();
       },
       signOut: async () => {
         const { error } = await client.auth.signOut();
@@ -196,17 +224,28 @@ export async function createSupabaseApi(supabaseUrl, supabaseAnonKey, opts = {})
       set: async (path, val, merge=false) => {
         const { table, id } = parsePath(path);
         if (!id) throw new Error("set() needs a document path: " + path);
-        let doc;
-        if (merge){ const existing = await getRow(table, id); doc = deepMerge(existing ? stripId(existing) : {}, val); }
-        else doc = applyFields({}, val);
-        await putRow(table, id, doc);
+        return serial(table + "/" + id, async () => {
+          let doc;
+          if (merge){ const existing = await getRow(table, id); doc = deepMerge(existing ? stripId(existing) : {}, val); }
+          else doc = applyFields({}, val);
+          await putRow(table, id, doc);
+        });
       },
       update: async (path, val) => {
         const { table, id } = parsePath(path);
         if (!id) throw new Error("update() needs a document path: " + path);
         // Creates the row if it is missing (earlier versions of this adapter behaved the same way)
-        const existing = await getRow(table, id);
-        await putRow(table, id, applyFields(existing ? stripId(existing) : {}, val));
+        return serial(table + "/" + id, async () => {
+          // Preferred: the database applies the changes in one locked step (safe across devices; see ll_apply in supabase-schema.sql)
+          if (rpcAvailable){
+            const { error } = await client.rpc("ll_apply", { p_table: table, p_id: id, p_ops: toOps(val) });
+            if (!error) return;
+            if (!isMissingFunctionError(error)) check(error, table);
+            rpcAvailable = false;                     // the SQL has not been run yet: fall back to read-modify-write
+          }
+          const existing = await getRow(table, id);
+          await putRow(table, id, applyFields(existing ? stripId(existing) : {}, val));
+        });
       },
       del: async path => {
         const { table, id } = parsePath(path);

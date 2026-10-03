@@ -700,3 +700,39 @@ main:has(.vd){max-width:1320px}
   .vd-points{grid-template-columns:1fr}
   .vd-line{grid-template-columns:40px minmax(0,1fr) auto;padding:8px 6px}
 }
+
+/* ===== Scoring: quiz results, XP, level, mastery ===== */
+.stars{display:flex;justify-content:center;gap:6px;font-size:2rem;line-height:1;margin:6px 0 2px}
+.stars span{color:var(--surface-3);transition:color .2s}
+.stars span.on{color:#F59E0B;text-shadow:0 1px 0 rgba(0,0,0,.08)}
+.result .big small{font-size:1.1rem;font-weight:600}
+.verdict{margin:4px 0 10px;font-weight:700}
+.verdict.ok{color:var(--jade)}.verdict.no{color:var(--bad)}
+.breakdown{max-width:320px;margin:0 auto;display:flex;flex-direction:column;gap:4px;text-align:left}
+.breakdown .total{border-top:1px solid var(--line);padding-top:6px;margin-top:2px;font-size:1.02rem}
+.xp-pill,.combo-pill{display:inline-block;margin-left:8px;padding:1px 9px;border-radius:99px;font-size:.8rem;font-weight:700;vertical-align:middle}
+.xp-pill{background:#FEF3C7;color:#92400E}
+.combo-pill{background:var(--accent-2);color:var(--accent)}
+.qprog i.skip{background:var(--line-2)}
+.hw-canvas-bg.compare{opacity:.55;color:var(--jade)}
+.xpcard{display:flex;flex-direction:column;gap:14px}
+.xp-level{display:flex;align-items:center;gap:14px}
+.xp-badge{flex:none;width:58px;height:58px;border-radius:16px;background:var(--accent-grad);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:var(--shadow)}
+.xp-badge small{font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;opacity:.9}
+.xp-badge b{font-size:1.45rem;line-height:1}
+.xp-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.xp-main .bar i{background:var(--accent-grad)}
+.xp-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center}
+.xp-goal{display:flex;flex-direction:column;gap:6px}
+.xp-goal svg,.xp-streak svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;vertical-align:-3px}
+.bar.goal i{background:#F59E0B}
+.xp-streak{display:flex;align-items:center;gap:6px;color:#EA580C}
+.xp-streak b{font-size:1.2rem}
+.xpcard.compact .xp-badge{width:48px;height:48px;border-radius:13px}
+.skill.mastery{grid-template-columns:9em minmax(0,1fr) 9.5em}
+.m-label{text-align:right;font-weight:600;color:var(--ink-3)}
+.m-mastered .m-label{color:var(--jade)}.m-mastered .bar i{background:var(--jade)}
+.m-strong .m-label{color:var(--t1)}
+.m-practicing .m-label{color:var(--warn)}.m-practicing .bar i{background:var(--warn)}
+.m-learning .m-label{color:var(--bad)}.m-learning .bar i{background:var(--bad)}
+@media (max-width:600px){ .skill.mastery{grid-template-columns:7em minmax(0,1fr)} .skill.mastery .m-label{grid-column:1/-1;text-align:left;margin-top:-6px} }

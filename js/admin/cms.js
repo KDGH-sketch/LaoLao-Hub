@@ -7,7 +7,7 @@ import { makeEngine } from "../shared/engine.js";
 import { runQuiz, QTYPES, QTYPE_SKILL } from "../shared/quiz.js";
 import { sentenceEl, ctx } from "../shared/widgets.js";
 import { SKILLS } from "../shared/content.js";
-import { S, L, t, go, canContent, canViewMenu, canEditMenu, fld } from "./state.js";
+import { S, L, t, go, canContent, canViewMenu, canEditMenu, fld, markUnpublished } from "./state.js";
 import { SCHEMAS, STEP_TYPE_TO_COL, APP_PAGES } from "./schemas.js";
 import { parseTime, formatTime, normalizeSegments } from "../shared/video.js";
 import { publishFlow } from "./main.js";
@@ -91,7 +91,7 @@ export async function viewContentList({ type, q="", status="", level="" }){
           const allP = await rows("patterns");
           copy.n = Math.max(0, ...allP.map(p=>p.n||0)) + 1;
         }
-        await saveContent(S.api, type, newId, copy, S.me ? S.me.uid : "admin");
+        await saveContent(S.api, type, newId, copy, S.me ? S.me.uid : "admin"); markUnpublished();
         delete cache[type];
         toast("Duplicated as " + newId, "ok");
         go("editor", { type, id: newId });
@@ -101,7 +101,7 @@ export async function viewContentList({ type, q="", status="", level="" }){
         e.stopPropagation();
         if (await confirmDialog(t("delete_item"), `Delete "${titleOf(type,d)}" (${d.id})?`, t("delete_item"), t("cancel"), true)){
           await S.api.db.del(`${type}/${d.id}`);
-          await S.api.db.set("settings/bundle", { dirty:true }, true);
+          await S.api.db.set("settings/bundle", { dirty:true }, true); markUnpublished();
           delete cache[type];
           selected.delete(d.id);
           toast("Deleted " + d.id, "ok");
@@ -152,7 +152,7 @@ export async function viewContentList({ type, q="", status="", level="" }){
     const ops = [];
     selected.forEach(id => ops.push({ op:"set", path:`${type}/${id}`, data:{ status:"published", updatedAt:new Date() }, merge:true }));
     await S.api.db.batch(ops);
-    await S.api.db.set("settings/bundle", { dirty:true }, true);
+    await S.api.db.set("settings/bundle", { dirty:true }, true); markUnpublished();
     delete cache[type];
     all.forEach(d => { if (selected.has(d.id)) d.status = "published"; });
     selected.clear();
@@ -167,7 +167,7 @@ export async function viewContentList({ type, q="", status="", level="" }){
     const ops = [];
     selected.forEach(id => ops.push({ op:"set", path:`${type}/${id}`, data:{ status:"draft", updatedAt:new Date() }, merge:true }));
     await S.api.db.batch(ops);
-    await S.api.db.set("settings/bundle", { dirty:true }, true);
+    await S.api.db.set("settings/bundle", { dirty:true }, true); markUnpublished();
     delete cache[type];
     all.forEach(d => { if (selected.has(d.id)) d.status = "draft"; });
     selected.clear();
@@ -183,7 +183,7 @@ export async function viewContentList({ type, q="", status="", level="" }){
       const ops = [];
       selected.forEach(id => ops.push({ op:"del", path:`${type}/${id}` }));
       await S.api.db.batch(ops);
-      await S.api.db.set("settings/bundle", { dirty:true }, true);
+      await S.api.db.set("settings/bundle", { dirty:true }, true); markUnpublished();
       delete cache[type];
       const selArr = Array.from(selected);
       for (const id of selArr){
@@ -354,7 +354,7 @@ export async function viewEditor({ type, id, isNew }){
         docId = autoName.toLowerCase().replace(/[\s\/#?]/g, "-").slice(0, 32) || (type + "-" + Date.now().toString(36).slice(-6));
       }
       clean.id = docId;
-      await saveContent(S.api, type, docId, clean, S.me.uid);
+      await saveContent(S.api, type, docId, clean, S.me.uid); markUnpublished();
       delete cache[type];
       if (type === "lexicon") { LEXICON = null; ENGINE = null; }
       toast(t("saved_ok"), "ok");
@@ -377,8 +377,8 @@ export async function viewEditor({ type, id, isNew }){
     previewPanel(type, draft),
     doc ? versionsPanel(type, id, v => { if (!canEdit) return; draft = JSON.parse(JSON.stringify(Object.assign({}, v, { status: draft.status }))); renderForm(); toast("v"+v.version+" → "+t("save")); }) : null,
     (doc && canEdit) ? h("div",{class:"row"},
-      h("button",{class:"btn sm",onclick:async()=>{ const nid = id+"-copy-" + Date.now().toString(36).slice(-4); await saveContent(S.api, type, nid, Object.assign({}, draft, { status:"draft" }), S.me.uid); go("editor",{type,id:nid}); }}, icon("copy"), t("duplicate")),
-      h("button",{class:"btn sm ghost",style:"color:var(--bad)",onclick:async()=>{ if(await confirmDialog(t("delete_item"),t("confirm_delete"),t("delete_item"),t("cancel"),true)){ await S.api.db.del(`${type}/${id}`); await S.api.db.set("settings/bundle",{dirty:true},true); delete cache[type]; go("contentList",{type}); } }}, icon("trash"), t("delete_item"))) : null);
+      h("button",{class:"btn sm",onclick:async()=>{ const nid = id+"-copy-" + Date.now().toString(36).slice(-4); await saveContent(S.api, type, nid, Object.assign({}, draft, { status:"draft" }), S.me.uid); markUnpublished(); go("editor",{type,id:nid}); }}, icon("copy"), t("duplicate")),
+      h("button",{class:"btn sm ghost",style:"color:var(--bad)",onclick:async()=>{ if(await confirmDialog(t("delete_item"),t("confirm_delete"),t("delete_item"),t("cancel"),true)){ await S.api.db.del(`${type}/${id}`); await S.api.db.set("settings/bundle",{dirty:true},true); markUnpublished(); delete cache[type]; go("contentList",{type}); } }}, icon("trash"), t("delete_item"))) : null);
 
   return h("div",null,
     h("div",{class:"crumb"}, h("button",{onclick:()=>go("content")}, t("adm_content")), "›", h("button",{onclick:()=>go("contentList",{type})}, t("type_"+type)||type), "›", h("span",{class:"mono"}, id || t("new_item"))),

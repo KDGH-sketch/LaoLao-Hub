@@ -7,7 +7,7 @@ import { sentenceEl, openWord, toggleBtn, ensureTokens, markRanges } from "../sh
 import { runQuiz } from "../shared/quiz.js";
 import { SKILLS } from "../shared/content.js";
 import { A, T, expLang, prefs, srsDue, streak, skillPct, nextLesson, orderedLessons, genMany, exampleOf, lockedItem, tierName,
-  completeLesson, learnPattern, setLast, recordAnswer, quizDone, logEvent, wordsMastered, touchDay } from "./core.js";
+  completeLesson, learnPattern, setLast, recordAnswer, quizDone, logEvent, wordsMastered, touchDay, level, todayXP, mastery, achievements } from "./core.js";
 import { patternQuestions } from "./views-tools.js";
 
 export const VIEWS = {};
@@ -95,7 +95,7 @@ VIEWS.home = () => {
   );
   root.append(h("section",{class:"sect"}, h("h2",null,lang()==="lo"?"ຫ້ອງທົດລອງພາສາລາວ (Lao Language Labs)":"Lao Language Labs & Culture"), labsBox));
   // skills + weak areas
-  const skills = h("div",{class:"card stack",style:"gap:10px"}, SKILLS.map(k => h("div",{class:"skill"}, h("span",null,t("sk_"+k)), h("div",{class:"bar"},h("i",{style:`width:${skillPct(k)}%`})), h("span",{class:"tabnum small muted"}, (A.prog.skills[k]||{}).t ? skillPct(k)+"%" : "—"))));
+  const skills = h("div",{class:"stack",style:"gap:12px"}, xpCard(true), h("div",{class:"card stack",style:"gap:10px"}, SKILLS.map(masteryRow)));
   // recent lessons
   const recent = Object.entries(A.prog.lessons).filter(([id])=>A.byType.lessons[id]).sort((a,b)=>b[1].at-a[1].at).slice(0,4);
   const recentBox = h("div",{class:"list-card"}, recent.length ? recent.map(([id,x]) => { const l = A.byType.lessons[id];
@@ -111,16 +111,41 @@ VIEWS.home = () => {
   return root;
 };
 export function achievementsEl(compact){
-  const done = Object.values(A.prog.lessons).filter(x=>x.done).length, pats = Object.keys(A.prog.patterns).length;
-  const list = [["ach_first_lesson",done>=1],["ach_10_patterns",pats>=10],["ach_50_patterns",pats>=50],["ach_streak7",streak()>=7],["ach_100_answers",(A.prog.answers.t||0)>=100],["ach_words50",wordsMastered()>=50]];
-  return h("div",{class:"sect",style:compact?"margin-top:14px":""}, h("h3",null,t("achievements")), h("div",{class:"badges"}, list.map(([k,ok]) => h("span",{class:"badge"+(ok?"":" off")}, icon("trophy"), t(k)))));
+  const list = achievements(), got = list.filter(a => a.earned).length;
+  const shown = compact ? list.filter(a => a.earned).slice(-4).concat(list.filter(a => !a.earned).slice(0, 2)) : list;
+  return h("div",{class:"sect",style:compact?"margin-top:14px":""}, h("h3",null,t("achievements"), h("span",{class:"chip",style:"margin-left:8px"}, got+" / "+list.length)),
+    h("div",{class:"badges"}, shown.map(a => h("span",{class:"badge"+(a.earned?"":" off"),title:t("achd_"+a.id)}, icon(a.earned ? "trophy" : "lock"), t("ach_"+a.id)))));
+}
+// XP, level and today's goal
+export function xpCard(compact){
+  const lv = level(), today = todayXP(), goal = A.rules.dailyGoal, s = streak();
+  return h("section",{class:"card xpcard"+(compact?" compact":"")},
+    h("div",{class:"xp-level"}, h("span",{class:"xp-badge"}, h("small",null,t("lvl")), h("b",null, lv.level)),
+      h("div",{class:"xp-main"},
+        h("div",{class:"spread"}, h("b",null, (A.prog.xp||0).toLocaleString()+" XP"), h("span",{class:"small muted"}, t("to_next",{ n: lv.toNext, l: lv.level+1 }))),
+        h("div",{class:"bar",role:"progressbar","aria-valuenow":String(lv.pct),"aria-valuemin":"0","aria-valuemax":"100"}, h("i",{style:`width:${lv.pct}%`})))),
+    h("div",{class:"xp-row"},
+      h("div",{class:"xp-goal"}, h("div",{class:"spread small"}, h("span",null, icon("star"), " "+t("daily_goal")), h("b",{class:"tabnum"}, Math.min(today, goal)+" / "+goal+" XP")),
+        h("div",{class:"bar goal"}, h("i",{style:`width:${Math.min(100, Math.round(100*today/goal))}%`}))),
+      h("div",{class:"xp-streak"}, icon("flame"), h("b",null, s), h("span",{class:"small muted"}, t("streak_days")))));
+}
+// one skill: mastery label from the cautious lower bound, plus the plain accuracy and number of answers
+export function masteryRow(k){
+  const m = mastery(k);
+  const label = m.label === "none" ? t("m_none") : m.label === "new" ? t("m_new", { n: m.needed }) : t("m_"+m.label);
+  return h("div",{class:"skill mastery m-"+m.label,title: m.answers ? t("m_detail", { r: m.raw, n: m.answers }) : ""},
+    h("span",null,t("sk_"+k)), h("div",{class:"bar"},h("i",{style:`width:${m.pct}%`})),
+    h("span",{class:"m-label small"}, label));
 }
 
 // ---------- paths ----------
+// Paths list their steps as [{type,id}]; older paths used a plain list of lesson ids (itemIds)
+const pathSteps = p => Array.isArray(p.steps) && p.steps.length ? p.steps : (p.itemIds || []).map(id => ({ type:"lesson", id }));
+
 VIEWS.paths = () => {
   const paths = Object.values(A.byType.paths||{}).sort((a,b)=>(a.order||0)-(b.order||0));
   const locked = A.catalog.filter(c => c.type==="paths" && c.tier > A.tier);
-  const card = p => { const steps = p.steps||[]; const done = steps.filter(s => s.type==="lesson" && lessonDone(s.id)).length; const lessons = steps.filter(s=>s.type==="lesson").length;
+  const card = p => { const steps = pathSteps(p); const done = steps.filter(s => s.type==="lesson" && lessonDone(s.id)).length; const lessons = steps.filter(s=>s.type==="lesson").length;
     return h("button",{class:"pcard",onclick:()=>go("path",{id:p.id})}, h("span",{class:"qi",lang:"zh-CN"}, p.kind==="level" ? String(p.level) : icon(p.kind==="skill"?"layers":"path")),
       h("div",{style:"flex:1"}, h("b",null,T(p.title)), h("span",{class:expLang()==="lo"?"lo":""},T(p.desc)), lessons ? h("div",{class:"bar",style:"margin-top:8px"},h("i",{style:`width:${100*done/lessons}%`})) : null)); };
   return h("div",null, pageHead(t("nav_paths"), t("learn_sub")),
@@ -129,7 +154,7 @@ VIEWS.paths = () => {
 VIEWS.path = ({ id }) => {
   const p = A.byType.paths[id]; if (!p) return h("div",{class:"empty"},t("no_rows"));
   const list = h("div",{class:"list-card"});
-  (p.steps||[]).forEach((s,i) => {
+  pathSteps(p).forEach((s,i) => {
     const map = { lesson:["lessons","lesson"], grammar:["grammar","grammarItem"], quiz:["quizzes","quiz"], dialogue:["dialogues","dialogue"] };
     let title="", sub="", open=null, done=false, lock=null;
     if (s.type==="page"){ title = t({pinyin:"nav_pinyin",chars:"nav_chars",speak:"nav_speak",gen:"nav_gen",dict:"nav_dict"}[s.id]||"nav_home"); open = () => go(s.id); }
@@ -197,8 +222,8 @@ VIEWS.lesson = ({ id }) => {
   const quizzes = (l.quizzes||[]).map(q=>A.byType.quizzes[q]).filter(Boolean);
   const qbox = h("div",{class:"quiz"});
   const startQuiz = (qs, ref) => { qbox.innerHTML=""; let score=0;
-    runQuiz(qbox, qs, { title: ref ? T(A.byType.quizzes[ref].title) : t("auto_quiz"), onAnswer:(q,ok)=>{ recordAnswer(q.skill, ok); if (ok) score++; },
-      onFinish:r => { if (ref){ A.prog.lessons["quiz:"+ref] = { done:true, at:Date.now(), score:r.right, total:r.total }; quizDone(ref, r.right, r.total); } if (!lessonDone(id) && r.right >= Math.ceil(r.total*0.6)){ completeLesson(id, r.right, r.total); toast(t("completed")); } },
+    runQuiz(qbox, qs, { key: ref ? "quiz:"+ref : "lesson:"+id, title: ref ? T(A.byType.quizzes[ref].title) : t("auto_quiz"), onAnswer:(q,ok,m)=>{ recordAnswer(q.skill, ok, m); if (ok) score++; },
+      onFinish:r => { if (ref){ A.prog.lessons["quiz:"+ref] = { done:true, at:Date.now(), score:r.right, total:r.total }; quizDone(ref, r.right, r.total); } if (!lessonDone(id) && r.passed){ completeLesson(id, r.right, r.total, r.stars); toast(t("completed")); } },
       onAgain:()=>startQuiz(ref ? A.byType.quizzes[ref].questions : patternQuestions(ps, 8), ref) }); qbox.scrollIntoView({behavior:"smooth", block:"start"}); };
   root.append(h("section",{class:"sect"}, h("h2",null,t("quiz")),
     h("div",{class:"row"}, quizzes.map(q => h("button",{class:"btn primary",onclick:()=>startQuiz(q.questions, q.id)}, icon("star"), T(q.title))),
@@ -266,7 +291,7 @@ VIEWS.pattern = ({ n }) => {
   }
   const qbox = h("div",{class:"quiz"});
   root.append(h("section",{class:"sect"}, h("div",{class:"card spread"}, h("div",null, h("h3",null,t("practice_this")), h("p",{class:"muted small"}, t("pr_order")+" · "+t("pr_blank")+" · "+t("pr_meaning")+" · "+t("pr_listen"))),
-    h("button",{class:"btn primary",onclick:()=>{ runQuiz(qbox, patternQuestions([p], 8), { onAnswer:(q,ok)=>recordAnswer(q.skill,ok), onFinish:r=>{ if (r.right>=6 && !A.prog.patterns[n]) { learnPattern(n,true); toast(t("learned")); } }, onAgain:()=>go("pattern",{n},false) }); qbox.scrollIntoView({behavior:"smooth"}); }}, t("start"), icon("right"))), qbox));
+    h("button",{class:"btn primary",onclick:()=>{ runQuiz(qbox, patternQuestions([p], 8), { key:"pattern:"+n, onAnswer:(q,ok,m)=>recordAnswer(q.skill,ok,m), onFinish:r=>{ if (r.passed && r.pct >= 75 && !A.prog.patterns[n]) { learnPattern(n,true); toast(t("learned")); } }, onAgain:()=>go("pattern",{n},false) }); qbox.scrollIntoView({behavior:"smooth"}); }}, t("start"), icon("right"))), qbox));
   const all = Object.values(A.P).sort((a,b)=>(a.level-b.level)||(a.n-b.n)), i = all.indexOf(p), pv = all[i-1], nx = all[i+1];
   root.append(h("div",{class:"pnav"}, pv ? h("button",{class:"btn",onclick:()=>go("pattern",{n:pv.n})}, icon("left"), h("span",{class:"hz"},pv.hz)) : h("span"), nx ? h("button",{class:"btn",onclick:()=>go("pattern",{n:nx.n})}, h("span",{class:"hz"},nx.hz), icon("right")) : h("span")));
   return root;
@@ -306,7 +331,7 @@ VIEWS.vocab = ({ words, title, lv }) => {
   const listFor = () => words || Object.keys(D).filter(k => D[k].h===level && k.length<=4).sort((a,b)=>D[a].fq-D[b].fq);
   const draw = () => { box.innerHTML = ""; const ws = listFor();
     box.append(h("div",{class:"row",style:"margin-bottom:12px"}, h("span",{class:"muted"}, ws.length+" "+t("word_count")+" · "+wordsMastered()+" "+t("learned_words")),
-      h("button",{class:"btn sm primary",onclick:()=>{ const qb = h("div",{class:"quiz"}); box.prepend(qb); runQuiz(qb, ws.slice().sort(()=>Math.random()-.5).slice(0,12).map(w => ({ type:"flashcard", skill:"vocabulary", prompt:{ zh:w, py:D[w]?D[w].p:"" }, back:{ en:D[w]?D[w].en:"", lo:D[w]?D[w].lo:"" }, w })), { onAnswer:(q,ok)=>{ recordAnswer("vocabulary",ok); if(!ok) import("./core.js").then(m=>m.srsAdd("w:"+q.w,{type:"w",w:q.w})); }, onExit:()=>draw() }); }}, icon("review"), t("flashcards"))),
+      h("button",{class:"btn sm primary",onclick:()=>{ const qb = h("div",{class:"quiz"}); box.prepend(qb); runQuiz(qb, ws.slice().sort(()=>Math.random()-.5).slice(0,12).map(w => ({ type:"flashcard", skill:"vocabulary", prompt:{ zh:w, py:D[w]?D[w].p:"" }, back:{ en:D[w]?D[w].en:"", lo:D[w]?D[w].lo:"" }, w })), { key:"vocab-cards", onAnswer:(q,ok,m)=>{ recordAnswer("vocabulary",ok,m); if(!ok) import("./core.js").then(m=>m.srsAdd("w:"+q.w,{type:"w",w:q.w})); }, onExit:()=>draw() }); }}, icon("review"), t("flashcards"))),
       h("div",{class:"vgrid"}, ws.slice(0,300).map(w => h("button",{class:"vcard",onclick:()=>openWord(w)}, h("span",{class:"hz lo",lang:"lo"},w), h("span",{html:pyHTML(D[w]?D[w].p:"")}), h("span",{class:"m"+(EL==="lo"&&D[w]&&D[w].lo?" lo":"")}, (meaning(w,EL)||"").split(";")[0].slice(0,40)))))); };
   const seg = words ? null : h("div",{class:"seg",style:"margin-bottom:14px"}, [1,2,3,4,5,6].map(n => h("button",{"aria-pressed":String(level===n),onclick:e=>{ level=n; $$("button",seg).forEach(b=>b.setAttribute("aria-pressed","false")); e.currentTarget.setAttribute("aria-pressed","true"); draw(); }}, "Stage "+n)));
   draw();

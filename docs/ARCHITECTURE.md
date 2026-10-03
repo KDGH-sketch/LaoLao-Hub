@@ -63,7 +63,7 @@ Who can read and write each table is defined by the RLS policies at the end of `
 | 99 | Admin only |
 
 The learner's tier is computed in the browser by `tierFor()` in `js/shared/content.js`. Admin roles and menu permissions are checked in the browser by `js/admin/state.js`.
-The current RLS policies in `supabase-schema.sql` allow public reads of content and bundles and give write access to the owner email only, so tiers and non-owner admin roles are **not** enforced by the database yet.
+The database enforces the same rules with the row-level security policies in `supabase-schema.sql`: `ll_my_tier()` decides which `bundles` parts an account may read (an account without a learner profile only gets public content), raw content is readable by admins only, and writes follow the admin roles (`ll_can_edit`, `ll_can_support`, `ll_is_super`). The owner is the account that completed the first-time setup (`settings/bootstrap.uid`). Progress changes are applied in one locked step by the `ll_apply` function, so updates from several devices do not overwrite each other.
 
 ## Publishing
 
@@ -92,4 +92,4 @@ Patterns carry templates with slots such as `{P}`, `{VO}`, `{PL}`. Shared word l
 
 ## Adding online payments later
 
-Access is already separate from payment. A Supabase Edge Function can receive the payment provider's webhook, verify it, then write `subscriptions/{id}` with `source: "payment"` and update `access/{uid}` with `{ planId, tier, status: "active", expiresAt }`.
+Access is already separate from payment. A Supabase Edge Function can receive the payment provider's webhook, verify it, then write `subscriptions/{id}` with `source: "payment"` and update `access/{uid}` with `{ planId, tier, status: "active", expiresAt }`. See [PAYMENTS.md](PAYMENTS.md) for Lao payment options (LAO QR, BCEL, PhaJay) and the full design.

@@ -47,6 +47,22 @@ function query(t){
   };
   return q;
 }
+// ll_apply (supabase-schema.sql), implemented independently here; RPC.enabled=false simulates "SQL not run yet"
+const RPC = { enabled: true, calls: 0 };
+async function rpc(fn, { p_table, p_id, p_ops }){
+  if (!RPC.enabled || fn !== "ll_apply") return { data: null, error: { code: "PGRST202", message: "Could not find the function public." + fn } };
+  RPC.calls++;
+  await new Promise(r => setTimeout(r, 1));            // a little latency, like a network call
+  const row = (tables[p_table] ||= {})[p_id] || { id: p_id, data: {} };
+  const doc = JSON.parse(JSON.stringify(row.data));
+  for (const op of p_ops){
+    let t = doc; for (const k of op.path.slice(0, -1)){ if (typeof t[k] !== "object" || t[k] === null) t[k] = {}; t = t[k]; }
+    const last = op.path[op.path.length - 1];
+    if (op.del) delete t[last]; else if ("inc" in op) t[last] = (typeof t[last] === "number" ? t[last] : 0) + op.inc; else t[last] = op.set;
+  }
+  tables[p_table][p_id] = { id: p_id, data: doc };
+  return { data: null, error: null };
+}
 const sessions = [];
 function createClient(_url, _key, opts){
   const persistent = opts.auth.persistSession;
@@ -56,9 +72,11 @@ function createClient(_url, _key, opts){
     auth: {
       getSession: async () => ({ data: { session } }),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe(){} } } }),
-      signUp: async ({ email }) => { const user = { id: "uid-" + email.split("@")[0], email, identities: [{}] }; session = { user }; return { data: { user, session }, error: null }; },
+      // emails starting with "confirm" behave as if Supabase "Confirm email" is on (no session until confirmed)
+      signUp: async ({ email }) => { const user = { id: "uid-" + email.split("@")[0], email, identities: [{}] }; if (email.startsWith("confirm")) return { data: { user, session: null }, error: null }; session = { user }; return { data: { user, session }, error: null }; },
       signInWithPassword: async ({ email }) => { const user = { id: "uid-" + email.split("@")[0], email }; session = { user }; return { data: { user, session }, error: null }; }
     },
+    rpc,
     from: t => Object.assign(query(t), {
       upsert: async row => { if (MISSING.has(t)) return missing(t); (tables[t] ||= {})[row.id] = JSON.parse(JSON.stringify(row)); return { error: null }; },
       insert: async row => { if (MISSING.has(t)) return missing(t); (tables[t] ||= {})[row.id] = JSON.parse(JSON.stringify(row)); return { error: null }; },
@@ -97,6 +115,27 @@ ok(!("5" in prog.patterns) && !Object.keys(prog).some(k => k.includes(".")), "de
 await api.db.set("progress/u1", { last: { type: "lesson", id: "l2" } }, true);
 ok((await api.db.get("progress/u1")).skills.reading.t === 2, "set(merge) keeps the other fields");
 
+console.log("concurrent updates (answering a quiz fires two updates at once)");
+await api.db.set("progress/race", { skills: {}, days: {}, answers: { r: 0, t: 0 } });
+await Promise.all([
+  api.db.update("progress/race", { "days.2026-10-02": 1 }),
+  api.db.update("progress/race", { "skills.reading.t": api.db.inc(1), "answers.t": api.db.inc(1) }),
+  api.db.update("progress/race", { "skills.reading.t": api.db.inc(1), "answers.t": api.db.inc(1) })
+]);
+const race = await api.db.get("progress/race");
+ok(race.days["2026-10-02"] === 1 && race.skills.reading && race.skills.reading.t === 2 && race.answers.t === 2,
+  `no update is lost when several run at once (day=${race.days["2026-10-02"]}, reading.t=${race.skills.reading && race.skills.reading.t}, answers.t=${race.answers.t})`);
+
+ok(RPC.calls > 0, "updates go through the database function ll_apply when it exists");
+console.log("fallback when ll_apply has not been installed yet");
+RPC.enabled = false;
+const api2 = await createSupabaseApi("https://x.supabase.co", "anon", { createClient });
+await api2.db.set("progress/fb", { skills: {}, days: {} });
+await Promise.all([api2.db.update("progress/fb", { "days.d1": 1 }), api2.db.update("progress/fb", { "skills.r.t": api2.db.inc(1) }), api2.db.update("progress/fb", { "skills.r.t": api2.db.inc(1) })]);
+const fb = await api2.db.get("progress/fb");
+ok(fb.days.d1 === 1 && fb.skills.r.t === 2, "without ll_apply, updates still apply correctly (read-modify-write, one at a time)");
+RPC.enabled = true;
+
 console.log("sub-collections");
 const evId = await api.db.add("progress/u1/events", { type: "quiz", at: day });
 await api.db.add("progress/u2/events", { type: "lesson", at: day });
@@ -132,6 +171,9 @@ await api.auth.signIn("owner@x.com", "pw");
 const newUid = await api.auth.createAccount("learner@x.com", "pw123456");
 ok(newUid === "uid-learner" && main.session.user.email === "owner@x.com", "admin creating an account stays signed in as admin");
 ok(typeof api.auth.signUp === "function", "learner self-registration (signUp) exists");
+let ce = null; try { await api.auth.signUp("confirm.me@x.com", "pw123456"); } catch(e){ ce = e; }
+ok(ce && ce.code === "auth/confirm-email" && /confirmation email/.test(ce.message), "with email confirmation on, sign-up asks the learner to confirm their email");
+ok(typeof api.auth.onRecovery === "function", "password-recovery hook exists");
 
 console.log(failed ? `\n${failed} test(s) FAILED` : "\nAll tests passed");
 process.exit(failed ? 1 : 0);

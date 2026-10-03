@@ -20,8 +20,12 @@ setLang(pref==="lo" ? "lo" : "en");
 async function boot(){
   const api = S.api = await getApi();
   if (api.mode==="demo"){ root.innerHTML=""; root.append(h("div",{class:"empty",style:"margin:40px"}, t("loading")+" (demo setup)")); await ensureDemo(api); }
+  // arriving from a password-reset email: ask for the new password first
+  let recovering = /type=recovery/.test(location.hash);
+  if (api.auth.onRecovery) api.auth.onRecovery(() => { recovering = true; renderNewPassword(); });
   api.auth.onChange(async user => {
     if (!user){ S.me=null; return renderLogin(); }
+    if (recovering) return renderNewPassword();
     let adm = null; try { adm = await api.db.get(`admins/${user.uid}`); } catch(e){}
     if (!adm){
       let boot = null; try { boot = await api.db.get("settings/bootstrap"); } catch(e){}
@@ -74,6 +78,17 @@ function renderLogin(){
       h("button",{class:"btn primary",type:"submit"}, t("sign_in"))),
     h("button",{class:"linkbtn",onclick:async()=>{ if(!email.value) { msg.textContent=t("email")+"?"; return; } try{ await S.api.auth.resetPassword(email.value.trim()); toast(t("reset_sent")); }catch(err){ msg.textContent=errText(err); } }}, t("forgot")),
     h("div",{class:"row"}, langSwitch(), h("a",{href:"../",class:"small"}, t("adm_open_learner"))));
+}
+function renderNewPassword(){
+  const pw = h("input",{class:"input",type:"password",id:"npw",autocomplete:"new-password"}), pw2 = h("input",{class:"input",type:"password",id:"npw2",autocomplete:"new-password"});
+  const msg = h("p",{class:"small",style:"color:var(--bad)"});
+  authFrame(h("h1",null,"Choose a new password"),
+    h("form",{class:"stack",onsubmit:async e=>{ e.preventDefault(); msg.textContent="";
+      if (pw.value.length < 6){ msg.textContent = "Password must be at least 6 characters."; return; }
+      if (pw.value !== pw2.value){ msg.textContent = "The passwords do not match."; return; }
+      try { await S.api.auth.changePassword(null, pw.value); toast("Password changed"); location.replace(location.pathname); } catch(err){ msg.textContent = errText(err); } }},
+      h("div",{class:"field"}, h("label",{for:"npw"},"New password"), pw), h("div",{class:"field"}, h("label",{for:"npw2"},"Repeat the new password"), pw2), msg,
+      h("button",{class:"btn primary",type:"submit"}, t("save"))));
 }
 function renderNoAccess(user){
   authFrame(h("h1",null,t("adm_title")),
@@ -363,8 +378,8 @@ async function viewSettings(){
   const wrap = h("div",{class:"stack-l"});
   wrap.append(h("div",{class:"pagehead"}, h("h1",null,t("adm_settings")), h("p",null,"Configure platform settings, database schema, and test accounts.")));
 
-  // Learner & Admin Test Accounts Card
-  wrap.append(h("section",{class:"panel",style:"background:var(--surface-2);border:1px solid var(--accent)"},
+  // Learner & Admin Test Accounts Card (these accounts exist only in demo mode)
+  if (S.api.mode === "demo") wrap.append(h("section",{class:"panel",style:"background:var(--surface-2);border:1px solid var(--accent)"},
     h("h3",{style:"color:var(--accent);display:flex;align-items:center;gap:6px"}, icon("users"), "Learner & Admin Login Credentials"),
     h("p",{class:"small muted"}, "Pre-configured user accounts with distinct roles to test permissions, read-only modes, and access tiers:"),
     h("div",{class:"grid3",style:"gap:10px;margin-top:8px"},

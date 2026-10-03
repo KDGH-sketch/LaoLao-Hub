@@ -36,7 +36,8 @@ export function gloss(w, lang){
   if (d) return meaning(w, lang).split(/;|\//)[0].replace(/\(.*?\)/g,"").trim();
   return [...w].map(c => CHARS && CHARS[c] ? (CHARS[c].d||"").split(/[;,]/)[0] : c).join(" + ");
 }
-function index(){ if (!INDEX) INDEX = Object.keys(DICT).map(k => ({ k, p: stripTone(DICT[k].p), en: " "+DICT[k].en.toLowerCase()+" ", lo: DICT[k].lo||"", d: DICT[k] })); return INDEX; }
+// p = tone-marked romanization, a = the simple spelling people type (e.g. "sabaidee")
+function index(){ if (!INDEX) INDEX = Object.keys(DICT).map(k => ({ k, p: stripTone(DICT[k].p), a: stripTone(DICT[k].alt||""), en: " "+DICT[k].en.toLowerCase()+" ", lo: DICT[k].lo||"", d: DICT[k] })); return INDEX; }
 export function searchDict(q, limit=40){
   q = String(q||"").trim(); if (!q || !DICT) return [];
   const ql = q.toLowerCase(), qp = stripTone(q), lao = /[\u0E80-\u0EFF]/.test(q);
@@ -49,9 +50,9 @@ export function searchDict(q, limit=40){
       else if (e.k.includes(q)) sc=60-e.k.length;
       else if (e.lo && e.lo.includes(q)) sc=50;
     } else {
-      if (e.p===qp) sc=90;
-      else if (qp.length>=2 && e.p.startsWith(qp)) sc=70-(e.p.length-qp.length);
-      else if (qp.length>=2 && e.p.includes(qp)) sc=50;
+      if (e.p===qp || (e.a && e.a===qp)) sc=90;
+      else if (qp.length>=2 && (e.p.startsWith(qp) || (e.a && e.a.startsWith(qp)))) sc=70-(Math.min(e.p.length, e.a.length||99)-qp.length);
+      else if (qp.length>=2 && (e.p.includes(qp) || (e.a && e.a.includes(qp)))) sc=50;
       if (ql.length>=2){
         if (e.en.includes(" "+ql+" ")||e.en.includes(" "+ql+";")||e.en.includes("to "+ql+";")) sc=Math.max(sc,85);
         else if (ql.length>=3 && e.en.includes(ql)) sc=Math.max(sc,45);

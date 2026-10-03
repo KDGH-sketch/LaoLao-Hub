@@ -1,10 +1,13 @@
 // Data-driven quiz engine. One renderer for every question type, used by lessons, practice,
 // the admin Quiz Builder preview and auto-generated pattern drills.
-import { h, $$, icon, pyHTML, shuffle, stripTone, tr, isHan, toast } from "./ui.js";
-import { t } from "./i18n.js";
+import { h, $$, icon, pyHTML, shuffle, stripTone, tr, isHan, toast, esc } from "./ui.js";
+import { t, lang } from "./i18n.js";   // lang was used below without being imported (handwriting questions crashed)
 import { speak, canListen, listen, similarity } from "./speech.js";
 import { strokes } from "./dict.js";
 import { ctx } from "./widgets.js";
+import { DEFAULT_RULES, answerPoints, roundResult } from "./scoring.js";
+const rules = () => (ctx.rules && ctx.rules()) || DEFAULT_RULES;
+const starsEl = n => h("div",{class:"stars","aria-label":n+" / 3"}, [1,2,3].map(i => h("span",{class:i<=n?"on":""}, "★")));
 
 export const QTYPES = ["mc","fill","order","match","type","listen_select","listen_type","tone","speak","write_char","flashcard"];
 export const QTYPE_SKILL = { mc:"reading", fill:"grammar", order:"sentence", match:"vocabulary", type:"writing", listen_select:"listening", listen_type:"listening", tone:"pinyin", speak:"speaking", write_char:"characters", flashcard:"vocabulary" };
@@ -17,26 +20,52 @@ const norm = (s, mode) => (mode==="hanzi" || mode==="script" || mode==="text") ?
  */
 export function runQuiz(root, questions, opts={}){
   const L = ctx.exp();
-  const state = { i:0, res:[] };
+  const state = { i:0, res:[], ans:[], combo:0 };
+  const key = opts.key || opts.title || "practice";
   const render = () => {
     root.innerHTML = "";
     const prog = h("div",{class:"qprog"}, questions.map((_,i)=>h("i",{class: i<state.res.length ? (state.res[i]?"ok":"no") : i===state.i ? "cur" : ""})));
     root.append(h("div",{class:"spread",style:"margin-bottom:10px"}, opts.title ? h("b",null,opts.title) : h("span"), h("span",{class:"muted tabnum"}, Math.min(state.i+1,questions.length)+" / "+questions.length)), prog);
     if (state.i >= questions.length){
-      const ok = state.res.filter(Boolean).length;
-      const box = h("div",{class:"qbox result"}, h("div",{class:"eyebrow"},t("round_done")), h("div",{class:"big"},ok+"/"+questions.length), h("p",{class:"muted"},t("score")));
+      const R = rules();
+      const repeat = ctx.roundRepeat ? ctx.roundRepeat(key) : 0;
+      const res = roundResult(state.ans, { repeat }, R);
+      const line = (label, val) => val ? h("div",{class:"spread small"}, h("span",{class:"muted"},label), h("b",{class:"tabnum"}, val)) : null;
+      const awarded = h("p",{class:"small",style:"margin:8px 0 0"});
+      const box = h("div",{class:"qbox result"}, h("div",{class:"eyebrow"},t("round_done")),
+        starsEl(res.stars),
+        h("div",{class:"big"}, res.right+"/"+res.total, h("small",{class:"muted"}, " · "+res.pct+"%")),
+        h("p",{class:"verdict "+(res.passed?"ok":"no")}, res.passed ? t("sc_passed") : t("sc_failed", { p: R.passPct })),
+        h("div",{class:"breakdown"},
+          line(t("sc_answers"), res.answerPts - res.comboPts),
+          line(t("sc_combo"), res.comboPts ? "+"+res.comboPts : 0),
+          line(t("sc_round_bonus"), res.bonus ? "+"+res.bonus : 0),
+          res.factor < 1 ? h("div",{class:"small muted"}, t("sc_repeat", { n: repeat + 1, f: Math.round(res.factor*100) })) : null,
+          res.selfCount ? h("div",{class:"small muted"}, t("sc_self_note", { n: res.selfCount })) : null,
+          res.skipped ? h("div",{class:"small muted"}, t("sc_skipped", { n: res.skipped })) : null,
+          h("div",{class:"spread total"}, h("span",null,t("sc_points")), h("b",{class:"tabnum"}, res.points+" XP"))),
+        awarded);
       const btns = h("div",{class:"row",style:"justify-content:center;margin-top:18px"});
       if (opts.onAgain) btns.append(h("button",{class:"btn primary",onclick:opts.onAgain}, t("again")));
       if (opts.onExit) btns.append(h("button",{class:"btn",onclick:opts.onExit}, t("finish")));
       box.append(btns); root.append(box);
-      opts.onFinish && opts.onFinish({ right: ok, total: questions.length });
+      Promise.resolve(ctx.scoreRound ? ctx.scoreRound(key, res) : null).then(a => {
+        if (!a) return;
+        awarded.textContent = t("sc_added", { n: a.xp }) + (a.streak ? " · "+t("sc_streak_bonus", { n: a.streak }) : "") + (a.goal ? " · "+t("sc_goal_bonus", { n: a.goal }) : "") + (a.capped ? " · "+t("sc_capped") : "");
+      }).catch(() => {});
+      opts.onFinish && opts.onFinish(res);
       return;
     }
     const q = questions[state.i];
-    root.append(questionEl(q, L, correct => {
+    root.append(questionEl(q, L, (correct, meta={}) => {
+      const self = !!meta.self, skipped = !!meta.skipped;
+      const p = skipped ? { points:0, combo:state.combo, comboBonus:0 } : answerPoints(q.type, correct, { self, combo: state.combo }, rules());
+      state.combo = p.combo;
       state.res.push(correct);
-      $$(".qprog i", root)[state.i].className = correct ? "ok" : "no";
-      opts.onAnswer && opts.onAnswer(q, correct);
+      state.ans.push({ type:q.type, correct, self, skipped });
+      $$(".qprog i", root)[state.i].className = skipped ? "skip" : correct ? "ok" : "no";
+      opts.onAnswer && opts.onAnswer(q, correct, { self, skipped });
+      return p;
     }, () => { state.i++; render(); }));
   };
   render();
@@ -45,10 +74,13 @@ export function runQuiz(root, questions, opts={}){
 export function questionEl(q, L, onResult, onNext){
   const box = h("div",{class:"qbox"}); let answered = false;
   const ask = q.ask ? tr(q.ask, L) : "";
-  const finish = (ok, extra) => {
+  const finish = (ok, extra, meta) => {
     if (answered) return; answered = true;
-    onResult(ok);
-    const fb = h("div",{class:"feedback "+(ok?"ok":"no")}, h("b",null, ok ? t("correct") : t("incorrect")));
+    const p = onResult(ok, meta || {}) || {};
+    const fb = h("div",{class:"feedback "+(ok?"ok":"no")}, h("b",null, ok ? t("correct") : t("incorrect")),
+      p.points ? h("span",{class:"xp-pill"}, "+"+p.points+" XP") : null,
+      p.comboBonus ? h("span",{class:"combo-pill"}, t("sc_combo_n", { n: p.combo })) : null,
+      meta && meta.self ? h("span",{class:"small muted"}, " · "+t("sc_self")) : null);
     if (q.reveal) fb.append(q.reveal());
     if (extra) fb.append(extra);
     if (q.explain) fb.append(h("div",{class:L==="lo"?"lo":""}, tr(q.explain, L)));
@@ -76,7 +108,7 @@ export function questionEl(q, L, onResult, onNext){
   switch (q.type){
     case "mc": case "fill": {
       box.append(...promptBlock());
-      if (q.type==="fill" && q.prompt && q.prompt.zh){ const z = box.querySelector(".qzh"); if (z) z.innerHTML = z.textContent.replace(/_{2,}|＿+/, '<span class="blank">＿</span>'); }
+      if (q.type==="fill" && q.prompt && q.prompt.zh){ const z = box.querySelector(".qzh"); if (z) z.innerHTML = esc(z.textContent).replace(/_{2,}|＿+/, '<span class="blank">＿</span>'); }
       const s = shuffled(q.options, q.answer); box.append(optionButtons(s.opts, s.ans, optIsHz(q.options[0])));
       break;
     }
@@ -143,7 +175,7 @@ export function questionEl(q, L, onResult, onNext){
     case "speak": {
       box.append(...promptBlock());
       const out = h("div",{class:"muted",style:"margin-top:10px"});
-      const self = () => { out.innerHTML=""; out.append(h("p",null,t("q_self")), h("div",{class:"row"}, h("button",{class:"btn jade",onclick:()=>finish(true)}, t("q_good")), h("button",{class:"btn",onclick:()=>finish(false)}, t("q_retry")))); };
+      const self = () => { out.innerHTML=""; out.append(h("p",null,t("q_self")), h("div",{class:"row"}, h("button",{class:"btn jade",onclick:()=>finish(true, null, { self:true })}, t("q_good")), h("button",{class:"btn",onclick:()=>finish(false, null, { self:true })}, t("q_retry")))); };
       const btn = h("button",{class:"btn primary",onclick:async()=>{
         if (answered) return;
         if (!canListen()){ self(); return; }
@@ -179,19 +211,26 @@ export function questionEl(q, L, onResult, onNext){
       box.append(cvWrap, h("div",{class:"row",style:"justify-content:center;gap:10px;margin-top:10px"},
         h("button",{class:"btn sm ghost",type:"button",onclick:()=>{ cctx.clearRect(0,0,cv.width,cv.height); strokeCount=0; }}, icon("trash"), t("reset")),
         h("button",{class:"btn sm",type:"button",onclick:()=>speak(char)}, icon("speaker"), t("play")),
-        h("button",{class:"btn primary sm",type:"button",onclick:()=>{
-          if (strokeCount > 0){ finish(true); }
-          else { toast(lang()==="lo"?"ກະລຸນາຂຽນຕົວອັກສອນກ່ອນ":"Please draw the character on the canvas","warn"); }
+        h("button",{class:"btn primary sm",type:"button",onclick:e=>{
+          if (strokeCount === 0){ toast(lang()==="lo"?"ກະລຸນາຂຽນຕົວອັກສອນກ່ອນ":"Please draw the character on the canvas","warn"); return; }
+          bg.classList.add("compare");
+          grade.hidden = false; e.currentTarget.disabled = true;
         }}, icon("check"), t("check"))));
+      const grade = h("div",{class:"stack",style:"align-items:center;gap:8px;margin-top:10px",hidden:true},
+        h("p",{class:"small muted",style:"margin:0"}, t("sc_compare")),
+        h("div",{class:"row",style:"justify-content:center"},
+          h("button",{class:"btn",onclick:()=>finish(false, null, { self:true })}, t("q_didnt")),
+          h("button",{class:"btn jade",onclick:()=>finish(true, null, { self:true })}, t("sc_wrote_it"))));
+      box.append(grade);
       break;
     }
     case "flashcard": {
       const back = h("div",{class:"stack",style:"align-items:center;gap:6px",hidden:true}, q.prompt.py ? h("div",{style:"font-size:1.3rem",html:pyHTML(q.prompt.py)}) : null, h("div",{style:"font-size:1.2rem",class:L==="lo"?"lo":""}, tr(q.back||{}, L)));
-      const btns = h("div",{class:"row",style:"justify-content:center",hidden:true}, h("button",{class:"btn",onclick:()=>finish(false)}, t("q_didnt")), h("button",{class:"btn jade",onclick:()=>finish(true)}, t("q_knew")));
+      const btns = h("div",{class:"row",style:"justify-content:center",hidden:true}, h("button",{class:"btn",onclick:()=>finish(false, null, { self:true })}, t("q_didnt")), h("button",{class:"btn jade",onclick:()=>finish(true, null, { self:true })}, t("q_knew")));
       box.append(h("div",{class:"flash"}, h("div",{class:"front lo",lang:"lo"}, q.prompt.zh), back, h("button",{class:"btn primary",onclick:e=>{ back.hidden=false; btns.hidden=false; e.currentTarget.remove(); speak(q.prompt.zh); }}, t("q_flip"))), btns);
       break;
     }
-    default: box.append(h("p",null,"Unknown question type: "+q.type), h("button",{class:"btn",onclick:()=>finish(true)},t("q_skip")));
+    default: box.append(h("p",null,"Unknown question type: "+q.type), h("button",{class:"btn",onclick:()=>finish(false, null, { skipped:true })},t("q_skip")));
   }
   return box;
 }

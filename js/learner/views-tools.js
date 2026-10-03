@@ -1,6 +1,6 @@
 // Learner views: generator, practice & quizzes, dictionary, pinyin, characters, pronunciation, review,
 // saved items, notes, progress, offline downloads, account.
-import { h, $$, icon, toast, pyHTML, tr, stripTone, fmtDate, isHan, debounce, rnd, shuffle, errText, dialog } from "../shared/ui.js";
+import { h, $$, icon, toast, pyHTML, tr, stripTone, fmtDate, isHan, debounce, rnd, shuffle, errText, dialog, normTheme } from "../shared/ui.js";
 import { t, lang } from "../shared/i18n.js";
 import { dict, chars, strokes, searchDict, meaning } from "../shared/dict.js";
 import { speak, voices, canListen } from "../shared/speech.js";
@@ -9,7 +9,7 @@ import { runQuiz, toneSVG } from "../shared/quiz.js";
 import { SKILLS, accessState, cacheGet } from "../shared/content.js";
 import { A, T, expLang, prefs, setPref, srsDue, srsGrade, streak, skillPct, genSentence, genMany, exampleOf, recordAnswer, quizDone, logEvent, touchDay,
   tierName, isSaved, toggleSave, wordsMastered, srsAdd } from "./core.js";
-import { achievementsEl } from "./views-learn.js";
+import { achievementsEl, xpCard, masteryRow } from "./views-learn.js";
 
 export const VIEWS = {};
 const go = (...a) => A.go(...a);
@@ -102,7 +102,7 @@ function startPractice(root, type){
   root.append(h("div",{class:"spread",style:"margin-bottom:10px"}, h("button",{class:"btn sm ghost",onclick:()=>go("practice",{},false)}, icon("left"), t("back"))), box);
   const make = async () => type==="words" ? wordQuestions(10) : type==="tones" ? toneQuestions(10) : type==="write" ? await writeQuestions(6)
     : type==="mix" ? shuffle([...patternQuestions(pool, 7, ["order","blank","meaning","listen","reverse","pattern"]), ...wordQuestions(3)]) : patternQuestions(pool, 10, [type]);
-  const start = async () => { const qs = await make(); runQuiz(box, qs, { onAnswer:(q,ok)=>{ recordAnswer(q.skill, ok); if (!ok && q.w) srsAdd("w:"+q.w,{type:"w",w:q.w}); if (!ok && q.say) srsAdd("s:"+q.say,{type:"s",zh:q.say}); },
+  const start = async () => { const qs = await make(); runQuiz(box, qs, { key:"practice:"+type, onAnswer:(q,ok,m)=>{ recordAnswer(q.skill, ok, m); if (!ok && q.w) srsAdd("w:"+q.w,{type:"w",w:q.w}); if (!ok && q.say) srsAdd("s:"+q.say,{type:"s",zh:q.say}); },
     onFinish:r => logEvent("practice", { ref:type, score:r.right, total:r.total }, true), onAgain:start, onExit:()=>go("practice",{},false) }); };
   start();
   return root;
@@ -110,7 +110,7 @@ function startPractice(root, type){
 VIEWS.quiz = ({ id }) => {
   const q = A.byType.quizzes[id]; if (!q) return h("div",{class:"empty"},t("no_rows"));
   const box = h("div",{class:"quiz"});
-  const start = () => runQuiz(box, q.questions||[], { title:T(q.title), onAnswer:(qq,ok)=>recordAnswer(qq.skill, ok),
+  const start = () => runQuiz(box, q.questions||[], { key:"quiz:"+id, title:T(q.title), onAnswer:(qq,ok,m)=>recordAnswer(qq.skill, ok, m),
     onFinish:r => { A.prog.lessons["quiz:"+id] = { done:true, at:Date.now(), score:r.right, total:r.total }; quizDone(id, r.right, r.total); }, onAgain:start, onExit:()=>A.back() });
   start();
   return h("div",null, h("div",{class:"crumb"}, h("button",{onclick:()=>go("practice")},t("nav_practice")), "›", h("span",null,T(q.title))), box);
@@ -380,7 +380,7 @@ VIEWS.speak = () => {
   const pool = Object.values(A.P).filter(p=>p.level<=Math.max(2,lv));
   const box = h("div",{class:"quiz"});
   const start = () => { const qs = []; for (let i=0;i<30 && qs.length<8;i++){ const q = MAKERS.speak(pool); if (q) qs.push(q); }
-    runQuiz(box, qs, { title:t("speak_title"), onAnswer:(q,ok)=>recordAnswer("speaking", ok), onFinish:r=>logEvent("speaking", { score:r.right, total:r.total }, true), onAgain:start }); };
+    runQuiz(box, qs, { key:"speak", title:t("speak_title"), onAnswer:(q,ok,m)=>recordAnswer("speaking", ok, m), onFinish:r=>logEvent("speaking", { score:r.right, total:r.total }, true), onAgain:start }); };
   start();
   return h("div",null, pageHead(t("speak_title"), t("speak_sub")), canListen() ? null : h("div",{class:"banner",style:"margin-bottom:14px"}, t("no_mic")), box);
 };
@@ -437,8 +437,8 @@ VIEWS.progress = () => {
   const lessons = Object.entries(A.prog.lessons).filter(([id,x])=>x.done && !id.startsWith("quiz:")).length, pats = Object.keys(A.prog.patterns).length;
   root.append(h("div",{class:"grid4"}, h("div",{class:"card stat"}, h("b",null,lessons), h("span",null,t("lessons_done"))), h("div",{class:"card stat"}, h("b",null,pats+" / "+Object.keys(A.P).length), h("span",null,t("patterns_learned"))),
     h("div",{class:"card stat"}, h("b",null,wordsMastered()), h("span",null,t("learned_words"))), h("div",{class:"card stat"}, h("b",null,Object.keys(A.prog.days).length), h("span",null,t("study_days")))));
-  root.append(h("section",{class:"sect"}, h("h2",null,t("skills")), h("div",{class:"card stack",style:"gap:12px"}, SKILLS.map(k => { const s = A.prog.skills[k]||{r:0,t:0};
-    return h("div",{class:"skill"}, h("span",null,t("sk_"+k)), h("div",{class:"bar"},h("i",{style:`width:${skillPct(k)}%`})), h("span",{class:"tabnum small",title:s.r+"/"+s.t}, s.t ? skillPct(k)+"%" : "—")); }))));
+  root.append(xpCard(false));
+  root.append(h("section",{class:"sect"}, h("h2",null,t("skills")), h("p",{class:"small muted"}, t("mastery_note")), h("div",{class:"card stack",style:"gap:12px"}, SKILLS.map(masteryRow))));
   const byLevel = h("div",{class:"card stack",style:"gap:10px"});
   for (let L=1; L<=6; L++){ const all = Object.values(A.P).filter(p=>p.level===L); if (!all.length) continue; const d = all.filter(p=>A.prog.patterns[p.n]).length;
     byLevel.append(h("div",{class:"lvbar"}, h("b",null,"Stage "+L), h("div",{class:"bar"},h("i",{style:`width:${100*d/all.length}%`})), h("span",{class:"muted tabnum",style:"text-align:right"}, d+" / "+all.length))); }
@@ -493,7 +493,7 @@ VIEWS.account = () => {
   root.append(h("section",{class:"card"},
     row(t("ui_lang"), h("div",{class:"seg"}, [["en","English"],["lo","ລາວ"],["zh","中文"]].map(([l,n]) => h("button",{"aria-pressed":String(lang()===l),onclick:()=>{ setPref("uiLang",l); try{ localStorage.setItem("xuelu.lang",l); }catch(e){} A.render(); }}, n)))),
     row(t("explain_lang"), h("div",{class:"seg"}, [["","Auto"],["en","English"],["lo","ລາວ"],["zh","中文"]].map(([l,n]) => h("button",{"aria-pressed":String((p.explainLang||"")===l),onclick:()=>{ setPref("explainLang",l); A.render(); }}, n))), t("explain_lang_d")),
-    row(t("theme"), h("div",{class:"seg"}, [["auto","theme_auto"],["light","theme_light"],["dark","theme_dark"]].map(([k,l]) => h("button",{"aria-pressed":String(p.theme===k),onclick:()=>{ setPref("theme",k); A.render(); }}, t(l))))),
+    row(t("theme"), h("div",{class:"seg"}, [["system","theme_auto"],["day","theme_light"],["night","theme_dark"]].map(([k,l]) => h("button",{"aria-pressed":String(normTheme(p.theme)===k),onclick:()=>{ setPref("theme",k); A.render(); }}, t(l))))),
     row(t("show_pinyin"), sw("showPy")), row(t("show_trans"), sw("showTr")), row(t("tone_colors"), sw("toneColor")),
     row(t("speech_rate"), h("input",{type:"range",min:"0.5",max:"1.2",step:"0.05",value:p.rate,"aria-label":t("speech_rate"),onchange:e=>{ setPref("rate",+e.target.value); speak("ຂ້ອຍຮຽນພາສາລາວທຸກມື້."); }})),
     row(t("voice"), vs.length ? h("select",{class:"input",style:"width:auto;max-width:220px",onchange:e=>{ setPref("voice",e.target.value); speak("ສະບາຍດີ, ຍິນດີຕ້ອນຮັບສູ່ LaoLao."); }}, h("option",{value:""},"Auto"), vs.map(v=>h("option",{value:v.name,selected:v.name===p.voice},v.name+" ("+v.lang+")"))) : h("span",{class:"chip warn"},t("voice_none")), vs.length ? null : t("voice_help"))));

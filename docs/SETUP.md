@@ -31,13 +31,25 @@ Open http://localhost:3000/ (learner) and http://localhost:3000/admin/ (admin). 
 ## 1. Create the Supabase project
 
 1. Go to **supabase.com** → **New project**.
-2. **Authentication → Providers → Email**: make sure Email sign-in is enabled.
+2. **Authentication → Providers → Email**: make sure Email sign-in is enabled, and turn on **Confirm email** (recommended: addresses are then verified before an account can sign in; LaoLao creates the learner profile at the first sign-in).
 3. **Authentication → URL Configuration**: add your site URL (for example `https://kdgh-sketch.github.io/LaoLao-Hub/`) and `http://localhost:3000` to the redirect URLs.
 
 ## 2. Create the tables and security policies
 
 1. Open `supabase-schema.sql` and replace `kindathanomsuck@gmail.com` with your owner email if it is different.
-2. In Supabase: **SQL Editor → New query**, paste the whole file, **Run**.
+2. In Supabase: **SQL Editor → New query**, paste the whole file, **Run**. It is safe to run again after updates: tables and data are kept, and the security policies are replaced. It ends with a self-test of the `ll_apply` function and a list of accounts that have no learner profile.
+
+On an existing installation, also run these once (each only changes rows that still have the old values):
+
+| File | What it does |
+|---|---|
+| `supabase-seed-missing-tables.sql` | Starter rows for videos, tones, culture, characters and dictionary |
+| `supabase-fix-video-links.sql` | Replaces made-up YouTube links with real videos |
+| `supabase-fix-content.sql` | Repairs lesson links and the beginner learning path |
+
+Then open the Admin and click **Publish now**.
+
+To check the result without signing in: `npm run check:live` (read-only).
 
 ## 3. Connect the website
 

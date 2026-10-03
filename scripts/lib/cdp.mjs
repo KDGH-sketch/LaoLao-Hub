@@ -21,7 +21,10 @@ export async function launch({ width = 1366, height = 900 } = {}){
     { stdio: "ignore" });
   const portFile = path.join(profile, "DevToolsActivePort");
   let port;
-  for (let i = 0; i < 100 && !port; i++){ await sleep(100); if (fs.existsSync(portFile)) port = fs.readFileSync(portFile, "utf8").split("\n")[0]; }
+  for (let i = 0; i < 150 && !port; i++){
+    await sleep(100);
+    try { port = fs.readFileSync(portFile, "utf8").split("\n")[0].trim(); } catch(e){}   // file may still be being written
+  }
   if (!port) throw new Error("Chrome did not start");
   const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
   const page = targets.find(t => t.type === "page");

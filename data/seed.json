@@ -1013,6 +1013,25 @@
           "type": "quiz",
           "qid": "q-greetings"
         }
+      ],
+      "patterns": [
+        3,
+        1
+      ],
+      "grammar": [
+        "g03-politeness"
+      ],
+      "dialogues": [],
+      "quizzes": [
+        "q-greetings"
+      ],
+      "vocab": [
+        "ສະບາຍດີ",
+        "ຂອບໃຈ",
+        "ບໍ່ເປັນຫຍັງ",
+        "ເຈົ້າ",
+        "ຂ້ອຍ",
+        "ຊື່"
       ]
     },
     {
@@ -1049,6 +1068,28 @@
           "type": "quiz",
           "qid": "q-food"
         }
+      ],
+      "patterns": [
+        4,
+        2
+      ],
+      "grammar": [
+        "g01-word-order"
+      ],
+      "dialogues": [
+        "d01-restaurant",
+        "d-coffee"
+      ],
+      "quizzes": [
+        "q-food"
+      ],
+      "vocab": [
+        "ກິນ",
+        "ເຂົ້າໜຽວ",
+        "ລາບ",
+        "ຕຳໝາກຫຸ່ງ",
+        "ແຊບ",
+        "ກາເຟ"
       ]
     },
     {
@@ -1085,6 +1126,28 @@
           "type": "pattern",
           "n": 7
         }
+      ],
+      "patterns": [
+        3,
+        7
+      ],
+      "grammar": [
+        "g02-classifiers"
+      ],
+      "dialogues": [
+        "d02-market",
+        "d-shopping"
+      ],
+      "quizzes": [
+        "q-market"
+      ],
+      "vocab": [
+        "ຊື້",
+        "ລາຄາ",
+        "ເທົ່າໃດ",
+        "ແພງ",
+        "ຖືກ",
+        "ກີບ"
       ]
     },
     {
@@ -1122,11 +1185,11 @@
         "ກີບ"
       ],
       "patterns": [
-        11,
-        81
+        3,
+        4
       ],
       "grammar": [
-        "g-time"
+        "g02-classifiers"
       ],
       "dialogues": [
         "d-shopping"
@@ -1176,17 +1239,18 @@
         "ເຜັດ"
       ],
       "patterns": [
-        97,
-        117
+        4,
+        2
       ],
       "grammar": [
-        "g-svo"
+        "g01-word-order"
       ],
       "dialogues": [
-        "d-coffee"
+        "d-coffee",
+        "d01-restaurant"
       ],
       "quizzes": [
-        "q-drinks"
+        "q-food"
       ],
       "audio": [
         "a-kin",
@@ -2016,11 +2080,31 @@
         "en": "Start from zero: greetings, self-introductions, alphabet, and core conversational patterns.",
         "lo": "ເລີ່ມຕົ້ນຈາກສູນ: ການທັກທາຍ, ອັກສອນ, ແລະ ຮູບແບບປະໂຫຍກພື້ນຖານ."
       },
-      "itemIds": [
-        "lao1-greetings",
-        "lao1-food",
-        "lao1-shopping"
-      ]
+      "steps": [
+        {
+          "type": "lesson",
+          "id": "lao1-greetings"
+        },
+        {
+          "type": "lesson",
+          "id": "lao1-food"
+        },
+        {
+          "type": "lesson",
+          "id": "lao1-shopping"
+        },
+        {
+          "type": "lesson",
+          "id": "hsk2-talat"
+        },
+        {
+          "type": "lesson",
+          "id": "hsk2-restaurant"
+        }
+      ],
+      "kind": "level",
+      "level": 1,
+      "status": "published"
     }
   ],
   "releases": [

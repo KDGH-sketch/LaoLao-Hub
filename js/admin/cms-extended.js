@@ -3,7 +3,7 @@ import { h, $$, icon, toast, tr, dialog, confirmDialog, errText, debounce, video
 import { parseTranscript, mergeTranslation, transcriptOf, recapOf, formatTime } from "../shared/video.js";
 import { t, lang } from "../shared/i18n.js";
 import { speak } from "../shared/speech.js";
-import { S, go, fld, isSuper, canContent, canEditMenu } from "./state.js";
+import { S, go, fld, isSuper, canContent, canEditMenu, markUnpublished } from "./state.js";
 import { saveContent } from "../shared/content.js";
 import { refreshBundleState } from "./main.js";
 
@@ -328,7 +328,8 @@ EXT_VIEWS.excelImport = () => {
     previewBox.append(table);
     previewBox.style.display = "block";
 
-    validationAlert.innerHTML = `<b>Validation Success:</b> Found ${rows.length} records in spreadsheet. Columns: [${headers.join(", ")}]. All rows parsed correctly with no fatal syntax errors.`;
+    // column names come from the uploaded file: insert as text, not HTML
+    validationAlert.replaceChildren(h("b",null,"Validation Success:"), ` Found ${rows.length} records in spreadsheet. Columns: [${headers.join(", ")}]. All rows parsed correctly with no fatal syntax errors.`);
     validationAlert.style.display = "block";
     commitBtn.disabled = false;
   }
@@ -411,7 +412,7 @@ EXT_VIEWS.excelImport = () => {
       for (let i = 0; i < ops.length; i += 80) {
         await S.api.db.batch(ops.slice(i, i + 80));
       }
-      await S.api.db.set("settings/bundle", { dirty:true }, true);
+      await S.api.db.set("settings/bundle", { dirty:true }, true); markUnpublished();
       toast(`Successfully saved ${ops.length} items to database!`, "ok");
       setTimeout(() => go("contentList", { type: importType }), 1200);
     } catch(err) {
@@ -506,7 +507,7 @@ EXT_VIEWS.videoManager = async () => {
       actions:[{label:t("cancel"),value:false},{label:t("save"),primary:true,onClick:async()=>{
         const url = toStored(inp.value);
         if (!url){ toast("Not a valid YouTube or video link", "bad"); return false; }
-        try { await saveContent(S.api, "videos", v.id, Object.assign({}, v, { embedUrl:url }), S.me.uid); }
+        try { await saveContent(S.api, "videos", v.id, Object.assign({}, v, { embedUrl:url }), S.me.uid); markUnpublished(); }
         catch(e){ toast(errText(e), "bad"); return false; }
         await saved("Video link updated.");
         return true;
@@ -555,13 +556,13 @@ EXT_VIEWS.videoManager = async () => {
         { label:t("cancel"), value:false },
         current.timed ? { label:"Remove transcript", onClick:async()=>{
           if (!await confirmDialog("Remove transcript", "Delete all transcript lines of this video?", "Remove", t("cancel"), true)) return false;
-          try { await saveContent(S.api, "videos", v.id, Object.assign({}, v, { transcript:[] }), S.me.uid); } catch(e){ toast(errText(e), "bad"); return false; }
+          try { await saveContent(S.api, "videos", v.id, Object.assign({}, v, { transcript:[] }), S.me.uid); markUnpublished(); } catch(e){ toast(errText(e), "bad"); return false; }
           await saved("Transcript removed."); return true; } } : null,
         { label:"Save transcript", primary:true, onClick:async()=>{
           update();
           if (!parsed || !parsed.timed || !parsed.segments.length){ toast("Nothing to save: the transcript needs timestamps.", "bad"); return false; }
           const lines = parsed.segments.map(x => Object.assign({ start:x.start, end:x.end, text:x.text }, x.en ? { en:x.en } : {}));
-          try { await saveContent(S.api, "videos", v.id, Object.assign({}, v, { transcript:lines }), S.me.uid); } catch(e){ toast(errText(e), "bad"); return false; }
+          try { await saveContent(S.api, "videos", v.id, Object.assign({}, v, { transcript:lines }), S.me.uid); markUnpublished(); } catch(e){ toast(errText(e), "bad"); return false; }
           await saved(`Transcript saved (${lines.length} lines).`); return true; } }
       ].filter(Boolean) });
   };
@@ -616,13 +617,13 @@ EXT_VIEWS.videoManager = async () => {
           h("button",{class:"btn sm",title:canEdit?"Edit the recap and all other fields":"View",onclick:()=>go("editor",{type:"videos",id:v.id})}, icon(canEdit?"review":"eye"), canEdit ? "Recap & details" : "View"),
           canEdit ? h("button",{class:"btn sm ghost",title:"Duplicate",onclick:async()=>{
             const nid = v.id + "-copy-" + Date.now().toString(36).slice(-4);
-            try { await saveContent(S.api, "videos", nid, Object.assign({}, v, { status:"draft" }), S.me.uid); }
+            try { await saveContent(S.api, "videos", nid, Object.assign({}, v, { status:"draft" }), S.me.uid); markUnpublished(); }
             catch(e){ toast(errText(e), "bad"); return; }
             await saved("Duplicated as " + nid + " (draft).");
           }}, icon("copy")) : null,
           canEdit ? h("button",{class:"btn sm ghost",style:"color:var(--bad)",title:"Delete",onclick:async()=>{
             if (await confirmDialog("Delete Video", `Delete "${vTitle}"?`, "Delete", t("cancel"), true)){
-              try { await S.api.db.del("videos/" + v.id); await S.api.db.set("settings/bundle", { dirty:true }, true); }
+              try { await S.api.db.del("videos/" + v.id); await S.api.db.set("settings/bundle", { dirty:true }, true); markUnpublished(); }
               catch(e){ toast(errText(e), "bad"); return; }
               await saved("Deleted video " + v.id + ".");
             }
@@ -662,7 +663,7 @@ EXT_VIEWS.videoManager = async () => {
         status: "published",
         access: "free"
       };
-      try { await saveContent(S.api, "videos", id, data, S.me.uid); }
+      try { await saveContent(S.api, "videos", id, data, S.me.uid); markUnpublished(); }
       catch(e){ toast(errText(e), "bad"); return; }
       titleEn.value = ""; titleLo.value = ""; urlInp.value = ""; diffInp.value = ""; urlPreview.replaceChildren();
       await saved("Video saved to the database.");

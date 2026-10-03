@@ -132,6 +132,9 @@ export function canEditMenu(menuId) {
 export const canContent = () => canEditMenu("lessons");
 export const canSupport = () => isSuper() || getActiveRole() === "support";
 
+// Content changed: show "Publish now" in the header without another database read
+export const markUnpublished = () => { S.bundle = Object.assign({}, S.bundle, { dirty: true }); };
+
 export function go(view, params = {}) {
   S.view = view;
   S.params = params;

@@ -7,7 +7,7 @@ import { dict, searchDict } from "../shared/dict.js";
 import { onMissingVoice, speak } from "../shared/speech.js";
 import { openWord, closeSheet } from "../shared/widgets.js";
 import { createWaitingScreen, dokChampaSvg, LAO_SAMPLES } from "../shared/lao-decorations.js";
-import { A, loadAccount, prefs, setPref, applyPrefs, srsDue, T } from "./core.js";
+import { A, loadAccount, prefs, setPref, applyPrefs, srsDue, T, createLearnerProfile, rememberPendingProfile } from "./core.js";
 import * as LV from "./views-learn.js";
 import * as TV from "./views-tools.js";
 import { LAB_VIEWS } from "./views-labs.js";
@@ -31,8 +31,12 @@ async function boot(){
     await ensureDemo(api);
   }
   onMissingVoice(() => toast(t("voice_none")));
+  // arriving from a password-reset email: ask for the new password before anything else
+  let recovering = /type=recovery/.test(location.hash);
+  if (api.auth.onRecovery) api.auth.onRecovery(() => { recovering = true; renderNewPassword(); });
   api.auth.onChange(async user => {
     if (!user) return renderAuth("signin");
+    if (recovering) return renderNewPassword();
     root.innerHTML = "";
     root.append(createWaitingScreen("ສະບາຍດີ", "ກຳລັງໂຫລດຂໍ້ມູນ... / Preparing your account..."));
     try { await loadAccount(user); } catch(e){ console.error(e); }
@@ -73,10 +77,18 @@ async function renderAuth(mode){
       if (mode==="signin") await A.api.auth.signIn(email.value.trim(), pw.value);
       else if (mode==="reset"){ await A.api.auth.resetPassword(email.value.trim()); toast(t("reset_sent")); renderAuth("signin"); }
       else {
-        const u = await A.api.auth.signUp(email.value.trim(), pw.value);
-        const now = new Date();
-        await A.api.db.set(`users/${u.uid}`, { email:u.email, name:name.value.trim(), status:"active", level:1, role:"learner", prefs:{ uiLang:lang(), explainLang:lang() }, createdAt:now, lastActive:now });
-        await A.api.db.set(`access/${u.uid}`, { planId: settings.defaultPlanId||"free", tier:1, status:"active", start:now, expiresAt:null, source:"registration" });
+        rememberPendingProfile(email.value.trim(), name.value.trim());   // used if the email must be confirmed first
+        let u;
+        try { u = await A.api.auth.signUp(email.value.trim(), pw.value); }
+        catch(err){
+          if (err.code !== "auth/confirm-email") throw err;
+          await renderAuth("signin");
+          const note = document.querySelector(".auth-form [role=alert]");
+          if (note){ note.style.color = "var(--jade)"; note.textContent = err.message; }
+          return;
+        }
+        await createLearnerProfile(A.api, u, name.value.trim(), settings);
+        if (A.api._flush) await A.api._flush();   // demo mode saves with a short delay; finish before reloading
         location.reload();
       }
     } catch(err){
@@ -224,6 +236,24 @@ async function renderAuth(mode){
   );
 }
 
+function renderNewPassword(){
+  const pw = h("input",{class:"input",type:"password",id:"npw",autocomplete:"new-password",minlength:"6"});
+  const pw2 = h("input",{class:"input",type:"password",id:"npw2",autocomplete:"new-password"});
+  const msg = h("p",{class:"small",style:"color:var(--bad);margin:0",role:"alert"});
+  const save = async e => { e.preventDefault(); msg.textContent = "";
+    if (pw.value.length < 6){ msg.textContent = t("weak_pw") !== "weak_pw" ? t("weak_pw") : "Password must be at least 6 characters."; return; }
+    if (pw.value !== pw2.value){ msg.textContent = lang()==="lo" ? "ລະຫັດຜ່ານບໍ່ກົງກັນ." : "The passwords do not match."; return; }
+    try { await A.api.auth.changePassword(null, pw.value); toast(lang()==="lo" ? "ປ່ຽນລະຫັດຜ່ານແລ້ວ" : "Password changed"); location.replace(location.pathname); }
+    catch(err){ msg.textContent = errText(err); } };
+  root.innerHTML = "";
+  root.append(h("div",{class:"auth"}, h("div",{class:"auth-art"}, h("div",{class:"big lo"},"ລ")), h("div",{class:"auth-form-wrap"},
+    h("form",{class:"auth-form",onsubmit:save},
+      h("h1",null, lang()==="lo" ? "ຕັ້ງລະຫັດຜ່ານໃໝ່" : "Choose a new password"),
+      h("div",{class:"field"}, h("label",{for:"npw"}, lang()==="lo" ? "ລະຫັດຜ່ານໃໝ່" : "New password"), pw),
+      h("div",{class:"field"}, h("label",{for:"npw2"}, lang()==="lo" ? "ຢືນຢັນລະຫັດຜ່ານ" : "Repeat the new password"), pw2),
+      msg, h("button",{class:"btn primary",type:"submit"}, t("save"))))));
+}
+
 function renderDisabled(){
   root.innerHTML = "";
   root.append(h("div",{class:"auth"}, h("div",{class:"auth-art"}, h("div",{class:"big lo"},"ລ")), h("div",{class:"auth-form-wrap"}, h("div",{class:"auth-form"}, h("h1",null,t("disabled")), A.settings.supportContact ? h("p",null,t("contact")+": "+A.settings.supportContact) : null, h("button",{class:"btn",onclick:()=>A.api.auth.signOut()}, t("sign_out"))))));
@@ -269,7 +299,8 @@ function render(){
     h("div",{class:"brand"}, h("div",{class:"seal lo"},"ລ"), h("div",null, h("b",null,A.settings.appName||"LaoLao"), h("small",null,t("tagline")))));
   NAV.forEach(n => { if (!n){ side.append(h("div",{class:"sep"})); return; } const [id,k,ic] = n; const due = id==="review" ? srsDue().length : 0;
     side.append(h("button",{class:"nav-btn","aria-current":cur===id?"page":null,onclick:()=>go(id)}, icon(ic), t(k), due ? h("span",{class:"count"},due) : null)); });
-  side.append(h("div",{class:"sep"}), h("a",{class:"nav-btn",href:"admin/",style:"text-decoration:none;color:var(--accent);font-weight:600"}, icon("shield"), (lang()==="lo"?"ຈັດການລະບົບ ":"Admin Backend ")+"(CMS)"));
+  // the admin link is only useful to administrators (access is still checked in the admin app and the database)
+  if (A.isAdmin) side.append(h("div",{class:"sep"}), h("a",{class:"nav-btn",href:"admin/",style:"text-decoration:none;color:var(--accent);font-weight:600"}, icon("shield"), (lang()==="lo"?"ຈັດການລະບົບ ":"Admin Backend ")+"(CMS)"));
   netEl = h("span",{class:"netdot"}, h("i"), " ");
   side.append(h("div",{class:"side-foot"}, netEl));
   const search = h("input",{id:"search",type:"search",autocomplete:"off","aria-label":t("search_ph"),placeholder:t("search_ph")});
@@ -279,7 +310,7 @@ function render(){
     h("button",{class:"mbrand",style:"border:0;background:none;padding:0",onclick:()=>go("home")}, h("span",{class:"seal lo"},"ລ"), h("span",null,A.settings.appName||"LaoLao")),
     h("div",{class:"search",role:"search"}, icon("dict"), search, searchPop),
     h("div",{class:"toggles"},
-      h("a",{class:"btn sm ghost",href:"admin/",style:"text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;font-weight:600;color:var(--accent);border:1px solid var(--accent)",title:"Content Management Portal"}, icon("shield"), h("span",{class:"hide-sm"}, lang()==="lo"?"ຈັດການເນື້ອຫາ":"Admin CMS")),
+      !A.isAdmin ? null : h("a",{class:"btn sm ghost",href:"admin/",style:"text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;font-weight:600;color:var(--accent);border:1px solid var(--accent)",title:"Content Management Portal"}, icon("shield"), h("span",{class:"hide-sm"}, lang()==="lo"?"ຈັດການເນື້ອຫາ":"Admin CMS")),
       h("button",{class:"tg","aria-pressed":String(p.showPy),onclick:e=>{ setPref("showPy",!prefs().showPy); e.currentTarget.setAttribute("aria-pressed",String(prefs().showPy)); }}, t("show_pinyin")),
       h("button",{class:"tg","aria-pressed":String(p.showTr),onclick:e=>{ setPref("showTr",!prefs().showTr); e.currentTarget.setAttribute("aria-pressed",String(prefs().showTr)); }}, t("show_trans")),
       h("div",{class:"langsw",role:"group","aria-label":t("ui_lang")}, [["en","EN"],["lo","ລາວ"],["zh","中"]].map(([l,n]) => h("button",{"aria-pressed":String(lang()===l),lang:l==="zh"?"zh-CN":l,onclick:()=>{ setPref("uiLang",l); try{ localStorage.setItem("xuelu.lang",l); }catch(e){} render(); }}, n)))));

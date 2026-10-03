@@ -6,6 +6,7 @@ import { loadDict, dict, chars, mergeVocabulary } from "../shared/dict.js";
 import { makeEngine } from "../shared/engine.js";
 import { setSpeechSettings, setAudioLibrary } from "../shared/speech.js";
 import { ctx } from "../shared/widgets.js";
+import { mergeRules, lessonPoints, reviewPoints, dailyAward, levelFromXP, wilsonLower, skillMastery, earnedAchievements } from "../shared/scoring.js";
 
 export const A = {
   api:null, user:null, profile:null, access:null, isAdmin:false, tier:0, settings:{}, plans:[],
@@ -35,15 +36,35 @@ export function applyPrefs(){
 }
 
 // ---------- loading ----------
+const PENDING = "laolao.pendingProfile";
+export const rememberPendingProfile = (email, name) => { try { localStorage.setItem(PENDING, JSON.stringify({ email: String(email).toLowerCase(), name })); } catch(e){} };
+// The learner profile + free access created at self-registration (the database only allows this while registration is open)
+export async function createLearnerProfile(api, user, name, settings){
+  const now = new Date();
+  const profile = { email:user.email, name:name||"", status:"active", level:1, role:"learner", prefs:{ uiLang:lang(), explainLang:lang() }, createdAt:now, lastActive:now };
+  await api.db.set(`users/${user.uid}`, profile);
+  await api.db.set(`access/${user.uid}`, { planId:(settings && settings.defaultPlanId)||"free", tier:1, status:"active", start:now, expiresAt:null, source:"registration" });
+  try { localStorage.removeItem(PENDING); } catch(e){}
+  return profile;
+}
 export async function loadAccount(user){
   const api = A.api;
   A.user = user;
   const [profile, access, adm, settings, plans] = await Promise.all([
     api.db.get(`users/${user.uid}`).catch(()=>null), api.db.get(`access/${user.uid}`).catch(()=>null),
     api.db.get(`admins/${user.uid}`).catch(()=>null), api.db.get("settings/app").catch(()=>null), api.db.list("plans").catch(()=>[]) ]);
-  A.profile = profile || { email:user.email, name:"", status:"active", level:1, prefs:{} };
-  A.access = access; A.isAdmin = !!adm; A.settings = settings || {}; A.plans = plans.sort((a,b)=>(a.order||0)-(b.order||0));
-  A.tier = tierFor({ isAdmin:A.isAdmin, user:A.profile, access });
+  let prof = profile, acc = access;
+  // Signed in without a profile: a self-registration that needed email confirmation first. Finish it now.
+  if (!prof && !adm && settings && settings.allowRegistration){
+    let pending = null; try { pending = JSON.parse(localStorage.getItem(PENDING) || "null"); } catch(e){}
+    const name = pending && pending.email === String(user.email).toLowerCase() ? pending.name : "";
+    try { prof = await createLearnerProfile(api, user, name, settings); acc = await api.db.get(`access/${user.uid}`).catch(()=>null); } catch(e){ console.warn("Could not create the learner profile:", e.message); }
+  }
+  A.profile = prof || { email:user.email, name:"", status:"active", level:1, prefs:{} };
+  A.rules = mergeRules(settings && settings.scoring);   // admin overrides from Settings → Scoring rules
+  A.access = acc; A.isAdmin = !!adm; A.settings = settings || {}; A.plans = plans.sort((a,b)=>(a.order||0)-(b.order||0));
+  // without a profile the database gives public content only; match that here
+  A.tier = tierFor({ isAdmin:A.isAdmin, user: prof ? A.profile : null, access: acc });
   const p = prefs(); setLang(p.uiLang || "en"); applyPrefs();
   await Promise.all([loadDict(), loadContent(), loadProgress()]);
   if (A.profile.status==="active") api.db.update(`users/${user.uid}`, { lastActive: new Date() }).catch(()=>{});
@@ -69,7 +90,9 @@ async function loadProgress(){
   const api = A.api, uid = A.user.uid;
   const [prog, srs, saved] = await Promise.all([
     api.db.get(`progress/${uid}`).catch(()=>null), api.db.list(`reviews/${uid}/items`).catch(()=>[]), api.db.list(`bookmarks/${uid}/items`).catch(()=>[]) ]);
-  A.prog = Object.assign({ skills:{}, lessons:{}, patterns:{}, days:{}, answers:{r:0,t:0}, last:null }, prog||{});
+  A.prog = Object.assign({ skills:{}, lessons:{}, patterns:{}, days:{}, answers:{r:0,t:0}, last:null, xp:0, xpDays:{}, goalDays:{}, rounds:{}, stats:{ passed:0, threeStars:0 } }, prog||{});
+  ["xpDays","goalDays","rounds"].forEach(k => { if (!A.prog[k] || typeof A.prog[k] !== "object") A.prog[k] = {}; });
+  A.prog.stats = Object.assign({ passed:0, threeStars:0 }, A.prog.stats || {});
   if (!prog && A.profile.status==="active") api.db.set(`progress/${uid}`, { skills:{}, lessons:{}, patterns:{}, days:{}, answers:{r:0,t:0}, createdAt:new Date() }).catch(()=>{});
   A.srs = Object.fromEntries(srs.map(x=>[x.id,x]));
   A.saved = Object.fromEntries(saved.map(x=>[x.id,x]));
@@ -79,7 +102,10 @@ async function loadProgress(){
 const safeId = id => String(id).replace(/\//g,"∕").slice(0,300);
 function progUpdate(data){ if (A.profile.status!=="active") return; A.api.db.update(`progress/${A.user.uid}`, Object.assign(data, { updatedAt:new Date() })).catch(()=>{}); }
 export function touchDay(){ const k = todayKey(); if (!A.prog.days[k]){ A.prog.days[k]=1; progUpdate({ ["days."+k]:1 }); } }
-export function recordAnswer(skill, correct){
+// Checked answers count toward skill accuracy. Self-graded answers (flashcards, handwriting, "I said it well")
+// and skipped questions only count as study activity.
+export function recordAnswer(skill, correct, meta){
+  if (meta && (meta.self || meta.skipped)){ touchDay(); return; }
   skill = SKILLS.includes(skill) ? skill : "reading";
   const s = A.prog.skills[skill] = A.prog.skills[skill] || { r:0, t:0 }; s.t++; if (correct) s.r++;
   A.prog.answers.t++; if (correct) A.prog.answers.r++;
@@ -93,11 +119,56 @@ export function logEvent(type, data={}, feed=false){
   if (feed) A.api.db.add("activity", Object.assign({ uid:A.user.uid, name:A.profile.name||A.user.email }, ev)).catch(()=>{});
 }
 export function setLast(type, id){ A.prog.last = { type, id, at:Date.now() }; progUpdate({ last:{ type, id, at:new Date() } }); }
-export function completeLesson(id, score, total){
-  A.prog.lessons[id] = { done:true, at:Date.now(), score:score||0, total:total||0 };
-  progUpdate({ ["lessons."+safeId(id)]: { done:true, at:new Date(), score:score||0, total:total||0 } });
+// A lesson finished through a passed quiz earns full points; "Mark complete" earns a little.
+export function completeLesson(id, score, total, stars){
+  const viaQuiz = total > 0 && Math.round(100 * score / total) >= A.rules.passPct;
+  A.prog.lessons[id] = { done:true, at:Date.now(), score:score||0, total:total||0, stars:stars||0, viaQuiz };
+  progUpdate({ ["lessons."+safeId(id)]: { done:true, at:new Date(), score:score||0, total:total||0, stars:stars||0, viaQuiz } });
   logEvent("lesson", { ref:id, score:score||0, total:total||0 }, true); touchDay();
+  return award(lessonPoints({ viaQuiz }, A.rules), "lesson");
 }
+
+// ---------- XP ----------
+// Adds XP with the daily rules: streak bonus on the first XP of the day, goal bonus when crossing the daily goal, daily cap.
+export function award(points, reason){
+  if (!A.profile || A.profile.status !== "active" || !(points > 0)) return { xp:0, streak:0, goal:0, capped:false };
+  const day = todayKey(), todayXP = A.prog.xpDays[day] || 0;
+  const a = dailyAward(points, { todayXP, firstToday: todayXP === 0, streakDays: streak() }, A.rules);
+  if (a.xp > 0){
+    A.prog.xp = (A.prog.xp || 0) + a.xp; A.prog.xpDays[day] = todayXP + a.xp;
+    const upd = { xp: A.api.db.inc(a.xp), ["xpDays."+day]: A.api.db.inc(a.xp) };
+    if (a.goal){ A.prog.goalDays[day] = 1; upd["goalDays."+day] = 1; }
+    progUpdate(upd);
+    logEvent("xp", { ref: reason||"", xp: a.xp });
+  }
+  if (a.goal) toast(t("sc_goal_reached"));
+  return a;
+}
+const roundKey = k => String(k||"practice").replace(/[.\s/]+/g, "_").slice(0, 80);
+// how many times this quiz was already played today (for the replay rule)
+export const roundRepeat = key => { const r = A.prog.rounds[roundKey(key)]; return r && r.d === todayKey() ? r.n : 0; };
+export function scoreRound(key, res){
+  const k = roundKey(key), day = todayKey(), prev = A.prog.rounds[k] || {};
+  const firstPass = res.passed && !prev.passed, firstThree = res.stars === 3 && (prev.stars||0) < 3;
+  const next = { d: day, n: prev.d === day ? (prev.n||0) + 1 : 1, best: Math.max(prev.best||0, res.pct), stars: Math.max(prev.stars||0, res.stars), passed: !!(prev.passed || res.passed) };
+  A.prog.rounds[k] = next;
+  const upd = { ["rounds."+k]: next };
+  if (firstPass){ A.prog.stats.passed++; upd["stats.passed"] = A.api.db.inc(1); }
+  if (firstThree){ A.prog.stats.threeStars++; upd["stats.threeStars"] = A.api.db.inc(1); }
+  progUpdate(upd);
+  return award(res.points, "quiz:" + k);
+}
+export const level = () => levelFromXP(A.prog.xp || 0, A.rules);
+export const todayXP = () => A.prog.xpDays[todayKey()] || 0;
+export const mastery = k => { const s = A.prog.skills[k] || { r:0, t:0 }; return skillMastery(s.r||0, s.t||0, A.rules); };
+export function learnerStats(){
+  const ans = A.prog.answers || { r:0, t:0 };
+  return { lessons: Object.entries(A.prog.lessons).filter(([id,x]) => x.done && !id.startsWith("quiz:")).length,
+    passedRounds: A.prog.stats.passed||0, threeStarRounds: A.prog.stats.threeStars||0, streak: streak(),
+    answers: ans.t||0, accuracyLower: wilsonLower(ans.r||0, ans.t||0), xp: A.prog.xp||0, level: level().level,
+    wordsMastered: wordsMastered(), goalDays: Object.keys(A.prog.goalDays||{}).length };
+}
+export const achievements = () => earnedAchievements(learnerStats());
 export function learnPattern(n, on=true){
   if (on){ A.prog.patterns[n] = Date.now(); progUpdate({ ["patterns."+n]: Date.now() }); logEvent("pattern", { ref:"#"+n }, true); srsAdd("p:"+n, { type:"p", n }); }
   else { delete A.prog.patterns[n]; progUpdate({ ["patterns."+n]: A.api.db.delField() }); }
@@ -121,6 +192,7 @@ export function srsGrade(id, q){
   A.api.db.set(`reviews/${A.user.uid}/items/${id}`, rest).catch(()=>{});
   if (c.type==="w" && c.reps===3) logEvent("word_mastered", { ref:c.w });
   logEvent("review", { ref:id, grade:q }); touchDay();
+  award(reviewPoints(q, A.rules), "review");
 }
 export const wordsMastered = () => Object.values(A.srs).filter(x=>x.type==="w" && x.reps>=3).length;
 
@@ -159,6 +231,7 @@ export const exampleOf = (p, e) => Object.assign({ pn:p.n }, e);
 
 // widgets context
 ctx.exp = expLang;
+ctx.rules = () => A.rules; ctx.roundRepeat = roundRepeat; ctx.scoreRound = scoreRound;
 ctx.isSaved = isSaved; ctx.toggleSave = toggleSave;
 ctx.patterns = () => Object.values(A.P);
 ctx.examples = () => A.examples;

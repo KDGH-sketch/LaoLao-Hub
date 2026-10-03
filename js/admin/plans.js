@@ -1,7 +1,7 @@
 // Plans (what an account can access)
 import { h, icon, toast, dialog, confirmDialog, errText } from "../shared/ui.js";
 import { lang } from "../shared/i18n.js";
-import { S, t, isSuper, refreshPlans, planName, fld } from "./state.js";
+import { S, t, isSuper, refreshPlans, planName, fld, markUnpublished } from "./state.js";
 
 export async function viewPlans(){
   if (!isSuper()) {
@@ -50,6 +50,6 @@ async function editPlan(p){
       if (!pid){ msg.textContent = t("id_f")+"?"; return false; }
       const data = { name:{en:nm[0].value.trim(),lo:nm[1].value.trim(),zh:nm[2].value.trim()}, tier:Math.max(1,+tier.value||1), durationDays:+dur.value||0, price:+price.value||0, currency:cur.value.trim(),
         features:{en:feats[0].value.split("\n").map(s=>s.trim()).filter(Boolean),lo:feats[1].value.split("\n").map(s=>s.trim()).filter(Boolean),zh:feats[2].value.split("\n").map(s=>s.trim()).filter(Boolean)}, active:active.checked, order:+order.value||0 };
-      try { await S.api.db.set(`plans/${pid}`, data); await S.api.db.set("settings/bundle",{dirty:true},true); toast(t("saved_ok")); S.render(); return true; } catch(e){ msg.textContent = errText(e); return false; }
+      try { await S.api.db.set(`plans/${pid}`, data); await S.api.db.set("settings/bundle",{dirty:true},true); markUnpublished(); toast(t("saved_ok")); S.render(); return true; } catch(e){ msg.textContent = errText(e); return false; }
     }}] });
 }

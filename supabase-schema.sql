@@ -39,9 +39,15 @@ end $$;
 create or replace function public.ll_owner_email() returns text
 language sql immutable as $$ select 'kindathanomsuck@gmail.com'::text $$;
 
+-- The owner is the account that completed the first-time setup (settings/bootstrap.uid).
+-- The email is used only before setup has happened, so nobody can become owner by claiming the email later.
 create or replace function public.ll_is_owner() returns boolean
-language sql stable as $$
-  select coalesce(lower(auth.jwt() ->> 'email') = lower(public.ll_owner_email()), false)
+language sql stable security definer set search_path = public as $$
+  select case
+    when exists (select 1 from public.settings where id = 'bootstrap' and coalesce(data ->> 'uid', '') <> '')
+      then auth.uid() is not null and auth.uid()::text = (select data ->> 'uid' from public.settings where id = 'bootstrap')
+    else coalesce(lower(auth.jwt() ->> 'email') = lower(public.ll_owner_email()), false)
+  end
 $$;
 
 -- Role of the signed-in admin (null when not an admin or disabled)
@@ -89,8 +95,9 @@ declare u jsonb; a jsonb; exp_ms numeric;
 begin
   if auth.uid() is null then return 0; end if;
   if public.ll_is_admin() then return 99; end if;
+  -- no learner profile = not a learner (e.g. an account created directly through the Supabase API while registration is closed)
   select data into u from public.users where id = auth.uid()::text;
-  if u is not null and coalesce(u ->> 'status', 'active') <> 'active' then return 0; end if;
+  if u is null or coalesce(u ->> 'status', 'active') <> 'active' then return 0; end if;
   select data into a from public.access where id = auth.uid()::text;
   if a is null or coalesce(a ->> 'status', '') <> 'active' then return 1; end if;
   if jsonb_typeof(a -> 'expiresAt') = 'number' then
@@ -241,7 +248,54 @@ create policy "ll super all" on public.vocab for all using (public.ll_is_super()
 create policy "ll super all" on public.saved for all using (public.ll_is_super()) with check (public.ll_is_super());
 
 -- --------------------------------------------------------
--- 5. Storage: public bucket for audio / images, uploads by content admins
+-- 5. Atomic updates: apply field changes to one row in a single locked step.
+--    p_ops: [{ "path": ["skills","reading","t"], "inc": 1 }, { "path": ["days","2026-10-02"], "set": 1 }, { "path": ["patterns","5"], "del": true }]
+--    Runs with the caller's permissions, so the row-level security policies above still apply.
+-- --------------------------------------------------------
+create or replace function public.ll_apply(p_table text, p_id text, p_ops jsonb) returns void
+language plpgsql security invoker set search_path = public as $$
+declare doc jsonb; op jsonb; p text[]; i int; cur jsonb;
+begin
+  if p_table not in ('users','admins','adminNotes','access','plans','subscriptions','settings',
+                     'lessons','patterns','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon',
+                     'videos','tones','culture','characters','dictionary','bundles','progress','reviews','bookmarks','notes','activity') then
+    raise exception 'll_apply: table % is not allowed', p_table;
+  end if;
+  execute format('select data from public.%I where id = $1 for update', p_table) into doc using p_id;
+  doc := coalesce(doc, '{}'::jsonb);
+  for op in select * from jsonb_array_elements(coalesce(p_ops, '[]'::jsonb)) loop
+    p := array(select jsonb_array_elements_text(op -> 'path'));
+    if coalesce(array_length(p, 1), 0) = 0 then continue; end if;
+    for i in 1 .. array_length(p, 1) - 1 loop            -- create missing parent objects
+      if jsonb_typeof(doc #> p[1:i]) is distinct from 'object' then doc := jsonb_set(doc, p[1:i], '{}'::jsonb, true); end if;
+    end loop;
+    if op ? 'del' then
+      doc := doc #- p;
+    elsif op ? 'inc' then
+      cur := doc #> p;
+      doc := jsonb_set(doc, p, to_jsonb(coalesce(case when jsonb_typeof(cur) = 'number' then (cur #>> '{}')::numeric end, 0) + (op ->> 'inc')::numeric), true);
+    else
+      doc := jsonb_set(doc, p, coalesce(op -> 'set', 'null'::jsonb), true);
+    end if;
+  end loop;
+  execute format('insert into public.%I (id, data, updated_at) values ($1, $2, now())
+                  on conflict (id) do update set data = excluded.data, updated_at = now()', p_table) using p_id, doc;
+end $$;
+revoke all on function public.ll_apply(text, text, jsonb) from public, anon;
+grant execute on function public.ll_apply(text, text, jsonb) to authenticated;
+
+-- self-test (runs as the SQL Editor's admin role on a temporary row; any mismatch aborts and rolls back this whole script)
+do $$
+declare d jsonb;
+begin
+  perform public.ll_apply('settings', '__ll_selftest', '[{"path":["a","b"],"set":1},{"path":["n"],"inc":2},{"path":["n"],"inc":3},{"path":["x"],"set":true},{"path":["x"],"del":true}]'::jsonb);
+  select data into d from public.settings where id = '__ll_selftest';
+  if d is distinct from '{"a":{"b":1},"n":5}'::jsonb then raise exception 'll_apply self-test failed: %', d; end if;
+  delete from public.settings where id = '__ll_selftest';
+end $$;
+
+-- --------------------------------------------------------
+-- 6. Storage: public bucket for audio / images, uploads by content admins
 -- --------------------------------------------------------
 insert into storage.buckets (id, name, public) values ('laolao-assets', 'laolao-assets', true)
   on conflict (id) do update set public = true;
@@ -258,3 +312,14 @@ create policy "ll assets delete" on storage.objects for delete to authenticated
   using (bucket_id = 'laolao-assets' and public.ll_can_publish());
 
 commit;
+
+-- Information: accounts that have no learner profile and are not administrators. After this script they only
+-- see public content. If any of them are real learners, add them in Admin → Learners, or uncomment the insert below.
+select u.email, u.created_at from auth.users u
+ where not exists (select 1 from public.users p where p.id = u.id::text)
+   and not exists (select 1 from public.admins a where a.id = u.id::text)
+ order by u.created_at;
+-- insert into public.users (id, data)
+--   select u.id::text, jsonb_build_object('email', u.email, 'name', '', 'status', 'active', 'level', 1, 'role', 'learner', 'prefs', '{}'::jsonb)
+--   from auth.users u where not exists (select 1 from public.users p where p.id = u.id::text)
+--                       and not exists (select 1 from public.admins a where a.id = u.id::text);
