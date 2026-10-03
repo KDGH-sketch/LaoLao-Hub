@@ -21,6 +21,13 @@ table.tbl{width:100%;border-collapse:collapse;font-size:.92rem}
 .pill.draft,.pill.suspended{background:var(--warn-2);color:var(--warn)}
 .pill.archived,.pill.cancelled,.pill.none,.pill.disabled{background:var(--surface-3);color:var(--ink-3)}
 .pill.expired{background:var(--bad-2);color:var(--bad)}
+/* Role colors: a 5-way categorical palette built entirely from the existing day/night tokens
+   (including the --t0..--t4 set) so it stays correct in dark mode without new color variables. */
+.pill.role-super{background:var(--accent-2);color:var(--accent)}
+.pill.role-editor{background:var(--jade-2);color:var(--jade)}
+.pill.role-reviewer{background:color-mix(in srgb,var(--t2) 16%,transparent);color:var(--t2)}
+.pill.role-support{background:var(--surface-3);color:var(--t0)}
+.pill.role-custom{background:var(--warn-2);color:var(--warn)}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
 .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;transition:border-color .15s,box-shadow .15s,transform .15s}
 button.kpi{cursor:pointer}
@@ -56,9 +63,3 @@ button.kpi:hover{border-color:var(--accent-3);box-shadow:var(--shadow);transform
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
 .hide-desk{display:none}
 @media (max-width:900px){.hide-desk{display:block}}
-
-/* Icon sizing/stroke for Tailwind-laid-out markup (dashboard cards, topbar) that isn't inside
-   one of the existing scoped icon rules above (.nav-btn svg, .btn svg, etc.) */
-.icn{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.icn-sm{width:16px;height:16px}
-.icn-lg{width:24px;height:24px}

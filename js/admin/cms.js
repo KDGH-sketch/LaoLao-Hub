@@ -20,15 +20,25 @@ async function engine(){ await loadDict(); if (!LEXICON){ LEXICON = {}; (await r
 export function autoPinyin(eng, zh){ const toks = eng.tokenize(segment(zh).join(" ")); return { tokens: toks.map(x=>({ z:x.z, p:x.p })), py: eng.pinyinLine(toks) }; }
 
 // ---------- content home ----------
+// Distinct icon + color tone per content type: each type gets its own identity instead of
+// every tile sharing one blue icon (several used to share the exact same icon glyph, e.g.
+// vocabulary/dictionary both showed "dict", audio/tones both showed "speaker").
+const CONTENT_TILE = {
+  lessons:["learn","accent"], patterns:["gen","jade"], grammar:["layers","warn"], vocabulary:["cards","accent"],
+  dialogues:["users","jade"], quizzes:["practice","warn"], audio:["speaker","accent"], paths:["path","jade"],
+  releases:["gift","warn"], lexicon:["sliders","neutral"], videos:["video","bad"], tones:["sound","accent"],
+  culture:["culture","jade"], characters:["chars","warn"], dictionary:["book","accent"]
+};
+const TILE_TONE = { accent:"bg-accent-2 text-accent", jade:"bg-jade-2 text-jade", warn:"bg-warn-2 text-warn", bad:"bg-bad-2 text-bad", neutral:"bg-surface-2 text-ink-3" };
 export async function viewContentHome(){
   const counts = await Promise.all(CONTENT_TYPES.map(async ty => [ty, await S.api.db.count(ty).catch(()=>0)]));
-  const ICON = {
-    lessons:"learn", patterns:"gen", grammar:"layers", vocabulary:"dict", dialogues:"users",
-    quizzes:"practice", audio:"speaker", paths:"path", releases:"gift", lexicon:"content",
-    videos:"play", tones:"speaker", culture:"culture", characters:"chars", dictionary:"dict"
-  };
   return h("div",null, h("div",{class:"pagehead"}, h("h1",null,t("adm_content")), h("p",null,"Universal Content Management System: Create, edit, duplicate, bulk-manage, and publish curriculum entities.")),
-    h("div",{class:"grid3"}, counts.map(([ty,n]) => h("button",{class:"qs",onclick:()=>go("contentList",{type:ty})}, h("span",{class:"qi",style:"background:var(--surface-2);color:var(--accent)"}, icon(ICON[ty]||"content")), h("span",null, h("b",null,t("type_"+ty)||ty), h("div",{class:"small muted"}, n+" "+t("items")))))));
+    h("div",{class:"grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"}, counts.map(([ty,n]) => {
+      const [iconName, tone] = CONTENT_TILE[ty] || ["content","neutral"];
+      return h("button",{class:"flex items-center gap-3 rounded border border-line bg-surface p-4 text-left shadow-card transition hover:shadow-card-lg hover:-translate-y-0.5",onclick:()=>go("contentList",{type:ty})},
+        h("span",{class:"flex h-10 w-10 shrink-0 items-center justify-center rounded-s "+TILE_TONE[tone]}, icon(iconName,"icn-sm")),
+        h("span",{class:"min-w-0"}, h("b",{class:"block"},t("type_"+ty)||ty), h("div",{class:"small muted"}, n+" "+t("items"))));
+    })));
 }
 
 // ---------- list (Universal Admin DataTable) ----------
@@ -531,7 +541,7 @@ function renderField(f, obj, type){
       const draw = () => { box.innerHTML="";
         v.forEach((item,i) => {
           const head = h("div",{class:"listed-head"}, h("b",null, (L(f.itemLabel)||"")+" "+(i+1)+(f.summary && f.summary(item) ? " · "+f.summary(item).slice(0,50) : "")),
-            h("div",{class:"row",style:"gap:2px"}, h("button",{class:"ib",type:"button","aria-label":t("move_up"),disabled:i===0,onclick:()=>{ [v[i-1],v[i]]=[v[i],v[i-1]]; draw(); }}, icon("left")), h("button",{class:"ib",type:"button","aria-label":t("move_down"),disabled:i===v.length-1,onclick:()=>{ [v[i+1],v[i]]=[v[i],v[i+1]]; draw(); }}, icon("right")), h("button",{class:"ib",type:"button","aria-label":t("remove"),onclick:()=>{ v.splice(i,1); draw(); }}, icon("trash"))));
+            h("div",{class:"row",style:"gap:2px"}, h("button",{class:"ib",type:"button","aria-label":t("move_up"),disabled:i===0,onclick:()=>{ [v[i-1],v[i]]=[v[i],v[i-1]]; draw(); }}, icon("up")), h("button",{class:"ib",type:"button","aria-label":t("move_down"),disabled:i===v.length-1,onclick:()=>{ [v[i+1],v[i]]=[v[i],v[i+1]]; draw(); }}, icon("down")), h("button",{class:"ib",type:"button","aria-label":t("remove"),onclick:()=>{ v.splice(i,1); draw(); }}, icon("trash"))));
           const el = h("div",{class:"listed-item"}, head); f.item.forEach(x => el.append(renderField(x, item, type))); box.append(el);
         });
         box.append(h("button",{class:"btn sm",type:"button",style:"align-self:flex-start",onclick:()=>{ v.push({}); draw(); }}, icon("plus"), t("add")+" "+(L(f.itemLabel)||"").toLowerCase()));
@@ -597,8 +607,8 @@ function questionsBuilder(obj, key){
       item.append(h("div",{class:"listed-head"}, h("div",{class:"row"}, h("b",null,"Q"+(i+1)), typeSel),
         h("div",{class:"row",style:"gap:2px"},
           h("button",{class:"ib",type:"button","aria-label":t("preview"),onclick:()=>{ const b=h("div",{class:"quiz"}); dialog({title:t("preview"),wide:true,body:b}); normalize("quizzes",{questions:[q]}).then(c=>runQuiz(b,c.questions,{})); }}, icon("eye")),
-          h("button",{class:"ib",type:"button","aria-label":t("move_up"),disabled:i===0,onclick:()=>{ [v[i-1],v[i]]=[v[i],v[i-1]]; draw(); }}, icon("left")),
-          h("button",{class:"ib",type:"button","aria-label":t("move_down"),disabled:i===v.length-1,onclick:()=>{ [v[i+1],v[i]]=[v[i],v[i+1]]; draw(); }}, icon("right")),
+          h("button",{class:"ib",type:"button","aria-label":t("move_up"),disabled:i===0,onclick:()=>{ [v[i-1],v[i]]=[v[i],v[i-1]]; draw(); }}, icon("up")),
+          h("button",{class:"ib",type:"button","aria-label":t("move_down"),disabled:i===v.length-1,onclick:()=>{ [v[i+1],v[i]]=[v[i],v[i+1]]; draw(); }}, icon("down")),
           h("button",{class:"ib",type:"button","aria-label":t("remove"),onclick:()=>{ v.splice(i,1); draw(); }}, icon("trash")))));
       item.append(h("div",{class:"field-row"},
         fld(t("skill"), h("select",{class:"input",onchange:e=>q.skill=e.target.value}, SKILLS.map(s=>h("option",{value:s,selected:(q.skill||QTYPE_SKILL[q.type])===s},t("sk_"+s))))),

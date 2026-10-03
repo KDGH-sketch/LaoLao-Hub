@@ -120,7 +120,10 @@ const IC = {
  filter:'<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />',
  external:'<path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />'
 };
-export function icon(n, cls){ const s=document.createElementNS("http://www.w3.org/2000/svg","svg"); s.setAttribute("viewBox","0 0 24 24"); s.setAttribute("aria-hidden","true"); if (cls) s.setAttribute("class",cls); s.innerHTML = IC[n] || IC.more; return s; }
+// "icn" is a safety-net default size/stroke (see css/app.css) for any icon used outside an
+// already-sized context (.nav-btn svg, .btn svg, etc.) — without it, a bare icon() call has no
+// intrinsic width/height and can render at an enormous, layout-breaking size.
+export function icon(n, cls){ const s=document.createElementNS("http://www.w3.org/2000/svg","svg"); s.setAttribute("viewBox","0 0 24 24"); s.setAttribute("aria-hidden","true"); s.setAttribute("class", cls ? "icn "+cls : "icn"); s.innerHTML = IC[n] || IC.more; return s; }
 
 // ----- theme management (Day, Night, System) -----
 export function getTheme(){

@@ -74,6 +74,12 @@ p{margin:0}
 .nav-btn[aria-current="page"]{background:var(--accent-2);color:var(--accent);font-weight:700}
 .nav-btn .count{margin-left:auto;font-size:.75rem;background:var(--accent);color:var(--accent-ink);border-radius:99px;padding:1px 7px;font-weight:700}
 .side .sep{height:1px;background:var(--line);margin:10px 8px}
+/* Safety-net default for icon() (see js/shared/ui.js): any icon lacking a more specific sizing
+   rule (.nav-btn svg, .btn svg, etc. all win over this via higher specificity) gets a sane size
+   instead of rendering unbounded. */
+.icn{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.icn-sm{width:16px;height:16px}
+.icn-lg{width:24px;height:24px}
 .side-group-label{padding:14px 12px 4px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
 .side-group-label:first-child{padding-top:0}
 .side-foot{margin-top:auto;padding:10px 12px;font-size:.8rem;color:var(--ink-3);display:flex;align-items:center;gap:6px}

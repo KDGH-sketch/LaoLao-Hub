@@ -363,7 +363,7 @@ async function viewDashboard(){
 const KPI_TONE = { accent:"bg-accent-2 text-accent", jade:"bg-jade-2 text-jade", warn:"bg-warn-2 text-warn", bad:"bg-bad-2 text-bad", neutral:"bg-surface-2 text-ink-3" };
 const kpiCard = (n, label, iconName, tone="accent") => h("div",
   { class:"flex items-center gap-3 rounded border border-line bg-surface p-4 shadow-card transition hover:shadow-card-lg hover:-translate-y-0.5" },
-  h("div",{ class:"flex h-10 w-10 shrink-0 items-center justify-center rounded-s "+KPI_TONE[tone] }, icon(iconName,"icn icn-sm")),
+  h("div",{ class:"flex h-10 w-10 shrink-0 items-center justify-center rounded-s "+KPI_TONE[tone] }, icon(iconName,"icn-sm")),
   h("div",{class:"min-w-0"}, h("b",{class:"block text-2xl font-bold leading-none tracking-tight tabular-nums"}, n), h("span",{class:"block mt-1 text-sm text-ink-3 truncate"}, label)));
 export function activityFeed(rows){
   if (!rows.length) return h("p",{class:"muted"}, t("no_rows"));
@@ -396,6 +396,42 @@ async function viewSettings(){
   const wrap = h("div",{class:"stack-l"});
   wrap.append(h("div",{class:"pagehead"}, h("h1",null,t("adm_settings")), h("p",null,"Configure platform settings, database schema, and test accounts.")));
 
+  // General settings — the thing people actually come to this page for, so it goes first.
+  wrap.append(h("section",{class:"panel"},
+    h("h3",{style:"display:flex;align-items:center;gap:6px"}, icon("settings","icn-sm"), " General Settings"),
+    fld(t("app_name"), name), h("div",{class:"set-row"}, h("div",null,h("label",null,t("allow_reg")),h("p",null,t("allow_reg_d"))), reg),
+    fld(t("support_contact"), contact),
+    h("div",{class:"row"}, h("button",{class:"btn primary",disabled:!isSuper(),onclick:async()=>{ await S.api.db.set("settings/app",{appName:name.value.trim(),allowRegistration:reg.checked,defaultPlanId:plan.value,supportContact:contact.value.trim()},true); S.settings = await S.api.db.get("settings/app"); toast(t("saved_ok")); }}, t("save")), isSuper()?null:h("span",{class:"muted small"},t("only_super")))));
+
+  wrap.append(h("section",{class:"panel"}, h("h3",null,t("adm_import")), h("p",{class:"muted"},t("adm_import_d")),
+    h("div",{class:"row"}, h("button",{class:"btn",disabled:!isSuper(),onclick:async()=>{
+      if (!await confirmDialog(t("adm_import"), t("confirm_import"), t("adm_import"), t("cancel"))) return;
+      const st = h("p",{class:"muted"}, t("importing")); dialog({ title:t("adm_import"), body:st });
+      try { const n = await importSeed(S.api, S.me.uid, step => st.textContent = t("importing")+" "+step); await refreshPlans(); await refreshBundleState(); document.querySelector(".dialog .ib")?.click(); toast(t("imported")+" ("+n+")"); S.render(); }
+      catch(e){ st.textContent = errText(e); }
+    }}, icon("download"), t("adm_import")),
+    h("button",{class:"btn",onclick:exportAll}, icon("copy"), t("export")))));
+
+  // Supabase schema is a one-time/troubleshooting tool, not something visited often — collapsed by default.
+  wrap.append(h("details",{class:"panel"},
+    h("summary",null, h("b",null, icon("content","icn-sm"), " Supabase PostgreSQL Database Schema (30 Tables)")),
+    h("p",{class:"small muted",style:"margin-top:10px"}, "Current Mode: ", h("span",{class:"chip ok mono"}, S.api.mode.toUpperCase()), " · All 15 curriculum collections (lessons, patterns, grammar, vocabulary, dialogues, quizzes, videos, tones, culture, characters, dictionary, audio, lexicon, paths, releases) have dedicated tables."),
+    h("p",{class:"small muted"}, "If your Supabase project displays 'Could not find the table ... in the schema cache', run the complete SQL script in your Supabase SQL Editor:"),
+    h("div",{class:"row",style:"gap:8px"},
+      h("button",{class:"btn sm primary",onclick:async()=>{
+        try {
+          const res = await fetch("../supabase-schema.sql");
+          const sql = await res.text();
+          await navigator.clipboard.writeText(sql);
+          toast("Supabase SQL Schema copied to clipboard!", "ok");
+        } catch(e){
+          window.open("../supabase-schema.sql", "_blank");
+        }
+      }}, icon("copy"), "Copy Supabase SQL Schema (30 Tables)"),
+      h("a",{href:"../supabase-schema.sql",target:"_blank",download:"supabase-schema.sql",class:"btn sm ghost",style:"text-decoration:none"}, icon("download"), "Download supabase-schema.sql")
+    )
+  ));
+
   // Learner & Admin Test Accounts Card (these accounts exist only in demo mode)
   if (S.api.mode === "demo") wrap.append(h("section",{class:"panel",style:"background:var(--surface-2);border:1px solid var(--accent)"},
     h("h3",{style:"color:var(--accent);display:flex;align-items:center;gap:6px"}, icon("users"), "Learner & Admin Login Credentials"),
@@ -414,13 +450,13 @@ async function viewSettings(){
         h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Full edit on curriculum & studio. No credentials.")
       ),
       h("div",{class:"card",style:"padding:10px;background:var(--surface)"},
-        h("b",{style:"color:#7c3aed"}, "👁️ Content Reviewer (Read-Only)"),
+        h("b",{style:"color:var(--t2)"}, "👁️ Content Reviewer (Read-Only)"),
         h("div",{class:"small mono",style:"margin-top:4px"}, "reviewer@demo.laolao"),
         h("div",{class:"small muted"}, "Password: ", h("b",{class:"mono"}, "demo1234")),
         h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Can view and preview curriculum, CANNOT edit or delete")
       ),
       h("div",{class:"card",style:"padding:10px;background:var(--surface)"},
-        h("b",{style:"color:#2563eb"}, "🎧 Support Admin"),
+        h("b",{style:"color:var(--t0)"}, "🎧 Support Admin"),
         h("div",{class:"small mono",style:"margin-top:4px"}, "support@demo.laolao"),
         h("div",{class:"small muted"}, "Password: ", h("b",{class:"mono"}, "demo1234")),
         h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Can manage learners and view activity only")
@@ -444,41 +480,10 @@ async function viewSettings(){
     )
   ));
 
-  // Supabase PostgreSQL Schema Integration Card
-  wrap.append(h("section",{class:"panel"},
-    h("h3",{style:"display:flex;align-items:center;gap:6px"}, icon("content"), "Supabase PostgreSQL Database Schema (30 Tables)"),
-    h("p",{class:"small muted"}, "Current Mode: ", h("span",{class:"chip ok mono"}, S.api.mode.toUpperCase()), " · All 15 curriculum collections (lessons, patterns, grammar, vocabulary, dialogues, quizzes, videos, tones, culture, characters, dictionary, audio, lexicon, paths, releases) have dedicated tables."),
-    h("p",{class:"small muted"}, "If your Supabase project displays 'Could not find the table ... in the schema cache', run the complete SQL script in your Supabase SQL Editor:"),
-    h("div",{class:"row",style:"gap:8px"},
-      h("button",{class:"btn sm primary",onclick:async()=>{
-        try {
-          const res = await fetch("../supabase-schema.sql");
-          const sql = await res.text();
-          await navigator.clipboard.writeText(sql);
-          toast("Supabase SQL Schema copied to clipboard!", "ok");
-        } catch(e){
-          window.open("../supabase-schema.sql", "_blank");
-        }
-      }}, icon("copy"), "Copy Supabase SQL Schema (30 Tables)"),
-      h("a",{href:"../supabase-schema.sql",target:"_blank",download:"supabase-schema.sql",class:"btn sm ghost",style:"text-decoration:none"}, icon("download"), "Download supabase-schema.sql")
-    )
-  ));
-
-  wrap.append(h("section",{class:"panel"},
-    fld(t("app_name"), name), h("div",{class:"set-row"}, h("div",null,h("label",null,t("allow_reg")),h("p",null,t("allow_reg_d"))), reg),
-    fld(t("support_contact"), contact),
-    h("div",{class:"row"}, h("button",{class:"btn primary",disabled:!isSuper(),onclick:async()=>{ await S.api.db.set("settings/app",{appName:name.value.trim(),allowRegistration:reg.checked,defaultPlanId:plan.value,supportContact:contact.value.trim()},true); S.settings = await S.api.db.get("settings/app"); toast(t("saved_ok")); }}, t("save")), isSuper()?null:h("span",{class:"muted small"},t("only_super")))));
-
-  wrap.append(h("section",{class:"panel"}, h("h3",null,t("adm_import")), h("p",{class:"muted"},t("adm_import_d")),
-    h("div",{class:"row"}, h("button",{class:"btn",disabled:!isSuper(),onclick:async()=>{
-      if (!await confirmDialog(t("adm_import"), t("confirm_import"), t("adm_import"), t("cancel"))) return;
-      const st = h("p",{class:"muted"}, t("importing")); dialog({ title:t("adm_import"), body:st });
-      try { const n = await importSeed(S.api, S.me.uid, step => st.textContent = t("importing")+" "+step); await refreshPlans(); await refreshBundleState(); document.querySelector(".dialog .ib")?.click(); toast(t("imported")+" ("+n+")"); S.render(); }
-      catch(e){ st.textContent = errText(e); }
-    }}, icon("download"), t("adm_import")),
-    h("button",{class:"btn",onclick:exportAll}, icon("copy"), t("export")))));
-
-  if (S.api.mode==="demo") wrap.append(h("section",{class:"panel"}, h("h3",null,t("danger")), h("button",{class:"btn danger",style:"align-self:flex-start",onclick:async()=>{ if(await confirmDialog(t("reset_demo"),"Delete all demo data in this browser?",t("reset_demo"),t("cancel"),true)){ await S.api._reset(); location.reload(); } }}, t("reset_demo"))));
+  if (S.api.mode==="demo") wrap.append(h("section",{class:"panel",style:"border:1px solid var(--bad);background:color-mix(in srgb,var(--bad) 6%,var(--surface))"},
+    h("h3",{style:"color:var(--bad);display:flex;align-items:center;gap:6px"}, icon("trash","icn-sm"), t("danger")),
+    h("p",{class:"small muted"}, "Destructive actions below cannot be undone."),
+    h("button",{class:"btn danger",style:"align-self:flex-start",onclick:async()=>{ if(await confirmDialog(t("reset_demo"),"Delete all demo data in this browser?",t("reset_demo"),t("cancel"),true)){ await S.api._reset(); location.reload(); } }}, t("reset_demo"))));
   return wrap;
 }
 async function exportAll(){
