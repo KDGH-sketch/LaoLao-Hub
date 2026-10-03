@@ -406,9 +406,10 @@ async function viewSettings(){
     fld(t("support_contact"), contact),
     h("div",{class:"row"}, h("button",{class:"btn primary",disabled:!isSuper(),onclick:async()=>{ await S.api.db.set("settings/app",{appName:name.value.trim(),allowRegistration:reg.checked,defaultPlanId:plan.value,supportContact:contact.value.trim()},true); S.settings = await S.api.db.get("settings/app"); toast(t("saved_ok")); }}, t("save")), isSuper()?null:h("span",{class:"muted small"},t("only_super")))));
 
-  // System Font: applies site-wide, to both learner and admin (var(--f-lo) -- see js/shared/ui.js
-  // applyFont()), not a per-user preference. Phetsarath OT / Saysettha OT aren't on Google Fonts, so
-  // "Custom" lets an admin upload a font file they've obtained themselves from a licensed source.
+  // System Font: the site-wide default (var(--f-lo) -- see js/shared/ui.js applyFont()), for both
+  // learner and admin; a learner may personally override it in their own Account settings. Phetsarath
+  // OT / Saysettha OT aren't on Google Fonts, so "Custom" lets an admin upload a font file they've
+  // obtained themselves from a licensed source.
   let fontId = s.uiFont || "default", customName = s.customFontName || "", customUrl = s.customFontUrl || "";
   const fontSelect = h("select",{class:"input"}, FONT_OPTIONS.map(f => h("option",{value:f.id,selected:f.id===fontId}, f.label)));
   const customNameInp = h("input",{class:"input",value:customName,placeholder:"e.g. Phetsarath OT"});
@@ -424,7 +425,7 @@ async function viewSettings(){
   updatePreview();
   wrap.append(h("section",{class:"panel"},
     h("h3",{style:"display:flex;align-items:center;gap:6px"}, icon("chars","icn-sm"), " System Font"),
-    h("p",{class:"small muted"}, "The Lao-script font used everywhere across both the learner app and this admin panel — not a personal preference, a site-wide setting."),
+    h("p",{class:"small muted"}, "The default Lao-script font for both the learner app and this admin panel. Learners can personally override it for themselves in their own Account settings; this is just the default everyone starts with."),
     fld("Font", fontSelect),
     customBox,
     fld("Preview", fontPreview),

@@ -1,6 +1,6 @@
 // Learner views: generator, practice & quizzes, dictionary, pinyin, characters, pronunciation, review,
 // saved items, notes, progress, offline downloads, account.
-import { h, $$, icon, toast, pyHTML, tr, stripTone, fmtDate, isHan, debounce, rnd, shuffle, errText, dialog, normTheme } from "../shared/ui.js";
+import { h, $$, icon, toast, pyHTML, tr, stripTone, fmtDate, isHan, debounce, rnd, shuffle, errText, dialog, normTheme, FONT_OPTIONS } from "../shared/ui.js";
 import { t, lang } from "../shared/i18n.js";
 import { dict, chars, strokes, searchDict, meaning } from "../shared/dict.js";
 import { speak, voices, canListen } from "../shared/speech.js";
@@ -527,6 +527,10 @@ VIEWS.account = () => {
     row(t("ui_lang"), h("div",{class:"seg"}, [["en","English"],["lo","ລາວ"],["zh","中文"]].map(([l,n]) => h("button",{"aria-pressed":String(lang()===l),onclick:()=>{ setPref("uiLang",l); try{ localStorage.setItem("xuelu.lang",l); }catch(e){} A.render(); }}, n)))),
     row(t("explain_lang"), h("div",{class:"seg"}, [["","Auto"],["en","English"],["lo","ລາວ"],["zh","中文"]].map(([l,n]) => h("button",{"aria-pressed":String((p.explainLang||"")===l),onclick:()=>{ setPref("explainLang",l); A.render(); }}, n))), t("explain_lang_d")),
     row(t("theme"), h("div",{class:"seg"}, [["system","theme_auto"],["day","theme_light"],["night","theme_dark"]].map(([k,l]) => h("button",{"aria-pressed":String(normTheme(p.theme)===k),onclick:()=>{ setPref("theme",k); A.render(); }}, t(l))))),
+    row(t("ui_font"), h("select",{class:"input",style:"width:auto;max-width:260px",onchange:e=>{ setPref("font",e.target.value); A.render(); }},
+      [["default", t("font_default")], ...FONT_OPTIONS.filter(f=>f.id!=="default"&&f.id!=="custom").map(f=>[f.id,f.label]),
+        ...(A.settings.customFontName && A.settings.customFontUrl ? [["custom", A.settings.customFontName]] : [])]
+        .map(([v,l])=>h("option",{value:v,selected:(p.font||"default")===v},l)))),
     row(t("show_pinyin"), sw("showPy")), row(t("show_trans"), sw("showTr")), row(t("tone_colors"), sw("toneColor")),
     row(t("speech_rate"), h("input",{type:"range",min:"0.5",max:"1.2",step:"0.05",value:p.rate,"aria-label":t("speech_rate"),onchange:e=>{ setPref("rate",+e.target.value); speak("ຂ້ອຍຮຽນພາສາລາວທຸກມື້."); }})),
     row(t("voice"), vs.length ? h("select",{class:"input",style:"width:auto;max-width:220px",onchange:e=>{ setPref("voice",e.target.value); speak("ສະບາຍດີ, ຍິນດີຕ້ອນຮັບສູ່ LaoLao."); }}, h("option",{value:""},"Auto"), vs.map(v=>h("option",{value:v.name,selected:v.name===p.voice},v.name+" ("+v.lang+")"))) : h("span",{class:"chip warn"},t("voice_none")), vs.length ? null : t("voice_help"))));

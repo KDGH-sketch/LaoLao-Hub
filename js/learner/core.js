@@ -14,7 +14,7 @@ export const A = {
   prog:{ skills:{}, lessons:{}, patterns:{}, days:{}, answers:{r:0,t:0}, last:null },
   srs:{}, saved:{}, view:{ name:"home", params:{} }, hist:[], render:()=>{}
 };
-export const prefs = () => Object.assign({ uiLang:"en", explainLang:"", showPy:true, showTr:true, toneColor:true, rate:0.85, voice:"", theme:getTheme()||"day" }, (A.profile && A.profile.prefs) || {});
+export const prefs = () => Object.assign({ uiLang:"en", explainLang:"", showPy:true, showTr:true, toneColor:true, rate:0.85, voice:"", theme:getTheme()||"day", font:"default" }, (A.profile && A.profile.prefs) || {});
 export const expLang = () => prefs().explainLang || lang();
 let prefT;
 export function setPref(k, v){
@@ -31,6 +31,7 @@ export function applyPrefs(){
   document.body.classList.toggle("no-tone", !p.toneColor);
   const th = p.theme || getTheme() || "day";
   setTheme(th);
+  applyFont(A.settings, p.font);
   document.documentElement.lang = lang()==="zh" ? "zh-CN" : lang();
   setSpeechSettings({ rate:p.rate, voice:p.voice });
 }
@@ -63,7 +64,6 @@ export async function loadAccount(user){
   A.profile = prof || { email:user.email, name:"", status:"active", level:1, prefs:{} };
   A.rules = mergeRules(settings && settings.scoring);   // admin overrides from Settings → Scoring rules
   A.access = acc; A.isAdmin = !!adm; A.settings = settings || {}; A.plans = plans.sort((a,b)=>(a.order||0)-(b.order||0));
-  applyFont(A.settings);
   // without a profile the database gives public content only; match that here
   A.tier = tierFor({ isAdmin:A.isAdmin, user: prof ? A.profile : null, access: acc });
   const p = prefs(); setLang(p.uiLang || "en"); applyPrefs();

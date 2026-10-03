@@ -147,8 +147,10 @@ export function setTheme(mode="day"){
     document.documentElement.setAttribute("data-theme", "system");
   }
 }
-// ----- Lao UI font (system-wide; admin-controlled via Admin -> Settings -> System Font, not a
-// per-user preference like the theme above) -----
+// ----- Lao UI font -----
+// The admin-set choice (Admin -> Settings -> System Font) is the site-wide default; a learner may
+// personally override it for themselves (Account -> Lao font, stored in their own prefs, same
+// mechanism as the theme above) -- their choice, when set, wins over the admin default.
 // Phetsarath OT and Saysettha OT are the two fonts most requested by name, but neither is hosted
 // on Google Fonts -- they're only reliably available as desktop-installed fonts (the official Lao
 // government site distributes installers) or as files an admin downloads themselves from a
@@ -168,11 +170,14 @@ export const FONT_STACKS = {
   serif: `"Noto Serif Lao","Phetsarath OT","Saysettha OT","Noto Sans Lao",serif`
 };
 let customFontFace = null;
-// settings: the settings/app doc (uiFont, customFontName, customFontUrl). Overrides the --f-lo
-// custom property on <html> (inline style beats the :root rule in app.css), so every existing
-// var(--f-lo) usage across the app -- there's no shortage of them -- picks it up with no other change.
-export function applyFont(settings={}){
-  const id = FONT_OPTIONS.some(f=>f.id===settings.uiFont) ? settings.uiFont : "default";
+// settings: the settings/app doc (uiFont, customFontName, customFontUrl) -- the site-wide default.
+// userFontId: an optional per-learner override (their prefs.font); "default" or unset defers to the
+// admin's setting. Overrides the --f-lo custom property on <html> (inline style beats the :root rule
+// in app.css), so every existing var(--f-lo) usage across the app -- there's no shortage of them --
+// picks it up with no other change.
+export function applyFont(settings={}, userFontId){
+  const hasOverride = userFontId && userFontId !== "default" && FONT_OPTIONS.some(f=>f.id===userFontId);
+  const id = hasOverride ? userFontId : (FONT_OPTIONS.some(f=>f.id===settings.uiFont) ? settings.uiFont : "default");
   let stack = FONT_STACKS[id] || FONT_STACKS.default;
   if (id === "custom" && settings.customFontName && settings.customFontUrl){
     if (!customFontFace){ customFontFace = document.createElement("style"); customFontFace.id = "custom-lao-font"; document.head.appendChild(customFontFace); }
