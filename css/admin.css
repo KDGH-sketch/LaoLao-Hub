@@ -186,3 +186,20 @@ button.kpi:hover{border-color:var(--accent-3);box-shadow:var(--shadow);transform
 table.tbl tr.clickable{cursor:pointer}
 table.tbl tr.clickable:hover td{background:var(--surface-2)}
 @media (max-width:640px){.pay-mrow{grid-template-columns:1fr auto}}
+
+/* ---------- Website & Welcome (js/admin/welcome-admin.js) ---------- */
+.wl-adm-state{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.wl-adm-bundle{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:.85rem;background:var(--warn-2);border-radius:10px;padding:8px 10px}
+.wl-adm-secs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.wl-adm-sec{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.wl-adm-sec.off{opacity:.6}
+.wl-adm-sec[draggable="true"]{cursor:grab}
+.wl-adm-grip{color:var(--ink-3);display:grid;place-items:center}
+.wl-adm-frame{overflow:auto;max-width:100%;background:var(--surface-2);border-radius:14px;padding:10px}
+.wl-adm-scale{overflow:hidden;border-radius:12px;box-shadow:var(--shadow);background:#fff}
+.wl-adm-scale iframe{border:0;display:block;background:#fff}
+.web-checks p{display:flex;gap:6px;align-items:flex-start}
+.up-preview:empty{display:none}
+
+/* sidebar section headings on the dark admin sidebar: readable contrast (WCAG AA) */
+.side .side-group-label{color:#9DB4CC}

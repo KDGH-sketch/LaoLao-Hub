@@ -2,7 +2,7 @@
 // then a success summary (items per plan, time taken) or an error with Retry. Styles: .pub-* in css/admin.css.
 import { h, icon, errText } from "../shared/ui.js";
 import { buildBundles, CONTENT_TYPES } from "../shared/content.js";
-import { S, L, t, planName } from "./state.js";
+import { S, L, t, planName, audit } from "./state.js";
 
 // Types that always ship whole (reference data), so they are not counted as "published items"
 const REFERENCE = new Set(["lexicon", "tones", "dictionary"]);
@@ -98,6 +98,7 @@ export function publishPanel({ onDone } = {}){
         });
         const wait = MIN_MS - (performance.now() - started); if (wait > 0) await new Promise(r => setTimeout(r, wait));
         if (onDone) await onDone();
+        audit("publish", "bundles", "v" + String(meta.version).slice(-6));
         target = 1; await new Promise(r => setTimeout(r, 380));
         success(meta);
       } catch(e){ fail(e); }

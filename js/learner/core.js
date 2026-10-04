@@ -75,9 +75,19 @@ export async function saveProfile(patch){
 const PENDING = "laolao.pendingProfile";
 export const rememberPendingProfile = (email, name) => { try { localStorage.setItem(PENDING, JSON.stringify({ email: String(email).toLowerCase(), name })); } catch(e){} };
 // The learner profile + free access created at self-registration (the database only allows this while registration is open)
+// Where a sign-up came from (?ref= / utm_* and the offer or plan clicked on the welcome page; see welcome.js).
+// Read from this tab only; nothing is sent anywhere before the account exists.
+export const SIGNUP_KEY = "laolao.signup";
+function signupInfo(){
+  try { const v = JSON.parse(sessionStorage.getItem(SIGNUP_KEY) || "null"); if (!v || typeof v !== "object") return null;
+    const s = x => x == null ? null : String(x).replace(/[^\w .:/-]/g, "").slice(0, 60) || null;
+    return { source: s(v.source) || "direct", offerId: s(v.offerId), planId: s(v.planId), campaign: s(v.campaign) };
+  } catch(e){ return null; }
+}
 export async function createLearnerProfile(api, user, name, settings){
   const now = new Date();
   const profile = { email:user.email, name:name||"", status:"active", level:1, role:"learner", prefs:{ uiLang:lang(), explainLang:lang() }, createdAt:now, lastActive:now };
+  const signup = signupInfo(); if (signup) profile.signup = signup;
   await api.db.set(`users/${user.uid}`, profile);
   await api.db.set(`access/${user.uid}`, { planId:(settings && settings.defaultPlanId)||"free", tier:1, status:"active", start:now, expiresAt:null, source:"registration" });
   try { localStorage.removeItem(PENDING); } catch(e){}

@@ -15,6 +15,7 @@ import { viewContentHome, viewContentList, viewEditor } from "./cms.js";
 import { EXT_VIEWS } from "./cms-extended.js";
 import { viewAdmins } from "./admins.js";
 import { publishPanel } from "./publish.js";
+import { viewWelcome, viewPromotions } from "./welcome-admin.js";
 import { viewPayments } from "./payments.js";
 
 const root = document.getElementById("root");
@@ -158,8 +159,17 @@ const NAV_SECTIONS = [
     items: [
       { id:"audioStudio", label:["Voice Studio", "ສະຕູດິໂອບັນທຶກສຽງ"], icon:"mic", view:"audioStudio" },
       { id:"excelImport", label:["Excel / CSV Importer", "ນຳເຂົ້າ Excel/CSV"], icon:"upload", view:"excelImport" },
-      { id:"promotions", label:["Promotions & Feed", "ໂປຣໂມຊັ່ນ ແລະ ຂ່າວ"], icon:"gift", view:"promotions" },
       { id:"contentHealth", label:["Content Health Audit", "ກວດສອບຄວາມສົມບູນ"], icon:"spark", view:"contentHealth" }
+    ]
+  },
+  {
+    title: ["Website & Welcome", "ເວັບໄຊ ແລະ ໜ້າຕ້ອນຮັບ"],
+    items: [
+      { id:"welcome", label:["Welcome Page", "ໜ້າຕ້ອນຮັບ"], icon:"home", view:"welcome" },
+      { id:"places", label:["Journey Places", "ສະຖານທີ່"], icon:"globe", view:"contentList", params:{ type:"places" } },
+      { id:"festivals", label:["Festivals", "ບຸນ"], icon:"star", view:"contentList", params:{ type:"festivals" } },
+      { id:"promotions", label:["Promotions & Feed", "ໂປຣໂມຊັ່ນ ແລະ ຂ່າວ"], icon:"gift", view:"promotions" },
+      { id:"resources", label:["Free Resources", "ຊັບພະຍາກອນຟຣີ"], icon:"download", view:"contentList", params:{ type:"resources" } }
     ]
   },
   {
@@ -310,7 +320,7 @@ function renderShell(){
     return;
   }
 
-  const V = Object.assign({ dashboard:viewDashboard, learners:viewLearners, learner:viewLearner, plans:viewPlans, accessMatrix:viewAccessMatrix, accessLogs:viewAccessLogs, payments:viewPayments, handwriting:viewHandwriting, handwritingEditor:viewHandwritingEditor, content:viewContentHome, contentList:viewContentList, editor:viewEditor, activity:viewActivity, admins:viewAdmins, settings:viewSettings }, EXT_VIEWS);
+  const V = Object.assign({ dashboard:viewDashboard, learners:viewLearners, learner:viewLearner, plans:viewPlans, accessMatrix:viewAccessMatrix, accessLogs:viewAccessLogs, payments:viewPayments, handwriting:viewHandwriting, handwritingEditor:viewHandwritingEditor, content:viewContentHome, contentList:viewContentList, editor:viewEditor, activity:viewActivity, admins:viewAdmins, settings:viewSettings }, EXT_VIEWS, { welcome:viewWelcome, promotions:viewPromotions });
   const fn = V[S.view] || viewDashboard;
   Promise.resolve(fn(S.params||{})).then(el => { main.innerHTML=""; main.append(el); }).catch(err => { console.error(err); main.innerHTML=""; main.append(h("div",{class:"banner"}, errText(err))); });
 }

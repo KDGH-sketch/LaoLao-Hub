@@ -2118,7 +2118,10 @@
       "notes": {
         "en": "Dedicated platform for mastering the Lao language: Lao script, phonetics, sentence patterns, audio pronunciation, stroke handwriting studio, dictionary, and quizzes.",
         "lo": "ເວັບແອັບຮຽນພາສາລາວຢ່າງຄົບວົງຈອນ ພ້ອມສຽງ, ອັກສອນ, ໄວຍາກອນ, ວັດຈະນານຸກົມ ແລະ ແບບຝຶກຫັດ."
-      }
+      },
+      "featured": true,
+      "status": "published",
+      "access": "free"
     }
   ],
   "plans": [
@@ -2684,7 +2687,8 @@
         }
       ],
       "status": "published",
-      "access": "free"
+      "access": "free",
+      "featured": true
     },
     {
       "id": "cul-baci",
@@ -2736,7 +2740,8 @@
         }
       ],
       "status": "published",
-      "access": "free"
+      "access": "free",
+      "featured": true
     },
     {
       "id": "cul-khao-niao",
@@ -2788,7 +2793,8 @@
         }
       ],
       "status": "published",
-      "access": "free"
+      "access": "free",
+      "featured": true
     }
   ],
   "characters": [
@@ -7823,5 +7829,1207 @@
       "status": "published",
       "access": "free"
     }
-  ]
+  ],
+  "places": [
+    {
+      "id": "luangprabang",
+      "status": "published",
+      "access": "public",
+      "order": 1,
+      "scene": "luangprabang",
+      "lat": 19.888,
+      "lon": 102.14,
+      "unesco": 1995,
+      "title": {
+        "en": "Luang Prabang",
+        "lo": "ຫຼວງພະບາງ",
+        "zh": "琅勃拉邦"
+      },
+      "laoName": "ຫຼວງພະບາງ",
+      "badge": {
+        "en": "UNESCO World Heritage since 1995",
+        "lo": "ມໍລະດົກໂລກ UNESCO ແຕ່ປີ 1995",
+        "zh": "1995年起列入联合国教科文组织世界遗产"
+      },
+      "text": {
+        "en": "Where the Nam Khan meets the Mekong, monks in saffron walk the streets at dawn for Tak Bat, the morning alms round. Phou Si hill rises over town, crowned by the golden stupa of Wat Chom Si.",
+        "lo": "ບ່ອນທີ່ນ້ຳຄານບັນຈົບແມ່ນ້ຳຂອງ ພະສົງຍ່າງຕາມຖະໜົນຍາມເຊົ້າເພື່ອຮັບບາດ. ພູສີຕັ້ງເດັ່ນເໜືອເມືອງ ມີທາດຄຳຂອງວັດຈອມສີ.",
+        "zh": "在南康河与湄公河交汇处，身着橘色僧袍的僧侣清晨走上街头接受布施。普西山矗立城中，山顶是金色的宗西寺佛塔。"
+      },
+      "facts": [
+        {
+          "en": "Tak Bat every dawn",
+          "lo": "ຕັກບາດທຸກເຊົ້າ",
+          "zh": "每天清晨布施"
+        },
+        {
+          "en": "Phou Si hill",
+          "lo": "ພູສີ",
+          "zh": "普西山"
+        },
+        {
+          "en": "Wat Xieng Thong",
+          "lo": "ວັດຊຽງທອງ",
+          "zh": "香通寺"
+        }
+      ],
+      "words": [
+        {
+          "lo": "ໃສ່ບາດ",
+          "rom": "sai bat",
+          "en": "to give alms",
+          "audio": ""
+        },
+        {
+          "lo": "ພູສີ",
+          "rom": "phou si",
+          "en": "Phou Si hill",
+          "audio": ""
+        }
+      ]
+    },
+    {
+      "id": "vangvieng",
+      "status": "published",
+      "access": "public",
+      "order": 2,
+      "scene": "vangvieng",
+      "lat": 18.926,
+      "lon": 102.451,
+      "title": {
+        "en": "Vang Vieng",
+        "lo": "ວັງວຽງ",
+        "zh": "万荣"
+      },
+      "laoName": "ວັງວຽງ",
+      "badge": {
+        "en": "Nam Song valley",
+        "lo": "ຮ່ອມພູນ້ຳຊອງ",
+        "zh": "南松河谷"
+      },
+      "text": {
+        "en": "Limestone karst towers rise straight out of the rice fields along the Nam Song river. At sunrise, hot-air balloons drift between the peaks.",
+        "lo": "ພູຫີນປູນຕັ້ງຂຶ້ນຈາກທົ່ງນາລຽບນ້ຳຊອງ. ຍາມຕາເວັນຂຶ້ນ ບານລູນລອຍຜ່ານລະຫວ່າງຍອດພູ.",
+        "zh": "石灰岩喀斯特峰林从南松河沿岸的稻田中拔地而起。日出时，热气球在山峰间飘荡。"
+      },
+      "facts": [
+        {
+          "en": "Karst peaks",
+          "lo": "ພູຫີນປູນ",
+          "zh": "喀斯特山峰"
+        },
+        {
+          "en": "Nam Song river",
+          "lo": "ນ້ຳຊອງ",
+          "zh": "南松河"
+        },
+        {
+          "en": "Sunrise balloons",
+          "lo": "ບານລູນຍາມເຊົ້າ",
+          "zh": "日出热气球"
+        }
+      ],
+      "words": [
+        {
+          "lo": "ພູ",
+          "rom": "phou",
+          "en": "mountain",
+          "audio": ""
+        },
+        {
+          "lo": "ນ້ຳ",
+          "rom": "nam",
+          "en": "water, river",
+          "audio": ""
+        }
+      ]
+    },
+    {
+      "id": "phonsavan",
+      "status": "published",
+      "access": "public",
+      "order": 3,
+      "scene": "phonsavan",
+      "lat": 19.455,
+      "lon": 103.205,
+      "unesco": 2019,
+      "title": {
+        "en": "Plain of Jars",
+        "lo": "ທົ່ງໄຫຫີນ",
+        "zh": "石缸平原"
+      },
+      "laoName": "ທົ່ງໄຫຫີນ",
+      "badge": {
+        "en": "UNESCO World Heritage since 2019",
+        "lo": "ມໍລະດົກໂລກ UNESCO ແຕ່ປີ 2019",
+        "zh": "2019年起列入联合国教科文组织世界遗产"
+      },
+      "text": {
+        "en": "Thousands of Iron Age stone jars lie scattered across the hills of Xieng Khouang province, near Phonsavan. Archaeologists link them to burial rites, and no one knows the whole story.",
+        "lo": "ໄຫຫີນຍຸກເຫຼັກຫຼາຍພັນໜ່ວຍກະຈາຍຢູ່ຕາມເນີນພູຂອງແຂວງຊຽງຂວາງ ໃກ້ໂພນສະຫວັນ. ນັກໂບຮານຄະດີເຊື່ອມໂຍງກັບພິທີຝັງສົບ.",
+        "zh": "数千个铁器时代的石缸散布在川圹省丰沙湾附近的山丘上。考古学家认为它们与丧葬仪式有关，但完整的故事仍是谜。"
+      },
+      "facts": [
+        {
+          "en": "Xieng Khouang province",
+          "lo": "ແຂວງຊຽງຂວາງ",
+          "zh": "川圹省"
+        },
+        {
+          "en": "Iron Age jars",
+          "lo": "ໄຫຍຸກເຫຼັກ",
+          "zh": "铁器时代石缸"
+        },
+        {
+          "en": "Near Phonsavan",
+          "lo": "ໃກ້ໂພນສະຫວັນ",
+          "zh": "丰沙湾附近"
+        }
+      ],
+      "words": [
+        {
+          "lo": "ໄຫ",
+          "rom": "hai",
+          "en": "jar",
+          "audio": ""
+        },
+        {
+          "lo": "ຫີນ",
+          "rom": "hin",
+          "en": "stone",
+          "audio": ""
+        }
+      ]
+    },
+    {
+      "id": "vientiane",
+      "status": "published",
+      "access": "public",
+      "order": 4,
+      "scene": "vientiane",
+      "lat": 17.969,
+      "lon": 102.605,
+      "title": {
+        "en": "Vientiane",
+        "lo": "ວຽງຈັນ",
+        "zh": "万象"
+      },
+      "laoName": "ວຽງຈັນ",
+      "badge": {
+        "en": "Capital of Laos",
+        "lo": "ນະຄອນຫຼວງຂອງລາວ",
+        "zh": "老挝首都"
+      },
+      "text": {
+        "en": "Pha That Luang, the great golden stupa, is the national symbol. Each November at the full moon, Boun That Luang fills its grounds with candles, music and a fair that runs for up to a week.",
+        "lo": "ພະທາດຫຼວງ ທາດຄຳອັນຍິ່ງໃຫຍ່ ເປັນສັນຍາລັກຂອງຊາດ. ທຸກເດືອນພະຈິກ ວັນເພັງ ບຸນທາດຫຼວງເຕັມໄປດ້ວຍທຽນ, ດົນຕີ ແລະ ງານບຸນເຖິງໜຶ່ງອາທິດ.",
+        "zh": "塔銮大金塔是国家的象征。每年十一月月圆时，塔銮节以烛光、音乐和长达一周的集市充满寺院。"
+      },
+      "facts": [
+        {
+          "en": "Pha That Luang",
+          "lo": "ພະທາດຫຼວງ",
+          "zh": "塔銮"
+        },
+        {
+          "en": "Boun That Luang, November",
+          "lo": "ບຸນທາດຫຼວງ, ເດືອນພະຈິກ",
+          "zh": "塔銮节，十一月"
+        },
+        {
+          "en": "On the Mekong",
+          "lo": "ຢູ່ແຄມແມ່ນ້ຳຂອງ",
+          "zh": "湄公河畔"
+        }
+      ],
+      "words": [
+        {
+          "lo": "ທາດຫຼວງ",
+          "rom": "that luang",
+          "en": "great stupa",
+          "audio": ""
+        },
+        {
+          "lo": "ທຽນ",
+          "rom": "thian",
+          "en": "candle",
+          "audio": ""
+        }
+      ]
+    },
+    {
+      "id": "champasak",
+      "status": "published",
+      "access": "public",
+      "order": 5,
+      "scene": "champasak",
+      "lat": 14.848,
+      "lon": 105.853,
+      "unesco": 2001,
+      "title": {
+        "en": "Champasak and Wat Phou",
+        "lo": "ຈຳປາສັກ · ວັດພູ",
+        "zh": "占巴塞与瓦普寺"
+      },
+      "laoName": "ຈຳປາສັກ · ວັດພູ",
+      "badge": {
+        "en": "UNESCO World Heritage since 2001",
+        "lo": "ມໍລະດົກໂລກ UNESCO ແຕ່ປີ 2001",
+        "zh": "2001年起列入联合国教科文组织世界遗产"
+      },
+      "text": {
+        "en": "A Khmer-era temple complex climbs the slope of Phou Kao, a mountain whose peak is shaped like a lingam. Frangipani trees, the dok champa, drop white flowers along the way.",
+        "lo": "ສິ່ງກໍ່ສ້າງວັດສະໄໝຂະແມປີນຂຶ້ນເນີນພູເກົ້າ ທີ່ຍອດມີຮູບຄືລຶງຄະ. ຕົ້ນດອກຈຳປາຫຼົ່ນດອກສີຂາວຕາມທາງ.",
+        "zh": "一座高棉时期的寺庙群沿着普告山坡而上，山顶形似林伽。鸡蛋花（占芭花）沿途洒落白色花朵。"
+      },
+      "facts": [
+        {
+          "en": "Khmer-era temple",
+          "lo": "ວັດສະໄໝຂະແມ",
+          "zh": "高棉时期寺庙"
+        },
+        {
+          "en": "Phou Kao peak",
+          "lo": "ຍອດພູເກົ້າ",
+          "zh": "普告山峰"
+        },
+        {
+          "en": "Dok champa trees",
+          "lo": "ຕົ້ນດອກຈຳປາ",
+          "zh": "占芭花树"
+        }
+      ],
+      "words": [
+        {
+          "lo": "ວັດພູ",
+          "rom": "wat phou",
+          "en": "mountain temple",
+          "audio": ""
+        },
+        {
+          "lo": "ດອກຈຳປາ",
+          "rom": "dok champa",
+          "en": "frangipani flower",
+          "audio": ""
+        }
+      ]
+    },
+    {
+      "id": "siphandon",
+      "status": "published",
+      "access": "public",
+      "order": 6,
+      "scene": "siphandon",
+      "lat": 14.1,
+      "lon": 105.972,
+      "title": {
+        "en": "Si Phan Don",
+        "lo": "ສີ່ພັນດອນ",
+        "zh": "四千美岛"
+      },
+      "laoName": "ສີ່ພັນດອນ",
+      "badge": {
+        "en": "Four Thousand Islands",
+        "lo": "ສີ່ພັນດອນ",
+        "zh": "四千美岛"
+      },
+      "text": {
+        "en": "Near the Cambodian border the Mekong widens to as much as 14 km and breaks into thousands of islands. Long-tail boats cross between Don Khone and Don Det, near the Li Phi and Khone Phapheng falls.",
+        "lo": "ໃກ້ຊາຍແດນກຳປູເຈຍ ແມ່ນ້ຳຂອງກວ້າງເຖິງ 14 ກມ ແລະ ແຍກເປັນດອນຫຼາຍພັນດອນ. ເຮືອຫາງຍາວແລ່ນລະຫວ່າງດອນຄອນ ແລະ ດອນເດດ ໃກ້ນ້ຳຕົກຫຼີຜີ ແລະ ຄອນພະເພັງ.",
+        "zh": "在靠近柬埔寨边境处，湄公河宽达14公里，分出数千个岛屿。长尾船往返于孔岛和德岛之间，附近是李皮瀑布和孔帕平瀑布。"
+      },
+      "facts": [
+        {
+          "en": "Don Khone and Don Det",
+          "lo": "ດອນຄອນ ແລະ ດອນເດດ",
+          "zh": "孔岛与德岛"
+        },
+        {
+          "en": "Li Phi falls",
+          "lo": "ນ້ຳຕົກຫຼີຜີ",
+          "zh": "李皮瀑布"
+        },
+        {
+          "en": "Khone Phapheng falls",
+          "lo": "ນ້ຳຕົກຄອນພະເພັງ",
+          "zh": "孔帕平瀑布"
+        }
+      ],
+      "words": [
+        {
+          "lo": "ດອນ",
+          "rom": "don",
+          "en": "river island",
+          "audio": ""
+        },
+        {
+          "lo": "ເຮືອ",
+          "rom": "heua",
+          "en": "boat",
+          "audio": ""
+        }
+      ]
+    }
+  ],
+  "festivals": [
+    {
+      "id": "pi-mai",
+      "status": "published",
+      "access": "public",
+      "order": 1,
+      "month": 4,
+      "lunar": false,
+      "art": "water",
+      "dateText": {
+        "en": "13–16 April",
+        "lo": "13–16 ເມສາ",
+        "zh": "4月13日至16日"
+      },
+      "title": {
+        "en": "Boun Pi Mai Lao",
+        "lo": "ບຸນປີໃໝ່ລາວ",
+        "zh": "老挝新年"
+      },
+      "laoName": "ບຸນປີໃໝ່ລາວ",
+      "text": {
+        "en": "Lao New Year. Neighbors splash water to wash away the old year, and Nang Sangkhan parades through Luang Prabang.",
+        "lo": "ປີໃໝ່ລາວ. ເພື່ອນບ້ານຫົດນ້ຳເພື່ອລ້າງປີເກົ່າ ແລະ ນາງສັງຂານແຫ່ຜ່ານຫຼວງພະບາງ.",
+        "zh": "老挝新年。邻里互相泼水送走旧年，桑坎女神巡游琅勃拉邦。"
+      }
+    },
+    {
+      "id": "bang-fai",
+      "status": "published",
+      "access": "public",
+      "order": 2,
+      "month": 5,
+      "lunar": true,
+      "art": "rocket",
+      "dateText": {
+        "en": "May",
+        "lo": "ພຶດສະພາ",
+        "zh": "5月"
+      },
+      "title": {
+        "en": "Boun Bang Fai",
+        "lo": "ບຸນບັ້ງໄຟ",
+        "zh": "火箭节"
+      },
+      "laoName": "ບຸນບັ້ງໄຟ",
+      "text": {
+        "en": "The rocket festival. Villages launch bamboo rockets to call the rains before rice planting.",
+        "lo": "ບຸນບັ້ງໄຟ. ບ້ານຈູດບັ້ງໄຟເພື່ອຂໍຝົນກ່ອນລົງນາ.",
+        "zh": "火箭节。村民在插秧前发射竹制火箭以祈求降雨。"
+      }
+    },
+    {
+      "id": "khao-phansa",
+      "status": "published",
+      "access": "public",
+      "order": 3,
+      "month": 7,
+      "lunar": true,
+      "art": "candle",
+      "dateText": {
+        "en": "July, full moon",
+        "lo": "ກໍລະກົດ, ວັນເພັງ",
+        "zh": "7月，月圆时"
+      },
+      "title": {
+        "en": "Boun Khao Phansa",
+        "lo": "ບຸນເຂົ້າພັນສາ",
+        "zh": "入夏节"
+      },
+      "laoName": "ບຸນເຂົ້າພັນສາ",
+      "text": {
+        "en": "The start of Buddhist Lent. Families bring candles and offerings to the temple.",
+        "lo": "ເລີ່ມເຂົ້າພັນສາ. ຄອບຄົວນຳທຽນ ແລະ ເຄື່ອງຖວາຍໄປວັດ.",
+        "zh": "佛教守夏期开始。家家户户带着蜡烛和供品前往寺庙。"
+      }
+    },
+    {
+      "id": "ok-phansa",
+      "status": "published",
+      "access": "public",
+      "order": 4,
+      "month": 10,
+      "lunar": true,
+      "art": "fireboat",
+      "dateText": {
+        "en": "October",
+        "lo": "ຕຸລາ",
+        "zh": "10月"
+      },
+      "title": {
+        "en": "Boun Ok Phansa and Suang Heua",
+        "lo": "ບຸນອອກພັນສາ ແລະ ບຸນສ່ວງເຮືອ",
+        "zh": "出夏节与龙舟赛"
+      },
+      "laoName": "ບຸນອອກພັນສາ · ບຸນສ່ວງເຮືອ",
+      "text": {
+        "en": "End of Lent. Lit boats float on the Mekong the night before, and crews race long boats the next day.",
+        "lo": "ອອກພັນສາ. ເຮືອໄຟລອຍໃນແມ່ນ້ຳຂອງຄືນກ່ອນ ແລະ ມື້ຕໍ່ມາມີການແຂ່ງເຮືອ.",
+        "zh": "守夏期结束。前一晚湄公河上漂着火船，第二天举行长舟竞赛。"
+      }
+    },
+    {
+      "id": "that-luang",
+      "status": "published",
+      "access": "public",
+      "order": 5,
+      "month": 11,
+      "lunar": true,
+      "art": "stupa",
+      "dateText": {
+        "en": "November, full moon",
+        "lo": "ພະຈິກ, ວັນເພັງ",
+        "zh": "11月，月圆时"
+      },
+      "title": {
+        "en": "Boun That Luang",
+        "lo": "ບຸນທາດຫຼວງ",
+        "zh": "塔銮节"
+      },
+      "laoName": "ບຸນທາດຫຼວງ",
+      "text": {
+        "en": "Candlelit processions and a fair at Pha That Luang in Vientiane, for up to a week.",
+        "lo": "ຂະບວນແຫ່ທຽນ ແລະ ງານບຸນທີ່ພະທາດຫຼວງ ວຽງຈັນ ເຖິງໜຶ່ງອາທິດ.",
+        "zh": "万象塔銮的烛光游行和集市，持续长达一周。"
+      }
+    },
+    {
+      "id": "national-day",
+      "status": "published",
+      "access": "public",
+      "order": 6,
+      "month": 12,
+      "lunar": false,
+      "art": "flag",
+      "dateText": {
+        "en": "2 December",
+        "lo": "2 ທັນວາ",
+        "zh": "12月2日"
+      },
+      "title": {
+        "en": "Lao National Day",
+        "lo": "ວັນຊາດ",
+        "zh": "老挝国庆节"
+      },
+      "laoName": "ວັນຊາດ",
+      "text": {
+        "en": "Marks the founding of the Lao People's Democratic Republic in 1975.",
+        "lo": "ລະນຶກການສະຖາປະນາ ສປປ ລາວ ໃນປີ 1975.",
+        "zh": "纪念1975年老挝人民民主共和国成立。"
+      }
+    }
+  ],
+  "offers": [
+    {
+      "id": "sample-premium",
+      "status": "published",
+      "access": "public",
+      "order": 1,
+      "kind": "countdown",
+      "placement": "promotions",
+      "active": false,
+      "planId": "premium",
+      "badge": {
+        "en": "Example offer",
+        "lo": "ໂປຣໂມຊັນຕົວຢ່າງ",
+        "zh": "示例优惠"
+      },
+      "title": {
+        "en": "Save 30% on Premium for your first 3 months",
+        "lo": "ປະຢັດ 30% ສຳລັບ Premium 3 ເດືອນທຳອິດ",
+        "zh": "Premium前3个月立省30%"
+      },
+      "text": {
+        "en": "An example offer for the demo. Edit or replace it in Admin → Promotions & Feed.",
+        "lo": "ໂປຣໂມຊັນຕົວຢ່າງສຳລັບການທົດລອງ. ແກ້ໄຂໄດ້ທີ່ Admin → Promotions & Feed.",
+        "zh": "演示用的示例优惠，可在管理后台 → 优惠与动态中修改。"
+      },
+      "discountText": {
+        "en": "30% off",
+        "lo": "ຫຼຸດ 30%",
+        "zh": "七折"
+      },
+      "ctaLabel": {
+        "en": "Create a free account",
+        "lo": "ສ້າງບັນຊີຟຣີ",
+        "zh": "创建免费账户"
+      },
+      "startsAt": "2026-10-01",
+      "endsAt": "2026-12-31T23:59:00"
+    }
+  ],
+  "resources": [
+    {
+      "id": "starter-guide",
+      "status": "published",
+      "access": "public",
+      "order": 1,
+      "kind": "pdf",
+      "glyph": "ກ",
+      "cover": 1,
+      "requiresAccount": true,
+      "url": "",
+      "title": {
+        "en": "30-day Lao starter guide",
+        "lo": "ຄູ່ມືເລີ່ມຕົ້ນ 30 ວັນ",
+        "zh": "30天老挝语入门指南"
+      },
+      "text": {
+        "en": "Script, tones and survival conversation in one reference.",
+        "lo": "ອັກສອນ, ວັນນະຍຸດ ແລະ ບົດສົນທະນາພື້ນຖານໃນເຫຼັ້ມດຽວ.",
+        "zh": "文字、声调和生存会话，一本全搞定。"
+      }
+    },
+    {
+      "id": "consonant-chart",
+      "status": "published",
+      "access": "public",
+      "order": 2,
+      "kind": "chart",
+      "glyph": "ຂ ຄ",
+      "cover": 2,
+      "requiresAccount": true,
+      "url": "",
+      "title": {
+        "en": "Consonant chart",
+        "lo": "ຕາຕະລາງພະຍັນຊະນະ",
+        "zh": "辅音表"
+      },
+      "text": {
+        "en": "27 letters with class, sound and mnemonic.",
+        "lo": "27 ຕົວອັກສອນ ພ້ອມໝວດ, ສຽງ ແລະ ຄຳຊ່ວຍຈຳ.",
+        "zh": "27个字母，附类别、发音和助记词。"
+      }
+    },
+    {
+      "id": "tone-sheet",
+      "status": "published",
+      "access": "public",
+      "order": 3,
+      "kind": "cheatsheet",
+      "glyph": "໊ ໋",
+      "cover": 3,
+      "requiresAccount": true,
+      "url": "",
+      "title": {
+        "en": "Six tones, one page",
+        "lo": "ຫົກວັນນະຍຸດ ໃນໜ້າດຽວ",
+        "zh": "六个声调，一页纸"
+      },
+      "text": {
+        "en": "Marks, pitch shapes and example words.",
+        "lo": "ເຄື່ອງໝາຍ, ລະດັບສຽງ ແລະ ຄຳຕົວຢ່າງ.",
+        "zh": "声调符号、音高曲线和例词。"
+      }
+    },
+    {
+      "id": "greetings-audio",
+      "status": "published",
+      "access": "public",
+      "order": 4,
+      "kind": "audio",
+      "glyph": "ສ",
+      "cover": 4,
+      "requiresAccount": true,
+      "url": "",
+      "title": {
+        "en": "Greetings audio pack",
+        "lo": "ຊຸດສຽງຄຳທັກທາຍ",
+        "zh": "问候语音频包"
+      },
+      "text": {
+        "en": "20 everyday phrases by a native speaker.",
+        "lo": "20 ປະໂຫຍກປະຈຳວັນ ໂດຍເຈົ້າຂອງພາສາ.",
+        "zh": "20个日常短语，由母语者朗读。"
+      }
+    }
+  ],
+  "welcome": {
+    "seo": {
+      "title": {
+        "en": "LaoLao · Learn Lao, one real sentence at a time",
+        "lo": "LaoLao · ຮຽນພາສາລາວ ເທື່ອລະປະໂຫຍກ",
+        "zh": "LaoLao · 一句一句学老挝语"
+      },
+      "description": {
+        "en": "Learn Lao with sentence patterns, native audio, a handwriting studio and spaced review. Start free.",
+        "lo": "ຮຽນພາສາລາວດ້ວຍໂຄງສ້າງປະໂຫຍກ, ສຽງເຈົ້າຂອງພາສາ, ຫ້ອງຝຶກຂຽນ ແລະ ການທົບທວນ. ເລີ່ມຟຣີ.",
+        "zh": "用句型、真人发音、书写练习和间隔复习学习老挝语。免费开始。"
+      }
+    },
+    "nav": {
+      "home": {
+        "en": "Home",
+        "lo": "ໜ້າຫຼັກ",
+        "zh": "首页"
+      },
+      "journey": {
+        "en": "Journey",
+        "lo": "ການເດີນທາງ",
+        "zh": "旅程"
+      },
+      "services": {
+        "en": "Services",
+        "lo": "ບໍລິການ",
+        "zh": "服务"
+      },
+      "resources": {
+        "en": "Free resources",
+        "lo": "ຟຣີ",
+        "zh": "免费资源"
+      },
+      "promotions": {
+        "en": "Promotions",
+        "lo": "ໂປຣໂມຊັນ",
+        "zh": "优惠"
+      },
+      "news": {
+        "en": "News",
+        "lo": "ຂ່າວ",
+        "zh": "新闻"
+      },
+      "about": {
+        "en": "About",
+        "lo": "ກ່ຽວກັບ",
+        "zh": "关于"
+      }
+    },
+    "hero": {
+      "badge": {
+        "en": "Lao for real conversations · 27 consonants, 6 tones",
+        "lo": "ຮຽນລາວເພື່ອສົນທະນາຈິງ · 27 ພະຍັນຊະນະ, 6 ວັນນະຍຸດ",
+        "zh": "学真正能用的老挝语 · 27个辅音，6个声调"
+      },
+      "loWord": "ສະບາຍດີ",
+      "h1a": {
+        "en": "Learn Lao, one",
+        "lo": "ຮຽນພາສາລາວ ເທື່ອລະ",
+        "zh": "一句一句，"
+      },
+      "h1b": {
+        "en": "real sentence",
+        "lo": "ປະໂຫຍກຈິງ",
+        "zh": "真实的句子"
+      },
+      "h1c": {
+        "en": "at a time.",
+        "lo": "ທຸກວັນ.",
+        "zh": "学会老挝语。"
+      },
+      "lead": {
+        "en": "Sentence patterns with native audio, a handwriting studio and spaced review. Start free, no card needed. Works offline.",
+        "lo": "ໂຄງສ້າງປະໂຫຍກພ້ອມສຽງເຈົ້າຂອງພາສາ, ຫ້ອງຝຶກຂຽນ ແລະ ການທົບທວນ. ເລີ່ມຟຣີ ບໍ່ຕ້ອງໃຊ້ບັດ. ໃຊ້ອອບລາຍໄດ້.",
+        "zh": "带真人发音的句型、书写练习与间隔复习。免费开始，无需绑卡，可离线使用。"
+      },
+      "ctaStart": {
+        "en": "Start free",
+        "lo": "ເລີ່ມຟຣີ",
+        "zh": "免费开始"
+      },
+      "ctaTour": {
+        "en": "Take the journey through Laos",
+        "lo": "ເດີນທາງທົ່ວລາວ",
+        "zh": "走进老挝"
+      },
+      "hear": {
+        "en": "Tap to hear the greeting",
+        "lo": "ແຕະເພື່ອຟັງສຽງທັກທາຍ",
+        "zh": "点击收听问候语"
+      },
+      "greeting": {
+        "lo": "ສະບາຍດີ",
+        "rom": "Sabaidee"
+      }
+    },
+    "sections": [
+      {
+        "id": "greetings",
+        "on": true
+      },
+      {
+        "id": "alphabet",
+        "on": true
+      },
+      {
+        "id": "stats",
+        "on": true
+      },
+      {
+        "id": "journey",
+        "on": true
+      },
+      {
+        "id": "festivals",
+        "on": true
+      },
+      {
+        "id": "services",
+        "on": true
+      },
+      {
+        "id": "resources",
+        "on": true
+      },
+      {
+        "id": "promotions",
+        "on": true
+      },
+      {
+        "id": "news",
+        "on": true
+      },
+      {
+        "id": "about",
+        "on": true
+      },
+      {
+        "id": "closing",
+        "on": true
+      }
+    ],
+    "heads": {
+      "alphabet": {
+        "eyebrow": {
+          "en": "Hear the alphabet",
+          "lo": "ຟັງສຽງຕົວອັກສອນ",
+          "zh": "听字母发音"
+        }
+      },
+      "journey": {
+        "eyebrow": {
+          "en": "Journey through Laos",
+          "lo": "ເດີນທາງທົ່ວລາວ",
+          "zh": "走遍老挝"
+        },
+        "title": {
+          "en": "Follow the Mekong, learn the words on the way",
+          "lo": "ຕາມແມ່ນ້ຳຂອງ ຮຽນຄຳສັບລາວຕະຫຼອດທາງ",
+          "zh": "沿湄公河而行，边走边学"
+        },
+        "loSub": "ຕາມແມ່ນ້ຳຂອງ ຮຽນຄຳສັບລາວຕະຫຼອດທາງ",
+        "intro": {
+          "en": "Six real places, from Luang Prabang to the Four Thousand Islands. Pick a place, watch it come alive, and learn the Lao words that belong to it.",
+          "lo": "ຫົກສະຖານທີ່ຈິງ ແຕ່ຫຼວງພະບາງ ຮອດສີ່ພັນດອນ. ເລືອກສະຖານທີ່ ແລ້ວຮຽນຄຳສັບລາວທີ່ກ່ຽວຂ້ອງ.",
+          "zh": "从琅勃拉邦到四千美岛的六个真实地点。选一个地方，看它活起来，学会与它相关的老挝语词汇。"
+        },
+        "mapCaption": {
+          "en": "The Mekong, ແມ່ນ້ຳຂອງ, flowing south",
+          "lo": "ແມ່ນ້ຳຂອງ ໄຫຼລົງທິດໃຕ້",
+          "zh": "湄公河（ແມ່ນ້ຳຂອງ）向南流淌"
+        }
+      },
+      "festivals": {
+        "eyebrow": {
+          "en": "Festival calendar",
+          "lo": "ປະຕິທິນບຸນ",
+          "zh": "节日日历"
+        },
+        "title": {
+          "en": "The Lao year, month by month",
+          "lo": "ປີລາວ ເດືອນຕໍ່ເດືອນ",
+          "zh": "老挝的一年，按月看"
+        },
+        "intro": {
+          "en": "Lunar festival dates move each year. The current one is highlighted.",
+          "lo": "ວັນບຸນຕາມຈັນທະຄະຕິປ່ຽນທຸກປີ. ບຸນປັດຈຸບັນຖືກເນັ້ນໄວ້.",
+          "zh": "农历节日的日期每年不同，当前的节日已高亮显示。"
+        }
+      },
+      "services": {
+        "eyebrow": {
+          "en": "Services",
+          "lo": "ບໍລິການ",
+          "zh": "服务"
+        },
+        "title": {
+          "en": "Everything you need to read, write and speak",
+          "lo": "ທຸກຢ່າງທີ່ຕ້ອງການເພື່ອອ່ານ, ຂຽນ ແລະ ເວົ້າ",
+          "zh": "读、写、说所需的一切"
+        },
+        "loSub": "ທຸກຢ່າງທີ່ຕ້ອງການເພື່ອຮຽນພາສາລາວ",
+        "intro": {
+          "en": "Each tool runs on the same sentence patterns, so what you hear in a lesson turns up in practice, review and the dictionary.",
+          "lo": "ທຸກເຄື່ອງມືໃຊ້ໂຄງສ້າງປະໂຫຍກດຽວກັນ ສິ່ງທີ່ໄດ້ຍິນໃນບົດຮຽນຈະພົບອີກໃນການຝຶກ, ການທົບທວນ ແລະ ວັດຈະນານຸກົມ.",
+          "zh": "每个工具都基于同一套句型，课上听到的内容会出现在练习、复习和词典中。"
+        }
+      },
+      "resources": {
+        "eyebrow": {
+          "en": "Free resources",
+          "lo": "ຊັບພະຍາກອນຟຣີ",
+          "zh": "免费资源"
+        },
+        "title": {
+          "en": "Take something home today",
+          "lo": "ເອົາບາງຢ່າງກັບບ້ານມື້ນີ້",
+          "zh": "今天就带点东西回家"
+        },
+        "intro": {
+          "en": "Free with a free account. Your download appears in your library after sign-up.",
+          "lo": "ຟຣີກັບບັນຊີຟຣີ. ໄຟລ໌ຈະຢູ່ໃນຫ້ອງສະໝຸດຂອງທ່ານຫຼັງສະໝັກ.",
+          "zh": "注册免费账户即可获得，下载内容会出现在你的资料库中。"
+        }
+      },
+      "promotions": {
+        "eyebrow": {
+          "en": "Promotions and plans",
+          "lo": "ໂປຣໂມຊັນ ແລະ ແພັກເກດ",
+          "zh": "优惠与套餐"
+        },
+        "title": {
+          "en": "Start free, upgrade when you want more",
+          "lo": "ເລີ່ມຟຣີ ອັບເກຣດເມື່ອຕ້ອງການຫຼາຍກວ່າ",
+          "zh": "免费开始，需要时再升级"
+        }
+      },
+      "news": {
+        "eyebrow": {
+          "en": "News",
+          "lo": "ຂ່າວ",
+          "zh": "新闻"
+        },
+        "title": {
+          "en": "Updates and stories from Laos",
+          "lo": "ຂ່າວສານ ແລະ ເລື່ອງລາວຈາກລາວ",
+          "zh": "来自老挝的更新与故事"
+        }
+      }
+    },
+    "greetings": [
+      {
+        "lo": "ສະບາຍດີ",
+        "rom": "sabaidee",
+        "en": "hello"
+      },
+      {
+        "lo": "ຂອບໃຈ",
+        "rom": "khop jai",
+        "en": "thank you"
+      },
+      {
+        "lo": "ບໍ່ເປັນຫຍັງ",
+        "rom": "bo pen nyang",
+        "en": "no problem"
+      },
+      {
+        "lo": "ແຊບ",
+        "rom": "saep",
+        "en": "delicious"
+      },
+      {
+        "lo": "ຍິນດີຕ້ອນຮັບ",
+        "rom": "yindi ton hap",
+        "en": "welcome"
+      },
+      {
+        "lo": "ລາກ່ອນ",
+        "rom": "la kon",
+        "en": "goodbye"
+      },
+      {
+        "lo": "ຂໍໂທດ",
+        "rom": "kho thot",
+        "en": "sorry"
+      },
+      {
+        "lo": "ຮັກ",
+        "rom": "hak",
+        "en": "love"
+      }
+    ],
+    "alphabet": [
+      {
+        "lo": "ກ",
+        "name": "Kai",
+        "meaning": "Chicken",
+        "ipa": "k"
+      },
+      {
+        "lo": "ຂ",
+        "name": "Khai",
+        "meaning": "Egg",
+        "ipa": "kh"
+      },
+      {
+        "lo": "ງ",
+        "name": "Ngua",
+        "meaning": "Ox",
+        "ipa": "ng"
+      },
+      {
+        "lo": "ຈ",
+        "name": "Chork",
+        "meaning": "Glass",
+        "ipa": "ch"
+      },
+      {
+        "lo": "ດ",
+        "name": "Dek",
+        "meaning": "Child",
+        "ipa": "d"
+      },
+      {
+        "lo": "ນ",
+        "name": "Nok",
+        "meaning": "Bird",
+        "ipa": "n"
+      },
+      {
+        "lo": "ລ",
+        "name": "Ling",
+        "meaning": "Monkey",
+        "ipa": "l"
+      },
+      {
+        "lo": "ສ",
+        "name": "Seua",
+        "meaning": "Tiger",
+        "ipa": "s"
+      }
+    ],
+    "stats": [
+      {
+        "value": "27",
+        "label": {
+          "en": "consonants by class, with mnemonic names",
+          "lo": "ພະຍັນຊະນະຕາມໝວດ ພ້ອມຊື່ຊ່ວຍຈຳ",
+          "zh": "按类别排列的辅音，附助记名称"
+        }
+      },
+      {
+        "value": "6",
+        "label": {
+          "en": "Vientiane tones with audio",
+          "lo": "ວັນນະຍຸດແບບວຽງຈັນ ພ້ອມສຽງ",
+          "zh": "带音频的万象声调"
+        }
+      },
+      {
+        "value": "120+",
+        "label": {
+          "en": "dictionary words, search by romanization",
+          "lo": "ຄຳສັບໃນວັດຈະນານຸກົມ ຄົ້ນດ້ວຍຄຳອ່ານໂຣມັນ",
+          "zh": "词典词条，可按罗马字搜索"
+        }
+      },
+      {
+        "value": "3",
+        "label": {
+          "en": "interface languages: English, ລາວ, 中文",
+          "lo": "ພາສາໜ້າຈໍ: English, ລາວ, 中文",
+          "zh": "界面语言：English、ລາວ、中文"
+        }
+      }
+    ],
+    "services": [
+      {
+        "size": "big",
+        "icon": "book",
+        "title": {
+          "en": "Sentence patterns and generator",
+          "lo": "ໂຄງສ້າງປະໂຫຍກ ແລະ ເຄື່ອງສ້າງປະໂຫຍກ",
+          "zh": "句型与句子生成器"
+        },
+        "text": {
+          "en": "Learn a pattern once, then swap words in and out. Every sentence has Lao script, romanization, audio and a translation.",
+          "lo": "ຮຽນໂຄງສ້າງເທື່ອດຽວ ແລ້ວປ່ຽນຄຳເຂົ້າອອກ. ທຸກປະໂຫຍກມີອັກສອນລາວ, ຄຳອ່ານ, ສຽງ ແລະ ຄຳແປ.",
+          "zh": "学会一个句型，再自由替换词语。每个句子都有老挝文、罗马字、音频和翻译。"
+        },
+        "demo": true
+      },
+      {
+        "size": "mid",
+        "icon": "wave",
+        "title": {
+          "en": "Alphabet, vowels and tones",
+          "lo": "ຕົວອັກສອນ, ສະຫຼະ ແລະ ວັນນະຍຸດ",
+          "zh": "字母、元音与声调"
+        },
+        "text": {
+          "en": "All 27 consonants by Middle, High and Low class, short and long vowels, and six tones you can hear.",
+          "lo": "ພະຍັນຊະນະທັງ 27 ຕົວຕາມອັກສອນກາງ, ສູງ ແລະ ຕ່ຳ, ສະຫຼະສັ້ນ-ຍາວ ແລະ ວັນນະຍຸດ 6 ສຽງທີ່ຟັງໄດ້.",
+          "zh": "按中、高、低类排列的全部27个辅音，长短元音，以及可收听的六个声调。"
+        }
+      },
+      {
+        "size": "sm",
+        "icon": "pen",
+        "title": {
+          "en": "Handwriting studio",
+          "lo": "ຫ້ອງຝຶກຂຽນ",
+          "zh": "书写练习"
+        },
+        "text": {
+          "en": "Trace each stroke and get scored.",
+          "lo": "ຂຽນຕາມແຕ່ລະເສັ້ນ ແລະ ໄດ້ຄະແນນ.",
+          "zh": "逐笔描写并获得评分。"
+        },
+        "lock": {
+          "en": "Basic",
+          "lo": "ແພັກ Basic",
+          "zh": "基础版"
+        }
+      },
+      {
+        "size": "sm",
+        "icon": "search",
+        "title": {
+          "en": "Dictionary",
+          "lo": "ວັດຈະນານຸກົມ",
+          "zh": "词典"
+        },
+        "text": {
+          "en": "Search in Lao, romanization or English.",
+          "lo": "ຄົ້ນຫາດ້ວຍພາສາລາວ, ຄຳອ່ານ ຫຼື ອັງກິດ.",
+          "zh": "可用老挝文、罗马字或英文搜索。"
+        }
+      },
+      {
+        "size": "sm",
+        "icon": "repeat",
+        "title": {
+          "en": "Spaced review",
+          "lo": "ການທົບທວນເປັນໄລຍະ",
+          "zh": "间隔复习"
+        },
+        "text": {
+          "en": "Flashcards come back just before you forget.",
+          "lo": "ບັດຄຳກັບມາກ່ອນທີ່ທ່ານຈະລືມ.",
+          "zh": "在你快要忘记时，卡片会再次出现。"
+        }
+      },
+      {
+        "size": "mid",
+        "icon": "lamp",
+        "title": {
+          "en": "Culture and pronunciation labs",
+          "lo": "ຫ້ອງທົດລອງວັດທະນະທຳ ແລະ ການອອກສຽງ",
+          "zh": "文化与发音实验室"
+        },
+        "text": {
+          "en": "Tone drills, minimal pairs, kinship terms, classifiers and etiquette such as the Baci ceremony.",
+          "lo": "ຝຶກວັນນະຍຸດ, ຄູ່ຄຳ, ຄຳເອີ້ນຍາດ, ລັກສະນະນາມ ແລະ ມາລະຍາດ ເຊັ່ນ ພິທີບາສີ.",
+          "zh": "声调练习、最小对立词、亲属称谓、量词以及拴线礼等礼仪。"
+        }
+      }
+    ],
+    "patternDemo": [
+      {
+        "lo": "ເຂົ້າໜຽວ",
+        "rom": "khao niao",
+        "en": "sticky rice",
+        "vlo": "ກິນ",
+        "vrom": "kin",
+        "ven": "eat"
+      },
+      {
+        "lo": "ນ້ຳ",
+        "rom": "nam",
+        "en": "water",
+        "vlo": "ດື່ມ",
+        "vrom": "deum",
+        "ven": "drink"
+      },
+      {
+        "lo": "ໝາກໄມ້",
+        "rom": "mak mai",
+        "en": "fruit",
+        "vlo": "ກິນ",
+        "vrom": "kin",
+        "ven": "eat"
+      },
+      {
+        "lo": "ກາເຟ",
+        "rom": "kafe",
+        "en": "coffee",
+        "vlo": "ດື່ມ",
+        "vrom": "deum",
+        "ven": "drink"
+      }
+    ],
+    "about": {
+      "eyebrow": {
+        "en": "About LaoLao",
+        "lo": "ກ່ຽວກັບ LaoLao",
+        "zh": "关于 LaoLao"
+      },
+      "title": {
+        "en": "Built for people learning Lao, with Lao speakers",
+        "lo": "ສ້າງເພື່ອຜູ້ຮຽນພາສາລາວ ຮ່ວມກັບຄົນລາວ",
+        "zh": "为学习老挝语的人打造，与老挝语母语者一起"
+      },
+      "text": {
+        "en": "LaoLao teaches from real sentence patterns instead of word lists. Content is written and checked by native speakers and published in tiers, so free learners and subscribers always see what their plan includes.",
+        "lo": "LaoLao ສອນຈາກໂຄງສ້າງປະໂຫຍກຈິງ ແທນລາຍການຄຳສັບ. ເນື້ອຫາຂຽນ ແລະ ກວດໂດຍເຈົ້າຂອງພາສາ ແລະ ເຜີຍແຜ່ຕາມລະດັບ ເພື່ອໃຫ້ຜູ້ຮຽນເຫັນສິ່ງທີ່ແພັກເກດຂອງຕົນມີ.",
+        "zh": "LaoLao 用真实句型而不是单词表来教学。内容由母语者编写和审核，并按等级发布，免费用户和订阅用户都能看到自己套餐包含的内容。"
+      },
+      "points": [
+        {
+          "en": "Native audio on patterns, words and dialogues",
+          "lo": "ສຽງເຈົ້າຂອງພາສາໃນໂຄງສ້າງ, ຄຳສັບ ແລະ ບົດສົນທະນາ",
+          "zh": "句型、词汇和对话均有真人发音"
+        },
+        {
+          "en": "Works offline as an installable app",
+          "lo": "ໃຊ້ອອບລາຍໄດ້ ຕິດຕັ້ງເປັນແອັບໄດ້",
+          "zh": "可安装为应用并离线使用"
+        },
+        {
+          "en": "Interface in English, Lao and Chinese",
+          "lo": "ໜ້າຈໍເປັນພາສາອັງກິດ, ລາວ ແລະ ຈີນ",
+          "zh": "界面支持英语、老挝语和中文"
+        }
+      ],
+      "tagline": "ຮຽນພາສາລາວດ້ວຍຄວາມສຸກ"
+    },
+    "closing": {
+      "title": {
+        "en": "Say your first sentence in Lao today.",
+        "lo": "ເວົ້າປະໂຫຍກລາວທຳອິດຂອງທ່ານມື້ນີ້.",
+        "zh": "今天就说出你的第一句老挝语。"
+      },
+      "cta": {
+        "en": "Create a free account",
+        "lo": "ສ້າງບັນຊີຟຣີ",
+        "zh": "创建免费账户"
+      }
+    },
+    "footer": {
+      "copyright": {
+        "en": "© 2026 LaoLao · ລາວລາວ",
+        "lo": "© 2026 LaoLao · ລາວລາວ",
+        "zh": "© 2026 LaoLao · ລາວລາວ"
+      },
+      "links": [
+        {
+          "label": {
+            "en": "About",
+            "lo": "ກ່ຽວກັບ",
+            "zh": "关于"
+          },
+          "target": "about"
+        },
+        {
+          "label": {
+            "en": "News",
+            "lo": "ຂ່າວ",
+            "zh": "新闻"
+          },
+          "target": "news"
+        },
+        {
+          "label": {
+            "en": "Plans",
+            "lo": "ແພັກເກດ",
+            "zh": "套餐"
+          },
+          "target": "promotions"
+        }
+      ]
+    }
+  }
 }

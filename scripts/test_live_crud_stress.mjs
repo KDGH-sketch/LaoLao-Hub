@@ -174,6 +174,31 @@ async function runLiveCrudStress() {
       status: "published",
       access: "free"
     },
+    places: {
+      id: "place-rnd-" + Math.floor(Math.random() * 9000 + 1000),
+      scene: "waterfall", lat: 19.75, lon: 102.0, laoName: "ຕາດກວາງຊີ",
+      title: { en: "Kuang Si Falls", lo: "ນ້ຳຕົກຕາດກວາງຊີ", zh: "光西瀑布" },
+      text: { en: "Turquoise pools south of Luang Prabang.", lo: "ອ່າງນ້ຳສີຟ້າ ທາງໃຕ້ຫຼວງພະບາງ.", zh: "琅勃拉邦南部的碧绿水潭。" },
+      status: "published", access: "public"
+    },
+    festivals: {
+      id: "fest-rnd-" + Math.floor(Math.random() * 9000 + 1000),
+      month: 2, lunar: true, art: "candle", laoName: "ບຸນມາຂະບູຊາ",
+      title: { en: "Boun Makha Bousa", lo: "ບຸນມາຂະບູຊາ", zh: "万佛节" },
+      status: "published", access: "public"
+    },
+    offers: {
+      id: "offer-rnd-" + Math.floor(Math.random() * 9000 + 1000),
+      kind: "banner", placement: "promotions", active: true, startsAt: "2026-10-01", endsAt: "2026-12-31",
+      title: { en: "Back to school", lo: "ກັບໄປໂຮງຮຽນ", zh: "开学季" },
+      status: "published", access: "public"
+    },
+    resources: {
+      id: "res-rnd-" + Math.floor(Math.random() * 9000 + 1000),
+      kind: "pdf", glyph: "ກ", requiresAccount: true, url: "https://example.com/guide.pdf",
+      title: { en: "Vowel chart", lo: "ຕາຕະລາງສະຫຼະ", zh: "元音表" },
+      status: "published", access: "public"
+    },
     releases: {
       id: "rel-rnd-" + Math.floor(Math.random() * 9000 + 1000),
       date: "2026-10-01",

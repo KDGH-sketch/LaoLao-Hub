@@ -184,5 +184,51 @@ for (const [i, a] of cases.entries()){
   ok(pick(sqlE) === pick(jsE), `case ${i} (${a ? a.planId + "/" + a.status : "no access"}): ${pick(sqlE) === pick(jsE) ? sqlE.status + " tier " + sqlE.tier : "SQL " + pick(sqlE) + " vs JS " + pick(jsE)}`);
 }
 
+console.log("welcome page: new tables and settings/welcome (docs/WELCOME.md)");
+{
+  const W = { ed:"a1000000-0000-0000-0000-000000000001", ct:"a1000000-0000-0000-0000-000000000002", ad:"a1000000-0000-0000-0000-000000000003",
+              rv:"a1000000-0000-0000-0000-000000000004", sp:"a1000000-0000-0000-0000-000000000005", cu:"a1000000-0000-0000-0000-000000000006", cp:"a1000000-0000-0000-0000-000000000007" };
+  const roles = { ed:{ role:"editor" }, ct:{ role:"content" }, ad:{ role:"admin" }, rv:{ role:"reviewer" }, sp:{ role:"support" },
+                  cu:{ role:"custom", permissions:{ places:{ view:true, edit:true } } }, cp:{ role:"custom", permissions:{ promotions:{ view:true, edit:true } } } };
+  for (const [k, d] of Object.entries(roles)) await db.exec(`insert into public.admins (id, data) values ('${W[k]}', '${j(Object.assign({ status:"active" }, d))}') on conflict (id) do update set data = excluded.data`);
+  const asW = async (k, fn) => {
+    const sub = k === null ? "" : W[k] || U[k];
+    await db.exec(`reset role; select set_config('request.jwt.claim.sub', '${sub}', false); set role ${k === null ? "anon" : "authenticated"};`);
+    try { return await fn(); } finally { await db.exec(`reset role; select set_config('request.jwt.claim.sub', '', false);`); }
+  };
+  const tryWrite = (k, table, id) => asW(k, async () => { try { await db.query(`insert into public."${table}" (id, data) values ($1, '{"status":"draft"}')`, [id]); return true; } catch(e){ return false; } });
+  const types = ["places","festivals","offers","resources"];
+  // seed one published public row of each type, a published welcome copy and its draft
+  for (const t of types) await db.exec(`insert into public."${t}" (id, data) values ('seed-${t}', '{"status":"published","access":"public"}') on conflict (id) do nothing`);
+  await db.exec(`insert into public.settings (id, data) values ('welcome', '{"published":{"hero":{}}}'), ('welcomeDraft', '{"data":{"secret":"unpublished copy"}}') on conflict (id) do update set data = excluded.data`);
+  await db.exec(`insert into public.bundles (id, data) values ('t2_p0', '{"tier":2}') on conflict (id) do nothing`);
+
+  const anonBundles = await asW(null, async () => (await all(`select id from public.bundles order by id`)).map(r => r.id).join(","));
+  ok(anonBundles === "meta,t0_p0", "anonymous: reads only the bundle meta and tier-0 parts (" + anonBundles + ")");
+  ok(await asW(null, async () => (await all(`select id from public.places`)).length) === 0, "anonymous: cannot read the raw places table (only the bundle)");
+  ok(await asW(null, async () => !!(await one(`select data from public.settings where id = 'welcome'`))), "anonymous: reads the published welcome copy");
+  ok(await asW(null, async () => !(await one(`select data from public.settings where id = 'welcomeDraft'`))), "anonymous: cannot read the welcome draft");
+  ok(await asW("free", async () => !(await one(`select data from public.settings where id = 'welcomeDraft'`))), "learner: cannot read the welcome draft");
+  ok(await asW("ed", async () => !!(await one(`select data from public.settings where id = 'welcomeDraft'`))), "editor: reads the welcome draft");
+  for (const t of types){
+    ok(!(await tryWrite(null, t, "x-anon")) && !(await tryWrite("free", t, "x-free")) && !(await tryWrite("rv", t, "x-rv")) && !(await tryWrite("sp", t, "x-sp")),
+      `${t}: anonymous, learner, reviewer and support cannot write`);
+    ok((await tryWrite("ed", t, "x-ed")) && (await tryWrite("ct", t, "x-ct")) && (await tryWrite("ad", t, "x-ad")) && (await tryWrite("adm", t, "x-super")),
+      `${t}: editor, content, admin and super can write`);
+  }
+  ok((await tryWrite("cu", "places", "x-cu")) && !(await tryWrite("cu", "festivals", "x-cu")) && !(await tryWrite("cu", "offers", "x-cu")), "custom role with places → edit: places only");
+  ok((await tryWrite("cp", "offers", "x-cp")) && !(await tryWrite("cp", "places", "x-cp2")), "custom role with promotions → edit: offers only");
+  const setW = (k, id) => asW(k, async () => { try { await db.query(`insert into public.settings (id, data) values ($1, '{"x":1}') on conflict (id) do update set data = excluded.data`, [id]); return (await one(`select data->>'x' x from public.settings where id = '${id}'`))?.x === "1"; } catch(e){ return false; } });
+  ok((await setW("ed", "welcome")) && (await setW("ed", "welcomeDraft")), "editor: writes settings/welcome and its draft");
+  ok(!(await setW("ed", "app")), "editor: cannot write settings/app (only super writes outside its menu)");
+  ok(!(await setW("rv", "welcome")) && !(await setW("sp", "welcome")) && !(await setW("free", "welcome")) && !(await setW(null, "welcome")), "reviewer, support, learner and anonymous cannot write settings/welcome");
+  ok(!(await setW("cu", "welcome")), "custom role without the welcome menu cannot write it");
+  ok(await setW("adm", "app"), "super admin still writes settings/app");
+  // the migration file for live projects runs on its own and again
+  const mig = fs.readFileSync(new URL("supabase-welcome-migration.sql", ROOT), "utf8");
+  try { await db.exec(mig); await db.exec(mig); ok(true, "supabase-welcome-migration.sql runs, twice"); } catch(e){ ok(false, "migration failed: " + e.message); }
+  ok(!(await tryWrite("free", "places", "x-free2")) && (await tryWrite("ed", "places", "x-ed2")), "after the migration the same rules apply");
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -27,8 +27,17 @@ export const ALL_ADMIN_MENUS = [
     items: [
       { id: "audioStudio", label: ["Voice Studio", "ສະຕູດິໂອບັນທຶກສຽງ"], icon: "mic", type: "studio" },
       { id: "excelImport", label: ["Excel / CSV Importer", "ນຳເຂົ້າ Excel/CSV"], icon: "upload", type: "studio" },
-      { id: "promotions", label: ["Promotions & Feed", "ໂປຣໂມຊັ່ນ ແລະ ຂ່າວ"], icon: "gift", type: "studio" },
       { id: "contentHealth", label: ["Content Health Audit", "ກວດສອບຄວາມສົມບູນ"], icon: "spark", type: "studio" }
+    ]
+  },
+  {
+    section: ["Website & Welcome", "ເວັບໄຊ ແລະ ໜ້າຕ້ອນຮັບ"],
+    items: [
+      { id: "welcome", label: ["Welcome Page", "ໜ້າຕ້ອນຮັບ"], icon: "home", type: "content" },
+      { id: "places", label: ["Journey Places", "ສະຖານທີ່"], icon: "globe", type: "content" },
+      { id: "festivals", label: ["Festivals", "ບຸນ"], icon: "star", type: "content" },
+      { id: "promotions", label: ["Promotions & Feed", "ໂປຣໂມຊັ່ນ ແລະ ຂ່າວ"], icon: "gift", type: "content" },
+      { id: "resources", label: ["Free Resources", "ຊັບພະຍາກອນຟຣີ"], icon: "download", type: "content" }
     ]
   },
   {

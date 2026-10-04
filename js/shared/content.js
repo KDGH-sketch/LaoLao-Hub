@@ -5,7 +5,8 @@ export const ACCESS_KEYS = ["public","free","standard","premium","admin"];
 export const STATUS_KEYS = ["draft","published","archived"];
 export const CONTENT_TYPES = [
   "lessons","patterns","grammar","vocabulary","dialogues","quizzes","audio","paths","releases","lexicon",
-  "videos","tones","culture","characters","dictionary"
+  "videos","tones","culture","characters","dictionary",
+  "places","festivals","offers","resources"          // the public welcome page (docs/WELCOME.md)
 ];
 export const LEVELS = [1,2,3,4,5,6];
 export const SKILLS = ["vocabulary","grammar","reading","listening","writing","speaking","pinyin","characters","sentence"];
@@ -66,7 +67,8 @@ export async function buildBundles(api, who, onStep=()=>{}){
   const pub = t => all[t].filter(d => d.status === "published" && minTier(d) < 99);
   const catalog = [];
   for (const t of ["lessons","patterns","grammar","dialogues","quizzes","paths","releases","videos","culture"]) for (const d of pub(t))
-    catalog.push({ type:t, id:d.id, title: d.title || (d.hz ? {en:d.hz} : null), hz:d.hz||"", level:d.level||0, tier:minTier(d), order:d.order??0, kind:d.kind||"" });
+    catalog.push({ type:t, id:d.id, title: d.title || (d.hz ? {en:d.hz} : null), hz:d.hz||"", level:d.level||0, tier:minTier(d), order:d.order??0, kind:d.kind||"",
+      featured: d.featured === true, date: d.date || "" });   // featured: shown as news on the welcome page (titles only unless the item is public)
   const meta = { version, tiers:{}, builtAt:new Date(), builtBy: who||"", counts:{} };
   const ops = [];
   const existing = await api.db.list("bundles");
@@ -99,6 +101,27 @@ export async function buildBundles(api, who, onStep=()=>{}){
 const idb = () => new Promise((res, rej) => { const r = indexedDB.open("laolao-cache", 1); r.onupgradeneeded = () => r.result.createObjectStore("kv"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
 export async function cacheGet(key){ try { const d = await idb(); return await new Promise(res => { const q = d.transaction("kv").objectStore("kv").get(key); q.onsuccess = () => res(q.result ?? null); q.onerror = () => res(null); }); } catch(e){ return null; } }
 export async function cacheSet(key, val){ try { const d = await idb(); await new Promise(res => { const t = d.transaction("kv","readwrite"); t.objectStore("kv").put(val, key); t.oncomplete = res; t.onerror = res; }); } catch(e){} }
+
+// The welcome page, before anyone signs in: the tier-0 bundle (public items + the catalog of titles).
+// Kept apart from loadBundle(), whose "bundle" cache belongs to the signed-in app. Gives up after timeoutMs
+// and falls back to the last copy on this device (or null), so the page never waits long on the network.
+export async function loadPublicBundle(api, timeoutMs = 2500){
+  const cached = await cacheGet("public-bundle");
+  const net = (async () => {
+    const meta = await api.db.get("bundles/meta");
+    if (!meta || !meta.tiers || meta.tiers[0] == null) return null;
+    if (cached && cached.version === meta.version) return JSON.parse(cached.json);
+    let json = "";
+    for (let i = 0; i < meta.tiers[0]; i++){ const p = await api.db.get(`bundles/t0_p${i}`); if (!p) return null; json += p.json; }
+    await cacheSet("public-bundle", { version: meta.version, json });
+    return JSON.parse(json);
+  })();
+  try {
+    const r = await Promise.race([net, new Promise(res => setTimeout(() => res("timeout"), timeoutMs))]);
+    if (r && r !== "timeout") return r;
+  } catch(e){}
+  return cached ? JSON.parse(cached.json) : null;
+}
 
 export async function loadBundle(api, tier){
   let meta = null;

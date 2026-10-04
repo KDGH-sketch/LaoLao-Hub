@@ -7,7 +7,8 @@ import { makeEngine } from "../shared/engine.js";
 import { runQuiz, QTYPES, QTYPE_SKILL } from "../shared/quiz.js";
 import { sentenceEl, ctx } from "../shared/widgets.js";
 import { SKILLS } from "../shared/content.js";
-import { S, L, t, go, canContent, canViewMenu, canEditMenu, fld, markUnpublished, planName, lockedScreen } from "./state.js";
+import { S, L, t, go, canContent, canViewMenu, canEditMenu, fld, markUnpublished, planName, lockedScreen, audit, menuOf } from "./state.js";
+import { checkWebItem, uploadChecked, migrateLegacyPromo } from "./web-checks.js";
 import { SCHEMAS, STEP_TYPE_TO_COL, APP_PAGES } from "./schemas.js";
 import { parseTime, formatTime, normalizeSegments } from "../shared/video.js";
 import { publishFlow } from "./main.js";
@@ -25,7 +26,8 @@ export async function viewContentHome(){
   const ICON = {
     lessons:"learn", patterns:"gen", grammar:"layers", vocabulary:"dict", dialogues:"users",
     quizzes:"practice", audio:"speaker", paths:"path", releases:"gift", lexicon:"content",
-    videos:"play", tones:"speaker", culture:"culture", characters:"chars", dictionary:"dict"
+    videos:"play", tones:"speaker", culture:"culture", characters:"chars", dictionary:"dict",
+    places:"globe", festivals:"star", offers:"gift", resources:"download"
   };
   return h("div",null, h("div",{class:"pagehead"}, h("h1",null,t("adm_content")), h("p",null,"Universal Content Management System: Create, edit, duplicate, bulk-manage, and publish curriculum entities.")),
     h("div",{class:"grid3"}, counts.map(([ty,n]) => h("button",{class:"qs",onclick:()=>go("contentList",{type:ty})}, h("span",{class:"qi",style:"background:var(--surface-2);color:var(--accent)"}, icon(ICON[ty]||"content")), h("span",null, h("b",null,t("type_"+ty)||ty), h("div",{class:"small muted"}, n+" "+t("items")))))));
@@ -35,7 +37,7 @@ export async function viewContentHome(){
 export async function viewContentList({ type, q="", status="", level="" }){
   const all = await rows(type, true);
   const s = SCHEMAS[type] || {};
-  const canEdit = canEditMenu(type);
+  const canEdit = canEditMenu(menuOf(type));
   const selected = new Set();
   let page = 1;
   const pageSize = 30;
@@ -74,7 +76,7 @@ export async function viewContentList({ type, q="", status="", level="" }){
 
     pageItems.forEach(d => {
       const isSel = selected.has(d.id);
-      const rowBox = h("input",{type:"checkbox",checked:isSel,disabled:!canEdit,onclick:e=>{
+      const rowBox = h("input",{type:"checkbox","aria-label":"Select "+(d.id||""),checked:isSel,disabled:!canEdit,onclick:e=>{
         e.stopPropagation();
         if (e.target.checked) selected.add(d.id); else selected.delete(d.id);
         updateBulkBar();
@@ -236,8 +238,8 @@ export async function viewContentList({ type, q="", status="", level="" }){
     bulkBar,
     h("div",{class:"toolbar"},
       h("input",{class:"input grow",placeholder:t("filter_ph"),value:q,oninput:debounce(e=>{ q=e.target.value; page=1; draw(); },120)}),
-      s.noAccess ? null : h("select",{class:"input",onchange:e=>{ status=e.target.value; page=1; draw(); }}, h("option",{value:""},t("status")+": "+t("all")), STATUS_KEYS.map(k=>h("option",{value:k,selected:status===k},t("status_"+k)))),
-      h("select",{class:"input",onchange:e=>{ level=e.target.value; page=1; draw(); }}, h("option",{value:""},t("level")+": "+t("all")), [1,2,3,4,5,6].map(n=>h("option",{value:String(n)},"Stage "+n)))
+      s.noAccess ? null : h("select",{class:"input","aria-label":t("status"),onchange:e=>{ status=e.target.value; page=1; draw(); }}, h("option",{value:""},t("status")+": "+t("all")), STATUS_KEYS.map(k=>h("option",{value:k,selected:status===k},t("status_"+k)))),
+      h("select",{class:"input","aria-label":t("level"),onchange:e=>{ level=e.target.value; page=1; draw(); }}, h("option",{value:""},t("level")+": "+t("all")), [1,2,3,4,5,6].map(n=>h("option",{value:String(n)},"Stage "+n)))
     ),
     h("div",{class:"tbl-wrap"},
       h("table",{class:"tbl"},
@@ -300,7 +302,7 @@ async function newItem(type){
 // ---------- editor ----------
 export async function viewEditor({ type, id, isNew }){
   const s = SCHEMAS[type] || {};
-  const canEdit = canEditMenu(type);
+  const canEdit = canEditMenu(menuOf(type));
   if (!canEdit && isNew) {
     return lockedScreen("Creating Items Restricted", "You have read-only permissions for this collection. Creating new items is reserved for Editors & Super Admins.", () => go("contentList",{type}), "Return to List");
   }
@@ -339,11 +341,19 @@ export async function viewEditor({ type, id, isNew }){
   const accessSel = h("select",{class:"input",disabled:!canEdit,onchange:e=>draft.access=e.target.value}, accessOpts.map(([k,l])=>h("option",{value:k,selected:String(draft.access ?? "free")===k},l)));
   const orderIn = h("input",{class:"input",type:"number",disabled:!canEdit,value:draft.order??0,oninput:e=>draft.order=+e.target.value});
 
+  // welcome-page items: warnings (e.g. Lao or Chinese missing) shown while editing; errors block saving
+  const webChecks = h("div",{class:"panel stack web-checks",role:"status","aria-live":"polite"});
+  const refreshChecks = () => { if (!s.web) return; const c = checkWebItem(type, draft);
+    webChecks.replaceChildren(h("h3",null, L(["Checks","ກວດສອບ"])), ...(c.errors.length || c.warnings.length ? [
+      ...c.errors.map(m => h("p",{class:"small",style:"color:var(--bad);margin:0"}, icon("x"), " ", m)),
+      ...c.warnings.map(m => h("p",{class:"small",style:"color:var(--warn);margin:0"}, icon("info"), " ", m))] : [h("p",{class:"small",style:"color:var(--jade);margin:0"}, icon("check"), " ", L(["All texts filled in, no problems found.","ຂໍ້ຄວາມຄົບ, ບໍ່ພົບບັນຫາ."]))])); };
+  if (s.web){ form.addEventListener("input", debounce(refreshChecks, 250)); form.addEventListener("change", refreshChecks); setTimeout(refreshChecks, 0); }
   const save = async publishToo => {
     if (!canEdit) { toast("You have read-only permissions", "bad"); return; }
     try {
       if (publishToo) draft.status = "published";
       const clean = await normalize(type, draft);
+      if (s.web){ const chk = checkWebItem(type, clean); if (chk.errors.length) throw new Error(chk.errors.join(" · ")); }
       let docId = (id || (idInput ? idInput.value : "") || "").trim();
       if (s.idFrom) {
         const fromField = (clean[s.idFrom] || "").trim();
@@ -355,6 +365,8 @@ export async function viewEditor({ type, id, isNew }){
       }
       clean.id = docId;
       await saveContent(S.api, type, docId, clean, S.me.uid); markUnpublished();
+      audit(isNew ? "create" : "update", `${type}/${docId}`, publishToo ? "published" : clean.status);
+      if (type === "offers") await migrateLegacyPromo().catch(() => null);      // the old download banner becomes a resource on the first offer save
       delete cache[type];
       if (type === "lexicon") { LEXICON = null; ENGINE = null; }
       toast(t("saved_ok"), "ok");
@@ -374,11 +386,12 @@ export async function viewEditor({ type, id, isNew }){
         s.noAccess ? null : h("button",{class:"btn jade",onclick:()=>save(true)}, icon("upload"), t("status_published")+" + "+t("publish_now")))
       : h("div",{class:"pill muted",style:"text-align:center;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"}, icon("lock"), " Editing Restricted (Read-Only)"),
       doc ? h("p",{class:"small muted"}, "v"+(doc.version||1)+" · "+t("updated")+" "+fmtDate(doc.updatedAt, lang(), true)) : null),
+    s.web ? webChecks : null,
     previewPanel(type, draft),
     doc ? versionsPanel(type, id, v => { if (!canEdit) return; draft = JSON.parse(JSON.stringify(Object.assign({}, v, { status: draft.status }))); renderForm(); toast("v"+v.version+" → "+t("save")); }) : null,
     (doc && canEdit) ? h("div",{class:"row"},
-      h("button",{class:"btn sm",onclick:async()=>{ const nid = id+"-copy-" + Date.now().toString(36).slice(-4); await saveContent(S.api, type, nid, Object.assign({}, draft, { status:"draft" }), S.me.uid); markUnpublished(); go("editor",{type,id:nid}); }}, icon("copy"), t("duplicate")),
-      h("button",{class:"btn sm ghost",style:"color:var(--bad)",onclick:async()=>{ if(await confirmDialog(t("delete_item"),t("confirm_delete"),t("delete_item"),t("cancel"),true)){ await S.api.db.del(`${type}/${id}`); await S.api.db.set("settings/bundle",{dirty:true},true); markUnpublished(); delete cache[type]; go("contentList",{type}); } }}, icon("trash"), t("delete_item"))) : null);
+      h("button",{class:"btn sm",onclick:async()=>{ const nid = id+"-copy-" + Date.now().toString(36).slice(-4); await saveContent(S.api, type, nid, Object.assign({}, draft, { status:"draft" }), S.me.uid); markUnpublished(); audit("duplicate", `${type}/${nid}`, "from "+id); go("editor",{type,id:nid}); }}, icon("copy"), t("duplicate")),
+      h("button",{class:"btn sm ghost",style:"color:var(--bad)",onclick:async()=>{ if(await confirmDialog(t("delete_item"),t("confirm_delete"),t("delete_item"),t("cancel"),true)){ await S.api.db.del(`${type}/${id}`); await S.api.db.set("settings/bundle",{dirty:true},true); markUnpublished(); audit("delete", `${type}/${id}`); delete cache[type]; go("contentList",{type}); } }}, icon("trash"), t("delete_item"))) : null);
 
   return h("div",null,
     h("div",{class:"crumb"}, h("button",{onclick:()=>go("content")}, t("adm_content")), "›", h("button",{onclick:()=>go("contentList",{type})}, t("type_"+type)||type), "›", h("span",{class:"mono"}, id || t("new_item"))),
@@ -460,7 +473,7 @@ async function normalize(type, d){
 
 // ---------- field renderers ----------
 const LANGS = [["en","EN"],["lo","ລາວ"],["zh","中文"]];
-function renderField(f, obj, type){
+export function renderField(f, obj, type){
   if (f.row) return h("div",{class:"field-row"}, f.row.map(x => renderField(x, obj, type)));
   const label = L(f.label||""), help = f.help ? L(f.help) : null;
   const get = () => f.key ? obj[f.key] : obj, set = v => { if (f.key) obj[f.key] = v; };
@@ -468,7 +481,24 @@ function renderField(f, obj, type){
   switch (f.type){
     case "text": return fld(label, input(get(), set, { cls:f.cls, placeholder:f.placeholder }), help);
     case "textarea": return fld(label, input(get(), set, { multi:true }), help);
-    case "number": return fld(label, input(get(), v=>set(+v), { type:"number" }), help);
+    case "number": { const el = input(get(), v=>set(v === "" ? "" : +v), { type:"number" }); if (f.step) el.step = f.step; return fld(label, el, help); }
+    case "bool": return h("label",{class:"row",style:"gap:10px;align-items:center"}, h("input",{type:"checkbox",class:"switch",checked:!!get(),onchange:e=>set(e.target.checked)}), h("span",null,label), help ? h("span",{class:"help"},help) : null);
+    case "datetime": { const v = get(); const el = h("input",{class:"input",type:"datetime-local",value: v ? String(v).slice(0,16) : "",oninput:e=>set(e.target.value || "")}); return fld(label, el, help || L(["Your local time","ເວລາທ້ອງຖິ່ນ"])); }
+    case "image": case "file": {
+      // upload to the public bucket (laolao-assets) after checking the type and size, or paste a link; images need alt text
+      const isImg = f.type === "image";
+      const url = input(get(), set, { placeholder:"https://…" });
+      const preview = h("div",{class:"up-preview"});
+      const show = () => { preview.replaceChildren(); const v = get(); if (!v) return; preview.append(isImg ? h("img",{src:v,alt:"",style:"max-width:220px;max-height:140px;border-radius:10px"}) : h("a",{href:v,target:"_blank",rel:"noopener"}, v.split("/").pop().slice(0,60))); };
+      const file = h("input",{type:"file",accept: isImg ? "image/png,image/jpeg,image/webp" : (f.accept || "*/*"),onchange:async e=>{ const fl = e.target.files[0]; e.target.value = ""; if (!fl) return;
+        try { const u = await uploadChecked(fl, isImg ? "image" : "file", type); set(u); url.value = u; show(); toast(t("saved_ok")); } catch(err){ toast(errText(err),"err"); } }});
+      show();
+      const parts = [h("label",{class:"btn sm",style:"align-self:flex-start"}, icon("upload"), L(isImg ? ["Upload image (PNG, JPEG, WebP, up to 5 MB)","ອັບໂຫຼດຮູບ (ສູງສຸດ 5 MB)"] : ["Upload file (up to 5 MB)","ອັບໂຫຼດໄຟລ໌ (ສູງສຸດ 5 MB)"]), h("span",{hidden:true}, file)),
+        h("span",{class:"help"}, t("or_url")), url, preview,
+        get() ? h("button",{class:"btn sm ghost",type:"button",style:"align-self:flex-start",onclick:()=>{ set(""); url.value = ""; show(); }}, icon("trash"), t("remove")) : null];
+      if (isImg && f.alt) parts.push(renderField({ key:f.alt, type:"tr", label:["Alt text: what the photo shows (required with a photo)","ຄຳອະທິບາຍຮູບ (ຈຳເປັນ)"] }, obj, type));
+      return fld(label, h("div",{class:"stack",style:"gap:8px"}, parts), help);
+    }
     case "date": return fld(label, input(get(), set, { type:"date" }), help);
     // shown as m:ss, stored as seconds
     case "time": return fld(label, input(get()==null ? "" : formatTime(get()), x => set(x.trim()==="" ? null : (parseTime(x) ?? x.trim())), { cls:"mono", placeholder:f.placeholder||"0:00" }), help);
@@ -541,7 +571,7 @@ function renderField(f, obj, type){
     case "json": { const ta = h("textarea",{class:"input mono",style:"min-height:260px"}); ta.value = typeof get()==="string" ? get() : JSON.stringify(get(), null, 1); ta.addEventListener("input", () => set(ta.value)); return fld(label, ta, help); }
     case "audio": {
       const url = input(get(), set, { placeholder:"https://…/nihao.mp3" });
-      const file = h("input",{type:"file",accept:"audio/*",onchange:async e=>{ const fl = e.target.files[0]; if (!fl) return; try { toast(t("importing")); const u = await S.api.storage.upload(fl, `audio/${Date.now()}-${fl.name.replace(/[^\w.\-]/g,"_")}`); set(u); url.value = u; toast(t("saved_ok")); } catch(err){ toast(errText(err),"err"); } }});
+      const file = h("input",{type:"file",accept:"audio/*",onchange:async e=>{ const fl = e.target.files[0]; if (!fl) return; try { toast(t("importing")); const u = await uploadChecked(fl, "audio", "audio"); set(u); url.value = u; toast(t("saved_ok")); } catch(err){ toast(errText(err),"err"); } }});
       return fld(label, h("div",{class:"stack",style:"gap:8px"}, h("label",{class:"btn sm",style:"align-self:flex-start"}, icon("upload"), t("upload_audio"), h("span",{hidden:true}, file)), h("span",{class:"help"}, t("or_url")), url,
         h("button",{class:"btn sm",type:"button",style:"align-self:flex-start",onclick:()=>{ if (get()) new Audio(get()).play().catch(e=>toast(errText(e),"err")); }}, icon("play"), t("play"))), "Uploads go to the Supabase Storage bucket \"laolao-assets\" (it must exist and allow uploads). Or paste a link to an audio file hosted anywhere.");
     }

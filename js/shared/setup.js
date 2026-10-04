@@ -1,5 +1,5 @@
 // Platform setup: first Super Admin, starter content import, and demo-mode sample data.
-import { buildBundles, TIERS } from "./content.js";
+import { buildBundles, TIERS, CONTENT_TYPES } from "./content.js";
 
 export async function bootstrapOwner(api, user, name){
   const now = new Date();
@@ -16,11 +16,16 @@ export async function importSeed(api, who, onStep=()=>{}){
   const seed = await fetch(new URL("../../data/seed.json", import.meta.url)).then(r=>r.json());
   const now = new Date(), ops = [];
   const meta = { version:1, createdAt: now, updatedAt: now, createdBy: who, updatedBy: who };
-  for (const type of ["patterns","lessons","grammar","vocabulary","dialogues","quizzes","audio","paths","releases","lexicon","videos","tones","culture","characters","dictionary"]){
+  for (const type of CONTENT_TYPES){
     for (const item of (seed[type]||[])){ const { id, ...rest } = item; ops.push({ op:"set", path:`${type}/${id}`, data: Object.assign(rest, meta) }); }
   }
   for (const p of seed.plans){ const { id, ...rest } = p; ops.push({ op:"set", path:`plans/${id}`, data: rest }); }
   ops.push({ op:"set", path:"settings/app", data: seed.settings, merge:true });
+  // the welcome page copy: published as is, and the same copy as the editors' starting draft
+  if (seed.welcome){
+    ops.push({ op:"set", path:"settings/welcome", data:{ published: seed.welcome, publishedAt: now, publishedBy: who } });
+    ops.push({ op:"set", path:"settings/welcomeDraft", data:{ data: seed.welcome, updatedAt: now, updatedBy: who } });
+  }
   onStep("write");
   await api.db.batch(ops);
   onStep("publish");
@@ -68,6 +73,25 @@ export async function addDemoPayments(api){
   }
 }
 
+// Demo only: the welcome page content for demo databases made before it existed, and the example offer switched on
+// (the starter content ships it inactive, because it describes a discount the checkout does not apply).
+export async function addWelcomeDemo(api, who = "admin-demo-owner"){
+  if (api.mode !== "demo") return;
+  let changed = false;
+  if (!(await api.db.count("places").catch(() => 0))){
+    const seed = await fetch(new URL("../../data/seed.json", import.meta.url)).then(r => r.json());
+    const now = new Date(), meta = { version:1, createdAt: now, updatedAt: now, createdBy: who, updatedBy: who }, ops = [];
+    for (const type of ["places","festivals","offers","resources"]) for (const item of (seed[type]||[])){ const { id, ...rest } = item; ops.push({ op:"set", path:`${type}/${id}`, data: Object.assign(rest, meta) }); }
+    for (const [type, ids] of [["culture",["cul-alms","cul-baci","cul-khao-niao"]],["releases",["r100"]]]) for (const id of ids) ops.push({ op:"set", path:`${type}/${id}`, data:{ featured:true }, merge:true });
+    ops.push({ op:"set", path:"settings/welcome", data:{ published: seed.welcome, publishedAt: now, publishedBy: who } });
+    ops.push({ op:"set", path:"settings/welcomeDraft", data:{ data: seed.welcome, updatedAt: now, updatedBy: who } });
+    await api.db.batch(ops); changed = true;
+  }
+  const offer = await api.db.get("offers/sample-premium").catch(() => null);
+  if (offer && offer.active !== true && !offer.demoTouched){ await api.db.set("offers/sample-premium", { active:true, demoTouched:true }, true); changed = true; }
+  if (changed) await buildBundles(api, who);
+}
+
 export async function ensureDemo(api, onStep=()=>{}){
   if (api.mode !== "demo") return false;
   if (!api._isEmpty()) {
@@ -85,6 +109,7 @@ export async function ensureDemo(api, onStep=()=>{}){
     const chars = await api.db.list("characters").catch(() => []);
     if (!chars.some(c => c.handwriting)) await addSampleHandwriting(api, "admin-demo-owner");
     await addDemoPayments(api);
+    await addWelcomeDemo(api);
     if (!revCount.length) {
       for (const roleKey of ["reviewer", "editor", "support"]) {
         const acc = DEMO[roleKey];
@@ -109,6 +134,7 @@ export async function ensureDemo(api, onStep=()=>{}){
   await importSeed(api, adminUid, onStep);
   await addSampleHandwriting(api, adminUid);
   await addDemoPayments(api);
+  await addWelcomeDemo(api, adminUid);
 
   // Seed demo reviewer, editor, and support admin accounts
   for (const roleKey of ["reviewer", "editor", "support"]) {

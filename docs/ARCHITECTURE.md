@@ -43,13 +43,15 @@ The app addresses data with paths such as `users/abc` or `reviews/abc/items/xyz`
 | `access` | planId, tier, status, start, expiresAt, source |
 | `subscriptions` | Every assign / extend / suspend / cancel, with who and when |
 | `patterns`, `lessons`, `grammar`, `vocabulary`, `dialogues`, `quizzes`, `audio`, `paths`, `releases`, `lexicon`, `videos`, `tones`, `culture`, `characters`, `dictionary` | Content. Each has `status`, `access`, `level`, `order`, `version`, `createdAt`, `updatedAt`, `updatedBy` |
+| `places`, `festivals`, `offers`, `resources` | The public welcome page: journey places (lat/lon → map pin), festival calendar, offers with start/end dates, free resources. Published like other content; visitors get `access: "public"` items through the tier-0 bundle. See WELCOME.md |
+| `orders`, `payments` | Plan purchases and verified provider transactions; see PAYMENTS.md |
 | `usage`, `accessLogs` | Usage counters (written only by `ll_use`) and refused attempts; see ACCESS.md |
 | `bundles` | `meta` and `t{tier}_p{n}`: published content per tier, split into parts |
 | `progress` | Skills, lessons, patterns, study days, last position; events as `{uid}__events__{id}` |
 | `reviews` | Spaced-repetition cards (SM-2 style) as `{uid}__items__{id}` |
 | `notes` | Learner notes as `{uid}__items__{id}` |
 | `activity` | Feed for the admin dashboard |
-| `settings` | `app`, `bundle`, `bootstrap`, `promotions` |
+| `settings` | `app`, `bundle`, `bootstrap`, `promotions` (old download banner, read as a fallback until converted), `welcome` (published welcome-page copy, public) and `welcomeDraft` (its draft, admins only) |
 
 Who can read and write each table is defined by the RLS policies at the end of `supabase-schema.sql`.
 
@@ -77,6 +79,15 @@ Admin roles and menu permissions are checked in the browser by `js/admin/state.j
 4. Writes the package parts, then `bundles/meta` with a new version number.
 
 The learner app reads `meta`. It downloads parts only when the version changed, and caches the package in IndexedDB.
+
+## Welcome page (signed out)
+
+The page visitors see before signing in (`js/learner/welcome.js`). It paints at once from `js/learner/welcome-data.js`,
+then fills in from `settings/welcome` (published copy), `settings/app`, `plans` and the tier-0 bundle (`loadPublicBundle`,
+cached apart from the signed-in app's bundle). Each read gives up after 2.5 s, so it also works offline. It never calls
+an `ll_*` function before sign-in. Admins manage it in **Website & Welcome** (Welcome Page, Journey Places, Festivals,
+Promotions & Feed, Free Resources): drafts, preview (`?welcome-preview=1`), publish, revert, and every change in the
+Activity Audit Log. Full guide: [WELCOME.md](WELCOME.md).
 
 ## Offline
 

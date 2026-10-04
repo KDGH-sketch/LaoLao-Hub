@@ -5,13 +5,13 @@ import { t, lang } from "../shared/i18n.js";
 import { featureByKey, ROUTE_FEATURE, PRACTICE_FEATURE } from "../shared/features.js";
 import { planIncluding } from "../shared/access.js";
 import { encodeReturn, planPrice, money, enabledMethods, methodCurrency } from "../shared/billing.js";
+import { planLabel as sharedPlanLabel } from "../shared/plan-format.js";
 import { A } from "./core.js";
 
 const L = obj => tr(obj, lang());
 export const featureName = f => featureByKey[f] ? L(featureByKey[f].label) : f;
 const featureDesc = f => featureByKey[f] ? L(featureByKey[f].desc) : "";
-// Plans with a plain-text name (the starter plans) use the standard labels, so "standard" shows as "Basic"
-export const planLabel = p => !p ? "" : typeof p.name === "string" && t("acc_" + p.id) !== "acc_" + p.id ? t("acc_" + p.id) : (tr(p.name, lang()) || p.id);
+export const planLabel = p => sharedPlanLabel(p, lang());   // js/shared/plan-format.js
 const byId = id => (A.plans || []).find(p => p.id === id) || null;
 const num = n => { try { return new Intl.NumberFormat(lang()==="zh" ? "zh-CN" : lang()==="lo" ? "lo-LA" : "en-US").format(n); } catch(e){ return String(n); } };
 const perText = per => t("ac_per_"+(per||"day"));     // "today", "this month", …

@@ -1,6 +1,6 @@
 // LaoLao learner app
 import { getApi } from "../api/index.js";
-import { h, $, $$, icon, toast, errText, pyHTML, stripTone, debounce, tr, withTransition, leave, confirmDialog, normTheme } from "../shared/ui.js";
+import { h, $, $$, icon, toast, errText, pyHTML, stripTone, debounce, tr, withTransition, leave, confirmDialog, normTheme, dialog } from "../shared/ui.js";
 import { t, lang, setLang } from "../shared/i18n.js";
 import { ensureDemo, DEMO } from "../shared/setup.js";
 import { dict, searchDict } from "../shared/dict.js";
@@ -14,6 +14,7 @@ import { LAB_VIEWS } from "./views-labs.js";
 import { MEDIA_VIEWS } from "./views-media.js";
 import { HANDWRITING_VIEWS } from "./views-handwriting.js";
 import { VIEWS as BILLING_VIEWS } from "./views-billing.js";
+import { renderWelcome, pendingResource } from "./welcome.js";
 import { lockedPanel, featureForView, navLock, planLabel } from "./upgrade.js";
 import { themeSwitcher } from "../shared/ui.js";
 
@@ -39,9 +40,15 @@ async function boot(){
   // arriving from a password-reset email: ask for the new password before anything else
   let recovering = /type=recovery/.test(location.hash);
   if (api.auth.onRecovery) api.auth.onRecovery(() => { recovering = true; renderNewPassword(); });
+  // Admin → Welcome Page → Preview opens ?welcome-preview=1: an admin sees the unpublished draft (others the normal page)
+  const previewWanted = new URLSearchParams(location.search).has("welcome-preview");
   api.auth.onChange(async user => {
     if (!user) return renderAuth("signin");
     if (recovering) return renderNewPassword();
+    if (previewWanted){
+      const adm = await api.db.get(`admins/${user.uid}`).catch(() => null);
+      return renderWelcome({ root, api, mode: "signin", preview: !!adm && adm.status !== "disabled", onLanguage: () => location.reload() });
+    }
     root.innerHTML = "";
     root.append(createWaitingScreen("ສະບາຍດີ", "ກຳລັງໂຫລດຂໍ້ມູນ... / Preparing your account..."));
     try { await loadAccount(user); } catch(e){ console.error(e); }
@@ -55,6 +62,10 @@ async function boot(){
     else if (VIEWS[start]) A.view = { name:start, params };
     if (query) history.replaceState(null, "", location.pathname + location.search);
     render();
+    // a free download chosen on the welcome page before signing up
+    const res = pendingResource();
+    if (res) dialog({ title: t("wl_res_ready"), body: h("div",{class:"stack"}, h("p",null, res.title || ""),
+      h("a",{class:"btn primary",href:res.url,target:"_blank",rel:"noopener",download:""}, icon("download"), t("wl_download"))), actions:[{ label:t("close"), value:true }] });
   });
   // back online: the database decides the plan again (a cached plan is never proof of payment)
   window.addEventListener("online", () => { updateNet(); if (A.user && A.ac) refreshAccess().then(() => A.render && A.render()).catch(() => {}); });
@@ -62,189 +73,9 @@ async function boot(){
 }
 
 // ---------- auth ----------
+// Signed out: the welcome page with the sign-in card (js/learner/welcome.js). mode = signin | register | reset.
 async function renderAuth(mode){
-  let settings = {}; try { settings = await A.api.db.get("settings/app") || {}; } catch(e){}
-  const email = h("input",{class:"input",type:"email",id:"em",autocomplete:"username",placeholder:"name@example.com"});
-  const pw = h("input",{class:"input",type:"password",id:"pw",autocomplete:mode==="register"?"new-password":"current-password",placeholder:"••••••••"});
-  const name = h("input",{class:"input",id:"nm",autocomplete:"name",placeholder:lang()==="lo"?"ຊື່ຂອງທ່ານ":"Your name"});
-  const msg = h("p",{class:"small",style:"color:var(--bad);margin:0",role:"alert"});
-  const submitBtn = h("button",{class:"btn primary",type:"submit"}, mode==="register" ? t("register") : mode==="reset" ? t("send_reset") : t("sign_in"));
-
-  // Password visibility toggle
-  let showPw = false;
-  const pwToggle = h("button",{type:"button",class:"pw-toggle-btn","aria-label":"Toggle password visibility",onclick:()=>{
-    showPw = !showPw;
-    pw.type = showPw ? "text" : "password";
-    pwToggle.replaceChildren(icon(showPw ? "eyeOff" : "eye"));
-  }}, icon("eye"));
-
-  const pwWrap = h("div",{class:"input-wrap"}, pw, pwToggle);
-
-  const submit = async e => {
-    e && e.preventDefault(); msg.textContent = "";
-    submitBtn.disabled = true;
-    submitBtn.textContent = lang()==="lo" ? "ກຳລັງດຳເນີນການ..." : "Please wait...";
-    try {
-      if (mode==="signin") await A.api.auth.signIn(email.value.trim(), pw.value);
-      else if (mode==="reset"){ await A.api.auth.resetPassword(email.value.trim()); toast(t("reset_sent")); renderAuth("signin"); }
-      else {
-        rememberPendingProfile(email.value.trim(), name.value.trim());   // used if the email must be confirmed first
-        let u;
-        try { u = await A.api.auth.signUp(email.value.trim(), pw.value); }
-        catch(err){
-          if (err.code !== "auth/confirm-email") throw err;
-          await renderAuth("signin");
-          const note = document.querySelector(".auth-form [role=alert]");
-          if (note){ note.style.color = "var(--jade)"; note.textContent = err.message; }
-          return;
-        }
-        await createLearnerProfile(A.api, u, name.value.trim(), settings);
-        if (A.api._flush) await A.api._flush();   // demo mode saves with a short delay; finish before reloading
-        location.reload();
-      }
-    } catch(err){
-      msg.textContent = errText(err);
-      submitBtn.disabled = false;
-      submitBtn.textContent = mode==="register" ? t("register") : mode==="reset" ? t("send_reset") : t("sign_in");
-    }
-  };
-
-  const L = lang();
-  root.innerHTML = "";
-
-  // Left Hero (Authentic Lao Interactive Experience)
-  const heroArt = h("div",{class:"auth-art"});
-
-  // Floating background ambient glyphs
-  const floatCont = h("div",{class:"floating-elements"});
-  ["ກ","ດ","ນ","ສ","ລ","ຮ"].forEach(g => floatCont.appendChild(h("div",{class:"float-glyph"}, g)));
-  heroArt.appendChild(floatCont);
-
-  const heroTop = h("div",{class:"auth-hero-top"},
-    h("div",{class:"auth-badge"}, h("i"), "ຮຽນຮູ້ພາສາລາວ · Authentic Lao Journey"),
-    h("div",{class:"auth-brand-row"},
-      h("div",{class:"auth-champa-icon"}, dokChampaSvg(56)),
-      h("div",{class:"auth-title-group"},
-        h("h2",null, settings.appName||"LaoLao"),
-        h("small",null, "ຮຽນພາສາລາວດ້ວຍຄວາມສຸກ · Learn Lao Joyfully")
-      )
-    )
-  );
-
-  // Interactive Sabaidee Audio Button
-  const sabaideeBtn = h("button",{type:"button",class:"sabaidee-interactive-btn",onclick:()=>{
-    sabaideeBtn.classList.add("playing");
-    speak("ສະບາຍດີ");
-    setTimeout(() => sabaideeBtn.classList.remove("playing"), 1500);
-  }},
-    icon("speaker"),
-    h("div",null,
-      h("div",{class:"lo",style:"font-size:1.15rem;font-weight:700"}, "ສະບາຍດີ! (Sabaidee)"),
-      h("small",{style:"opacity:.85;font-size:.78rem;display:block"}, "ແຕະເພື່ອຟັງສຽງທັກທາຍ · Tap to hear greeting")
-    ),
-    h("div",{class:"sound-bars"}, h("span"), h("span"), h("span"), h("span"))
-  );
-
-  // Interactive Consonants Showcase
-  const chipDesc = h("div",{class:"small",style:"color:rgba(255,255,255,.9);font-weight:600;min-height:20px"}, "ແຕະພະຍັນຊະນະເພື່ອຟັງສຽງ · Tap any consonant to hear its sound:");
-  const chipsCont = h("div",{class:"consonant-chips"});
-  LAO_SAMPLES.slice(0, 7).forEach(c => {
-    const chip = h("button",{
-      type: "button",
-      class: "consonant-chip",
-      title: `${c.char} - ${c.name} (${c.meaning})`,
-      onclick: e => {
-        e.preventDefault();
-        chipsCont.querySelectorAll(".consonant-chip").forEach(x => x.classList.remove("active"));
-        chip.classList.add("active");
-        chipDesc.innerHTML = `<span style="color:#FEF08A;font-weight:700">${c.char}</span> · <b>${c.name}</b> (${c.meaning}) · Sound: /${c.ipa}/`;
-        speak(c.char);
-      }
-    },
-      h("span",{class:"c-char"}, c.char),
-      h("span",{class:"c-name"}, c.name)
-    );
-    chipsCont.appendChild(chip);
-  });
-
-  const heroConsonants = h("div",{class:"hero-consonants"},
-    h("div",{class:"hero-consonants-title"}, "Lao Alphabet Preview"),
-    chipsCont,
-    chipDesc
-  );
-
-  // Proverb Box
-  const proverbBox = h("div",{class:"lao-proverb-box"},
-    h("div",{class:"pv-lao"}, "“ຄວາມພະຍາຍາມ ຢູ່ໃສ, ຄວາມສຳເລັດ ຢູ່ຫັ້ນ”"),
-    h("div",{class:"pv-tr"}, "Where there is perseverance, there is success.")
-  );
-
-  heroArt.append(heroTop, sabaideeBtn, heroConsonants, proverbBox);
-
-  // Right Form
-  const authFormWrap = h("div",{class:"auth-form-wrap"},
-    h("form",{class:"auth-form",onsubmit:submit},
-      h("div",{class:"auth-form-header"},
-        h("div",{class:"row",style:"align-items:center;gap:8px"},
-          themeSwitcher(),
-          h("div",{class:"langsw"}, [["en","EN"],["lo","ລາວ"],["zh","中文"]].map(([l,n]) =>
-            h("button",{type:"button","aria-pressed":String(L===l),onclick:()=>{ setLang(l); try{ localStorage.setItem("xuelu.lang",l); }catch(e){} renderAuth(mode); }}, n)
-          ))
-        ),
-        h("div",{class:"small",style:"color:var(--accent);font-weight:700"}, mode==="register" ? "New Account" : mode==="reset" ? "Reset Access" : "Welcome Back")
-      ),
-      h("h1",null, mode==="register" ? t("register") : mode==="reset" ? t("forgot") : t("sign_in")),
-      mode==="register" ? h("div",{class:"field"}, h("label",{for:"nm"},t("name")), name) : null,
-      h("div",{class:"field"}, h("label",{for:"em"},t("email")), email),
-      mode!=="reset" ? h("div",{class:"field"}, h("label",{for:"pw"},t("password")), pwWrap) : null,
-      msg,
-      submitBtn,
-      mode==="signin" ? h("button",{type:"button",class:"linkbtn",onclick:()=>renderAuth("reset")}, t("forgot")) : h("button",{type:"button",class:"linkbtn",onclick:()=>renderAuth("signin")}, t("have_account")),
-      mode==="signin" ? (settings.allowRegistration ? h("p",{class:"small"}, t("no_account")+" ", h("button",{type:"button",class:"linkbtn",onclick:()=>renderAuth("register")}, t("register"))) : h("p",{class:"small muted"}, t("reg_closed"), settings.supportContact ? " · "+settings.supportContact : "")) : null,
-      A.api.mode==="demo" && mode==="signin" ? h("div",{class:"demo-quick-box"},
-        h("div",{class:"demo-quick-header"},
-          h("span",null,t("demo_accounts")),
-          h("a",{href:"admin/",class:"linkbtn",style:"font-size:.8rem"}, "Admin Portal →")
-        ),
-        h("div",{class:"demo-btn-group"},
-          h("button",{type:"button",class:"btn primary sm",onclick:()=>{ email.value=DEMO.premium.email; pw.value=DEMO.premium.pw; submit(); }}, "Premium Learner"),
-          h("button",{type:"button",class:"btn sm",onclick:()=>{ email.value=DEMO.free.email; pw.value=DEMO.free.pw; submit(); }}, "Free Learner")
-        )
-      ) : null,
-
-      // Lao Learning Feed (Interesting Culture, Daily Tip)
-      h("div",{class:"card stack",style:"gap:8px;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:14px"},
-        h("div",{class:"spread"},
-          h("b",{style:"font-size:.85rem;color:var(--accent);text-transform:uppercase;letter-spacing:.04em"}, "🇱🇦 Lao Learning Feed"),
-          h("span",{class:"chip lv"}, "Daily Tip")
-        ),
-        h("div",{class:"lo",style:"font-size:1.05rem;font-weight:700"}, "“ບໍ່ເປັນຫຍັງ” (Bo Pen Nyang)"),
-        h("p",{class:"small muted",style:"margin:0"}, "The cornerstone of Lao social harmony: means 'no problem / it is alright'. Use it whenever someone apologizes or thanks you."),
-        h("button",{type:"button",class:"btn sm ghost",style:"align-self:flex-start;padding:4px 8px;font-size:.8rem",onclick:()=>speak("ບໍ່ເປັນຫຍັງ")}, icon("play"), "Listen")
-      ),
-
-      // Promotional Resource Banner & Socials
-      h("div",{class:"promo-card",style:"margin-top:10px"},
-        h("div",{class:"spread"},
-          h("b",{style:"font-size:.9rem"}, icon("gift"), "Free Lao Starter PDF Guide"),
-          h("span",{class:"chip lv"}, "Free")
-        ),
-        h("p",{class:"small muted",style:"margin:0"}, "Download our structured 30-day Lao script, tones, and survival conversation reference book."),
-        h("div",{class:"row",style:"justify-content:space-between;align-items:center;margin-top:6px"},
-          h("button",{type:"button",class:"btn primary sm",onclick:()=>toast("Downloading Lao Beginner PDF guide...", "ok")}, icon("download"), "Free Download"),
-          h("div",{class:"row",style:"gap:8px"},
-            h("a",{href:"https://youtube.com/@laolaohub",target:"_blank",rel:"noreferrer",class:"btn sm ghost",title:"YouTube Channel"}, icon("video")),
-            h("a",{href:"https://facebook.com/laolaohub",target:"_blank",rel:"noreferrer",class:"btn sm ghost",title:"Facebook"}, icon("globe"))
-          )
-        )
-      )
-    )
-  );
-
-  root.append(
-    A.api.mode==="demo" ? h("div",{class:"demo-bar"}, t("demo_banner")) : "",
-    h("div",{class:"auth"}, heroArt, authFormWrap)
-  );
+  return renderWelcome({ root, api: A.api, mode, onLanguage: m => withTransition(() => renderAuth(m), { kind:"fade" }) });
 }
 
 function renderNewPassword(){

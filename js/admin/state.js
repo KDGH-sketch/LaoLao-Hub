@@ -118,8 +118,8 @@ export function canEditMenu(menuId) {
     return false;
   }
 
-  // Content Editor has full write access to curriculum & studio content
-  if (["content", "editor"].includes(role)) {
+  // Content Editor has full write access to curriculum & studio content (the database's ll_can_edit() also lets "admin" edit)
+  if (["content", "editor", "admin"].includes(role)) {
     return !LEARNER_MENUS.includes(menuId);
   }
 
@@ -156,8 +156,26 @@ export const planName = id => {
 };
 
 export { t };
+// Admin menu that controls a content type (offers are managed in "Promotions & Feed")
+export const menuOf = type => type === "offers" ? "promotions" : type;
+// Audit trail: every create, update, delete, publish and revert in the CMS appears in Activity Audit Log
+export function audit(action, ref, detail){
+  if (!S.me || !S.api) return Promise.resolve();
+  return S.api.db.add("activity", { uid: S.me.uid, name: S.me.name || S.me.email || "admin", type: "admin:" + action, ref: ref + (detail ? " · " + detail : ""), admin: true, at: new Date() }).catch(e => console.warn("audit:", e.message));
+}
 // "You can't open this" screen: a calm 28px lock in a circle instead of a 48px emoji
 export const lockedScreen = (title, text, back = () => go("dashboard"), backLabel = t("adm_dashboard")) =>
   h("section", { class: "card lockp" }, h("div", { class: "lockp-ic" }, icon("lock")), h("h2", null, title), h("p", { class: "muted" }, text),
     h("div", { class: "row lockp-act" }, h("button", { class: "btn primary", onclick: back }, icon("left"), backLabel)));
-export const fld = (label, ctrl, help) => h("div", { class: "field" }, h("span", { class: "lbl" }, label), ctrl, help ? h("span", { class: "help" }, help) : null);
+export const fld = (label, ctrl, help) => nameControls(h("div", { class: "field" }, h("span", { class: "lbl" }, label), ctrl, help ? h("span", { class: "help" }, help) : null), label);
+// Screen readers: a control without its own name is named after its field (plus the language tab, e.g. "Title · ລາວ")
+function nameControls(el, label){
+  const text = typeof label === "string" ? label : (label && label.textContent) || "";
+  if (!text) return el;
+  el.querySelectorAll("input:not([type=hidden]),select,textarea").forEach(c => {
+    if (c.hasAttribute("aria-label") || c.closest("label") || (c.id && el.querySelector(`label[for="${c.id}"]`))) return;
+    const sub = c.parentElement && c.parentElement.querySelector(":scope > .help");
+    c.setAttribute("aria-label", sub && sub.textContent && sub.textContent !== text ? text + " · " + sub.textContent : text);
+  });
+  return el;
+}

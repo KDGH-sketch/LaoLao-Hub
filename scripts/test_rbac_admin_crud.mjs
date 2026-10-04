@@ -215,6 +215,18 @@ async function runRbacTests() {
   assert(isSuper(), "Simulation reset: Full super admin privileges immediately restored");
   assert(canViewMenu("admins"), "Simulation reset: Credential menus restored");
 
+  // ---------- Website & Welcome menus (docs/WELCOME.md): super/owner, editor, content and admin edit; reviewer reads; support has no access ----------
+  const WEB = ["welcome", "places", "festivals", "promotions", "resources"];
+  for (const role of ["super", "editor", "content", "admin"]){
+    S.me = { uid: "web-" + role, email: role + "@x", role }; S.simulatedRole = null;
+    assert(WEB.every(m => canViewMenu(m) && canEditMenu(m)), `${role}: can view and edit every Website & Welcome menu`);
+  }
+  S.me = { uid: "web-rev", email: "rev@x", role: "reviewer" }; S.simulatedRole = null;
+  assert(WEB.every(m => canViewMenu(m) && !canEditMenu(m)), "reviewer: can view the Website & Welcome menus, read-only");
+  S.me = { uid: "web-sup", email: "sup@x", role: "support" }; S.simulatedRole = null;
+  assert(WEB.every(m => !canViewMenu(m) && !canEditMenu(m)), "support: no access to the Website & Welcome menus");
+  S.me = { uid: "web-cus", email: "cus@x", role: "custom", permissions: { places: { view: true, edit: true }, welcome: { view: true, edit: false } } }; S.simulatedRole = null;
+  assert(canEditMenu("places") && canViewMenu("welcome") && !canEditMenu("welcome") && !canViewMenu("festivals") && !canEditMenu("promotions"), "custom role: per-menu view and edit toggles");
   console.log("\n=================================================================");
   console.log(`  TEST RESULTS: ${passedTests} / ${totalTests} TESTS PASSED (100%)`);
   console.log("=================================================================\n");

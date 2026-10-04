@@ -20,6 +20,7 @@ begin
     'users','admins','adminNotes','access','plans','subscriptions','settings',
     'lessons','patterns','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon',
     'videos','tones','culture','characters','dictionary',
+    'places','festivals','offers','resources',          -- the public welcome page (docs/WELCOME.md)
     'bundles','progress','reviews','bookmarks','notes','activity',
     'usage','accessLogs','orders','payments',
     'vocab','saved'  -- legacy, unused by the app
@@ -710,7 +711,7 @@ begin
            where schemaname = 'public' and tablename = any (array[
              'users','admins','adminNotes','access','plans','subscriptions','settings',
              'lessons','patterns','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon',
-             'videos','tones','culture','characters','dictionary',
+             'videos','tones','culture','characters','dictionary','places','festivals','offers','resources',
              'bundles','progress','reviews','bookmarks','notes','activity','usage','accessLogs','orders','payments','vocab','saved'])
   loop
     execute format('drop policy %I on public.%I', r.policyname, r.tablename);
@@ -723,14 +724,15 @@ end $$;
 
 -- Content: admins read, editors write (per menu). Learners never read these; they read bundles.
 do $$
-declare t text;
+declare t text; m text;
 begin
   foreach t in array array['lessons','patterns','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon',
-                           'videos','tones','culture','characters','dictionary'] loop
+                           'videos','tones','culture','characters','dictionary','places','festivals','offers','resources'] loop
+    m := case t when 'offers' then 'promotions' else t end;      -- admin menu id that grants editing
     execute format('create policy "ll admin read" on public.%I for select using (public.ll_is_admin())', t);
-    execute format('create policy "ll edit insert" on public.%I for insert with check (public.ll_can_edit(%L))', t, t);
-    execute format('create policy "ll edit update" on public.%I for update using (public.ll_can_edit(%L)) with check (public.ll_can_edit(%L))', t, t, t);
-    execute format('create policy "ll edit delete" on public.%I for delete using (public.ll_can_edit(%L))', t, t);
+    execute format('create policy "ll edit insert" on public.%I for insert with check (public.ll_can_edit(%L))', t, m);
+    execute format('create policy "ll edit update" on public.%I for update using (public.ll_can_edit(%L)) with check (public.ll_can_edit(%L))', t, m, m);
+    execute format('create policy "ll edit delete" on public.%I for delete using (public.ll_can_edit(%L))', t, m);
   end loop;
 end $$;
 
@@ -747,13 +749,15 @@ create policy "ll super insert" on public.plans for insert with check (public.ll
 create policy "ll super update" on public.plans for update using (public.ll_is_super()) with check (public.ll_is_super());
 create policy "ll super delete" on public.plans for delete using (public.ll_is_super());
 
--- Settings: public read (app name, registration, promotions); Super Admin writes; editors may update the publish state
-create policy "ll public read" on public.settings for select using (true);
+-- Settings: public read (app name, registration, the published welcome page), except the welcome-page draft (admins only);
+-- Super Admin writes; editors may update the publish state; editors of the "welcome" menu write the welcome page
+create policy "ll public read" on public.settings for select using (id <> 'welcomeDraft' or public.ll_is_admin());
 create policy "ll write insert" on public.settings for insert
-  with check (public.ll_is_super() or (id = 'bundle' and public.ll_can_publish()));
+  with check (public.ll_is_super() or (id = 'bundle' and public.ll_can_publish())
+              or (id in ('welcome', 'welcomeDraft') and public.ll_can_edit('welcome')));
 create policy "ll write update" on public.settings for update
-  using (public.ll_is_super() or (id = 'bundle' and public.ll_can_publish()))
-  with check (public.ll_is_super() or (id = 'bundle' and public.ll_can_publish()));
+  using (public.ll_is_super() or (id = 'bundle' and public.ll_can_publish()) or (id in ('welcome', 'welcomeDraft') and public.ll_can_edit('welcome')))
+  with check (public.ll_is_super() or (id = 'bundle' and public.ll_can_publish()) or (id in ('welcome', 'welcomeDraft') and public.ll_can_edit('welcome')));
 create policy "ll super delete" on public.settings for delete using (public.ll_is_super());
 
 -- Users: own row or admins; self-registration only as an active learner while registration is open
@@ -848,7 +852,8 @@ declare doc jsonb; op jsonb; p text[]; i int; cur jsonb;
 begin
   if p_table not in ('users','admins','adminNotes','access','plans','subscriptions','settings',
                      'lessons','patterns','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon',
-                     'videos','tones','culture','characters','dictionary','bundles','progress','reviews','bookmarks','notes','activity') then
+                     'videos','tones','culture','characters','dictionary','places','festivals','offers','resources',
+                     'bundles','progress','reviews','bookmarks','notes','activity') then
     raise exception 'll_apply: table % is not allowed', p_table;
   end if;
   execute format('select data from public.%I where id = $1 for update', p_table) into doc using p_id;
