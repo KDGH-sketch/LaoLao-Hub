@@ -174,3 +174,15 @@ button.kpi:hover{border-color:var(--accent-3);box-shadow:var(--shadow);transform
 /* reduced motion: the global rule in app.css stops animations, so show the end states directly */
 @media (prefers-reduced-motion:reduce){.pub-check path{stroke-dashoffset:0}.pub-tier{opacity:1;transform:none}}
 @media (max-width:420px){.pub{padding:26px 18px 18px}.pub-orb{width:116px;height:116px}.pub-core{inset:22px}}
+
+/* ---------- Payments (js/admin/payments.js) and plan prices (js/admin/plans.js) ---------- */
+.plan-prices{display:grid;grid-template-columns:auto repeat(2,minmax(0,1fr));gap:8px 10px;align-items:center;max-width:460px}
+.pay-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.pay-tile{display:flex;align-items:center;gap:12px;padding:14px 16px}
+.pay-tile b{font-size:1.15rem;font-variant-numeric:tabular-nums}
+.pay-tile-ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--accent-2);color:var(--accent);flex:none}
+.pay-tile.warn .pay-tile-ic{background:var(--warn-2);color:var(--warn)}
+.pay-mrow{display:grid;grid-template-columns:minmax(140px,1fr) auto auto minmax(0,auto);gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px}
+table.tbl tr.clickable{cursor:pointer}
+table.tbl tr.clickable:hover td{background:var(--surface-2)}
+@media (max-width:640px){.pay-mrow{grid-template-columns:1fr auto}}

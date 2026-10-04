@@ -15,6 +15,7 @@ import { viewContentHome, viewContentList, viewEditor } from "./cms.js";
 import { EXT_VIEWS } from "./cms-extended.js";
 import { viewAdmins } from "./admins.js";
 import { publishPanel } from "./publish.js";
+import { viewPayments } from "./payments.js";
 
 const root = document.getElementById("root");
 const pref = (() => { try { return localStorage.getItem("xuelu.admin.lang") || "en"; } catch(e){ return "en"; } })();
@@ -167,6 +168,7 @@ const NAV_SECTIONS = [
       { id:"plans", label:["Pricing Plans", "ແຜນການຮຽນ"], icon:"plan", view:"plans" },
       { id:"accessMatrix", label:["Plan Access & Limits", "ສິດ ແລະ ຂີດຈຳກັດແພັກເກດ"], icon:"sliders", view:"accessMatrix" },
       { id:"accessLogs", label:["Access Logs", "ບັນທຶກການເຂົ້າເຖິງ"], icon:"eye", view:"accessLogs" },
+      { id:"payments", label:["Payments & Orders", "ການຈ່າຍເງິນ ແລະ ຄຳສັ່ງຊື້"], icon:"wallet", view:"payments" },
       { id:"activity", label:["Activity Audit Log", "ປະຫວັດການໃຊ້ງານ"], icon:"clock", view:"activity" },
       { id:"admins", label:["Administrators", "ຜູ້ດູແລລະບົບ"], icon:"shield", view:"admins", superOnly:true },
       { id:"settings", label:["Settings", "ຕັ້ງຄ່າລະບົບ"], icon:"settings", view:"settings" }
@@ -308,7 +310,7 @@ function renderShell(){
     return;
   }
 
-  const V = Object.assign({ dashboard:viewDashboard, learners:viewLearners, learner:viewLearner, plans:viewPlans, accessMatrix:viewAccessMatrix, accessLogs:viewAccessLogs, handwriting:viewHandwriting, handwritingEditor:viewHandwritingEditor, content:viewContentHome, contentList:viewContentList, editor:viewEditor, activity:viewActivity, admins:viewAdmins, settings:viewSettings }, EXT_VIEWS);
+  const V = Object.assign({ dashboard:viewDashboard, learners:viewLearners, learner:viewLearner, plans:viewPlans, accessMatrix:viewAccessMatrix, accessLogs:viewAccessLogs, payments:viewPayments, handwriting:viewHandwriting, handwritingEditor:viewHandwritingEditor, content:viewContentHome, contentList:viewContentList, editor:viewEditor, activity:viewActivity, admins:viewAdmins, settings:viewSettings }, EXT_VIEWS);
   const fn = V[S.view] || viewDashboard;
   Promise.resolve(fn(S.params||{})).then(el => { main.innerHTML=""; main.append(el); }).catch(err => { console.error(err); main.innerHTML=""; main.append(h("div",{class:"banner"}, errText(err))); });
 }

@@ -61,11 +61,12 @@ try {
   await login("/", "free@demo.laolao");
   await ok(await b.eval(`[...document.querySelectorAll(".side .nav-btn")].some(e => /Tone/.test(e.innerText) && e.querySelector(".navlock"))`), "locked features show a lock in the menu");
   await learnerAt("#tone_lab");
-  await ok(await b.eval(`!!document.querySelector("main .lockp")`) && /Tone lab/.test(await text()) && /View plans/.test(await text()), "direct link #tone_lab shows the locked screen with the reason and 'View plans'");
+  await ok(await b.eval(`!!document.querySelector("main .lockp")`) && /Tone lab/.test(await text()) && /Upgrade to|View plans/.test(await text()), "direct link #tone_lab shows the locked screen with the reason and an upgrade button");
   await ok(!(await b.eval(`[...document.querySelectorAll("main h1")].some(h => /tone/i.test(h.innerText))`)), "the tone lab itself is not rendered");
   await b.screenshot(path.join(SHOTS, "access-locked-desktop.png"));
-  await click("main .lockp button", /View plans/); await sleep(900);
-  await ok(await b.eval(`!!document.querySelector("#plans")`) && /Your plan/.test(await text()), "'View plans' opens the plan list with the current plan marked");
+  await click("main .lockp button", /Upgrade to|View plans/); await sleep(900);
+  await ok(await b.eval(`!!document.querySelector(".bill-grid .bill-plan.current")`), "the upgrade button opens the Plans page with the current plan marked");
+  await learnerAt("#account");
   await ok(/Usage/.test(await text()) && /Dictionary search/.test(await text()), "the Account page shows usage meters");
   await ok(!(await b.eval(`/Open Admin CMS/.test(document.querySelector("main").innerText)`)), "learners no longer see the Admin CMS card");
   const logs = await api(`await api.auth.current(); return (await api.db.list("accessLogs")).filter(l => l.feature === "tones.lab").length;`);

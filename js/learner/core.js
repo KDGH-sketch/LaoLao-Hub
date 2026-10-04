@@ -1,5 +1,5 @@
 // Learner app state, data access and progress tracking
-import { h, icon, toast, todayKey, tr, rnd, shuffle, isHan, setTheme, getTheme } from "../shared/ui.js";
+import { h, icon, toast, todayKey, tr, rnd, shuffle, isHan, setTheme, getTheme, withTransition } from "../shared/ui.js";
 import { t, lang, setLang } from "../shared/i18n.js";
 import { loadBundle, SKILLS, TIERS } from "../shared/content.js";
 import { createAccessControl } from "../shared/access.js";
@@ -34,6 +34,41 @@ export function applyPrefs(){
   setTheme(th);
   document.documentElement.lang = lang()==="zh" ? "zh-CN" : lang();
   setSpeechSettings({ rate:p.rate, voice:p.voice });
+}
+
+// A theme change reveals the new colours in a circle growing from the button that was pressed (css: "transitions")
+export function setThemeFrom(k, ev){
+  const r = ev && ev.currentTarget ? ev.currentTarget.getBoundingClientRect() : null;
+  return withTransition(() => setPref("theme", k), { kind:"theme", x: r ? r.left + r.width/2 : innerWidth - 40, y: r ? r.top + r.height/2 : 40 });
+}
+
+// ---------- profile: nickname and photo ----------
+export const displayName = () => String((A.profile && (A.profile.nickname || A.profile.name)) || (A.user && A.user.email ? A.user.email.split("@")[0] : "") || "Learner").trim();
+// Only our own resized photos (data:image/…) or https images are shown; anything else falls back to initials
+const safeAvatar = v => typeof v === "string" && (/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v) || /^https:\/\/[^\s"'<>]+$/.test(v)) ? v : null;
+const initials = n => (n.match(/[\p{L}\p{N}]/gu) || ["?"]).slice(0, 2).join("").toUpperCase();
+const hue = s => { let x = 0; for (const c of String(s || "")) x = (x * 31 + c.charCodeAt(0)) % 360; return x; };
+export function avatarEl(size = "md"){
+  const src = safeAvatar(A.profile && A.profile.avatar), name = displayName();
+  return src ? h("img",{class:"av av-"+size, src, alt:"", decoding:"async"})
+    : h("span",{class:"av av-"+size, "aria-hidden":"true", style:`--av-h:${hue(A.user && A.user.uid)}`}, initials(name));
+}
+// A chosen photo becomes a small square JPEG (192 px, about 15 KB) stored on the learner's own profile
+export async function imageToAvatar(file){
+  if (!file || !/^image\//.test(file.type)) throw new Error(t("pf_photo_type"));
+  if (file.size > 10e6) throw new Error(t("pf_photo_big"));
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error(t("pf_photo_type"))); i.src = url; });
+    const S = 192, c = document.createElement("canvas"), side = Math.min(img.naturalWidth, img.naturalHeight);
+    c.width = c.height = S;
+    c.getContext("2d").drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, S, S);
+    return c.toDataURL("image/jpeg", 0.85);
+  } finally { URL.revokeObjectURL(url); }
+}
+export async function saveProfile(patch){
+  Object.assign(A.profile, patch);
+  await A.api.db.update(`users/${A.user.uid}`, patch);
 }
 
 // ---------- loading ----------
@@ -81,6 +116,18 @@ export async function loadAccount(user){
   const p = prefs(); setLang(p.uiLang || "en"); applyPrefs();
   await Promise.all([loadDict(), loadContent(), loadProgress()]);
   if (A.profile.status==="active") api.db.update(`users/${user.uid}`, { lastActive: new Date() }).catch(()=>{});
+}
+// After a payment, a plan change, or coming back online: reload the account's access from the database
+// (the authority) and, when the content tier changed, the matching content bundle. No sign-out needed.
+export async function refreshAccess(){
+  const api = A.api, uid = A.user.uid;
+  const [access, settings, plans] = await Promise.all([api.db.get(`access/${uid}`).catch(()=>A.access), api.db.get("settings/app").catch(()=>null), api.db.list("plans").catch(()=>A.plans)]);
+  A.access = access; if (settings) A.settings = settings; A.plans = (plans||[]).sort((a,b)=>(a.order||0)-(b.order||0));
+  const before = A.tier;
+  A.ent = await A.ac.load({ uid, isAdmin:A.isAdmin, user:A.profile, access, plans:A.plans, settings:A.settings });
+  A.tier = A.ent.tier;
+  if (A.tier !== before) await loadContent();
+  return A.ent;
 }
 export async function loadContent(){
   A.B = await loadBundle(A.api, A.tier) || { patterns:[], lessons:[], grammar:[], vocabulary:[], dialogues:[], quizzes:[], audio:[], paths:[], releases:[], lexicon:[], videos:[], tones:[], culture:[], characters:[], dictionary:[], catalog:[] };

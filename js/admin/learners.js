@@ -4,6 +4,7 @@ import { lang } from "../shared/i18n.js";
 import { accessState, SKILLS } from "../shared/content.js";
 import { S, t, go, canSupport, planName, fld } from "./state.js";
 import { learnerAccessPanel } from "./access.js";
+import { learnerPaymentsPanel } from "./payments.js";
 
 const DAY = 86400000;
 const pill = (cls, label) => h("span",{class:"pill "+cls}, label);
@@ -63,8 +64,8 @@ async function newLearner(){
         const now = new Date(), expires = readDate(exp);
         await S.api.db.batch([
           { op:"set", path:`users/${uid}`, data:{ email:e, name:name.value.trim(), status:"active", level:+level.value, role:"learner", prefs:{ uiLang: lang(), explainLang: lang() }, createdAt:now, createdBy:S.me.uid } },
-          { op:"set", path:`access/${uid}`, data:{ planId:plan.value, tier:pl.tier||1, status:"active", start:now, expiresAt:expires, source:"manual", updatedAt:now, updatedBy:S.me.uid } },
-          { op:"set", path:`subscriptions/${uid}-${now.getTime()}`, data:{ uid, planId:plan.value, action:"assign", start:now, expiresAt:expires, by:S.me.uid, at:now, source:"manual" } }
+          { op:"set", path:`access/${uid}`, data:{ planId:plan.value, tier:pl.tier||1, status:"active", start:now, expiresAt:expires, source:"admin", updatedAt:now, updatedBy:S.me.uid } },
+          { op:"set", path:`subscriptions/${uid}-${now.getTime()}`, data:{ uid, planId:plan.value, action:"assign", start:now, expiresAt:expires, by:S.me.uid, at:now, source:"admin", reason:"new account" } }
         ]);
         if (reset.checked){ try { await S.api.auth.resetPassword(e); } catch(err){} }
         toast(t("saved_ok")); go("learner",{uid}); return true;
@@ -103,12 +104,15 @@ export async function viewLearner({ uid }){
     a ? h("dl",{class:"kv"}, h("dt",null,t("plan")), h("dd",null,h("b",null,planName(a.planId))," · tier "+a.tier), h("dt",null,t("status")), h("dd",null,pill(accessState(a), stLabel(accessState(a)))),
       h("dt",null,t("start")), h("dd",null,fmtDate(a.start, lang())), h("dt",null,t("expiry")), h("dd",null, a.expiresAt ? fmtDate(a.expiresAt, lang()) : t("never")), h("dt",null,""), h("dd",{class:"small muted"}, a.source||""))
       : h("p",{class:"muted"},"—"));
-  const setAccess = async (patch, action) => {
-    const now = new Date(); const next = Object.assign({ planId:"free", tier:1, status:"active", start:now, expiresAt:null, source:"manual" }, a||{}, patch, { updatedAt:now, updatedBy:S.me.uid });
+  // Every manual change is recorded: who, old plan → new plan, source (admin / trial / promotion) and the reason.
+  // Manual grants never create orders or payments.
+  const setAccess = async (patch, action, reason = "") => {
+    const now = new Date(); const next = Object.assign({ planId:"free", tier:1, status:"active", start:now, expiresAt:null, source:"admin" }, a||{}, patch, { updatedAt:now, updatedBy:S.me.uid });
     ["start","expiresAt"].forEach(k => { if (typeof next[k]==="number") next[k] = new Date(next[k]); });
     await api.db.batch([
       { op:"set", path:`access/${uid}`, data: next },
-      { op:"set", path:`subscriptions/${uid}-${now.getTime()}`, data:{ uid, planId:next.planId, action, start: next.start, expiresAt: next.expiresAt, status: next.status, by:S.me.uid, at:now, source:"manual" } } ]);
+      { op:"set", path:`subscriptions/${uid}-${now.getTime()}`, data:{ uid, planId:next.planId, fromPlan: a ? a.planId : null, action, start: next.start, expiresAt: next.expiresAt,
+        status: next.status, by:S.me.uid, at:now, source: patch.source || "admin", reason: String(reason || "").slice(0, 300) } } ]);
     toast(t("saved_ok")); S.render();
   };
   if (canSupport()){
@@ -125,7 +129,8 @@ export async function viewLearner({ uid }){
   }
   const hist = subs.sort((x,y)=>(y.at||0)-(x.at||0));
   accBox.append(h("details",null, h("summary",{class:"small"}, t("history")+" ("+hist.length+")"),
-    h("div",{class:"feed"}, hist.map(s => h("div",{class:"feed-row"}, h("span",{class:"small"}, s.action+" · "+planName(s.planId)+" · "+(s.expiresAt?fmtDate(s.expiresAt,lang()):t("never"))), h("span",{class:"small muted"}, fmtDate(s.at, lang(), true)))))));
+    h("div",{class:"feed"}, hist.map(s => h("div",{class:"feed-row"}, h("span",{class:"small"}, s.action+" · "+(s.fromPlan && s.fromPlan !== s.planId ? planName(s.fromPlan)+" → " : "")+planName(s.planId)+" · "+(s.expiresAt?fmtDate(s.expiresAt,lang()):t("never"))
+      +(s.source ? " · "+s.source : "")+(s.amount ? " · "+s.amount+" "+(s.currency||"") : "")+(s.reason ? " · “"+s.reason+"”" : "")), h("span",{class:"small muted"}, fmtDate(s.at, lang(), true)))))));
 
   // progress
   const sk = (prog && prog.skills) || {};
@@ -146,7 +151,8 @@ export async function viewLearner({ uid }){
     canSupport() ? h("div",{class:"stack",style:"gap:8px"}, noteIn, h("button",{class:"btn sm",style:"align-self:flex-start",onclick:async()=>{ if(!noteIn.value.trim()) return; await api.db.set(`adminNotes/${uid}`,{ notes:[...notes,{ text:noteIn.value.trim(), by:S.me.name||S.me.email, at:Date.now() }] }); S.render(); }}, t("add_note_admin"))) : null);
 
   const accessBox = await learnerAccessPanel(uid, a, setAccess);   // personal grants (overrides) and current usage counters
-  wrap.append(h("div",{class:"grid2"}, h("div",{class:"stack"}, profile, accBox, accessBox), h("div",{class:"stack"}, progBox, resBox, notesBox)));
+  const payBox = await learnerPaymentsPanel(uid);
+  wrap.append(h("div",{class:"grid2"}, h("div",{class:"stack"}, profile, accBox, payBox, accessBox), h("div",{class:"stack"}, progBox, resBox, notesBox)));
   return wrap;
 }
 
@@ -160,7 +166,10 @@ async function assignDialog(a, setAccess){
   const status = h("select",{class:"input"}, ["active","trial","pending"].map(k => h("option",{value:k,selected:(a&&a.status)===k},t(k))));
   status.addEventListener("change", () => { const p = S.plans.find(x=>x.id===plan.value); if (status.value==="trial" && p && p.trialDays) exp.value = new Date(Date.now()+p.trialDays*DAY).toISOString().slice(0,10); });
   const tmp = h("input",{class:"input",type:"number",min:"1",placeholder:"7"});
+  const source = h("select",{class:"input"}, [["admin","Granted by admin"],["trial","Trial"],["promotion","Promotion / sponsored"]].map(([v,l]) => h("option",{value:v},l)));
+  status.addEventListener("change", () => { if (status.value === "trial") source.value = "trial"; });
+  const reason = h("input",{class:"input",placeholder:"e.g. school partnership, support case #12"});
   tmp.addEventListener("input", () => { const n=+tmp.value; if (n>0) exp.value = new Date(Date.now()+n*DAY).toISOString().slice(0,10); });
-  await dialog({ title:t("assign_plan"), body:h("div",{class:"stack"}, h("div",{class:"field-row"}, fld(t("plan"),plan), fld(t("status"),status)), h("div",{class:"field-row"}, fld(t("start"),start), fld(t("expiry"),exp, t("never")+" = empty")), fld(t("temporary"),tmp), h("p",{class:"small muted"},t("payments_note"))),
-    actions:[{label:t("cancel"),value:false},{label:t("save"),primary:true,onClick:async()=>{ const p = S.plans.find(x=>x.id===plan.value); await setAccess({ planId:p.id, tier:p.tier||1, status:status.value, start: readDate(start)||new Date(), expiresAt: readDate(exp) }, status.value==="active" ? (tmp.value ? "temporary" : "assign") : status.value); return true; }}] });
+  await dialog({ title:t("assign_plan"), body:h("div",{class:"stack"}, h("div",{class:"field-row"}, fld(t("plan"),plan), fld(t("status"),status)), h("div",{class:"field-row"}, fld(t("start"),start), fld(t("expiry"),exp, t("never")+" = empty")), fld(t("temporary"),tmp), h("div",{class:"field-row"}, fld("Source",source), fld("Reason",reason, "Kept in the plan history")), h("p",{class:"small muted"},t("payments_note"))),
+    actions:[{label:t("cancel"),value:false},{label:t("save"),primary:true,onClick:async()=>{ const p = S.plans.find(x=>x.id===plan.value); await setAccess({ planId:p.id, tier:p.tier||1, status:status.value, start: readDate(start)||new Date(), expiresAt: readDate(exp), source: source.value }, status.value==="active" ? (tmp.value ? "temporary" : "assign") : status.value, reason.value.trim()); return true; }}] });
 }

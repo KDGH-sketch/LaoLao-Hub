@@ -311,6 +311,33 @@ export async function createSupabaseApi(supabaseUrl, supabaseAnonKey, opts = {})
       if (error) throw error;
       return fromStore(data);
     },
+    // Payments: checkout, status and refunds go through the "payments" Edge Function (it holds the provider's secrets and
+    // verifies the provider's signed results); the learner's own plan choices are database functions. See docs/PAYMENTS.md.
+    pay: (() => {
+      const fnUrl = supabaseUrl.replace(/\/$/, "") + "/functions/v1/payments";
+      async function call(path, { method = "GET", body } = {}){
+        const { data: { session } } = await client.auth.getSession();
+        let r;
+        try {
+          r = await fetch(fnUrl + path, { method, body: body ? JSON.stringify(body) : undefined,
+            headers: Object.assign({ apikey: supabaseAnonKey, Authorization: "Bearer " + (session ? session.access_token : supabaseAnonKey) }, body ? { "Content-Type": "application/json" } : {}) });
+        } catch(e){ throw Object.assign(new Error("network_error"), { code: "network_error" }); }
+        let data = null; try { data = await r.json(); } catch(e){}
+        if (!r.ok){ const code = (data && data.error) || (r.status === 404 ? "payment_service_unavailable" : "server_error"); throw Object.assign(new Error(code), { code, status: r.status }); }
+        return data;
+      }
+      return {
+        live: true,
+        config: () => call("/config").catch(() => ({ provider: null, methods: [] })),
+        quote: (planId, cycle, method) => api.rpc("ll_my_quote", { p_plan: planId, p_cycle: cycle, p_method: method }),
+        checkout: args => call("/checkout", { method: "POST", body: args }),
+        status: id => call("/status?order=" + encodeURIComponent(id)).then(r => r.order),
+        cancelOrder: id => api.rpc("ll_cancel_my_order", { p_order: id }),
+        setCancel: on => api.rpc("ll_set_cancel", { p_cancel: !!on }),
+        schedule: planId => api.rpc("ll_schedule_plan", { p_plan: planId }),
+        refund: args => call("/refund", { method: "POST", body: args })
+      };
+    })(),
     storage: {
       upload: async (file, path) => {
         const bucket = "laolao-assets";
