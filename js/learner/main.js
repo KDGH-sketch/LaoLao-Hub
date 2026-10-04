@@ -12,6 +12,8 @@ import * as LV from "./views-learn.js";
 import * as TV from "./views-tools.js";
 import { LAB_VIEWS } from "./views-labs.js";
 import { MEDIA_VIEWS } from "./views-media.js";
+import { HANDWRITING_VIEWS } from "./views-handwriting.js";
+import { lockedPanel, featureForView, navLock } from "./upgrade.js";
 import { themeSwitcher } from "../shared/ui.js";
 
 const root = document.getElementById("root");
@@ -126,7 +128,7 @@ async function renderAuth(mode){
     speak("ສະບາຍດີ");
     setTimeout(() => sabaideeBtn.classList.remove("playing"), 1500);
   }},
-    h("span",{style:"font-size:1.35rem"}, "🔊"),
+    icon("speaker"),
     h("div",null,
       h("div",{class:"lo",style:"font-size:1.15rem;font-weight:700"}, "ສະບາຍດີ! (Sabaidee)"),
       h("small",{style:"opacity:.85;font-size:.78rem;display:block"}, "ແຕະເພື່ອຟັງສຽງທັກທາຍ · Tap to hear greeting")
@@ -192,12 +194,12 @@ async function renderAuth(mode){
       mode==="signin" ? (settings.allowRegistration ? h("p",{class:"small"}, t("no_account")+" ", h("button",{type:"button",class:"linkbtn",onclick:()=>renderAuth("register")}, t("register"))) : h("p",{class:"small muted"}, t("reg_closed"), settings.supportContact ? " · "+settings.supportContact : "")) : null,
       A.api.mode==="demo" && mode==="signin" ? h("div",{class:"demo-quick-box"},
         h("div",{class:"demo-quick-header"},
-          h("span",null,"⚡ "+t("demo_accounts")),
+          h("span",null,t("demo_accounts")),
           h("a",{href:"admin/",class:"linkbtn",style:"font-size:.8rem"}, "Admin Portal →")
         ),
         h("div",{class:"demo-btn-group"},
-          h("button",{type:"button",class:"btn primary sm",onclick:()=>{ email.value=DEMO.premium.email; pw.value=DEMO.premium.pw; submit(); }}, "✨ Premium Learner"),
-          h("button",{type:"button",class:"btn sm",onclick:()=>{ email.value=DEMO.free.email; pw.value=DEMO.free.pw; submit(); }}, "🌱 Free Learner")
+          h("button",{type:"button",class:"btn primary sm",onclick:()=>{ email.value=DEMO.premium.email; pw.value=DEMO.premium.pw; submit(); }}, "Premium Learner"),
+          h("button",{type:"button",class:"btn sm",onclick:()=>{ email.value=DEMO.free.email; pw.value=DEMO.free.pw; submit(); }}, "Free Learner")
         )
       ) : null,
 
@@ -215,7 +217,7 @@ async function renderAuth(mode){
       // Promotional Resource Banner & Socials
       h("div",{class:"promo-card",style:"margin-top:10px"},
         h("div",{class:"spread"},
-          h("b",{style:"font-size:.9rem"}, "🎁 Free Lao Starter PDF Guide"),
+          h("b",{style:"font-size:.9rem"}, icon("gift"), "Free Lao Starter PDF Guide"),
           h("span",{class:"chip lv"}, "Free")
         ),
         h("p",{class:"small muted",style:"margin:0"}, "Download our structured 30-day Lao script, tones, and survival conversation reference book."),
@@ -260,8 +262,8 @@ function renderDisabled(){
 }
 
 // ---------- shell ----------
-const VIEWS = Object.assign({}, LV.VIEWS, TV.VIEWS, LAB_VIEWS, MEDIA_VIEWS, {
-  script_lab: TV.VIEWS.chars
+const VIEWS = Object.assign({}, LV.VIEWS, TV.VIEWS, LAB_VIEWS, MEDIA_VIEWS, HANDWRITING_VIEWS, {
+  chars: HANDWRITING_VIEWS.handwriting, script_lab: HANDWRITING_VIEWS.handwriting
 });
 // Grouped so the sidebar reads as sections instead of one long flat list.
 const NAV_GROUPS = [
@@ -310,7 +312,7 @@ function openMoreMenu(){
       h("button",{class:"ib","aria-label":t("close"),onclick:()=>closeSheet()}, icon("x"))),
     h("div",{class:"sheet-b"}, NAV_GROUPS.map(g => h("div",{class:"stack",style:"gap:2px"},
       h("div",{class:"side-group-label",style:"padding-left:0"}, t(g.title)),
-      ...g.items.map(([id,k,ic]) => h("button",{class:"nav-btn","aria-current":cur===id?"page":null,onclick:()=>go(id)}, icon(ic), t(k)))))));
+      ...g.items.map(([id,k,ic]) => h("button",{class:"nav-btn","aria-current":cur===id?"page":null,onclick:()=>go(id)}, icon(ic), t(k), navLock(id)))))));
   document.body.append(scrim, sheet);
 }
 let searchPop, netEl;
@@ -322,7 +324,7 @@ function render(){
   NAV_GROUPS.forEach(g => {
     side.append(h("div",{class:"side-group-label"}, t(g.title)));
     g.items.forEach(([id,k,ic]) => { const due = id==="review" ? srsDue().length : 0;
-      side.append(h("button",{class:"nav-btn","aria-current":cur===id?"page":null,onclick:()=>go(id)}, icon(ic), t(k), due ? h("span",{class:"count"},due) : null)); });
+      side.append(h("button",{class:"nav-btn","aria-current":cur===id?"page":null,onclick:()=>go(id)}, icon(ic), t(k), due ? h("span",{class:"count"},due) : navLock(id))); });
   });
   // the admin link is only useful to administrators (access is still checked in the admin app and the database)
   if (A.isAdmin) side.append(h("div",{class:"sep"}), h("a",{class:"nav-btn",href:"admin/",style:"text-decoration:none;color:var(--accent);font-weight:600"}, icon("shield"), (lang()==="lo"?"ຈັດການລະບົບ ":"Admin Backend ")+"(CMS)"));
@@ -356,6 +358,10 @@ function render(){
   setupSearch(search);
   updateNet();
   const fn = VIEWS[A.view.name] || VIEWS.home;
+  // Router guard: a view the plan does not include shows the locked screen (also for direct links like #tone_lab).
+  // The attempt is reported to the database (Admin → Access logs). Content above the plan is never in the browser anyway.
+  const need = featureForView(A.view.name, A.view.params);
+  if (need && A.ac && !A.ac.can(need)){ main.append(lockedPanel({ feature:need })); A.ac.report(need); return; }
   try { const el = fn(A.view.params||{}); Promise.resolve(el).then(x => { main.innerHTML=""; main.append(x); }); }
   catch(e){ console.error(e); main.append(h("div",{class:"banner"}, errText(e))); }
 }

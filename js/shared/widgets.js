@@ -1,7 +1,10 @@
 // Shared learning widgets: sentences with word-by-word breakdown, the word sheet, stroke order.
 import { h, $$, icon, pyHTML, isHan, esc, toast, tr } from "./ui.js";
 import { t, lang } from "./i18n.js";
-import { dict, chars, gloss, meaning, strokes, segment } from "./dict.js";
+import { dict, chars, gloss, meaning, segment } from "./dict.js";
+import { createPad } from "./handwriting/pad.js";
+import { playDemo } from "./handwriting/animator.js";
+import { readTemplate } from "./handwriting/model.js";
 import { speak } from "./speech.js";
 
 // The host app fills this in (bookmarks, navigation, explanation language…)
@@ -120,8 +123,9 @@ export function entryEl(w){
         ci.x && ci.x!=="？" ? h("div",{class:"small muted"}, t("components")+": ", h("span",{class:"hz"}, ci.x.replace(/[⿰-⿻]/g," ").trim()), ci.hi ? " · "+ci.hi : "") : null));
     });
     box.append(h("div",{class:"sect"}, h("h3",null,t("chars_in")), cc));
+    const withTpl = ctx.hwTemplate ? cs.filter(c => ctx.hwTemplate(c)) : [];
     if (cs.length===1) showStroke(box, cs[0]);
-    else box.append(h("div",{class:"row"}, cs.map(c => h("button",{class:"btn sm",onclick:()=>showStroke(box,c)}, t("stroke_play")+" "+c))));
+    else if (withTpl.length) box.append(h("div",{class:"row"}, withTpl.map(c => h("button",{class:"btn sm",onclick:()=>showStroke(box,c)}, t("stroke_play")+" "+c))));
   }
   if (w.length<=2){
     const comp = Object.keys(D).filter(k => k!==w && k.includes(w) && k.length<=4).sort((a,b)=>((D[a].h||9)-(D[b].h||9))||(D[a].fq-D[b].fq)).slice(0,14);
@@ -133,22 +137,17 @@ export function entryEl(w){
   if (pats.length) box.append(h("div",{class:"sect"}, h("h3",null,t("in_patterns")), h("div",{class:"wordchips"}, pats.map(p => h("button",{onclick:()=>{ closeSheet(); ctx.openPattern(p.n); }}, "#"+p.n+" ", h("span",{class:"hz"},p.hz))))));
   return box;
 }
-export async function showStroke(box, c, opts={}){
+// Stroke order of a character in the word sheet, drawn from its handwriting template (nothing when it has none)
+export async function showStroke(box, c){
   let wrap = box.querySelector(".hw-box"); if (wrap) wrap.remove();
-  wrap = h("div",{class:"hw-box"}); box.append(wrap);
-  const S = await strokes(); const data = S[c];
-  if (!data || !window.HanziWriter){ wrap.append(h("p",{class:"small muted"}, t("no_strokes"))); return null; }
-  const target = h("div",{class:"hw-target"});
-  const cs = getComputedStyle(document.documentElement);
-  let writer;
-  wrap.append(target, h("div",{class:"row"},
-    h("button",{class:"btn sm",onclick:()=>{ try{ writer.cancelQuiz(); }catch(e){} writer.showCharacter(); writer.animateCharacter(); }}, icon("play"), t("stroke_play")),
-    h("button",{class:"btn sm",onclick:()=>{ writer.hideCharacter(); writer.quiz({ onComplete: s => { toast(t("correct")); ctx.track("write",{c, mistakes:s.totalMistakes}); } }); }}, icon("pen"), t("stroke_quiz"))));
-  const size = Math.min(220, target.clientWidth||220);
-  writer = HanziWriter.create(target, c, { width:size, height:size, padding:12, showOutline:true, strokeAnimationSpeed:1.1, delayBetweenStrokes:180,
-    strokeColor: cs.getPropertyValue("--ink").trim()||"#222", radicalColor: cs.getPropertyValue("--accent").trim()||"#b33",
-    outlineColor: cs.getPropertyValue("--surface-3").trim()||"#ddd", drawingColor: cs.getPropertyValue("--t1").trim()||"#36c",
-    charDataLoader: (ch, done) => done(S[ch]) });
-  if (!opts.noAnimate) setTimeout(() => writer.animateCharacter(), 250);
-  return writer;
+  const tpl = readTemplate(ctx.hwTemplate ? ctx.hwTemplate(c) : null);
+  if (!tpl) return null;
+  const pad = createPad({ guideChar: c, label: t("hw_canvas", { c }) });
+  pad.enable(false);
+  wrap = h("div",{class:"hw-box sect"}, h("h3",null,t("hw_show_demo")), h("div",{style:"max-width:220px"}, pad.el),
+    h("div",{class:"row"}, h("button",{class:"btn sm",onclick:()=>playDemo(pad, tpl)}, icon("play"), t("stroke_play")),
+      ctx.openHandwriting ? h("button",{class:"btn sm ghost",onclick:()=>ctx.openHandwriting(c)}, icon("pen"), t("hw_title")) : null));
+  box.append(wrap);
+  pad.setGuide({ level: 1, template: tpl, show: "all" });
+  return pad;
 }

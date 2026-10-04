@@ -1,5 +1,6 @@
 // Demo implementation of the data layer: same interface as js/api/supabase.js, stored in this browser.
 // Used automatically while env-config.js has no Supabase config.
+import { resolveEntitlements, consumeUsage, usageSnapshot, decide } from "../shared/access.js";
 const DBKEY = "laolao.demo.db", AUTHKEY = "laolao.demo.auth", SESSKEY = "laolao.demo.session";
 const load = k => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch(e){ return null; } };
 const store = (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){ console.warn("Demo storage full", e); } };
@@ -120,6 +121,24 @@ export async function createLocalApi(){
       batch: async ops => { for (const o of ops){ if (o.op==="del") await api.db.del(o.path); else if (o.op==="update") await api.db.update(o.path, o.data); else await api.db.set(o.path, o.data, !!o.merge); } },
       inc: n => ({ [INC]: n }),
       delField: () => DELF
+    },
+    // Same database functions as supabase-schema.sql, run on the demo database with the same resolver
+    rpc: async (name, args = {}) => {
+      const uid = session ? session.uid : null;
+      const adm = uid && db["admins/"+uid];
+      const ent = resolveEntitlements({ uid, isAdmin: !!adm && adm.status !== "disabled", user: uid ? db["users/"+uid] || null : null,
+        access: uid ? db["access/"+uid] || null : null, settings: db["settings/app"] || {},
+        plans: Object.keys(db).filter(k => inCol(k, "plans")).map(k => Object.assign({ id: k.split("/").pop() }, db[k])) });
+      const rows = new Proxy({}, { get: (_, id) => db["usage/"+String(id)], set: (_, id, v) => { db["usage/"+String(id)] = v; return true; } });
+      if (name === "ll_entitlements"){ persist(); return clone(Object.assign(ent, { usage: usageSnapshot(rows, ent) })); }
+      if (name === "ll_can") return decide(ent, args.f).allowed;
+      if (name === "ll_use"){
+        const r = consumeUsage(rows, ent, args.p_feature, { amount: args.p_amount ?? 1, ref: args.p_ref ?? null });
+        if (!r.allowed && uid) db["accessLogs/"+uid+"__"+uidGen()] = { uid, feature: args.p_feature, plan: ent.planId, status: ent.status, decision:"deny", reason: r.reason, used: r.used, limit: r.limit, at: Date.now() };
+        persist();
+        return clone(r);
+      }
+      const e = new Error("Could not find the function " + name); e.code = "PGRST202"; throw e;
     },
     storage: {
       upload: async file => {

@@ -1,15 +1,16 @@
 // Learner app state, data access and progress tracking
 import { h, icon, toast, todayKey, tr, rnd, shuffle, isHan, setTheme, getTheme } from "../shared/ui.js";
 import { t, lang, setLang } from "../shared/i18n.js";
-import { tierFor, loadBundle, SKILLS, TIERS } from "../shared/content.js";
+import { loadBundle, SKILLS, TIERS } from "../shared/content.js";
+import { createAccessControl } from "../shared/access.js";
 import { loadDict, dict, chars, mergeVocabulary } from "../shared/dict.js";
 import { makeEngine } from "../shared/engine.js";
-import { setSpeechSettings, setAudioLibrary } from "../shared/speech.js";
+import { setSpeechSettings, setAudioLibrary, setAudioGate } from "../shared/speech.js";
 import { ctx } from "../shared/widgets.js";
-import { mergeRules, lessonPoints, reviewPoints, dailyAward, levelFromXP, wilsonLower, skillMastery, earnedAchievements } from "../shared/scoring.js";
+import { mergeRules, lessonPoints, reviewPoints, dailyAward, levelFromXP, wilsonLower, skillMastery, earnedAchievements, handwritingRound } from "../shared/scoring.js";
 
 export const A = {
-  api:null, user:null, profile:null, access:null, isAdmin:false, tier:0, settings:{}, plans:[],
+  api:null, user:null, profile:null, access:null, isAdmin:false, tier:0, settings:{}, plans:[], ac:null, ent:null,
   B:null, P:{}, byType:{}, catalog:[], examples:[], engine:null,
   prog:{ skills:{}, lessons:{}, patterns:{}, days:{}, answers:{r:0,t:0}, last:null },
   srs:{}, saved:{}, view:{ name:"home", params:{} }, hist:[], render:()=>{}
@@ -63,8 +64,20 @@ export async function loadAccount(user){
   A.profile = prof || { email:user.email, name:"", status:"active", level:1, prefs:{} };
   A.rules = mergeRules(settings && settings.scoring);   // admin overrides from Settings → Scoring rules
   A.access = acc; A.isAdmin = !!adm; A.settings = settings || {}; A.plans = plans.sort((a,b)=>(a.order||0)-(b.order||0));
-  // without a profile the database gives public content only; match that here
-  A.tier = tierFor({ isAdmin:A.isAdmin, user: prof ? A.profile : null, access: acc });
+  // One entitlement payload per session (plan, features, limits, counters); the database decides content and counts.
+  // Without a profile the database gives public content only; the resolver matches that.
+  A.ac = createAccessControl(api); ctx.ac = A.ac;
+  A.ent = await A.ac.load({ uid:user.uid, isAdmin:A.isAdmin, user: prof ? A.profile : null, access: acc, plans: A.plans, settings: A.settings });
+  A.tier = A.ent.tier;
+  // Native recordings: plays while the plan allows it (counted in the background); otherwise the device voice reads the text
+  let audioNoted = false;
+  setAudioGate(() => {
+    const lim = A.ac.limit("audio.play"), u = A.ac.usage("audio.play");
+    const ok = A.ac.can("audio.play") && !(lim && u && u.used >= lim.n);
+    if (ok && lim) A.ac.use("audio.play");
+    if (!ok && !audioNoted){ audioNoted = true; toast(t("ac_audio_tts")); }
+    return ok;
+  });
   const p = prefs(); setLang(p.uiLang || "en"); applyPrefs();
   await Promise.all([loadDict(), loadContent(), loadProgress()]);
   if (A.profile.status==="active") api.db.update(`users/${user.uid}`, { lastActive: new Date() }).catch(()=>{});
@@ -173,6 +186,27 @@ export function learnPattern(n, on=true){
   if (on){ A.prog.patterns[n] = Date.now(); progUpdate({ ["patterns."+n]: Date.now() }); logEvent("pattern", { ref:"#"+n }, true); srsAdd("p:"+n, { type:"p", n }); }
   else { delete A.prog.patterns[n]; progUpdate({ ["patterns."+n]: A.api.db.delField() }); }
 }
+// A checked handwriting attempt: totals per character in progress/{uid}.handwriting (one locked update), the full
+// result as a history event, writing-skill accuracy, and XP through the round rules (stars, replay factor).
+export function recordHandwriting(id, sc, meta = {}){
+  if (!A.profile || A.profile.status !== "active") return null;
+  const k = safeId(id).replace(/[.\s]/g, "_"), prev = (A.prog.handwriting = A.prog.handwriting || {})[k] || {};
+  const errors = Object.assign({}, prev.errors || {}); for (const e in sc.errors) errors[e] = (errors[e] || 0) + sc.errors[e];
+  const next = { attempts: (prev.attempts || 0) + 1, best: Math.max(prev.best || 0, sc.total), last: sc.total, lastAt: Date.now(),
+    passed: !!(prev.passed || sc.passed), retries: (prev.retries || 0) + (meta.retries || 0), errors };
+  A.prog.handwriting[k] = next;
+  const upd = { [`handwriting.${k}.attempts`]: A.api.db.inc(1), [`handwriting.${k}.best`]: next.best, [`handwriting.${k}.last`]: sc.total,
+    [`handwriting.${k}.lastAt`]: new Date(), [`handwriting.${k}.passed`]: next.passed };
+  if (meta.retries) upd[`handwriting.${k}.retries`] = A.api.db.inc(meta.retries);
+  for (const e in sc.errors) upd[`handwriting.${k}.errors.${e}`] = A.api.db.inc(sc.errors[e]);
+  progUpdate(upd);
+  logEvent("handwriting", { ref: id, score: sc.total, total: 100, passed: sc.passed, components: sc.components, errors: sc.errors,
+    strokes: sc.strokes.map(s => ({ id: s.id, order: s.order, direction: s.direction, path: s.path, start: s.start, end: s.end, error: s.error || null, tries: s.tries })),
+    retries: meta.retries || 0, durationMs: meta.durationMs || 0, guide: meta.guide || 1 }, sc.passed);
+  recordAnswer("characters", sc.passed);
+  return scoreRound("hw:" + k, handwritingRound(sc, { repeat: roundRepeat("hw:" + k) }, A.rules));
+}
+export const handwritingProgress = id => (A.prog.handwriting || {})[safeId(id).replace(/[.\s]/g, "_")] || null;
 export function quizDone(id, score, total){ logEvent("quiz", { ref:id, score, total }, true); }
 
 // ---------- SRS ----------
@@ -234,5 +268,9 @@ ctx.exp = expLang;
 ctx.rules = () => A.rules; ctx.roundRepeat = roundRepeat; ctx.scoreRound = scoreRound;
 ctx.isSaved = isSaved; ctx.toggleSave = toggleSave;
 ctx.patterns = () => Object.values(A.P);
+// handwriting templates for the quiz type write_char and the word sheet (published characters only)
+ctx.hwTemplate = ch => { const c = Object.values(A.byType.characters || {}).find(x => x.char === ch); return c && c.handwriting || null; };
+ctx.hwRules = () => (A.settings && A.settings.handwriting) || {};
+ctx.openHandwriting = ch => { const c = Object.values(A.byType.characters || {}).find(x => x.char === ch); A.go("handwriting", c ? { id: c.id } : {}); };
 ctx.examples = () => A.examples;
 ctx.track = (type, data) => { if (type==="word"){ logEvent("word", { ref:data.w }); } if (type==="write"){ recordAnswer("writing", (data.mistakes||0)<=3); logEvent("writing", { ref:data.c }); } if (type==="listen") touchDay(); };

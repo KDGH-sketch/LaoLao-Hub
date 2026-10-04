@@ -208,7 +208,7 @@ LAB_VIEWS.tone_lab = () => {
       ))
     );
     pairsSect.append(h("div",{class:"pair-group",style:"background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px"},
-      h("h3",{style:"margin-bottom:10px;font-size:1rem;color:var(--ink-2)"}, "🎯 " + pair.title),
+      h("h3",{style:"margin-bottom:10px;font-size:1rem;color:var(--ink-2)"}, pair.title),
       pairCards
     ));
   });
@@ -766,7 +766,7 @@ LAB_VIEWS.classifiers_lab = () => {
 
   // Word order rules card
   root.append(h("div",{class:"card",style:"background:var(--surface-2);border-color:var(--accent);padding:20px"},
-    h("h3",{style:"margin-bottom:10px;color:var(--accent)"}, "📐 Fundamental Word Order of Lao Classifiers"),
+    h("h3",{style:"margin-bottom:10px;color:var(--accent)"}, "Fundamental Word Order of Lao Classifiers"),
     h("div",{class:"grid2",style:"gap:14px"},
       h("div",{class:"card"},
         h("b",null,"1. Counting Quantity:"),

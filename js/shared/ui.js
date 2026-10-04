@@ -120,7 +120,9 @@ const IC = {
  filter:'<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />',
  external:'<path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />'
 };
-export function icon(n, cls){ const s=document.createElementNS("http://www.w3.org/2000/svg","svg"); s.setAttribute("viewBox","0 0 24 24"); s.setAttribute("aria-hidden","true"); if (cls) s.setAttribute("class",cls); s.innerHTML = IC[n] || IC.more; return s; }
+// Every icon carries class "ic": its size and stroke come from the icon tokens in css/app.css (:root --ic-*).
+// Contexts pick a token (e.g. .nav-btn .ic = --ic-lg); never give an icon a one-off pixel size.
+export function icon(n, cls){ const s=document.createElementNS("http://www.w3.org/2000/svg","svg"); s.setAttribute("viewBox","0 0 24 24"); s.setAttribute("aria-hidden","true"); s.setAttribute("class", cls ? "ic "+cls : "ic"); s.innerHTML = IC[n] || IC.more; return s; }
 
 // ----- theme management (Day, Night, System) -----
 export function getTheme(){
@@ -183,7 +185,7 @@ export function dialog({ title, body, actions=[], wide=false }){
     scrim.addEventListener("click", () => close(null));
     box.append(
       title ? h("div",{class:"dialog-h"}, h("h2",null,title), h("button",{class:"ib","aria-label":"Close",onclick:()=>close(null)}, icon("x"))) : null,
-      h("div",{class:"dialog-b"}, body),
+      h("div",{class:"dialog-b"}, typeof body === "function" ? body(close) : body),   // body(close) lets the content close the dialog
       actions.length ? h("div",{class:"dialog-f"}, actions.map(a => h("button",{class:"btn"+(a.primary?" primary":"")+(a.danger?" danger":""),onclick:async()=>{ const v = a.value!==undefined ? a.value : (a.onClick ? await a.onClick() : true); if (v!==false) close(v); }}, a.label))) : null);
     document.body.append(scrim, box);
     const f = box.querySelector("input,select,textarea,button.primary"); if (f) f.focus();

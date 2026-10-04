@@ -2,14 +2,15 @@
 // saved items, notes, progress, offline downloads, account.
 import { h, $$, icon, toast, pyHTML, tr, stripTone, fmtDate, isHan, debounce, rnd, shuffle, errText, dialog, normTheme } from "../shared/ui.js";
 import { t, lang } from "../shared/i18n.js";
-import { dict, chars, strokes, searchDict, meaning } from "../shared/dict.js";
+import { dict, chars, searchDict, meaning } from "../shared/dict.js";
 import { speak, voices, canListen } from "../shared/speech.js";
 import { sentenceEl, openWord, entryEl, ensureTokens } from "../shared/widgets.js";
 import { runQuiz, toneSVG } from "../shared/quiz.js";
-import { SKILLS, accessState, cacheGet } from "../shared/content.js";
+import { SKILLS, cacheGet } from "../shared/content.js";
 import { A, T, expLang, prefs, setPref, srsDue, srsGrade, streak, skillPct, genSentence, genMany, exampleOf, recordAnswer, quizDone, logEvent, touchDay,
   tierName, isSaved, toggleSave, wordsMastered, srsAdd } from "./core.js";
 import { achievementsEl, xpCard, masteryRow } from "./views-learn.js";
+import { navLock, allowUse, lockedPanel, plansSection, usageMeters } from "./upgrade.js";
 
 export const VIEWS = {};
 const go = (...a) => A.go(...a);
@@ -54,9 +55,11 @@ function wordQuestions(n){
 }
 const TONE_SET = [["ກາ","kāa",1],["ກ່າ","kàa",2],["ກ້າ","kâa",3],["ມ້າ","mâa",4],["ຂາ","khǎa",5],["ດີ","dīi",1],["ປາ","paa",1],["ແມ່","mɛ̂ɛ",2],["ເຂົ້າ","khào",3],["ນ້ຳ","nâm",4],["ຫຼາຍ","lǎai",5],["ໄປ","pái",1],["ແຊບ","sàaep",2],["ເຈົ້າ","jâo",3],["ໝາກ","màak",6],["ເຮືອນ","hɯ́an",1]];
 const toneQuestions = n => shuffle(TONE_SET).slice(0,n).map(([z,p,a]) => ({ type:"tone", skill:"pinyin", prompt:{ zh:z, py:p }, answer:a }));
-async function writeQuestions(n){ const S = await strokes(); const D = dict(); const lv = A.profile.level||1;
-  const pool = Object.keys(D).filter(k => k.length===1 && S[k] && D[k].h && D[k].h<=Math.max(2,lv));
-  return shuffle(pool).slice(0,n).map(c => ({ type:"write_char", skill:"characters", prompt:{ zh:c, py:D[c].p, tr:{ en:D[c].en.split(";")[0], lo:(D[c].lo||"").split(";")[0] } }, ask:{ en:(D[c].en.split(";")[0])+" · "+D[c].p, lo:((D[c].lo||D[c].en).split(";")[0])+" · "+D[c].p } })); }
+// Writing practice: published characters that have a stroke template (checked by the handwriting engine)
+async function writeQuestions(n){
+  const pool = Object.values(A.byType.characters || {}).filter(c => c && c.char && c.handwriting && c.handwriting.strokes && c.handwriting.strokes.length);
+  return shuffle(pool).slice(0,n).map(c => ({ type:"write_char", skill:"characters", prompt:{ zh:c.char, py:c.name && c.name !== c.char ? c.name : "", tr:{ en:c.meaning||"", lo:"" } },
+    ask:{ en:"Write " + c.char, lo:"ຂຽນ " + c.char } })); }
 
 // ---------- generator ----------
 VIEWS.gen = () => {
@@ -88,8 +91,8 @@ VIEWS.practice = ({ type }) => {
   if (type) return startPractice(root, type);
   const quizzes = Object.values(A.byType.quizzes||{}).sort((a,b)=>(a.level-b.level)||((a.order||0)-(b.order||0)));
   root.append(pageHead(t("practice_title"), t("practice_sub")),
-    h("div",{class:"grid2"}, PTYPES.map(([k,ic,l]) => h("button",{class:"pcard",onclick:()=>go("practice",{type:k})}, h("span",{class:"qi lo",style:"font-weight:700"},ic), h("div",null, h("b",null,t(l)), h("span",null, t(l+"_d")!==l+"_d" ? t(l+"_d") : ""))))),
-    h("div",{style:"margin-top:14px"}, h("button",{class:"btn primary",onclick:()=>go("practice",{type:"mix"})}, icon("spark"), t("start")+" · mix")),
+    h("div",{class:"grid2"}, PTYPES.map(([k,ic,l]) => h("button",{class:"pcard",onclick:()=>go("practice",{type:k})}, h("span",{class:"qi lo",style:"font-weight:700"},ic), h("div",null, h("b",null,t(l), navLock("practice",{type:k})), h("span",null, t(l+"_d")!==l+"_d" ? t(l+"_d") : ""))))),
+    h("div",{style:"margin-top:14px"}, h("button",{class:"btn primary",onclick:()=>go("practice",{type:"mix"})}, icon("spark"), t("start")+" · mix", navLock("practice",{type:"mix"}))),
     quizzes.length ? h("section",{class:"sect",style:"margin-top:28px"}, h("h2",null,t("quiz")), h("div",{class:"list-card"}, quizzes.map(q => { const r = A.prog.lessons["quiz:"+q.id];
       return h("button",{class:"item-row",onclick:()=>go("quiz",{id:q.id})}, h("span",{class:"stepnum"+(r?" done":"")}, r?icon("check"):icon("star")), h("span",null, h("div",{class:"ttl"},T(q.title)), h("div",{class:"sub"}, "Stage "+q.level+" · "+(q.questions||[]).length+" "+t("questions").toLowerCase()+(r?" · "+r.score+"/"+r.total:""))), icon("right")); }))) : null);
   return root;
@@ -102,7 +105,9 @@ function startPractice(root, type){
   root.append(h("div",{class:"spread",style:"margin-bottom:10px"}, h("button",{class:"btn sm ghost",onclick:()=>go("practice",{},false)}, icon("left"), t("back"))), box);
   const make = async () => type==="words" ? wordQuestions(10) : type==="tones" ? toneQuestions(10) : type==="write" ? await writeQuestions(6)
     : type==="mix" ? shuffle([...patternQuestions(pool, 7, ["order","blank","meaning","listen","reverse","pattern"]), ...wordQuestions(3)]) : patternQuestions(pool, 10, [type]);
-  const start = async () => { const qs = await make(); runQuiz(box, qs, { key:"practice:"+type, onAnswer:(q,ok,m)=>{ recordAnswer(q.skill, ok, m); if (!ok && q.w) srsAdd("w:"+q.w,{type:"w",w:q.w}); if (!ok && q.say) srsAdd("s:"+q.say,{type:"s",zh:q.say}); },
+  // every round counts as one quiz attempt (usage limit)
+  const start = async () => { const r = await A.ac.use("quizzes.attempt"); if (!r.allowed){ box.replaceChildren(lockedPanel({ feature:"quizzes.attempt", result:r })); return; }
+    const qs = await make(); runQuiz(box, qs, { key:"practice:"+type, onAnswer:(q,ok,m)=>{ recordAnswer(q.skill, ok, m); if (!ok && q.w) srsAdd("w:"+q.w,{type:"w",w:q.w}); if (!ok && q.say) srsAdd("s:"+q.say,{type:"s",zh:q.say}); },
     onFinish:r => logEvent("practice", { ref:type, score:r.right, total:r.total }, true), onAgain:start, onExit:()=>go("practice",{},false) }); };
   start();
   return root;
@@ -110,8 +115,9 @@ function startPractice(root, type){
 VIEWS.quiz = ({ id }) => {
   const q = A.byType.quizzes[id]; if (!q) return h("div",{class:"empty"},t("no_rows"));
   const box = h("div",{class:"quiz"});
-  const start = () => runQuiz(box, q.questions||[], { key:"quiz:"+id, title:T(q.title), onAnswer:(qq,ok,m)=>recordAnswer(qq.skill, ok, m),
-    onFinish:r => { A.prog.lessons["quiz:"+id] = { done:true, at:Date.now(), score:r.right, total:r.total }; quizDone(id, r.right, r.total); }, onAgain:start, onExit:()=>A.back() });
+  const start = async () => { const r = await A.ac.use("quizzes.attempt"); if (!r.allowed){ box.replaceChildren(lockedPanel({ feature:"quizzes.attempt", result:r })); return; }
+    runQuiz(box, q.questions||[], { key:"quiz:"+id, title:T(q.title), onAnswer:(qq,ok,m)=>recordAnswer(qq.skill, ok, m),
+    onFinish:r => { A.prog.lessons["quiz:"+id] = { done:true, at:Date.now(), score:r.right, total:r.total }; quizDone(id, r.right, r.total); }, onAgain:start, onExit:()=>A.back() }); };
   start();
   return h("div",null, h("div",{class:"crumb"}, h("button",{onclick:()=>go("practice")},t("nav_practice")), "›", h("span",null,T(q.title))), box);
 };
@@ -120,11 +126,22 @@ VIEWS.quiz = ({ id }) => {
 VIEWS.dict = ({ q="" }) => {
   const res = h("div"), EL = expLang();
   const listEl = keys => { const D = dict(); return h("div",{class:"dres"}, keys.map(k => h("button",{onclick:()=>openWord(k)}, h("span",{class:"lo",style:"font-size:1.35rem;font-weight:700"},k), h("span",{html:pyHTML(D[k].p)}), h("span",{class:"gl"+(EL==="lo"&&D[k].lo?" lo":"")}, meaning(k,EL)), D[k].h ? h("span",{class:"chip lv"},"Stage "+D[k].h) : h("span")))); };
-  const draw = () => { res.innerHTML="";
-    if (!q.trim()){ const D = dict(); res.append(h("h3",{style:"margin:6px 0 10px"},"Stage 1 · High Frequency"), listEl(Object.keys(D).filter(k=>D[k].h===1).sort((a,b)=>D[a].fq-D[b].fq).slice(0,60))); return; }
+  const show = () => { res.innerHTML="";
     const hits = searchDict(q, 60); if (!hits.length){ res.append(h("div",{class:"empty"},t("search_none"))); return; }
     if (dict()[q.trim()]) res.append(h("div",{class:"card",style:"margin-bottom:16px"}, entryEl(q.trim())));
     res.append(h("p",{class:"muted small",style:"margin-bottom:8px"}, hits.length+" "+t("results")), listEl(hits)); };
+  // Search limit: a search counts once the learner stops typing; the same word again in the same period is free (ref).
+  const key = () => q.trim().toLowerCase();
+  const refused = (k, r) => { if (!r.allowed && key() === k) res.replaceChildren(lockedPanel({ feature:"dictionary.search", result:r })); return r.allowed; };
+  const exhausted = () => { const l = A.ac.limit("dictionary.search"), u = A.ac.usage("dictionary.search"); return !!(l && u && u.used >= l.n); };
+  let countT;
+  const draw = () => { res.innerHTML=""; clearTimeout(countT);
+    if (!q.trim()){ const D = dict(); res.append(h("h3",{style:"margin:6px 0 10px"},"Stage 1 · High Frequency"), listEl(Object.keys(D).filter(k=>D[k].h===1).sort((a,b)=>D[a].fq-D[b].fq).slice(0,60))); return; }
+    const k = key();
+    if (!A.ac.limit("dictionary.search")) return show();
+    if (exhausted()){ A.ac.use("dictionary.search", { ref:k }).then(r => { if (refused(k, r) && key() === k) show(); }); return; }
+    show();
+    countT = setTimeout(() => A.ac.use("dictionary.search", { ref:k }).then(r => refused(k, r)), 900); };
   draw();
   return h("div",null, pageHead(t("dict_title"), t("dict_sub")), h("input",{class:"input",style:"font-size:1.1rem;padding:12px 14px;margin-bottom:16px",placeholder:t("search_ph"),value:q,oninput:debounce(e=>{ q=e.target.value; draw(); },140)}), res);
 };
@@ -240,139 +257,7 @@ VIEWS.pinyin = () => {
   return root;
 };
 
-// ---------- Lao Script & Handwriting (ການຂຽນອັກສອນລາວ) ----------
-VIEWS.chars = () => {
-  const root = h("div",{class:"stack-l"});
-  root.append(pageHead(t("chars_title"), "Learn the art of writing Lao script: stroke orders, letter anatomy, and interactive handwriting canvas."));
-
-  // Interactive Handwriting Canvas Studio
-  let currentLetter = "ກ";
-  const canvas = h("canvas",{width:240, height:240, style:"border:2px solid var(--line);border-radius:12px;background:#fff;touch-action:none;cursor:crosshair;box-shadow:var(--shadow)"});
-  const ctx2 = canvas.getContext("2d");
-  let drawing = false, lastX=0, lastY=0;
-
-  function clearCanvas(){
-    ctx2.clearRect(0,0,240,240);
-    // Draw grid lines
-    ctx2.save();
-    ctx2.strokeStyle = "#e2e8f0";
-    ctx2.lineWidth = 1;
-    ctx2.setLineDash([4, 4]);
-    ctx2.beginPath();
-    ctx2.moveTo(120, 0); ctx2.lineTo(120, 240);
-    ctx2.moveTo(0, 120); ctx2.lineTo(240, 120);
-    ctx2.stroke();
-    // Draw faint background guide letter
-    ctx2.font = "bold 140px 'Noto Sans Lao', sans-serif";
-    ctx2.fillStyle = "rgba(2, 132, 199, 0.16)";
-    ctx2.textAlign = "center";
-    ctx2.textBaseline = "middle";
-    ctx2.fillText(currentLetter, 120, 130);
-    ctx2.restore();
-  }
-
-  function startPos(e){
-    drawing = true;
-    const rect = canvas.getBoundingClientRect();
-    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-    lastX = cx * (canvas.width / rect.width);
-    lastY = cy * (canvas.height / rect.height);
-  }
-  function drawPos(e){
-    if (!drawing) return;
-    e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-    const nx = cx * (canvas.width / rect.width);
-    const ny = cy * (canvas.height / rect.height);
-
-    ctx2.save();
-    ctx2.strokeStyle = "#0284C7";
-    ctx2.lineWidth = 7;
-    ctx2.lineCap = "round";
-    ctx2.lineJoin = "round";
-    ctx2.beginPath();
-    ctx2.moveTo(lastX, lastY);
-    ctx2.lineTo(nx, ny);
-    ctx2.stroke();
-    ctx2.restore();
-
-    lastX = nx; lastY = ny;
-  }
-  function endPos(){ drawing = false; }
-
-  canvas.addEventListener("mousedown", startPos);
-  canvas.addEventListener("mousemove", drawPos);
-  window.addEventListener("mouseup", endPos);
-  canvas.addEventListener("touchstart", startPos, {passive:false});
-  canvas.addEventListener("touchmove", drawPos, {passive:false});
-  canvas.addEventListener("touchend", endPos);
-
-  const feedback = h("div",{class:"small muted",style:"min-height:22px;font-weight:600"});
-  const charDisplay = h("div",{class:"lo",style:"font-size:3.5rem;font-weight:700;color:var(--accent);line-height:1"}, currentLetter);
-  const infoDisplay = h("div",{class:"muted small"}, "Lao Consonant · ກ ໄກ່ (ko kai)");
-
-  const selectLetter = (c, name) => {
-    currentLetter = c;
-    charDisplay.textContent = c;
-    infoDisplay.textContent = "Letter: " + c + " · " + (name || "");
-    clearCanvas();
-    feedback.textContent = "";
-    speak(c);
-  };
-
-  const studio = h("div",{class:"card",style:"display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center;padding:24px"},
-    h("div",{style:"display:flex;flex-direction:column;align-items:center;gap:12px"},
-      canvas,
-      h("div",{class:"row",style:"gap:8px"},
-        h("button",{class:"btn sm",onclick:()=>clearCanvas()}, icon("x"), "Clear"),
-        h("button",{class:"btn sm",onclick:()=>{ speak(currentLetter); }}, icon("play"), "Audio"),
-        h("button",{class:"btn sm primary",onclick:()=>{
-          feedback.textContent = "✨ Great practice! Lao calligraphy rule: always draw the circular head loop first.";
-          toast("✓ Practice recorded!");
-          recordAnswer("writing", true);
-        }}, icon("check"), "Check")
-      ),
-      feedback
-    ),
-    h("div",{class:"stack",style:"gap:14px"},
-      h("div",{style:"display:flex;align-items:baseline;gap:12px"},
-        charDisplay,
-        h("div",null,
-          h("h3",null,"Handwriting Practice Studio"),
-          infoDisplay
-        )
-      ),
-      h("div",{class:"banner info",style:"font-size:.9rem"},
-        h("b",null,"Golden Rule of Lao Script: "),
-        "ຂຽນຫົວ ກ່ອນ (Always write the head loop first!). Unlike English letters which start top-down, most Lao consonants start with the small circle or spiral loop."
-      ),
-      h("p",{class:"small muted"},"Pick any letter below to practice on the tracing canvas:")
-    )
-  );
-
-  setTimeout(clearCanvas, 50);
-
-  // Quick picker of 27 consonants
-  const ALL_CHARS = [
-    ["ກ","ໄກ່ (chicken)"],["ຂ","ໄຂ່ (egg)"],["ຄ","ຄວາຍ (buffalo)"],["ງ","ງົວ (cow)"],
-    ["ຈ","ຈອກ (cup)"],["ສ","ເສືອ (tiger)"],["ຊ","ຊ້າງ (elephant)"],["ຍ","ຍຸງ (mosquito)"],
-    ["ດ","ເດັກ (child)"],["ຕ","ຕາ (eye)"],["ຖ","ຖົງ (bag)"],["ທ","ທຸງ (flag)"],
-    ["ນ","ນົກ (bird)"],["ບ","ບົ້ງ (caterpillar)"],["ປ","ປາ (fish)"],["ຜ","ເຜິ້ງ (bee)"],
-    ["ຝ","ຝົນ (rain)"],["ພ","ພູ (mountain)"],["ຟ","ໄຟ (fire)"],["ມ","ມ້າ (horse)"],
-    ["ຢ","ຢາ (medicine)"],["ຣ","ຣະຄັງ (bell)"],["ລ","ລີງ (monkey)"],["ວ","ວີ (fan)"],
-    ["ຫ","ຫ່ານ (goose)"],["ອ","ໂອ (bowl)"],["ຮ","ເຮືອນ (house)"]
-  ];
-
-  const pickerGrid = h("div",{class:"cgrid",style:"margin-top:16px"},
-    ALL_CHARS.map(([c, n]) => h("button",{class:"lo",style:"font-size:1.6rem",onclick:()=>selectLetter(c, n)}, c))
-  );
-
-  root.append(studio, h("section",{class:"sect"}, h("h2",null,"Select Lao Consonant to Practice"), pickerGrid));
-  return root;
-};
+// The handwriting activity lives in js/learner/views-handwriting.js ("chars" and "script_lab" open it).
 
 // ---------- pronunciation ----------
 VIEWS.speak = () => {
@@ -459,10 +344,10 @@ VIEWS.downloads = () => {
   const base = new URL("./", location.href).href;
   const row = (label, desc, urls) => { const btn = h("button",{class:"btn sm"}, icon("download"), t("dl_btn")); const st = h("span",{class:"small muted"});
     (async () => { const ok = urls.length && (await Promise.all(urls.map(state))).every(Boolean); if (ok){ btn.replaceWith(h("span",{class:"chip lv"}, icon("check"), t("dl_done"))); } })();
-    btn.addEventListener("click", async () => { if (!("caches" in window)){ toast("Not supported in this browser","err"); return; } btn.disabled = true; st.textContent = t("loading"); const n = await fetchTo(urls); st.textContent = n+"/"+urls.length; btn.replaceWith(h("span",{class:"chip lv"}, icon("check"), t("dl_done"))); });
+    btn.addEventListener("click", async () => { if (!("caches" in window)){ toast("Not supported in this browser","err"); return; } if (!(await allowUse("offline.downloads"))) return; btn.disabled = true; st.textContent = t("loading"); const n = await fetchTo(urls); st.textContent = n+"/"+urls.length; btn.replaceWith(h("span",{class:"chip lv"}, icon("check"), t("dl_done"))); });
     return h("div",{class:"dl-row"}, h("div",null, h("b",null,label), desc ? h("div",{class:"small muted"},desc) : null, st), btn); };
   const core = ["","index.html","css/app.css","js/learner/main.js","js/learner/core.js","js/learner/views-learn.js","js/learner/views-tools.js","js/learner/views-labs.js","js/learner/views-media.js","js/shared/ui.js","js/shared/i18n.js","js/shared/content.js","js/shared/dict.js","js/shared/engine.js","js/shared/speech.js","js/shared/widgets.js","js/shared/quiz.js","js/shared/setup.js","js/api/index.js","js/api/supabase.js","js/api/local.js","js/config.js","manifest.webmanifest","icon.svg"].map(p=>base+p);
-  rows.append(row(t("dl_core"), t("sync_note"), core), row(t("dl_dict"), "≈ 1.3 MB", [base+"data/dictionary.json", base+"data/chars.json"]), row(t("dl_strokes"), "≈ 1.9 MB", [base+"data/strokes.json"]));
+  rows.append(row(t("dl_core"), t("sync_note"), core), row(t("dl_dict"), "≈ 50 KB", [base+"data/dictionary.json", base+"data/chars.json"]));
   const audio = (A.B.audio||[]).filter(a=>a.url);
   for (let L=1; L<=6; L++){ const words = new Set(Object.values(A.byType.lessons||{}).filter(l=>l.level===L).flatMap(l=>l.vocab||[]));
     const urls = audio.filter(a => words.has(a.text) || (a.relatedType==="lessons" && A.byType.lessons[a.relatedId] && A.byType.lessons[a.relatedId].level===L)).map(a=>a.url);
@@ -474,7 +359,8 @@ VIEWS.downloads = () => {
 };
 
 // ---------- account & settings ----------
-VIEWS.account = () => {
+const planTitle = id => { const p = (A.plans||[]).find(x=>x.id===id); return p ? tr(p.name, lang()) || p.id : ""; };
+VIEWS.account = (params = {}) => {
   const p = prefs(), a = A.access, root = h("div",{class:"stack-l"});
   const row = (label, ctrl, desc) => h("div",{class:"set-row"}, h("div",null, h("label",null,label), desc ? h("p",null,desc) : null), ctrl);
   const sw = k => h("input",{type:"checkbox",class:"switch",checked:!!p[k],"aria-label":k,onchange:e=>setPref(k, e.target.checked)});
@@ -486,10 +372,15 @@ VIEWS.account = () => {
     row(t("email"), h("span",{class:"muted"}, A.user.email)),
     row(t("level_label"), h("span",{class:"chip lv"}, "Stage "+(A.profile.level||1))),
     row(t("member_since"), h("span",{class:"muted"}, fmtDate(A.profile.createdAt, lang())))));
+  // Current plan (as resolved by the database), today's usage, and the plans with how to upgrade
+  const ent = A.ent || {}, stKey = A.isAdmin ? "" : (ent.status === "none" ? "active" : ent.status);
   root.append(h("section",{class:"card"}, h("h2",{style:"margin-bottom:6px"},t("current_plan")),
-    h("div",{class:"spread"}, h("div",null, h("b",{style:"font-size:1.3rem"}, A.isAdmin ? t("adm_title") : tierName(A.tier)), a ? h("p",{class:"small muted"}, t("status")+": "+t(accessState(a))+" · "+t("expires")+": "+(a.expiresAt?fmtDate(a.expiresAt, lang()):t("no_expiry"))) : null),
-      A.settings.supportContact ? h("span",{class:"small"}, t("contact")+": "+A.settings.supportContact) : null),
-    h("div",{class:"grid3",style:"margin-top:14px"}, A.plans.filter(pl=>pl.active!==false).map(pl => h("div",{class:"card",style:(a&&a.planId===pl.id)?"border-color:var(--jade)":""}, h("b",null,tr(pl.name, lang())), h("ul",{class:"obj small"+(lang()==="lo"?" lo":"")}, ((pl.features&&(pl.features[lang()]||pl.features.en))||[]).map(f=>h("li",null,f))))))));
+    h("div",{class:"spread"}, h("div",null, h("b",{style:"font-size:1.3rem"}, A.isAdmin ? t("adm_title") : (planTitle(ent.planId) || tierName(A.tier))),
+      !A.isAdmin ? h("p",{class:"small muted"}, t("status")+": "+t(stKey||"active")+(a ? " · "+t("expires")+": "+(a.expiresAt?fmtDate(a.expiresAt, lang()):t("no_expiry")) : "")) : null),
+      A.settings.supportContact ? h("span",{class:"small"}, t("contact")+": "+A.settings.supportContact) : null)));
+  const meters = usageMeters(); if (meters) root.append(meters);
+  root.append(plansSection());
+  if (params && params.plans) setTimeout(() => { const el = document.getElementById("plans"); if (el) el.scrollIntoView({ behavior:"smooth", block:"start" }); }, 60);
   root.append(h("section",{class:"card"},
     row(t("ui_lang"), h("div",{class:"seg"}, [["en","English"],["lo","ລາວ"],["zh","中文"]].map(([l,n]) => h("button",{"aria-pressed":String(lang()===l),onclick:()=>{ setPref("uiLang",l); try{ localStorage.setItem("xuelu.lang",l); }catch(e){} A.render(); }}, n)))),
     row(t("explain_lang"), h("div",{class:"seg"}, [["","Auto"],["en","English"],["lo","ລາວ"],["zh","中文"]].map(([l,n]) => h("button",{"aria-pressed":String((p.explainLang||"")===l),onclick:()=>{ setPref("explainLang",l); A.render(); }}, n))), t("explain_lang_d")),
@@ -502,7 +393,7 @@ VIEWS.account = () => {
     h("div",{class:"row"}, h("button",{class:"btn",onclick:async()=>{ try { await A.api.auth.changePassword(oldPw.value, newPw.value); toast(t("pw_changed")); oldPw.value=newPw.value=""; } catch(e){ toast(errText(e),"err"); } }}, t("change_pw")),
       h("button",{class:"btn ghost",onclick:()=>A.api.auth.signOut()}, icon("logout"), t("sign_out")))));
 
-  root.append(h("section",{class:"card stack",style:"background:var(--surface-2);border:1px solid var(--border);margin-top:14px"},
+  if (A.isAdmin) root.append(h("section",{class:"card stack",style:"background:var(--surface-2);border:1px solid var(--border);margin-top:14px"},
     h("div",{class:"spread",style:"align-items:center;flex-wrap:wrap;gap:10px"},
       h("div",null,
         h("h3",{style:"margin:0;display:flex;align-items:center;gap:6px"}, icon("shield"), lang()==="lo"?"ລະບົບຈັດການເນື້ອຫາຫຼັງບ້ານ":"Content Management Backend (Admin)"),
@@ -517,5 +408,5 @@ VIEWS.account = () => {
 // ---------- more (mobile) ----------
 VIEWS.more = () => h("div",null, pageHead(t("nav_more")), h("div",{class:"stack",style:"gap:10px"},
   [["lessons","nav_lessons","learn"],["videos","nav_videos","video"],["handwriting","nav_handwriting","pen"],["tone_lab","nav_tone_lab","spark"],["pronounce_lab","nav_pronounce","speaker"],["particle_lab","nav_particles","flame"],["kinship_lab","nav_kinship","users"],["classifiers_lab","nav_classifiers","layers"],["culture_lab","nav_culture","globe"],["patterns","nav_patterns","gen"],["gen","gen_title","spark"],["vocab","nav_vocab","dict"],["grammar","nav_grammar","layers"],["dict","nav_dict","dict"],["pinyin","nav_pinyin","pinyin"],["speak","nav_speak","mic"],["saved","nav_saved","bookmark"],["notes","nav_notes","note"],["progress","nav_progress","chart"],["downloads","nav_offline","download"],["account","nav_account","user"]]
-    .map(([id,k,ic]) => h("button",{class:"qs",onclick:()=>go(id)}, h("span",{class:"qi",style:"background:var(--surface-2)"},icon(ic)), h("b",null,t(k))))),
-  h("a",{class:"qs",href:"admin/",style:"margin-top:10px;text-decoration:none;color:var(--accent);border:1px solid var(--accent)"}, h("span",{class:"qi",style:"background:var(--surface-2);color:var(--accent)"},icon("shield")), h("b",null,lang()==="lo"?"ລະບົບຈັດການເນື້ອຫາ (Admin CMS)":"Admin & Content Management Portal (CMS)")));
+    .map(([id,k,ic]) => h("button",{class:"qs",onclick:()=>go(id)}, h("span",{class:"qi",style:"background:var(--surface-2)"},icon(ic)), h("b",null,t(k)), navLock(id)))),
+  !A.isAdmin ? null : h("a",{class:"qs",href:"admin/",style:"margin-top:10px;text-decoration:none;color:var(--accent);border:1px solid var(--accent)"}, h("span",{class:"qi",style:"background:var(--surface-2);color:var(--accent)"},icon("shield")), h("b",null,lang()==="lo"?"ລະບົບຈັດການເນື້ອຫາ (Admin CMS)":"Admin & Content Management Portal (CMS)")));

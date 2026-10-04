@@ -1,7 +1,7 @@
 // Comprehensive Administrator & Access Control Management (CRUD & RBAC)
 import { h, icon, toast, dialog, confirmDialog, fmtDate, errText } from "../shared/ui.js";
 import { lang } from "../shared/i18n.js";
-import { S, t, go, isSuper, isOwner, getActiveRole, canViewMenu, canEditMenu, fld } from "./state.js";
+import { S, t, go, isSuper, isOwner, getActiveRole, canViewMenu, canEditMenu, fld, lockedScreen } from "./state.js";
 import { OWNER_EMAIL } from "../config.js";
 
 // Canonical list of all manageable menus grouped by section
@@ -54,17 +54,17 @@ export function getRoleBadge(role, permissions) {
   switch (role) {
     case "super":
     case "owner":
-      return h("span", { class: "pill ok", style: "background:rgba(217,119,6,0.15);color:var(--accent);font-weight:700" }, "👑 " + t("role_super"));
+      return h("span", { class: "pill ok", style: "background:rgba(217,119,6,0.15);color:var(--accent);font-weight:700" }, icon("crown"), t("role_super"));
     case "editor":
     case "content":
-      return h("span", { class: "pill ok", style: "background:rgba(16,185,129,0.15);color:var(--jade);font-weight:600" }, "✍️ " + t("role_editor"));
+      return h("span", { class: "pill ok", style: "background:rgba(16,185,129,0.15);color:var(--jade);font-weight:600" }, icon("edit"), t("role_editor"));
     case "reviewer":
-      return h("span", { class: "pill", style: "background:rgba(124,58,237,0.15);color:#7c3aed;font-weight:600" }, "👁️ " + t("role_reviewer"));
+      return h("span", { class: "pill", style: "background:rgba(124,58,237,0.15);color:#7c3aed;font-weight:600" }, icon("eye"), t("role_reviewer"));
     case "support":
-      return h("span", { class: "pill", style: "background:rgba(37,99,235,0.15);color:#2563eb;font-weight:600" }, "🎧 " + t("role_support"));
+      return h("span", { class: "pill", style: "background:rgba(37,99,235,0.15);color:#2563eb;font-weight:600" }, icon("headphones"), t("role_support"));
     case "custom": {
       const allowedCount = permissions ? Object.values(permissions).filter(p => p && p.view).length : 0;
-      return h("span", { class: "pill", style: "background:rgba(245,158,11,0.15);color:#d97706;font-weight:600" }, `⚙️ ${t("role_custom")} (${allowedCount} menus)`);
+      return h("span", { class: "pill", style: "background:rgba(245,158,11,0.15);color:#d97706;font-weight:600" }, icon("sliders"), `${t("role_custom")} (${allowedCount} menus)`);
     }
     default:
       return h("span", { class: "pill muted" }, role || "Admin");
@@ -97,14 +97,7 @@ export function getAccessSummary(admin) {
 // ---------- Main Administrators View ----------
 export async function viewAdmins() {
   if (!isSuper()) {
-    return h("div", { class: "panel stack", style: "text-align:center;padding:48px 24px;max-width:540px;margin:40px auto" },
-      h("div", { style: "font-size:3rem;margin-bottom:8px" }, "🛡️"),
-      h("h2", null, t("only_super")),
-      h("p", { class: "muted" }, t("credential_menu_restricted")),
-      h("div", { class: "row", style: "justify-content:center;margin-top:16px" },
-        h("button", { class: "btn primary", onclick: () => go("dashboard") }, "← " + t("adm_dashboard"))
-      )
-    );
+    return lockedScreen(t("only_super"), t("credential_menu_restricted"));
   }
 
   const [adminsList, usersList] = await Promise.all([
@@ -141,19 +134,19 @@ export async function viewAdmins() {
       h("h3", { style: "display:flex;align-items:center;gap:6px" }, icon("shield"), "Role-Based Access Control (RBAC) Architecture"),
       h("div", { class: "grid4", style: "gap:12px;margin-top:8px" },
         h("div", { class: "card", style: "padding:12px;background:var(--surface)" },
-          h("b", { style: "color:var(--accent)" }, "👑 Super Admin"),
+          h("b", { style: "color:var(--accent)" }, icon("crown"), "Super Admin"),
           h("p", { class: "small muted", style: "margin-top:4px" }, "Complete access to all 22 menus, admin CRUD, credential menus, and system settings.")
         ),
         h("div", { class: "card", style: "padding:12px;background:var(--surface)" },
-          h("b", { style: "color:var(--jade)" }, "✍️ Content Editor"),
+          h("b", { style: "color:var(--jade)" }, icon("edit"), "Content Editor"),
           h("p", { class: "small muted", style: "margin-top:4px" }, "Can view and edit/publish all 15 curriculum types and studio tools. Credential menus are hidden.")
         ),
         h("div", { class: "card", style: "padding:12px;background:var(--surface)" },
-          h("b", { style: "color:#7c3aed" }, "👁️ Content Reviewer"),
+          h("b", { style: "color:#7c3aed" }, icon("eye"), "Content Reviewer"),
           h("p", { class: "small muted", style: "margin-top:4px" }, "Can view & review lessons, vocab, and media, but CANNOT edit or delete! Credential menus hidden.")
         ),
         h("div", { class: "card", style: "padding:12px;background:var(--surface)" },
-          h("b", { style: "color:#d97706" }, "⚙️ Custom Admin"),
+          h("b", { style: "color:#d97706" }, icon("sliders"), "Custom Admin"),
           h("p", { class: "small muted", style: "margin-top:4px" }, "Super Admin configures exact View and Edit checkboxes for each individual menu.")
         )
       )
@@ -267,7 +260,6 @@ function renderSimulationBar() {
       style: "background:rgba(217,119,6,0.15);border:1px solid var(--accent);display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-radius:10px"
     },
       h("div", { class: "row", style: "align-items:center;gap:10px" },
-        h("span", { style: "font-size:1.4rem" }, "🔬"),
         h("div", null,
           h("b", { style: "color:var(--accent)" }, `Simulating Role: ${t("role_" + currentSim) || currentSim}`),
           h("div", { class: "small muted" }, "Notice that Credential menus are hidden and edit actions are restricted according to this role's permissions.")
@@ -297,10 +289,10 @@ function renderSimulationBar() {
     }
   },
     h("option", { value: "" }, "🧪 Test Role Preview (Simulate in Live UI)..."),
-    h("option", { value: "reviewer" }, "👁️ Content Reviewer (Can View, Cannot Edit)"),
-    h("option", { value: "editor" }, "✍️ Content Editor (Edit Curriculum, No Credentials)"),
-    h("option", { value: "support" }, "🎧 Support Admin (Learners Only)"),
-    h("option", { value: "custom" }, "⚙️ Custom Admin (Restricted Menus)")
+    h("option", { value: "reviewer" }, "Content Reviewer (Can View, Cannot Edit)"),
+    h("option", { value: "editor" }, "Content Editor (Edit Curriculum, No Credentials)"),
+    h("option", { value: "support" }, "Support Admin (Learners Only)"),
+    h("option", { value: "custom" }, "Custom Admin (Restricted Menus)")
   );
 
   return h("div", {
@@ -350,7 +342,7 @@ function buildPermissionsMatrix(initialPerms = {}, initialRole = "custom") {
         });
         renderRows();
       }
-    }, "👁️ All Read-Only"),
+    }, icon("eye"), "All Read-Only"),
     h("button", {
       type: "button",
       class: "btn sm ghost",
@@ -364,7 +356,7 @@ function buildPermissionsMatrix(initialPerms = {}, initialRole = "custom") {
         });
         renderRows();
       }
-    }, "✍️ All Full Edit"),
+    }, icon("edit"), "All Full Edit"),
     h("button", {
       type: "button",
       class: "btn sm ghost",
@@ -380,7 +372,7 @@ function buildPermissionsMatrix(initialPerms = {}, initialRole = "custom") {
         });
         renderRows();
       }
-    }, "📚 Curriculum Only"),
+    }, icon("book"), "Curriculum Only"),
     h("button", {
       type: "button",
       class: "btn sm ghost",
@@ -474,8 +466,8 @@ function buildPermissionsMatrix(initialPerms = {}, initialRole = "custom") {
       h("thead", null,
         h("tr", null,
           h("th", null, "Menu Item / Module"),
-          h("th", { style: "text-align:center;width:120px" }, "👁️ View in Sidebar"),
-          h("th", { style: "text-align:center;width:120px" }, "✍️ Edit / Delete")
+          h("th", { style: "text-align:center;width:120px" }, "View in Sidebar"),
+          h("th", { style: "text-align:center;width:120px" }, "Edit / Delete")
         )
       ),
       tbody
@@ -513,11 +505,11 @@ export async function openAddAdminModal() {
   const pwInp = h("input", { class: "input", type: "text", value: "Admin2026!", placeholder: "Initial password" });
 
   const roleSelect = h("select", { class: "input" },
-    h("option", { value: "editor" }, "✍️ " + t("role_editor") + " (Can View & Edit Curriculum, Studio; No Credentials)"),
-    h("option", { value: "reviewer" }, "👁️ " + t("role_reviewer") + " (Can View Curriculum & Studio; CANNOT Edit)"),
-    h("option", { value: "support" }, "🎧 " + t("role_support") + " (Can Manage Learners & Subscriptions)"),
-    h("option", { value: "custom" }, "⚙️ " + t("role_custom") + " (Granular Checkboxes per Menu)"),
-    h("option", { value: "super" }, "👑 " + t("role_super") + " (Full Unrestricted Access to All Features & Credentials)")
+    h("option", { value: "editor" }, "" + t("role_editor") + " (Can View & Edit Curriculum, Studio; No Credentials)"),
+    h("option", { value: "reviewer" }, "" + t("role_reviewer") + " (Can View Curriculum & Studio; CANNOT Edit)"),
+    h("option", { value: "support" }, "" + t("role_support") + " (Can Manage Learners & Subscriptions)"),
+    h("option", { value: "custom" }, "" + t("role_custom") + " (Granular Checkboxes per Menu)"),
+    h("option", { value: "super" }, "" + t("role_super") + " (Full Unrestricted Access to All Features & Credentials)")
   );
 
   const customMatrixWrapper = h("div", { style: "display:none;margin-top:10px" });
@@ -640,11 +632,11 @@ export async function openEditAdminModal(admin) {
   );
 
   const roleSelect = h("select", { class: "input" },
-    h("option", { value: "editor", selected: ["editor", "content"].includes(admin.role) }, "✍️ " + t("role_editor") + " (Can View & Edit Curriculum, Studio; No Credentials)"),
-    h("option", { value: "reviewer", selected: admin.role === "reviewer" }, "👁️ " + t("role_reviewer") + " (Can View Curriculum & Studio; CANNOT Edit)"),
-    h("option", { value: "support", selected: admin.role === "support" }, "🎧 " + t("role_support") + " (Can Manage Learners & Subscriptions)"),
-    h("option", { value: "custom", selected: admin.role === "custom" }, "⚙️ " + t("role_custom") + " (Granular Checkboxes per Menu)"),
-    h("option", { value: "super", selected: ["super", "owner"].includes(admin.role) }, "👑 " + t("role_super") + " (Full Unrestricted Access to All Features & Credentials)")
+    h("option", { value: "editor", selected: ["editor", "content"].includes(admin.role) }, "" + t("role_editor") + " (Can View & Edit Curriculum, Studio; No Credentials)"),
+    h("option", { value: "reviewer", selected: admin.role === "reviewer" }, "" + t("role_reviewer") + " (Can View Curriculum & Studio; CANNOT Edit)"),
+    h("option", { value: "support", selected: admin.role === "support" }, "" + t("role_support") + " (Can Manage Learners & Subscriptions)"),
+    h("option", { value: "custom", selected: admin.role === "custom" }, "" + t("role_custom") + " (Granular Checkboxes per Menu)"),
+    h("option", { value: "super", selected: ["super", "owner"].includes(admin.role) }, "" + t("role_super") + " (Full Unrestricted Access to All Features & Credentials)")
   );
 
   const matrix = buildPermissionsMatrix(admin.permissions || {}, admin.role);

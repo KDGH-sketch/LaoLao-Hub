@@ -3,7 +3,7 @@
 
 export const DEFAULT_RULES = {
   // points for a correct answer, by question type (harder types earn more)
-  points: { mc: 10, fill: 10, tone: 12, listen_select: 12, order: 15, match: 15, type: 20, listen_type: 20, speak: 15, write_char: 8, flashcard: 5 },
+  points: { mc: 10, fill: 10, tone: 12, listen_select: 12, order: 15, match: 15, type: 20, listen_type: 20, speak: 15, write_char: 8, flashcard: 5, handwriting: 15 },
   defaultPoints: 10,
   // answers the learner grades themselves earn this share of the points and do not count toward skill accuracy
   selfFactor: 0.5,
@@ -70,6 +70,17 @@ export function roundResult(answers, { repeat = 0 } = {}, R = DEFAULT_RULES){
   const factor = R.repeatFactors[Math.min(repeat, R.repeatFactors.length - 1)];
   const points = Math.round((answerPts + bonus) * factor);
   return { right, total, pct, passed, stars, selfCount, skipped: answers.length - total, answerPts, comboPts, bonus, factor, points };
+}
+
+// A checked handwriting character (js/shared/handwriting/scorer.js result) as a round: same stars, pass bonus and replay rule as quizzes
+export function handwritingRound(score, { repeat = 0 } = {}, R = DEFAULT_RULES){
+  const pct = Math.max(0, Math.min(100, Math.round(score.total)));
+  const passed = !!score.passed;
+  let stars = 0; if (passed) R.stars.forEach((s, i) => { if (pct >= s) stars = i + 1; });
+  const base = passed ? Math.round((R.points.handwriting ?? R.defaultPoints) * pct / 100) : 0;
+  const bonus = passed ? R.roundBonus.pass + (pct === 100 ? R.roundBonus.perfect : 0) : 0;
+  const factor = R.repeatFactors[Math.min(repeat, R.repeatFactors.length - 1)];
+  return { right: passed ? 1 : 0, total: 1, pct, passed, stars, selfCount: 0, skipped: 0, answerPts: base, comboPts: 0, bonus, factor, points: Math.round((base + bonus) * factor) };
 }
 
 export const lessonPoints = ({ viaQuiz }, R = DEFAULT_RULES) => viaQuiz ? R.lesson.quizComplete : R.lesson.manualComplete;

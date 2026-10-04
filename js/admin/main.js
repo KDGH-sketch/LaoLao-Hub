@@ -3,15 +3,18 @@ import { getApi } from "../api/index.js";
 import { OWNER_EMAIL } from "../config.js";
 import { h, $, $$, icon, toast, dialog, confirmDialog, fmtDate, errText, themeSwitcher } from "../shared/ui.js";
 import { setLang, lang } from "../shared/i18n.js";
-import { buildBundles, CONTENT_TYPES } from "../shared/content.js";
+import { CONTENT_TYPES } from "../shared/content.js";
 import { bootstrapOwner, importSeed, ensureDemo, DEMO } from "../shared/setup.js";
 import { loadDict } from "../shared/dict.js";
-import { S, L, t, go, isSuper, isOwner, getActiveRole, canContent, canSupport, canViewMenu, canEditMenu, canManageAdmins, canManageSettings, refreshPlans, fld } from "./state.js";
+import { S, L, t, go, isSuper, isOwner, getActiveRole, canContent, canSupport, canViewMenu, canEditMenu, canManageAdmins, canManageSettings, refreshPlans, fld, lockedScreen } from "./state.js";
 import { viewLearners, viewLearner } from "./learners.js";
 import { viewPlans } from "./plans.js";
+import { viewAccessMatrix, viewAccessLogs } from "./access.js";
+import { viewHandwriting, viewHandwritingEditor } from "./handwriting.js";
 import { viewContentHome, viewContentList, viewEditor } from "./cms.js";
 import { EXT_VIEWS } from "./cms-extended.js";
 import { viewAdmins } from "./admins.js";
+import { publishPanel } from "./publish.js";
 
 const root = document.getElementById("root");
 const pref = (() => { try { return localStorage.getItem("xuelu.admin.lang") || "en"; } catch(e){ return "en"; } })();
@@ -64,10 +67,10 @@ function renderLogin(){
   const demoCard = S.api.mode==="demo" ? h("div",{class:"banner info stack",style:"gap:10px;margin-bottom:16px"},
     h("b",null,t("demo_accounts") + " · One-Click Role Sign In:"),
     h("div",{class:"grid2",style:"gap:8px"},
-      h("button",{class:"btn primary sm",type:"button",onclick:()=>{ email.value=DEMO.admin.email; pw.value=DEMO.admin.pw; go_(); }}, icon("shield"), "👑 Super Admin"),
-      h("button",{class:"btn sm",type:"button",onclick:()=>{ email.value=DEMO.editor.email; pw.value=DEMO.editor.pw; go_(); }}, icon("edit"), "✍️ Content Editor"),
-      h("button",{class:"btn sm",type:"button",onclick:()=>{ email.value=DEMO.reviewer.email; pw.value=DEMO.reviewer.pw; go_(); }}, icon("eye"), "👁️ Content Reviewer"),
-      h("button",{class:"btn sm",type:"button",onclick:()=>{ email.value=DEMO.support.email; pw.value=DEMO.support.pw; go_(); }}, icon("users"), "🎧 Support Admin")
+      h("button",{class:"btn primary sm",type:"button",onclick:()=>{ email.value=DEMO.admin.email; pw.value=DEMO.admin.pw; go_(); }}, icon("shield"), "Super Admin"),
+      h("button",{class:"btn sm",type:"button",onclick:()=>{ email.value=DEMO.editor.email; pw.value=DEMO.editor.pw; go_(); }}, icon("edit"), "Content Editor"),
+      h("button",{class:"btn sm",type:"button",onclick:()=>{ email.value=DEMO.reviewer.email; pw.value=DEMO.reviewer.pw; go_(); }}, icon("eye"), "Content Reviewer"),
+      h("button",{class:"btn sm",type:"button",onclick:()=>{ email.value=DEMO.support.email; pw.value=DEMO.support.pw; go_(); }}, icon("users"), "Support Admin")
     ),
     h("div",{class:"small muted mono"}, "Password for all demo accounts: demo1234")
   ) : null;
@@ -145,7 +148,7 @@ const NAV_SECTIONS = [
       { id:"videos", label:["Video Manager", "ຈັດການວິດີໂອ"], icon:"video", view:"videoManager" },
       { id:"tones", label:["Tone Lab", "ສຽງວັນນະຍຸດ"], icon:"sound", view:"contentList", params:{ type:"tones" } },
       { id:"culture", label:["Culture & Context", "ວັດທະນະທຳ"], icon:"culture", view:"contentList", params:{ type:"culture" } },
-      { id:"characters", label:["Lao Script & Handwriting", "ອັກສອນ ແລະ ລາຍມື"], icon:"chars", view:"contentList", params:{ type:"characters" } },
+      { id:"characters", label:["Lao Script & Handwriting", "ອັກສອນ ແລະ ລາຍມື"], icon:"chars", view:"handwriting" },
       { id:"dictionary", label:["Dictionary Database", "ວັດຈະນານຸກົມ"], icon:"dict", view:"contentList", params:{ type:"dictionary" } }
     ]
   },
@@ -162,6 +165,8 @@ const NAV_SECTIONS = [
     title: ["Platform & System", "ລະບົບ ແລະ ການຕັ້ງຄ່າ"],
     items: [
       { id:"plans", label:["Pricing Plans", "ແຜນການຮຽນ"], icon:"plan", view:"plans" },
+      { id:"accessMatrix", label:["Plan Access & Limits", "ສິດ ແລະ ຂີດຈຳກັດແພັກເກດ"], icon:"sliders", view:"accessMatrix" },
+      { id:"accessLogs", label:["Access Logs", "ບັນທຶກການເຂົ້າເຖິງ"], icon:"eye", view:"accessLogs" },
       { id:"activity", label:["Activity Audit Log", "ປະຫວັດການໃຊ້ງານ"], icon:"clock", view:"activity" },
       { id:"admins", label:["Administrators", "ຜູ້ດູແລລະບົບ"], icon:"shield", view:"admins", superOnly:true },
       { id:"settings", label:["Settings", "ຕັ້ງຄ່າລະບົບ"], icon:"settings", view:"settings" }
@@ -208,6 +213,9 @@ function isItemActive(item) {
   if (item.view === "learners") {
     return S.view === "learners" || S.view === "learner";
   }
+  if (item.view === "handwriting") {
+    return S.view === "handwriting" || S.view === "handwritingEditor" || (S.view === "editor" && S.params && S.params.type === "characters");
+  }
   return S.view === item.view;
 }
 
@@ -238,10 +246,10 @@ function rolePreviewSwitch(){
       }
     }
   },
-    h("option", { value: "" }, "👑 Super Admin (Live)"),
-    h("option", { value: "reviewer" }, "👁️ Content Reviewer (Read-Only)"),
-    h("option", { value: "editor" }, "✍️ Content Editor (No Credentials)"),
-    h("option", { value: "support" }, "🎧 Support Admin (Learners Only)")
+    h("option", { value: "" }, "Super Admin (Live)"),
+    h("option", { value: "reviewer" }, "Content Reviewer (Read-Only)"),
+    h("option", { value: "editor" }, "Content Editor (No Credentials)"),
+    h("option", { value: "support" }, "Support Admin (Learners Only)")
   );
 }
 
@@ -290,22 +298,17 @@ function renderShell(){
     allowed = canViewMenu(S.params?.type || "content");
   } else if (S.view === "learner") {
     allowed = canViewMenu("learners");
+  } else if (S.view === "handwriting" || S.view === "handwritingEditor") {
+    allowed = canViewMenu("characters");      // same rights as the characters content (the database checks ll_can_edit('characters'))
   }
 
   if (!allowed) {
     main.innerHTML = "";
-    main.append(h("div", { class: "panel stack", style: "text-align:center;padding:48px 24px;max-width:540px;margin:40px auto" },
-      h("div", { style: "font-size:3rem;margin-bottom:8px" }, "🔒"),
-      h("h2", null, t("only_super")),
-      h("p", { class: "muted" }, t("credential_menu_restricted")),
-      h("div", { class: "row", style: "justify-content:center;margin-top:16px" },
-        h("button", { class: "btn primary", onclick: () => go("dashboard") }, "← " + t("adm_dashboard"))
-      )
-    ));
+    main.append(lockedScreen(t("only_super"), t("credential_menu_restricted")));
     return;
   }
 
-  const V = Object.assign({ dashboard:viewDashboard, learners:viewLearners, learner:viewLearner, plans:viewPlans, content:viewContentHome, contentList:viewContentList, editor:viewEditor, activity:viewActivity, admins:viewAdmins, settings:viewSettings }, EXT_VIEWS);
+  const V = Object.assign({ dashboard:viewDashboard, learners:viewLearners, learner:viewLearner, plans:viewPlans, accessMatrix:viewAccessMatrix, accessLogs:viewAccessLogs, handwriting:viewHandwriting, handwritingEditor:viewHandwritingEditor, content:viewContentHome, contentList:viewContentList, editor:viewEditor, activity:viewActivity, admins:viewAdmins, settings:viewSettings }, EXT_VIEWS);
   const fn = V[S.view] || viewDashboard;
   Promise.resolve(fn(S.params||{})).then(el => { main.innerHTML=""; main.append(el); }).catch(err => { console.error(err); main.innerHTML=""; main.append(h("div",{class:"banner"}, errText(err))); });
 }
@@ -315,16 +318,10 @@ function publishChip(){
   const dirty = !!S.bundle.dirty || !S.bundle.builtAt;
   return h("button",{class:"btn sm"+(dirty?" primary":""),title: dirty ? t("unpublished_changes") : t("up_to_date"),onclick:publishFlow}, icon(dirty?"upload":"check"), dirty ? t("publish_now") : t("up_to_date"));
 }
+// Resolves when the panel is closed: true if it published (see js/admin/publish.js)
 export async function publishFlow(){
-  const status = h("p",{class:"muted"}, t("publishing"));
-  const dlg = dialog({ title: t("adm_publish"), body: status });
-  try {
-    await buildBundles(S.api, S.me.uid, step => status.textContent = t("publishing")+" "+step);
-    await refreshBundleState();
-    document.querySelector(".dialog .ib")?.click();
-    toast(t("published_ok")); S.render();
-  } catch(e){ status.textContent = errText(e); }
-  return dlg;
+  // refresh the header's publish button behind the panel as soon as it succeeds
+  return publishPanel({ onDone: async () => { await refreshBundleState(); S.render(); } });
 }
 
 // ---------- dashboard ----------
@@ -379,14 +376,7 @@ async function viewActivity(){
 // ---------- settings ----------
 async function viewSettings(){
   if (!isSuper()) {
-    return h("div", { class: "panel stack", style: "text-align:center;padding:48px 24px;max-width:540px;margin:40px auto" },
-      h("div", { style: "font-size:3rem;margin-bottom:8px" }, "🔒"),
-      h("h2", null, t("only_super")),
-      h("p", { class: "muted" }, t("credential_menu_restricted")),
-      h("div", { class: "row", style: "justify-content:center;margin-top:16px" },
-        h("button", { class: "btn primary", onclick: () => go("dashboard") }, "← " + t("adm_dashboard"))
-      )
-    );
+    return lockedScreen(t("only_super"), t("credential_menu_restricted"));
   }
 
   const s = Object.assign({ appName:"Xuélù", allowRegistration:false, defaultPlanId:"free", supportContact:"" }, await S.api.db.get("settings/app").catch(()=>null)||{});
@@ -402,37 +392,37 @@ async function viewSettings(){
     h("p",{class:"small muted"}, "Pre-configured user accounts with distinct roles to test permissions, read-only modes, and access tiers:"),
     h("div",{class:"grid3",style:"gap:10px;margin-top:8px"},
       h("div",{class:"card",style:"padding:10px;background:var(--surface)"},
-        h("b",{style:"color:var(--accent)"}, "🛡️ Super Admin / Owner"),
+        h("b",{style:"color:var(--accent)"}, icon("shield"), "Super Admin / Owner"),
         h("div",{class:"small mono",style:"margin-top:4px"}, "admin@demo.laolao"),
         h("div",{class:"small muted"}, "Password: ", h("b",{class:"mono"}, "demo1234")),
         h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Full privileges: Credentials, settings & admin CRUD")
       ),
       h("div",{class:"card",style:"padding:10px;background:var(--surface)"},
-        h("b",{style:"color:var(--jade)"}, "✍️ Content Editor"),
+        h("b",{style:"color:var(--jade)"}, icon("edit"), "Content Editor"),
         h("div",{class:"small mono",style:"margin-top:4px"}, "editor@demo.laolao"),
         h("div",{class:"small muted"}, "Password: ", h("b",{class:"mono"}, "demo1234")),
         h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Full edit on curriculum & studio. No credentials.")
       ),
       h("div",{class:"card",style:"padding:10px;background:var(--surface)"},
-        h("b",{style:"color:#7c3aed"}, "👁️ Content Reviewer (Read-Only)"),
+        h("b",{style:"color:#7c3aed"}, icon("eye"), "Content Reviewer (Read-Only)"),
         h("div",{class:"small mono",style:"margin-top:4px"}, "reviewer@demo.laolao"),
         h("div",{class:"small muted"}, "Password: ", h("b",{class:"mono"}, "demo1234")),
         h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Can view and preview curriculum, CANNOT edit or delete")
       ),
       h("div",{class:"card",style:"padding:10px;background:var(--surface)"},
-        h("b",{style:"color:#2563eb"}, "🎧 Support Admin"),
+        h("b",{style:"color:#2563eb"}, icon("headphones"), "Support Admin"),
         h("div",{class:"small mono",style:"margin-top:4px"}, "support@demo.laolao"),
         h("div",{class:"small muted"}, "Password: ", h("b",{class:"mono"}, "demo1234")),
         h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Can manage learners and view activity only")
       ),
       h("div",{class:"card",style:"padding:10px;background:var(--surface)"},
-        h("b",{style:"color:var(--jade)"}, "🎓 Learner (Premium)"),
+        h("b",{style:"color:var(--jade)"}, icon("learn"), "Learner (Premium)"),
         h("div",{class:"small mono",style:"margin-top:4px"}, "learner@demo.laolao"),
         h("div",{class:"small muted"}, "Password: ", h("b",{class:"mono"}, "demo1234")),
         h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Full access to all stages & lessons")
       ),
       h("div",{class:"card",style:"padding:10px;background:var(--surface)"},
-        h("b",{style:"color:var(--ink-2)"}, "🆓 Learner (Free Tier)"),
+        h("b",{style:"color:var(--ink-2)"}, icon("user"), "Learner (Free Tier)"),
         h("div",{class:"small mono",style:"margin-top:4px"}, "free@demo.laolao"),
         h("div",{class:"small muted"}, "Password: ", h("b",{class:"mono"}, "demo1234")),
         h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Free tier access for testing paywalls")

@@ -1,13 +1,13 @@
 // Content management: lists, schema-driven editor, versions, previews, quiz builder
 import { h, $$, icon, toast, dialog, confirmDialog, fmtDate, errText, debounce, tr, pyHTML, isHan, videoSource } from "../shared/ui.js";
 import { lang } from "../shared/i18n.js";
-import { CONTENT_TYPES, ACCESS_KEYS, STATUS_KEYS, saveContent, listVersions } from "../shared/content.js";
+import { CONTENT_TYPES, ACCESS_KEYS, TIERS, STATUS_KEYS, saveContent, listVersions } from "../shared/content.js";
 import { loadDict, dict, chars, segment } from "../shared/dict.js";
 import { makeEngine } from "../shared/engine.js";
 import { runQuiz, QTYPES, QTYPE_SKILL } from "../shared/quiz.js";
 import { sentenceEl, ctx } from "../shared/widgets.js";
 import { SKILLS } from "../shared/content.js";
-import { S, L, t, go, canContent, canViewMenu, canEditMenu, fld, markUnpublished } from "./state.js";
+import { S, L, t, go, canContent, canViewMenu, canEditMenu, fld, markUnpublished, planName, lockedScreen } from "./state.js";
 import { SCHEMAS, STEP_TYPE_TO_COL, APP_PAGES } from "./schemas.js";
 import { parseTime, formatTime, normalizeSegments } from "../shared/video.js";
 import { publishFlow } from "./main.js";
@@ -81,7 +81,7 @@ export async function viewContentList({ type, q="", status="", level="" }){
         draw();
       }});
 
-      const dupBtn = h("button",{class:"btn sm ghost",title:"Duplicate with new ID",onclick:async e=>{
+      const dupBtn = h("button",{class:"btn sm ghost icon-only",title:"Duplicate with new ID","aria-label":"Duplicate "+d.id,onclick:async e=>{
         e.stopPropagation();
         const newId = d.id + "-copy-" + Date.now().toString(36).slice(-4);
         const copy = JSON.parse(JSON.stringify(d));
@@ -97,7 +97,7 @@ export async function viewContentList({ type, q="", status="", level="" }){
         go("editor", { type, id: newId });
       }}, icon("copy"));
 
-      const delBtn = h("button",{class:"btn sm ghost",style:"color:var(--bad)",title:"Delete item",onclick:async e=>{
+      const delBtn = h("button",{class:"btn sm ghost icon-only",style:"color:var(--bad)",title:"Delete item","aria-label":"Delete "+d.id,onclick:async e=>{
         e.stopPropagation();
         if (await confirmDialog(t("delete_item"), `Delete "${titleOf(type,d)}" (${d.id})?`, t("delete_item"), t("cancel"), true)){
           await S.api.db.del(`${type}/${d.id}`);
@@ -122,7 +122,7 @@ export async function viewContentList({ type, q="", status="", level="" }){
         h("td",null, s.noAccess ? "—" : h("span",{class:"chip"}, t("acc_"+(d.access||"free")))),
         h("td",null, s.noAccess ? "" : h("span",{class:"pill "+(d.status||"draft")}, t("status_"+(d.status||"draft")))),
         h("td",{class:"small muted"}, fmtDate(d.updatedAt, lang())),
-        h("td",{onclick:e=>e.stopPropagation(),style:"text-align:right;white-space:nowrap"}, canEdit ? h("div",{class:"row",style:"gap:4px;justify-content:flex-end"}, dupBtn, delBtn) : viewBtn)));
+        h("td",{onclick:e=>e.stopPropagation(),style:"text-align:right;white-space:nowrap"}, canEdit ? h("div",{class:"row",style:"gap:4px;justify-content:flex-end;flex-wrap:nowrap"}, dupBtn, delBtn) : viewBtn)));
     });
 
     if (!pageItems.length) body.append(h("tr",null,h("td",{colspan:"8",class:"muted",style:"text-align:center;padding:24px"},t("no_rows"))));
@@ -302,12 +302,7 @@ export async function viewEditor({ type, id, isNew }){
   const s = SCHEMAS[type] || {};
   const canEdit = canEditMenu(type);
   if (!canEdit && isNew) {
-    return h("div",{class:"panel stack",style:"text-align:center;padding:32px;margin:24px auto;max-width:500px"},
-      h("div",{style:"font-size:2.5rem"}, "🔒"),
-      h("h3",null,"Creating Items Restricted"),
-      h("p",{class:"muted"}, "You have read-only permissions for this collection. Creating new items is reserved for Editors & Super Admins."),
-      h("button",{class:"btn primary",style:"align-self:center",onclick:()=>go("contentList",{type})},"← Return to List")
-    );
+    return lockedScreen("Creating Items Restricted", "You have read-only permissions for this collection. Creating new items is reserved for Editors & Super Admins.", () => go("contentList",{type}), "Return to List");
   }
 
   let doc = !isNew && id ? await S.api.db.get(`${type}/${id}`).catch(()=>null) : null;
@@ -336,7 +331,12 @@ export async function viewEditor({ type, id, isNew }){
   renderForm();
 
   const statusSel = h("select",{class:"input",disabled:!canEdit,onchange:e=>draft.status=e.target.value}, STATUS_KEYS.map(k=>h("option",{value:k,selected:draft.status===k},t("status_"+k))));
-  const accessSel = h("select",{class:"input",disabled:!canEdit,onchange:e=>draft.access=e.target.value}, ACCESS_KEYS.map(k=>h("option",{value:k,selected:draft.access===k},t("acc_"+k))));
+  // Who may see this item: Public / Free / Basic / Premium / Admin, or any other plan tier ("Custom", e.g. VVIP = tier 4).
+  // Publishing puts it only in the bundles of that tier and above; the database refuses lower tiers.
+  const tierPlan = tier => S.plans.find(p => +p.tier === tier);
+  const accessOpts = [...ACCESS_KEYS.map(k => [k, t("acc_"+k) + (tierPlan(TIERS[k]) ? " · "+planName(tierPlan(TIERS[k]).id) : "")]),
+    ...[...new Set(S.plans.map(p => +p.tier).filter(n => n >= 1 && !Object.values(TIERS).includes(n)))].sort((x,y)=>x-y).map(n => [String(n), t("acc_custom")+" · "+planName(tierPlan(n).id)+" (tier "+n+")"])];
+  const accessSel = h("select",{class:"input",disabled:!canEdit,onchange:e=>draft.access=e.target.value}, accessOpts.map(([k,l])=>h("option",{value:k,selected:String(draft.access ?? "free")===k},l)));
   const orderIn = h("input",{class:"input",type:"number",disabled:!canEdit,value:draft.order??0,oninput:e=>draft.order=+e.target.value});
 
   const save = async publishToo => {

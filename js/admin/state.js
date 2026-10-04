@@ -1,6 +1,6 @@
 // Shared admin state and Role-Based Access Control (RBAC)
 import { t, lang } from "../shared/i18n.js";
-import { h } from "../shared/ui.js";
+import { h, icon } from "../shared/ui.js";
 import { OWNER_EMAIL } from "../config.js";
 
 export const S = {
@@ -19,7 +19,10 @@ export const S = {
 export const L = pair => Array.isArray(pair) ? (lang() === "lo" && pair[1] ? pair[1] : pair[0]) : pair;
 
 // Credential & Sensitive System Menus (Strictly Super Admin / Owner only)
-export const CREDENTIAL_MENUS = ["admins", "settings", "plans"];
+export const CREDENTIAL_MENUS = ["admins", "settings", "plans", "accessMatrix"];
+
+// Menus showing learner data (support / super only; the database applies the same rule)
+export const LEARNER_MENUS = ["learners", "accessLogs"];
 
 // Active effective role (considering Super Admin simulation mode)
 export const getActiveRole = () => {
@@ -76,12 +79,12 @@ export function canViewMenu(menuId) {
 
   // Content Editors and Content Reviewers can view all curriculum and studio menus
   if (["content", "editor", "reviewer"].includes(role)) {
-    return menuId !== "learners"; // Learners view reserved for support/super
+    return !LEARNER_MENUS.includes(menuId); // learner data is reserved for support/super
   }
 
   // Support Admin can view dashboard, learners, and activity log
   if (role === "support") {
-    return ["dashboard", "learners", "activity"].includes(menuId);
+    return ["dashboard", "learners", "activity", "accessLogs"].includes(menuId);
   }
 
   return true;
@@ -117,7 +120,7 @@ export function canEditMenu(menuId) {
 
   // Content Editor has full write access to curriculum & studio content
   if (["content", "editor"].includes(role)) {
-    return menuId !== "learners";
+    return !LEARNER_MENUS.includes(menuId);
   }
 
   // Support Admin can edit learners/access
@@ -153,4 +156,8 @@ export const planName = id => {
 };
 
 export { t };
+// "You can't open this" screen: a calm 28px lock in a circle instead of a 48px emoji
+export const lockedScreen = (title, text, back = () => go("dashboard"), backLabel = t("adm_dashboard")) =>
+  h("section", { class: "card lockp" }, h("div", { class: "lockp-ic" }, icon("lock")), h("h2", null, title), h("p", { class: "muted" }, text),
+    h("div", { class: "row lockp-act" }, h("button", { class: "btn primary", onclick: back }, icon("left"), backLabel)));
 export const fld = (label, ctrl, help) => h("div", { class: "field" }, h("span", { class: "lbl" }, label), ctrl, help ? h("span", { class: "help" }, help) : null);

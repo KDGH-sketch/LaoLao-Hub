@@ -305,6 +305,12 @@ export async function createSupabaseApi(supabaseUrl, supabaseAnonKey, opts = {})
       inc: n => ({ [INC]: n }),
       delField: () => DELF
     },
+    // Database functions (ll_entitlements, ll_use, …): they run with the signed-in user's identity and decide on the server
+    rpc: async (name, args = {}) => {
+      const { data, error } = await client.rpc(name, args);
+      if (error) throw error;
+      return fromStore(data);
+    },
     storage: {
       upload: async (file, path) => {
         const bucket = "laolao-assets";

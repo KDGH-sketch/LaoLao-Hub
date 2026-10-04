@@ -3,7 +3,11 @@
 import { h, $$, icon, pyHTML, shuffle, stripTone, tr, isHan, toast, esc } from "./ui.js";
 import { t, lang } from "./i18n.js";   // lang was used below without being imported (handwriting questions crashed)
 import { speak, canListen, listen, similarity } from "./speech.js";
-import { strokes } from "./dict.js";
+import { createPad } from "./handwriting/pad.js";
+import { playDemo } from "./handwriting/animator.js";
+import { readTemplate, mergeHwRules } from "./handwriting/model.js";
+import { createSession } from "./handwriting/recognizer.js";
+import { scoreAttempt, strokeFeedback, attemptTip } from "./handwriting/scorer.js";
 import { ctx } from "./widgets.js";
 import { DEFAULT_RULES, answerPoints, roundResult } from "./scoring.js";
 const rules = () => (ctx.rules && ctx.rules()) || DEFAULT_RULES;
@@ -193,35 +197,51 @@ export function questionEl(q, L, onResult, onNext){
       break;
     }
     case "write_char": {
-      box.append(...promptBlock().slice(0,1), h("p",{class:"muted small"}, lang()==="lo" ? "ຝຶກຂຽນຕົວອັກສອນຕາມຮູບແບບດ້ານຫຼັງ" : "Practice writing the Lao letter over the guide outline."));
-      const char = (q.prompt.zh||"ກ")[0];
-      const cvWrap = h("div",{class:"hw-canvas-wrap",style:"margin:12px auto"});
-      const bg = h("div",{class:"hw-canvas-bg"}, char);
-      const cv = document.createElement("canvas");
-      cv.className = "hw-canvas"; cv.width = 240; cv.height = 240;
-      const cctx = cv.getContext("2d");
-      let drawing = false, strokeCount = 0;
-      const getPos = e => { const r = cv.getBoundingClientRect(); const ev = e.touches ? e.touches[0] : e; return { x: (ev.clientX - r.left)*(cv.width/r.width), y: (ev.clientY - r.top)*(cv.height/r.height) }; };
-      const startD = e => { e.preventDefault(); drawing = true; strokeCount++; const p = getPos(e); cctx.beginPath(); cctx.moveTo(p.x, p.y); cctx.strokeStyle = "#0284c7"; cctx.lineWidth = 10; cctx.lineCap = "round"; cctx.lineJoin = "round"; };
-      const moveD = e => { if (!drawing) return; e.preventDefault(); const p = getPos(e); cctx.lineTo(p.x, p.y); cctx.stroke(); };
-      const stopD = () => { drawing = false; };
-      cv.addEventListener("mousedown", startD); cv.addEventListener("mousemove", moveD); cv.addEventListener("mouseup", stopD);
-      cv.addEventListener("touchstart", startD, { passive:false }); cv.addEventListener("touchmove", moveD, { passive:false }); cv.addEventListener("touchend", stopD);
-      cvWrap.append(bg, cv, h("div",{class:"hw-grid-lines"}));
-      box.append(cvWrap, h("div",{class:"row",style:"justify-content:center;gap:10px;margin-top:10px"},
-        h("button",{class:"btn sm ghost",type:"button",onclick:()=>{ cctx.clearRect(0,0,cv.width,cv.height); strokeCount=0; }}, icon("trash"), t("reset")),
-        h("button",{class:"btn sm",type:"button",onclick:()=>speak(char)}, icon("speaker"), t("play")),
-        h("button",{class:"btn primary sm",type:"button",onclick:e=>{
-          if (strokeCount === 0){ toast(lang()==="lo"?"ກະລຸນາຂຽນຕົວອັກສອນກ່ອນ":"Please draw the character on the canvas","warn"); return; }
-          bg.classList.add("compare");
-          grade.hidden = false; e.currentTarget.disabled = true;
-        }}, icon("check"), t("check"))));
-      const grade = h("div",{class:"stack",style:"align-items:center;gap:8px;margin-top:10px",hidden:true},
-        h("p",{class:"small muted",style:"margin:0"}, t("sc_compare")),
-        h("div",{class:"row",style:"justify-content:center"},
-          h("button",{class:"btn",onclick:()=>finish(false, null, { self:true })}, t("q_didnt")),
-          h("button",{class:"btn jade",onclick:()=>finish(true, null, { self:true })}, t("sc_wrote_it"))));
-      box.append(grade);
+      // Checked by the handwriting engine when the character has a stroke template; otherwise self-graded.
+      box.append(...promptBlock().slice(0,1));
+      const tplChar = ctx.hwTemplate && [q.prompt.zh, (q.prompt.zh||"")[0]].find(c => c && ctx.hwTemplate(c));
+      const char = tplChar || (q.prompt.zh||"ກ")[0];
+      const tpl = tplChar ? readTemplate(ctx.hwTemplate(tplChar)) : null;
+      const pad = createPad({ guideChar: char, label: t("hw_canvas", { c: char }) });
+      const msg = h("div",{class:"hw-fb",role:"status","aria-live":"polite"});
+      const wrap = h("div",{class:"stack",style:"align-items:stretch;max-width:440px;margin:12px auto"}, pad.el, msg);
+      box.append(wrap);
+      if (tpl){
+        const R = mergeHwRules(ctx.hwRules ? ctx.hwRules() : {}, tpl.rules);
+        let session = createSession(tpl, R), ink = [];
+        const say = (kind, key, vars) => { msg.className = "hw-fb " + (kind||""); msg.textContent = t(key, vars); };
+        const end = () => { const sc = scoreAttempt(session.finish(), R); pad.enable(false);
+          finish(sc.passed, h("div",{class:"small"}, sc.total+" / 100 · "+t(attemptTip(sc)))); };
+        pad.setGuide({ level: 1, template: null }); pad.enable(false); say("info", "hw_demo_first", { c: tpl.strokes.length });
+        const start = () => { pad.enable(true); pad.setGuide({ level: R.guide, template: tpl, current: 0 }); say("info", "hw_draw_now", { n: 1, c: tpl.strokes.length }); };
+        const demoB = h("button",{class:"btn sm primary",type:"button",onclick:async e=>{ e.currentTarget.disabled = true; pad.enable(false); await playDemo(pad, tpl, { speed: R.demo.speed }); start(); }}, icon("play"), t("hw_show_demo"));
+        const checkB = R.feedback === "final" ? h("button",{class:"btn sm",type:"button",onclick:end}, icon("check"), t("check")) : null;
+        wrap.append(h("div",{class:"row",style:"justify-content:center"}, demoB, h("button",{class:"btn sm ghost",type:"button",onclick:()=>speak(char)}, icon("speaker"), t("play")), checkB));
+        const onStroke = pts => {
+          const r = session.addStroke(pts);
+          if (R.feedback === "final"){ ink.push(pts); pad.setInk(ink); return; }
+          if (!r.accepted) pad.flash(pts, "error");
+          pad.setInk(session.accepted.map(a => a.points)); pad.setGuide({ level: R.guide, template: tpl, current: Math.min(session.next, tpl.strokes.length - 1) });
+          const f = strokeFeedback(r); if (f) say(f.kind, f.key, f.vars);
+          if (r.done && r.accepted) setTimeout(end, 350);
+        };
+        pad.onStroke = onStroke;
+      } else {
+        let ink = [];
+        pad.onStroke = pts => { ink.push(pts); pad.setInk(ink); };
+        msg.textContent = t("hw_free_d");
+        const grade = h("div",{class:"stack",style:"align-items:center;gap:8px;margin-top:10px",hidden:true},
+          h("p",{class:"small muted",style:"margin:0"}, t("sc_compare")),
+          h("div",{class:"row",style:"justify-content:center"},
+            h("button",{class:"btn",onclick:()=>finish(false, null, { self:true })}, t("q_didnt")),
+            h("button",{class:"btn jade",onclick:()=>finish(true, null, { self:true })}, t("sc_wrote_it"))));
+        wrap.append(h("div",{class:"row",style:"justify-content:center;gap:10px"},
+          h("button",{class:"btn sm ghost",type:"button",onclick:()=>{ ink = []; pad.setInk([]); }}, icon("trash"), t("reset")),
+          h("button",{class:"btn sm",type:"button",onclick:()=>speak(char)}, icon("speaker"), t("play")),
+          h("button",{class:"btn primary sm",type:"button",onclick:e=>{
+            if (!ink.length){ toast(lang()==="lo"?"ກະລຸນາຂຽນຕົວອັກສອນກ່ອນ":"Please draw the character on the canvas","warn"); return; }
+            grade.hidden = false; e.currentTarget.disabled = true; }}, icon("check"), t("check"))), grade);
+      }
       break;
     }
     case "flashcard": {

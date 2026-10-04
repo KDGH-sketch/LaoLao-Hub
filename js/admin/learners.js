@@ -3,6 +3,7 @@ import { h, icon, toast, dialog, confirmDialog, fmtDate, errText, debounce } fro
 import { lang } from "../shared/i18n.js";
 import { accessState, SKILLS } from "../shared/content.js";
 import { S, t, go, canSupport, planName, fld } from "./state.js";
+import { learnerAccessPanel } from "./access.js";
 
 const DAY = 86400000;
 const pill = (cls, label) => h("span",{class:"pill "+cls}, label);
@@ -102,16 +103,16 @@ export async function viewLearner({ uid }){
     a ? h("dl",{class:"kv"}, h("dt",null,t("plan")), h("dd",null,h("b",null,planName(a.planId))," · tier "+a.tier), h("dt",null,t("status")), h("dd",null,pill(accessState(a), stLabel(accessState(a)))),
       h("dt",null,t("start")), h("dd",null,fmtDate(a.start, lang())), h("dt",null,t("expiry")), h("dd",null, a.expiresAt ? fmtDate(a.expiresAt, lang()) : t("never")), h("dt",null,""), h("dd",{class:"small muted"}, a.source||""))
       : h("p",{class:"muted"},"—"));
+  const setAccess = async (patch, action) => {
+    const now = new Date(); const next = Object.assign({ planId:"free", tier:1, status:"active", start:now, expiresAt:null, source:"manual" }, a||{}, patch, { updatedAt:now, updatedBy:S.me.uid });
+    ["start","expiresAt"].forEach(k => { if (typeof next[k]==="number") next[k] = new Date(next[k]); });
+    await api.db.batch([
+      { op:"set", path:`access/${uid}`, data: next },
+      { op:"set", path:`subscriptions/${uid}-${now.getTime()}`, data:{ uid, planId:next.planId, action, start: next.start, expiresAt: next.expiresAt, status: next.status, by:S.me.uid, at:now, source:"manual" } } ]);
+    toast(t("saved_ok")); S.render();
+  };
   if (canSupport()){
     const base = a && a.expiresAt && a.expiresAt > Date.now() ? a.expiresAt : Date.now();
-    const setAccess = async (patch, action) => {
-      const now = new Date(); const next = Object.assign({ planId:"free", tier:1, status:"active", start:now, expiresAt:null, source:"manual" }, a||{}, patch, { updatedAt:now, updatedBy:S.me.uid });
-      ["start","expiresAt"].forEach(k => { if (typeof next[k]==="number") next[k] = new Date(next[k]); });
-      await api.db.batch([
-        { op:"set", path:`access/${uid}`, data: next },
-        { op:"set", path:`subscriptions/${uid}-${now.getTime()}`, data:{ uid, planId:next.planId, action, start: next.start, expiresAt: next.expiresAt, status: next.status, by:S.me.uid, at:now, source:"manual" } } ]);
-      toast(t("saved_ok")); S.render();
-    };
     accBox.append(h("div",{class:"row"},
       h("button",{class:"btn primary",onclick:()=>assignDialog(a, setAccess)}, t("assign_plan")),
       h("button",{class:"btn sm",onclick:()=>setAccess({ expiresAt: base+30*DAY, status:"active" },"extend")}, t("ext_1m")),
@@ -144,7 +145,8 @@ export async function viewLearner({ uid }){
     notes.length ? h("div",{class:"feed"}, notes.slice().reverse().map(n => h("div",{class:"feed-row"}, h("span",null,n.text), h("span",{class:"small muted"}, (n.by||"")+" · "+fmtDate(n.at, lang()))))) : h("p",{class:"muted small"},t("no_rows")),
     canSupport() ? h("div",{class:"stack",style:"gap:8px"}, noteIn, h("button",{class:"btn sm",style:"align-self:flex-start",onclick:async()=>{ if(!noteIn.value.trim()) return; await api.db.set(`adminNotes/${uid}`,{ notes:[...notes,{ text:noteIn.value.trim(), by:S.me.name||S.me.email, at:Date.now() }] }); S.render(); }}, t("add_note_admin"))) : null);
 
-  wrap.append(h("div",{class:"grid2"}, h("div",{class:"stack"}, profile, accBox), h("div",{class:"stack"}, progBox, resBox, notesBox)));
+  const accessBox = await learnerAccessPanel(uid, a, setAccess);   // personal grants (overrides) and current usage counters
+  wrap.append(h("div",{class:"grid2"}, h("div",{class:"stack"}, profile, accBox, accessBox), h("div",{class:"stack"}, progBox, resBox, notesBox)));
   return wrap;
 }
 
@@ -154,8 +156,11 @@ async function assignDialog(a, setAccess){
   const pl0 = S.plans.find(p=>p.id===(a?a.planId:S.plans[0]&&S.plans[0].id)) || {};
   const exp = dateInput(pl0.durationDays ? Date.now()+pl0.durationDays*DAY : null);
   plan.addEventListener("change", () => { const p = S.plans.find(x=>x.id===plan.value); exp.value = p && p.durationDays ? new Date(Date.now()+p.durationDays*DAY).toISOString().slice(0,10) : ""; });
+  // active = paid/granted; trial = trial period (expiry from the plan's trial days); pending = waiting for payment (default plan until approved)
+  const status = h("select",{class:"input"}, ["active","trial","pending"].map(k => h("option",{value:k,selected:(a&&a.status)===k},t(k))));
+  status.addEventListener("change", () => { const p = S.plans.find(x=>x.id===plan.value); if (status.value==="trial" && p && p.trialDays) exp.value = new Date(Date.now()+p.trialDays*DAY).toISOString().slice(0,10); });
   const tmp = h("input",{class:"input",type:"number",min:"1",placeholder:"7"});
   tmp.addEventListener("input", () => { const n=+tmp.value; if (n>0) exp.value = new Date(Date.now()+n*DAY).toISOString().slice(0,10); });
-  await dialog({ title:t("assign_plan"), body:h("div",{class:"stack"}, fld(t("plan"),plan), h("div",{class:"field-row"}, fld(t("start"),start), fld(t("expiry"),exp, t("never")+" = empty")), fld(t("temporary"),tmp), h("p",{class:"small muted"},t("payments_note"))),
-    actions:[{label:t("cancel"),value:false},{label:t("save"),primary:true,onClick:async()=>{ const p = S.plans.find(x=>x.id===plan.value); await setAccess({ planId:p.id, tier:p.tier||1, status:"active", start: readDate(start)||new Date(), expiresAt: readDate(exp) }, tmp.value ? "temporary" : "assign"); return true; }}] });
+  await dialog({ title:t("assign_plan"), body:h("div",{class:"stack"}, h("div",{class:"field-row"}, fld(t("plan"),plan), fld(t("status"),status)), h("div",{class:"field-row"}, fld(t("start"),start), fld(t("expiry"),exp, t("never")+" = empty")), fld(t("temporary"),tmp), h("p",{class:"small muted"},t("payments_note"))),
+    actions:[{label:t("cancel"),value:false},{label:t("save"),primary:true,onClick:async()=>{ const p = S.plans.find(x=>x.id===plan.value); await setAccess({ planId:p.id, tier:p.tier||1, status:status.value, start: readDate(start)||new Date(), expiresAt: readDate(exp) }, status.value==="active" ? (tmp.value ? "temporary" : "assign") : status.value); return true; }}] });
 }

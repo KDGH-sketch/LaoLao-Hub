@@ -1,4 +1,5 @@
 // Content model, access tiers, publishing (bundles) and versioning.
+import { resolveEntitlements } from "./access.js";
 export const TIERS = { public:0, free:1, standard:2, premium:3, admin:99 };
 export const ACCESS_KEYS = ["public","free","standard","premium","admin"];
 export const STATUS_KEYS = ["draft","published","archived"];
@@ -9,20 +10,20 @@ export const CONTENT_TYPES = [
 export const LEVELS = [1,2,3,4,5,6];
 export const SKILLS = ["vocabulary","grammar","reading","listening","writing","speaking","pinyin","characters","sentence"];
 
-export const minTier = item => TIERS[item.access] ?? TIERS.free;
+// item.access is a key above, or a plan tier number for any other plan ("Custom", e.g. tier 4 = VVIP)
+export const minTier = item => TIERS[item.access] ?? (item.access !== "" && item.access != null && Number.isFinite(+item.access) ? Math.max(0, Math.floor(+item.access)) : TIERS.free);
 
-// Effective tier of an account (computed in the browser)
-export function tierFor({ isAdmin, user, access }){
-  if (isAdmin) return 99;
-  if (!user || user.status !== "active") return 0;
-  if (access && access.status === "active" && (access.expiresAt == null || access.expiresAt > Date.now())) return Math.max(1, access.tier || 1);
-  return 1;
+// Effective tier of an account (computed in the browser for display; the database decides with ll_my_tier()).
+// Delegates to the shared resolver so the browser and the database follow the same rules.
+export function tierFor({ isAdmin, user, access, plans = [], settings = {} }){
+  return resolveEntitlements({ uid:"self", isAdmin, user, access, plans, settings }).tier;
 }
+// Subscription state shown in the apps: active, trial, expired, suspended, cancelled, pending or none
 export function accessState(access){
   if (!access) return "none";
-  if (access.status !== "active") return access.status || "none";
+  if (access.status !== "active" && access.status !== "trial") return access.status || "none";
   if (access.expiresAt != null && access.expiresAt <= Date.now()) return "expired";
-  return "active";
+  return access.status;
 }
 
 // ---------- versioned save ----------
@@ -57,7 +58,8 @@ function publicView(type, doc){
 }
 export async function buildBundles(api, who, onStep=()=>{}){
   const all = {};
-  for (const t of CONTENT_TYPES){ onStep(t); all[t] = await api.db.list(t); }
+  // onStep(step, done, total): content type names while reading, then "write" while uploading (used by the publish panel's progress ring)
+  for (const [i, t] of CONTENT_TYPES.entries()){ onStep(t, i, CONTENT_TYPES.length); all[t] = await api.db.list(t); }
   const plans = await api.db.list("plans");
   const tiers = [...new Set([0, 1, ...plans.map(p=>p.tier||1)])].sort((a,b)=>a-b);
   const version = Date.now();
@@ -71,7 +73,8 @@ export async function buildBundles(api, who, onStep=()=>{}){
   for (const T of tiers){
     const data = { version, tier:T, catalog };
     for (const t of CONTENT_TYPES){
-      const items = (t==="lexicon" || t==="characters" || t==="tones" || t==="dictionary") ? all[t] : pub(t).filter(d => minTier(d) <= T);
+      // characters follow draft/published and plan tiers like lessons (their handwriting templates must not reach learners before publishing)
+      const items = (t==="lexicon" || t==="tones" || t==="dictionary") ? all[t] : pub(t).filter(d => minTier(d) <= T);
       data[t] = items.map(d => publicView(t, d));
     }
     const json = JSON.stringify(data);
@@ -84,8 +87,9 @@ export async function buildBundles(api, who, onStep=()=>{}){
   existing.forEach(b => { if (b.id!=="meta" && !keep.has(b.id)) ops.push({ op:"del", path:`bundles/${b.id}` }); });
   ops.push({ op:"set", path:"bundles/meta", data: meta });
   ops.push({ op:"set", path:"settings/bundle", data:{ dirty:false, builtAt:new Date(), builtBy:who||"", version }, merge:true });
-  onStep("write");
-  for (const o of ops.filter(o=>o.big)) await api.db.set(o.path, o.data);   // large parts one at a time
+  const big = ops.filter(o=>o.big);
+  onStep("write", 0, big.length + 1);
+  for (const [i, o] of big.entries()){ await api.db.set(o.path, o.data); onStep("write", i + 1, big.length + 1); }   // large parts one at a time
   await api.db.batch(ops.filter(o=>!o.big));                                // meta written last
 
   return meta;

@@ -2,7 +2,7 @@
 // vocabulary entries that admins add or edit in the Admin Backend.
 import { stripTone } from "./ui.js";
 const url = f => new URL(`../../data/${f}`, import.meta.url).href;
-let DICT = null, CHARS = null, STROKES = null, INDEX = null, loading = null;
+let DICT = null, CHARS = null, INDEX = null, loading = null;
 
 export async function loadDict(){
   if (DICT) return DICT;
@@ -14,7 +14,6 @@ export async function loadDict(){
 }
 export const dict = () => DICT || {};
 export const chars = () => CHARS || {};
-export async function strokes(){ if (!STROKES) STROKES = await fetch(url("strokes.json")).then(r=>r.json()).catch(()=>({})); return STROKES; }
 
 // Merge admin vocabulary (from the bundle) over the static dictionary
 export function mergeVocabulary(vocab=[]){

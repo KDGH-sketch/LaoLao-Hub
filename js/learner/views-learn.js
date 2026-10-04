@@ -9,11 +9,14 @@ import { SKILLS } from "../shared/content.js";
 import { A, T, expLang, prefs, srsDue, streak, skillPct, nextLesson, orderedLessons, genMany, exampleOf, lockedItem, tierName,
   completeLesson, learnPattern, setLast, recordAnswer, quizDone, logEvent, wordsMastered, touchDay, level, todayXP, mastery, achievements } from "./core.js";
 import { patternQuestions } from "./views-tools.js";
+import { lockedPanel, withUse, upgradeSheet } from "./upgrade.js";
 
 export const VIEWS = {};
 const go = (...a) => A.go(...a);
 const pageHead = (title, sub, extra) => h("div",{class:"pagehead"}, h("div",{class:"spread"}, h("h1",null,title), extra||null), sub ? h("p",{class:expLang()==="lo"&&lang()==="lo"?"lo":""},sub) : null);
+// Locked content: the title and tier are public (catalog); the content itself is not in this browser. Tapping explains how to unlock it.
 const lockBadge = tier => h("span",{class:"lock",title:t("locked_d",{s:tierName(tier)})}, icon("lock"), tierName(tier));
+const lockedRow = tier => ({ class:"locked-row", role:"button", tabindex:"0", onclick:()=>upgradeSheet({ tier }), onkeydown:e=>{ if (e.key==="Enter"||e.key===" "){ e.preventDefault(); upgradeSheet({ tier }); } } });
 const pMeaning = p => T({ en:p.tr.en.meaning, lo:p.tr.lo&&p.tr.lo.meaning, zh:p.tr.zh&&p.tr.zh.meaning });
 const lessonDone = id => !!(A.prog.lessons[id]||{}).done;
 const SKILL_ACTION = { vocabulary:["practice",{type:"words"}], grammar:["practice",{type:"blank"}], reading:["practice",{type:"meaning"}], listening:["practice",{type:"listen"}],
@@ -149,7 +152,7 @@ VIEWS.paths = () => {
     return h("button",{class:"pcard",onclick:()=>go("path",{id:p.id})}, h("span",{class:"qi",lang:"zh-CN"}, p.kind==="level" ? String(p.level) : icon(p.kind==="skill"?"layers":"path")),
       h("div",{style:"flex:1"}, h("b",null,T(p.title)), h("span",{class:expLang()==="lo"?"lo":""},T(p.desc)), lessons ? h("div",{class:"bar",style:"margin-top:8px"},h("i",{style:`width:${100*done/lessons}%`})) : null)); };
   return h("div",null, pageHead(t("nav_paths"), t("learn_sub")),
-    h("div",{class:"grid2"}, paths.map(card), locked.map(c => h("div",{class:"pcard",style:"opacity:.6"}, h("span",{class:"qi"},icon("lock")), h("div",null, h("b",null,T(c.title)), lockBadge(c.tier))))));
+    h("div",{class:"grid2"}, paths.map(card), locked.map(c => h("div",Object.assign(lockedRow(c.tier),{class:"pcard locked-row"}), h("span",{class:"qi"},icon("lock")), h("div",null, h("b",null,T(c.title)), lockBadge(c.tier))))));
 };
 VIEWS.path = ({ id }) => {
   const p = A.byType.paths[id]; if (!p) return h("div",{class:"empty"},t("no_rows"));
@@ -163,7 +166,7 @@ VIEWS.path = ({ id }) => {
       if (d){ title = T(d.title); sub = d.level ? "Stage "+d.level : ""; open = () => go(view,{id:s.id}); done = s.type==="lesson" ? lessonDone(s.id) : !!A.prog.lessons[s.type+":"+s.id]; }
       else { lock = lockedItem(col, s.id); if (lock) title = T(lock.title); } }
     if (!title && !lock) return;
-    list.append(h("button",{class:"item-row",disabled:!!lock,onclick:()=>open&&open()}, h("span",{class:"stepnum"+(done?" done":"")}, done ? icon("check") : String(i+1)), h("span",null, h("div",{class:"ttl "+(isHan(title[0])?"hz":"")}, title), h("div",{class:"sub"}, sub, lock ? lockBadge(lock.tier) : "")), lock ? icon("lock") : icon("right")));
+    list.append(h("button",{class:"item-row"+(lock?" locked-row":""),onclick:()=>lock ? upgradeSheet({ tier:lock.tier }) : open&&open()}, h("span",{class:"stepnum"+(done?" done":"")}, done ? icon("check") : String(i+1)), h("span",null, h("div",{class:"ttl "+(isHan(title[0])?"hz":"")}, title), h("div",{class:"sub"}, sub, lock ? lockBadge(lock.tier) : "")), lock ? icon("lock") : icon("right")));
   });
   return h("div",null, h("div",{class:"crumb"}, h("button",{onclick:()=>go("paths")},t("nav_paths")), "›", h("span",null,T(p.title))), pageHead(T(p.title), T(p.desc)), list);
 };
@@ -179,7 +182,7 @@ VIEWS.lessons = ({ lv }) => {
     Object.keys(groups).sort((a,b)=>a-b).forEach(L => { const items = groups[L].sort((a,b)=>(a.order||0)-(b.order||0));
       box.append(h("div",{class:"group-h"}, h("h2",null,stageLabel(L)), h("span",{class:"muted small"}, items.filter(x=>!x.locked && lessonDone(x.id)).length+" / "+items.length)),
         h("div",{class:"list-card"}, items.map(l => l.locked
-          ? h("div",{class:"item-row",style:"opacity:.6"}, h("span",{class:"stepnum"},icon("lock")), h("span",null, h("div",{class:"ttl"},T(l.title)), h("div",{class:"sub"}, lockBadge(l.tier))), h("span"))
+          ? h("div",Object.assign(lockedRow(l.tier),{class:"item-row locked-row"}), h("span",{class:"stepnum"},icon("lock")), h("span",null, h("div",{class:"ttl"},T(l.title)), h("div",{class:"sub"}, lockBadge(l.tier))), h("span"))
           : h("button",{class:"item-row",onclick:()=>go("lesson",{id:l.id})}, h("span",{class:"stepnum"+(lessonDone(l.id)?" done":"")}, lessonDone(l.id)?icon("check"):String(l.order||"")), h("span",null, h("div",{class:"ttl"},T(l.title)), h("div",{class:"sub"+(expLang()==="lo"?" lo":"")}, T(l.desc).slice(0,110))), icon("right"))))); });
     if (!box.childElementCount) box.append(h("div",{class:"empty"},t("no_rows")));
   };
@@ -189,7 +192,11 @@ VIEWS.lessons = ({ lv }) => {
 };
 VIEWS.lesson = ({ id }) => {
   const l = A.byType.lessons[id];
-  if (!l){ const lk = lockedItem("lessons", id); return h("div",{class:"empty"}, lk ? [lockBadge(lk.tier)," ",t("locked_d",{s:tierName(lk.tier)})] : t("no_rows")); }
+  if (!l){ const lk = lockedItem("lessons", id); return lk ? lockedPanel({ tier:lk.tier }) : h("div",{class:"empty"}, t("no_rows")); }
+  // Lessons per period: opening the same lesson again in the same period is not counted twice (ref)
+  return withUse("lessons.open", { ref:id }, () => lessonView(id, l));
+};
+function lessonView(id, l){
   setLast("lesson", id); logEvent("lesson_open", { ref:id }); touchDay();
   const EL = expLang(), root = h("div",{class:"stack-l"});
   const done = lessonDone(id);
@@ -231,7 +238,7 @@ VIEWS.lesson = ({ id }) => {
   root.append(h("div",{class:"row"}, h("button",{class:"btn"+(done?" jade":""),onclick:e=>{ if (!lessonDone(id)){ completeLesson(id); e.currentTarget.className="btn jade"; e.currentTarget.textContent=t("completed"); } }}, done ? t("completed") : t("complete_lesson")),
     (() => { const ls = orderedLessons(); const i = ls.findIndex(x=>x.id===id); const nx = ls[i+1]; return nx ? h("button",{class:"btn ghost",onclick:()=>go("lesson",{id:nx.id})}, t("next")+": "+T(nx.title).slice(0,40), icon("right")) : null; })()));
   return root;
-};
+}
 
 // ---------- patterns ----------
 VIEWS.patterns = ({ q="", mode="lv" }) => {
@@ -246,7 +253,7 @@ VIEWS.patterns = ({ q="", mode="lv" }) => {
       if (!items.length && !lk.length) return;
       list.append(h("div",{class:"group-h"}, h("h2",null,title), h("span",{class:"muted small"}, items.filter(p=>A.prog.patterns[p.n]).length+" / "+(items.length+lk.length)+" "+t("learned_all"))));
       items.forEach(p => list.append(h("button",{class:"prow",onclick:()=>go("pattern",{n:p.n})}, h("span",{class:"pn"},"#"+String(p.n).padStart(3,"0")), h("span",{class:"ph lo",lang:"lo"},p.hz), h("span",{class:"pm"+(expLang()==="lo"?" lo":"")},pMeaning(p)), h("span",{class:"status"+(A.prog.patterns[p.n]?" done":"")}))));
-      if (lk.length && !f) list.append(h("div",{class:"prow",style:"opacity:.6"}, h("span",{class:"pn"},icon("lock")), h("span",{class:"ph"}, lk.length+" "+t("patterns")), h("span",{class:"pm"}, t("locked_d",{s:tierName(lk[0].tier)})), h("span")));
+      if (lk.length && !f) list.append(h("div",Object.assign(lockedRow(lk[0].tier),{class:"prow locked-row"}), h("span",{class:"pn"},icon("lock")), h("span",{class:"ph"}, lk.length+" "+t("patterns")), h("span",{class:"pm"}, t("locked_d",{s:tierName(lk[0].tier)})), h("span")));
     });
     if (!list.childElementCount) list.append(h("div",{class:"empty"},t("search_none")));
   };
@@ -264,7 +271,7 @@ function formulaEl(f){
 }
 VIEWS.pattern = ({ n }) => {
   const p = A.P[n];
-  if (!p){ const lk = lockedItem("patterns","p"+String(n).padStart(3,"0")); return h("div",{class:"empty"}, lk ? [lockBadge(lk.tier)," ",t("locked_d",{s:tierName(lk.tier)})] : t("no_rows")); }
+  if (!p){ const lk = lockedItem("patterns","p"+String(n).padStart(3,"0")); return lk ? lockedPanel({ tier:lk.tier }) : h("div",{class:"empty"}, t("no_rows")); }
   setLast("pattern", n); touchDay();
   const EL = expLang(), root = h("div",{class:"stack-l"}), trx = p.tr[EL] && p.tr[EL].how ? p.tr[EL] : p.tr.en;
   const learned = !!A.prog.patterns[n];
@@ -303,7 +310,7 @@ VIEWS.grammar = () => {
   const lk = A.catalog.filter(c=>c.type==="grammar" && c.tier>A.tier);
   return h("div",null, pageHead(t("nav_grammar")),
     h("div",{class:"list-card"}, gs.map(g => h("button",{class:"item-row",onclick:()=>go("grammarItem",{id:g.id})}, h("span",{class:"chip lv"},"Stage "+g.level), h("span",null, h("div",{class:"ttl"},T(g.title)), h("div",{class:"sub hz lo"},g.structure)), icon("right"))),
-      lk.map(c => h("div",{class:"item-row",style:"opacity:.6"}, icon("lock"), h("span",null,h("div",{class:"ttl"},T(c.title)), lockBadge(c.tier)), h("span")))),
+      lk.map(c => h("div",Object.assign(lockedRow(c.tier),{class:"item-row locked-row"}), icon("lock"), h("span",null,h("div",{class:"ttl"},T(c.title)), lockBadge(c.tier)), h("span")))),
     h("p",{class:"muted small",style:"margin-top:14px"}, t("nav_patterns")+": ", h("button",{class:"linkbtn",onclick:()=>go("patterns")}, Object.keys(A.P).length+" "+t("patterns"))));
 };
 VIEWS.grammarItem = ({ id }) => {

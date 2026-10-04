@@ -28,6 +28,24 @@ export async function importSeed(api, who, onStep=()=>{}){
   return ops.length;
 }
 
+// Demo mode only: approximate sample stroke templates (js/shared/handwriting/samples.js), so the handwriting
+// activity can be tried. Existing characters get a template; letter combinations become new characters.
+export async function addSampleHandwriting(api, who){
+  if (api.mode !== "demo") return 0;
+  const { CHARS, templateFor } = await import("./handwriting/samples.js");
+  const rows = await api.db.list("characters").catch(() => []);
+  let n = 0;
+  for (const ch of Object.keys(CHARS)){
+    const row = rows.find(r => r.char === ch);
+    const id = row ? row.id : "char-" + ch, combo = [...ch].length > 1;
+    const base = row || { char: ch, name: CHARS[ch].name, meaning: "", ipa: "", class: combo ? "vowel" : "middle", status: "published", access: "free" };
+    await api.db.set(`characters/${id}`, Object.assign({}, base, { id: undefined, strokeCount: CHARS[ch].strokes.length, handwriting: templateFor(ch), order: n, updatedAt: new Date(), updatedBy: who }));
+    n++;
+  }
+  await buildBundles(api, who);
+  return n;
+}
+
 // Demo mode: one-time sample platform in this browser
 export const DEMO = {
   admin: { email: "admin@demo.laolao", pw: "demo1234", name: "Demo Super Admin", role: "super" },
@@ -50,6 +68,9 @@ export async function ensureDemo(api, onStep=()=>{}){
     if (vCount === 0 || cCount === 0 || dCount === 0) {
       await importSeed(api, "admin-demo-owner", onStep);
     }
+    // demo databases created before the handwriting templates existed
+    const chars = await api.db.list("characters").catch(() => []);
+    if (!chars.some(c => c.handwriting)) await addSampleHandwriting(api, "admin-demo-owner");
     if (!revCount.length) {
       for (const roleKey of ["reviewer", "editor", "support"]) {
         const acc = DEMO[roleKey];
@@ -72,6 +93,7 @@ export async function ensureDemo(api, onStep=()=>{}){
   const adminUid = await api.auth.createAccount(DEMO.admin.email, DEMO.admin.pw);
   await bootstrapOwner(api, { uid: adminUid, email: DEMO.admin.email }, DEMO.admin.name);
   await importSeed(api, adminUid, onStep);
+  await addSampleHandwriting(api, adminUid);
 
   // Seed demo reviewer, editor, and support admin accounts
   for (const roleKey of ["reviewer", "editor", "support"]) {

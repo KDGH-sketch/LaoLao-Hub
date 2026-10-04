@@ -1,9 +1,11 @@
 // Audio engine for LaoLao.
 // Order of preference: a recorded audio file → native Lao voice (lo-LA / lo) → Thai fallback (th-TH phonetics) → device default.
-let VOICES = [], settings = { rate: 0.85, voice: "" }, AUDIO_MAP = new Map(), onNoVoice = null, current = null;
+let VOICES = [], settings = { rate: 0.85, voice: "" }, AUDIO_MAP = new Map(), onNoVoice = null, current = null, audioGate = null;
 export function setSpeechSettings(s){ settings = Object.assign(settings, s||{}); }
 export function setAudioLibrary(items=[]){ AUDIO_MAP = new Map(items.filter(a=>a.url && a.text).map(a => [a.text.trim(), a])); }
 export function onMissingVoice(cb){ onNoVoice = cb; }
+// gate(text) → true to play the recording, false to use the device voice instead (plans and limits; decided synchronously so playback stays inside the tap)
+export function setAudioGate(fn){ audioGate = fn; }
 export function voices(){ return VOICES; }
 function loadVoices(){
   try {
@@ -26,7 +28,7 @@ export function speak(text, opt={}){
   text = String(text||"").trim(); if (!text) return;
   stop();
   const rec = AUDIO_MAP.get(text);
-  if (rec){
+  if (rec && (!audioGate || audioGate(text))){
     let n = opt.times || 1;
     const play = () => { const a = new Audio(rec.url); a.playbackRate = opt.slow ? 0.7 : 1; current = a; a.onended = () => { if (--n > 0) play(); }; a.play().catch(()=>speakTTS(text,opt)); };
     return play();
