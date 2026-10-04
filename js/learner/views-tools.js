@@ -8,9 +8,9 @@ import { sentenceEl, openWord, entryEl, ensureTokens } from "../shared/widgets.j
 import { runQuiz, toneSVG } from "../shared/quiz.js";
 import { SKILLS, cacheGet } from "../shared/content.js";
 import { A, T, expLang, prefs, setPref, srsDue, srsGrade, streak, skillPct, genSentence, genMany, exampleOf, recordAnswer, quizDone, logEvent, touchDay,
-  tierName, isSaved, toggleSave, wordsMastered, srsAdd } from "./core.js";
+  tierName, isSaved, toggleSave, wordsMastered, srsAdd, displayName, avatarEl, imageToAvatar, saveProfile, setThemeFrom } from "./core.js";
 import { achievementsEl, xpCard, masteryRow } from "./views-learn.js";
-import { navLock, allowUse, lockedPanel, plansSection, usageMeters } from "./upgrade.js";
+import { navLock, allowUse, lockedPanel, usageMeters, goPlans } from "./upgrade.js";
 
 export const VIEWS = {};
 const go = (...a) => A.go(...a);
@@ -367,7 +367,19 @@ VIEWS.account = (params = {}) => {
   const nameIn = h("input",{class:"input",value:A.profile.name||"",style:"max-width:260px"});
   const vs = voices();
   root.append(pageHead(t("account_title")));
+  // profile: photo and nickname (shown in the top bar)
+  const fileIn = h("input",{type:"file",accept:"image/*",hidden:true,onchange:async e=>{
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    try { await saveProfile({ avatar: await imageToAvatar(f) }); toast(t("pf_photo_saved")); A.render(); } catch(err){ toast(err.message || t("pf_photo_type"), "err"); } }});
+  const nickIn = h("input",{class:"input",value:A.profile.nickname||"",maxlength:"30",placeholder:displayName(),"aria-label":t("pf_nickname"),style:"max-width:260px"});
+  root.append(h("section",{class:"card acc-profile"},
+    h("div",{class:"acc-av"}, avatarEl("xl"), h("button",{class:"acc-cam",type:"button","aria-label":t("pf_change_photo"),title:t("pf_change_photo"),onclick:()=>fileIn.click()}, icon("image")), fileIn),
+    h("div",{class:"acc-id"},
+      h("h2",null, displayName()), h("p",{class:"muted small"}, A.user.email),
+      h("div",{class:"row"}, h("button",{class:"btn sm",onclick:()=>fileIn.click()}, icon("image"), t("pf_change_photo")),
+        A.profile.avatar ? h("button",{class:"btn sm ghost",onclick:async()=>{ await saveProfile({ avatar:null }); toast(t("saved")); A.render(); }}, t("pf_remove_photo")) : null))));
   root.append(h("section",{class:"card"},
+    row(t("pf_nickname"), h("div",{class:"row"}, nickIn, h("button",{class:"btn sm",onclick:async()=>{ try { await saveProfile({ nickname: nickIn.value.trim().slice(0, 30) }); toast(t("saved")); A.render(); } catch(e){ toast(errText(e),"err"); } }}, t("save_btn"))), t("pf_nickname_d")),
     row(t("name"), h("div",{class:"row"}, nameIn, h("button",{class:"btn sm",onclick:async()=>{ A.profile.name = nameIn.value.trim(); await A.api.db.update(`users/${A.user.uid}`,{ name:A.profile.name }).catch(e=>toast(errText(e),"err")); toast(t("saved")); }}, t("save_btn")))),
     row(t("email"), h("span",{class:"muted"}, A.user.email)),
     row(t("level_label"), h("span",{class:"chip lv"}, "Stage "+(A.profile.level||1))),
@@ -377,21 +389,24 @@ VIEWS.account = (params = {}) => {
   root.append(h("section",{class:"card"}, h("h2",{style:"margin-bottom:6px"},t("current_plan")),
     h("div",{class:"spread"}, h("div",null, h("b",{style:"font-size:1.3rem"}, A.isAdmin ? t("adm_title") : (planTitle(ent.planId) || tierName(A.tier))),
       !A.isAdmin ? h("p",{class:"small muted"}, t("status")+": "+t(stKey||"active")+(a ? " · "+t("expires")+": "+(a.expiresAt?fmtDate(a.expiresAt, lang()):t("no_expiry")) : "")) : null),
-      A.settings.supportContact ? h("span",{class:"small"}, t("contact")+": "+A.settings.supportContact) : null)));
+      A.settings.supportContact ? h("span",{class:"small"}, t("contact")+": "+A.settings.supportContact) : null),
+    A.isAdmin ? null : h("div",{class:"row",style:"margin-top:10px"}, h("button",{class:"btn primary sm",onclick:()=>go("myplan")}, icon("wallet"), t("bl_myplan")), h("button",{class:"btn sm",onclick:()=>goPlans()}, icon("plan"), t("bl_plans_title")))));
   const meters = usageMeters(); if (meters) root.append(meters);
-  root.append(plansSection());
-  if (params && params.plans) setTimeout(() => { const el = document.getElementById("plans"); if (el) el.scrollIntoView({ behavior:"smooth", block:"start" }); }, 60);
+  if (params && params.plans) setTimeout(() => go("plans"), 0);     // old links (#account?plans) open the Plans page
   root.append(h("section",{class:"card"},
     row(t("ui_lang"), h("div",{class:"seg"}, [["en","English"],["lo","ລາວ"],["zh","中文"]].map(([l,n]) => h("button",{"aria-pressed":String(lang()===l),onclick:()=>{ setPref("uiLang",l); try{ localStorage.setItem("xuelu.lang",l); }catch(e){} A.render(); }}, n)))),
     row(t("explain_lang"), h("div",{class:"seg"}, [["","Auto"],["en","English"],["lo","ລາວ"],["zh","中文"]].map(([l,n]) => h("button",{"aria-pressed":String((p.explainLang||"")===l),onclick:()=>{ setPref("explainLang",l); A.render(); }}, n))), t("explain_lang_d")),
-    row(t("theme"), h("div",{class:"seg"}, [["system","theme_auto"],["day","theme_light"],["night","theme_dark"]].map(([k,l]) => h("button",{"aria-pressed":String(normTheme(p.theme)===k),onclick:()=>{ setPref("theme",k); A.render(); }}, t(l))))),
+    row(t("theme"), h("div",{class:"seg"}, [["system","theme_auto"],["day","theme_light"],["night","theme_dark"]].map(([k,l]) => h("button",{"aria-pressed":String(normTheme(p.theme)===k),onclick:e=>{
+      e.currentTarget.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === e.currentTarget))); setThemeFrom(k, e); }}, t(l))))),
     row(t("show_pinyin"), sw("showPy")), row(t("show_trans"), sw("showTr")), row(t("tone_colors"), sw("toneColor")),
     row(t("speech_rate"), h("input",{type:"range",min:"0.5",max:"1.2",step:"0.05",value:p.rate,"aria-label":t("speech_rate"),onchange:e=>{ setPref("rate",+e.target.value); speak("ຂ້ອຍຮຽນພາສາລາວທຸກມື້."); }})),
     row(t("voice"), vs.length ? h("select",{class:"input",style:"width:auto;max-width:220px",onchange:e=>{ setPref("voice",e.target.value); speak("ສະບາຍດີ, ຍິນດີຕ້ອນຮັບສູ່ LaoLao."); }}, h("option",{value:""},"Auto"), vs.map(v=>h("option",{value:v.name,selected:v.name===p.voice},v.name+" ("+v.lang+")"))) : h("span",{class:"chip warn"},t("voice_none")), vs.length ? null : t("voice_help"))));
   const oldPw = h("input",{class:"input",type:"password",autocomplete:"current-password"}), newPw = h("input",{class:"input",type:"password",autocomplete:"new-password"});
   root.append(h("section",{class:"card stack"}, h("h2",null,t("change_pw")), h("div",{class:"field-row"}, h("div",{class:"field"},h("label",null,t("current_pw")),oldPw), h("div",{class:"field"},h("label",null,t("new_pw")),newPw)),
-    h("div",{class:"row"}, h("button",{class:"btn",onclick:async()=>{ try { await A.api.auth.changePassword(oldPw.value, newPw.value); toast(t("pw_changed")); oldPw.value=newPw.value=""; } catch(e){ toast(errText(e),"err"); } }}, t("change_pw")),
-      h("button",{class:"btn ghost",onclick:()=>A.api.auth.signOut()}, icon("logout"), t("sign_out")))));
+    h("div",{class:"row"}, h("button",{class:"btn",onclick:async()=>{ try { await A.api.auth.changePassword(oldPw.value, newPw.value); toast(t("pw_changed")); oldPw.value=newPw.value=""; } catch(e){ toast(errText(e),"err"); } }}, t("change_pw")))));
+  root.append(h("section",{class:"card acc-out"},
+    h("div",null, h("h2",null, t("pf_signout_title")), h("p",{class:"small muted"}, t("pf_logout_d"))),
+    h("button",{class:"btn danger acc-out-btn",onclick:()=>A.signOut()}, icon("logout"), t("sign_out"))));
 
   if (A.isAdmin) root.append(h("section",{class:"card stack",style:"background:var(--surface-2);border:1px solid var(--border);margin-top:14px"},
     h("div",{class:"spread",style:"align-items:center;flex-wrap:wrap;gap:10px"},
@@ -407,6 +422,6 @@ VIEWS.account = (params = {}) => {
 
 // ---------- more (mobile) ----------
 VIEWS.more = () => h("div",null, pageHead(t("nav_more")), h("div",{class:"stack",style:"gap:10px"},
-  [["lessons","nav_lessons","learn"],["videos","nav_videos","video"],["handwriting","nav_handwriting","pen"],["tone_lab","nav_tone_lab","spark"],["pronounce_lab","nav_pronounce","speaker"],["particle_lab","nav_particles","flame"],["kinship_lab","nav_kinship","users"],["classifiers_lab","nav_classifiers","layers"],["culture_lab","nav_culture","globe"],["patterns","nav_patterns","gen"],["gen","gen_title","spark"],["vocab","nav_vocab","dict"],["grammar","nav_grammar","layers"],["dict","nav_dict","dict"],["pinyin","nav_pinyin","pinyin"],["speak","nav_speak","mic"],["saved","nav_saved","bookmark"],["notes","nav_notes","note"],["progress","nav_progress","chart"],["downloads","nav_offline","download"],["account","nav_account","user"]]
+  [["lessons","nav_lessons","learn"],["videos","nav_videos","video"],["handwriting","nav_handwriting","pen"],["tone_lab","nav_tone_lab","spark"],["pronounce_lab","nav_pronounce","speaker"],["particle_lab","nav_particles","flame"],["kinship_lab","nav_kinship","users"],["classifiers_lab","nav_classifiers","layers"],["culture_lab","nav_culture","globe"],["patterns","nav_patterns","gen"],["gen","gen_title","spark"],["vocab","nav_vocab","dict"],["grammar","nav_grammar","layers"],["dict","nav_dict","dict"],["pinyin","nav_pinyin","pinyin"],["speak","nav_speak","mic"],["saved","nav_saved","bookmark"],["notes","nav_notes","note"],["progress","nav_progress","chart"],["downloads","nav_offline","download"],["myplan","bl_myplan","wallet"],["account","nav_account","user"]]
     .map(([id,k,ic]) => h("button",{class:"qs",onclick:()=>go(id)}, h("span",{class:"qi",style:"background:var(--surface-2)"},icon(ic)), h("b",null,t(k)), navLock(id)))),
   !A.isAdmin ? null : h("a",{class:"qs",href:"admin/",style:"margin-top:10px;text-decoration:none;color:var(--accent);border:1px solid var(--accent)"}, h("span",{class:"qi",style:"background:var(--surface-2);color:var(--accent)"},icon("shield")), h("b",null,lang()==="lo"?"ລະບົບຈັດການເນື້ອຫາ (Admin CMS)":"Admin & Content Management Portal (CMS)")));

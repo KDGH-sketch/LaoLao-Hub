@@ -21,7 +21,7 @@ begin
     'lessons','patterns','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon',
     'videos','tones','culture','characters','dictionary',
     'bundles','progress','reviews','bookmarks','notes','activity',
-    'usage','accessLogs',
+    'usage','accessLogs','orders','payments',
     'vocab','saved'  -- legacy, unused by the app
   ] loop
     execute format('create table if not exists public.%I (
@@ -327,6 +327,363 @@ grant execute on function public.ll_use(text, int, text) to authenticated;
 grant execute on function public.ll_entitlements() to anon, authenticated;
 grant execute on function public.ll_can(text) to anon, authenticated;
 
+-- --------------------------------------------------------
+-- Payments: plan → order (price snapshot) → verified payment → access (see docs/PAYMENTS.md)
+-- Orders and payments are written only by these functions. The ones that mark money as received
+-- (ll_activate_order, ll_refund_order, ll_fail_order, ll_order_checkout) run only with the service key,
+-- i.e. from the payments Edge Function after it has verified the provider's signed message.
+-- js/shared/billing.js mirrors ll_plan_price / ll_cycle_end / ll_quote / ll_activate_order for demo mode; keep them identical.
+-- --------------------------------------------------------
+
+-- Price of a plan for a billing cycle (month / year) in a currency (LAK / USD); null = not sold that way
+create or replace function public.ll_plan_price(p jsonb, cycle text, cur text) returns numeric
+language plpgsql immutable as $$
+declare v numeric;
+begin
+  if p is null then return null; end if;
+  if jsonb_typeof(p -> 'prices') = 'object' then
+    v := public.ll_num(p -> 'prices' -> cycle -> upper(cur));
+  elsif upper(coalesce(p ->> 'currency', '')) = upper(cur) and coalesce(p ->> 'billingPeriod', '') = cycle then
+    v := public.ll_num(p -> 'price');                    -- plans saved before per-cycle prices existed
+  end if;
+  return case when v > 0 then v end;
+end $$;
+
+-- End of a billing period that starts at from_ms: one calendar month or year later (UTC; 31 Jan + 1 month = 28/29 Feb)
+create or replace function public.ll_cycle_end(from_ms numeric, cycle text) returns numeric
+language sql immutable as $$
+  select round(extract(epoch from (((to_timestamp(from_ms / 1000.0) at time zone 'UTC')
+    + case when cycle = 'year' then interval '1 year' else interval '1 month' end) at time zone 'UTC')) * 1000)
+$$;
+
+-- Which currency a payment method charges in (Settings → Payments); cards default to USD, QR to LAK
+create or replace function public.ll_method_currency(s jsonb, method text) returns text
+language sql immutable as $$
+  select upper(coalesce(nullif(s -> 'payments' -> 'currency' ->> method, ''), case when method in ('onepay', 'laoqr') then 'LAK' else 'USD' end))
+$$;
+
+-- What buying a plan would do for this account: price, new / renew / upgrade, credited days, new end date.
+-- Internal (takes the uid): learners use ll_my_quote().
+create or replace function public.ll_quote(p_uid text, p_plan text, p_cycle text, p_currency text) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare
+  now_ms numeric := round(extract(epoch from now()) * 1000);
+  p jsonb; cur_p jsonb; u jsonb; a jsonb; def_id text; st text := 'none'; exp numeric;
+  amount numeric; new_tier int; cur_tier int := 0; cur_active boolean := false; kind text := 'new';
+  credit int := 0; old_cycle text; old_price numeric; ends numeric; cur text := upper(coalesce(p_currency, ''));
+begin
+  if p_cycle is null or p_cycle not in ('month', 'year') then return '{"ok":false,"reason":"bad_cycle"}'::jsonb; end if;
+  if cur not in ('LAK', 'USD') then return '{"ok":false,"reason":"bad_currency"}'::jsonb; end if;
+  select x.data || jsonb_build_object('id', x.id) into p from public.plans x where x.id = p_plan;
+  if p is null or coalesce(p ->> 'active', 'true') = 'false' then return '{"ok":false,"reason":"plan_unavailable"}'::jsonb; end if;
+  amount := public.ll_plan_price(p, p_cycle, cur);
+  if amount is null then return '{"ok":false,"reason":"not_for_sale"}'::jsonb; end if;
+  if exists (select 1 from public.admins where id = p_uid) then return '{"ok":false,"reason":"admin_account"}'::jsonb; end if;
+  select data into u from public.users where id = p_uid;
+  if u is null then return '{"ok":false,"reason":"no_profile"}'::jsonb; end if;
+  if coalesce(u ->> 'status', 'active') <> 'active' then return '{"ok":false,"reason":"account_disabled"}'::jsonb; end if;
+  select coalesce(nullif(data ->> 'defaultPlanId', ''), 'free') into def_id from public.settings where id = 'app';
+  def_id := coalesce(def_id, 'free');
+  new_tier := greatest(1, coalesce(floor(public.ll_num(p -> 'tier'))::int, 1));
+  select data into a from public.access where id = p_uid;
+  if a is not null then
+    st := coalesce(a ->> 'status', 'none'); exp := public.ll_ms(a -> 'expiresAt');
+    if st = 'suspended' then return '{"ok":false,"reason":"account_suspended"}'::jsonb; end if;
+    if st in ('active', 'trial') and coalesce(a ->> 'planId', def_id) <> def_id and (exp is null or exp > now_ms) then
+      cur_active := true;
+      select x.data || jsonb_build_object('id', x.id) into cur_p from public.plans x where x.id = a ->> 'planId';
+      cur_tier := greatest(1, coalesce(floor(public.ll_num(coalesce(cur_p -> 'tier', a -> 'tier')))::int, 1));
+    end if;
+  end if;
+  if cur_active then
+    if a ->> 'planId' = p_plan then
+      if st = 'trial' then kind := 'new';
+      elsif exp is null then return '{"ok":false,"reason":"already_unlimited"}'::jsonb;
+      else kind := 'renew'; end if;
+    elsif new_tier > cur_tier then kind := 'upgrade';
+    else
+      return jsonb_build_object('ok', false, 'reason', 'downgrade_at_period_end', 'currentPlan', a ->> 'planId', 'until', exp);
+    end if;
+  end if;
+  if kind = 'renew' then
+    ends := public.ll_cycle_end(greatest(exp, now_ms), p_cycle);
+  else
+    -- Upgrade policy "immediate, days credited": the unused value of a paid period becomes extra days on the new plan
+    if kind = 'upgrade' and st = 'active' and coalesce(a ->> 'source', '') = 'payment' and exp is not null then
+      old_cycle := coalesce(nullif(a ->> 'billingCycle', ''), 'month');
+      select public.ll_num(o.data -> 'amount') into old_price from public.orders o
+        where o.id = a ->> 'orderId' and upper(o.data ->> 'currency') = cur and o.data ->> 'cycle' = old_cycle;
+      old_price := coalesce(old_price, public.ll_plan_price(cur_p, old_cycle, cur));
+      if old_price is not null then
+        credit := floor(((exp - now_ms) / 86400000.0) * (old_price / case when old_cycle = 'year' then 365 else 30 end)
+                        / (amount / case when p_cycle = 'year' then 365 else 30 end));
+        credit := least(greatest(credit, 0), floor((exp - now_ms) / 86400000.0)::int);
+      end if;
+    end if;
+    ends := public.ll_cycle_end(now_ms, p_cycle) + credit * 86400000;
+  end if;
+  return jsonb_build_object('ok', true, 'planId', p_plan, 'planName', coalesce(p -> 'name', to_jsonb(p_plan)), 'tier', new_tier,
+    'cycle', p_cycle, 'currency', cur, 'amount', amount, 'kind', kind, 'fromPlan', case when cur_active then a ->> 'planId' end,
+    'creditDays', credit, 'endsAt', ends);
+end $$;
+
+create or replace function public.ll_my_quote(p_plan text, p_cycle text, p_method text) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare s jsonb;
+begin
+  if auth.uid() is null then return '{"ok":false,"reason":"not_signed_in"}'::jsonb; end if;
+  select data into s from public.settings where id = 'app';
+  return public.ll_quote(auth.uid()::text, p_plan, p_cycle, public.ll_method_currency(coalesce(s, '{}'::jsonb), p_method))
+         || jsonb_build_object('method', p_method);
+end $$;
+
+-- Start a purchase. The browser sends only plan, cycle, method and where to return; the price, currency and
+-- account come from the database. Repeated clicks reuse the open order with the same terms.
+create or replace function public.ll_create_order(p_plan text, p_cycle text, p_method text, p_return text default null) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_uid text := auth.uid()::text; now_ms numeric := round(extract(epoch from now()) * 1000);
+  s jsonb; q jsonb; cur text; ex record; n int; o_id text; ret text; d jsonb;
+begin
+  if v_uid is null then return '{"ok":false,"reason":"not_signed_in"}'::jsonb; end if;
+  perform pg_advisory_xact_lock(hashtext('ll_order:' || v_uid));     -- one order creation at a time per account
+  select data into s from public.settings where id = 'app';
+  s := coalesce(s, '{}'::jsonb);
+  if coalesce(s -> 'payments' ->> 'enabled', 'false') <> 'true' then return '{"ok":false,"reason":"payments_disabled"}'::jsonb; end if;
+  if jsonb_typeof(s -> 'payments' -> 'methods') <> 'array' or not (s -> 'payments' -> 'methods' ? p_method) then
+    return '{"ok":false,"reason":"method_unavailable"}'::jsonb;
+  end if;
+  cur := public.ll_method_currency(s, p_method);
+  q := public.ll_quote(v_uid, p_plan, p_cycle, cur);
+  if not (q ->> 'ok')::boolean then return q; end if;
+  -- checkouts left open for an hour expire (a payment that still arrives later is honoured by ll_activate_order)
+  update public.orders set data = data || jsonb_build_object('status', 'expired',
+      'history', coalesce(data -> 'history', '[]'::jsonb) || jsonb_build_array(jsonb_build_object('at', now_ms, 'status', 'expired'))), updated_at = now()
+    where data ->> 'uid' = v_uid and data ->> 'status' in ('created', 'pending') and public.ll_num(data -> 'createdAt') < now_ms - 3600000;
+  select o.id, o.data into ex from public.orders o
+    where o.data ->> 'uid' = v_uid and o.data ->> 'status' in ('created', 'pending') and o.data ->> 'planId' = p_plan
+      and o.data ->> 'cycle' = p_cycle and o.data ->> 'method' = p_method and o.data ->> 'currency' = cur
+      and public.ll_num(o.data -> 'amount') = (q ->> 'amount')::numeric and o.data ->> 'kind' = q ->> 'kind'
+    order by o.created_at desc limit 1;
+  if found then return ex.data || jsonb_build_object('id', ex.id, 'ok', true, 'reused', true); end if;
+  select count(*) into n from public.orders where data ->> 'uid' = v_uid and created_at > now() - interval '1 hour';
+  if n >= 20 then return '{"ok":false,"reason":"too_many_orders"}'::jsonb; end if;
+  -- where to go after paying: an app view name with simple parameters only, never a URL
+  ret := case when p_return ~ '^[A-Za-z_]{1,30}(\?[A-Za-z0-9_=&.-]{0,160})?$' then p_return end;
+  o_id := 'LLH-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 10));
+  d := jsonb_build_object('uid', v_uid, 'planId', p_plan, 'planName', q -> 'planName', 'tier', q -> 'tier', 'cycle', p_cycle,
+    'method', p_method, 'currency', cur, 'amount', q -> 'amount', 'kind', q -> 'kind', 'fromPlan', q -> 'fromPlan',
+    'creditDays', q -> 'creditDays', 'endsAt', q -> 'endsAt', 'status', 'created', 'returnTo', ret, 'createdAt', now_ms,
+    'history', jsonb_build_array(jsonb_build_object('at', now_ms, 'status', 'created')));
+  insert into public.orders (id, data) values (o_id, d);
+  return d || jsonb_build_object('id', o_id, 'ok', true);
+end $$;
+
+-- The checkout page was opened at the provider (service key)
+create or replace function public.ll_order_checkout(p_order text, p_provider text, p_ref jsonb) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare now_ms numeric := round(extract(epoch from now()) * 1000); d jsonb;
+begin
+  update public.orders set data = data || jsonb_build_object('status', 'pending', 'provider', p_provider, 'checkoutRef', p_ref,
+      'history', coalesce(data -> 'history', '[]'::jsonb) || jsonb_build_array(jsonb_build_object('at', now_ms, 'status', 'pending', 'provider', p_provider))),
+      updated_at = now()
+    where id = p_order and data ->> 'status' in ('created', 'pending')
+    returning data into d;
+  return case when d is null then '{"ok":false,"reason":"order_not_open"}'::jsonb else d || jsonb_build_object('id', p_order, 'ok', true) end;
+end $$;
+
+-- A verified payment (service key, after the provider's signed message was checked):
+-- checks the amount and currency against the order's snapshot, records the payment once, and extends the account.
+-- Calling it again with the same transaction does nothing (providers repeat callbacks).
+create or replace function public.ll_activate_order(p_order text, p_pay jsonb) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  now_ms numeric := round(extract(epoch from now()) * 1000);
+  o jsonb; a jsonb; p jsonb; prev jsonb; pid text; v_uid text; kind text; st text; exp numeric;
+  ends numeric; start_ms numeric; credit int := 0; bad text; pay jsonb;
+begin
+  if coalesce(p_pay ->> 'provider', '') = '' or coalesce(p_pay ->> 'txnId', '') = '' then
+    return '{"ok":false,"reason":"missing_transaction"}'::jsonb;
+  end if;
+  pid := lower(p_pay ->> 'provider') || '__' || (p_pay ->> 'txnId');
+  select data into o from public.orders where id = p_order for update;
+  if o is null then return '{"ok":false,"reason":"order_not_found"}'::jsonb; end if;
+  select data into prev from public.payments where id = pid;
+  if prev is not null then
+    return jsonb_build_object('ok', prev ->> 'orderId' = p_order and prev ->> 'status' = 'paid', 'already', true,
+      'reason', case when prev ->> 'orderId' = p_order then 'already_processed' else 'transaction_reused' end);
+  end if;
+  v_uid := o ->> 'uid';
+  -- only what the provider reported, never card numbers: brand and the last 4 digits at most
+  pay := jsonb_build_object('orderId', p_order, 'uid', v_uid, 'provider', lower(p_pay ->> 'provider'), 'txnId', p_pay ->> 'txnId',
+    'method', left(coalesce(p_pay ->> 'method', o ->> 'method'), 20), 'brand', left(coalesce(p_pay ->> 'brand', ''), 24),
+    'last4', right(regexp_replace(coalesce(p_pay ->> 'last4', ''), '\D', '', 'g'), 4),
+    'amount', public.ll_num(p_pay -> 'amount'), 'currency', upper(coalesce(p_pay ->> 'currency', '')),
+    'paidAt', coalesce(public.ll_ms(p_pay -> 'paidAt'), now_ms), 'verification', coalesce(p_pay -> 'verification', '{}'::jsonb), 'at', now_ms);
+  bad := case
+    when o ->> 'status' in ('paid', 'refunded') then 'order_already_paid'
+    when public.ll_num(p_pay -> 'amount') is distinct from public.ll_num(o -> 'amount') then 'amount_mismatch'
+    when upper(coalesce(p_pay ->> 'currency', '')) <> upper(o ->> 'currency') then 'currency_mismatch'
+  end;
+  if bad is not null then
+    -- money may have moved but must not unlock anything: keep it for an admin to review (and refund)
+    insert into public.payments (id, data) values (pid, pay || jsonb_build_object('status', case when bad = 'order_already_paid' then 'duplicate' else 'mismatch' end, 'reason', bad));
+    update public.orders set data = data || jsonb_build_object('needsReview', true,
+        'history', coalesce(data -> 'history', '[]'::jsonb) || jsonb_build_array(jsonb_build_object('at', now_ms, 'status', o ->> 'status', 'note', bad, 'payment', pid))),
+        updated_at = now() where id = p_order;
+    return jsonb_build_object('ok', false, 'reason', bad);
+  end if;
+
+  perform 1 from public.access where id = v_uid for update;
+  select data into a from public.access where id = v_uid;
+  select x.data || jsonb_build_object('id', x.id) into p from public.plans x where x.id = o ->> 'planId';
+  kind := o ->> 'kind'; st := coalesce(a ->> 'status', 'none'); exp := public.ll_ms(a -> 'expiresAt');
+  if kind = 'renew' and a ->> 'planId' = o ->> 'planId' and st = 'active' and exp > now_ms then
+    start_ms := coalesce(public.ll_ms(a -> 'start'), now_ms);
+    ends := public.ll_cycle_end(exp, o ->> 'cycle');
+  else
+    if kind = 'renew' then kind := 'new'; end if;           -- the plan ended before the payment arrived: a fresh period
+    if kind = 'upgrade' and a ->> 'planId' = o ->> 'fromPlan' and st = 'active' and exp > now_ms then
+      credit := coalesce(public.ll_num(o -> 'creditDays'), 0)::int;
+    end if;
+    start_ms := now_ms;
+    ends := public.ll_cycle_end(now_ms, o ->> 'cycle') + credit * 86400000;
+  end if;
+  insert into public.access (id, data) values (v_uid, '{}'::jsonb) on conflict (id) do nothing;
+  update public.access set data = data || jsonb_build_object('planId', o ->> 'planId', 'tier', coalesce(p -> 'tier', o -> 'tier', '1'::jsonb),
+      'status', 'active', 'start', start_ms, 'expiresAt', ends, 'billingCycle', o ->> 'cycle', 'source', 'payment', 'orderId', p_order,
+      'cancelAtPeriodEnd', false, 'scheduledPlanId', null, 'updatedAt', now_ms, 'updatedBy', 'payment'), updated_at = now()
+    where id = v_uid;
+  insert into public.payments (id, data) values (pid, pay || '{"status":"paid"}'::jsonb);
+  insert into public.subscriptions (id, data) values (v_uid || '-' || now_ms::bigint || '-' || p_order,
+    jsonb_build_object('uid', v_uid, 'planId', o ->> 'planId', 'fromPlan', a ->> 'planId', 'action', kind, 'start', start_ms, 'expiresAt', ends,
+      'status', 'active', 'source', 'payment', 'orderId', p_order, 'amount', o -> 'amount', 'currency', o -> 'currency', 'creditDays', credit,
+      'by', 'payment', 'at', now_ms))
+    on conflict (id) do nothing;
+  update public.orders set data = data || jsonb_build_object('status', 'paid', 'paidAt', pay -> 'paidAt', 'paymentId', pid, 'activatedUntil', ends,
+      'history', coalesce(data -> 'history', '[]'::jsonb) || jsonb_build_array(jsonb_build_object('at', now_ms, 'status', 'paid', 'payment', pid))),
+      updated_at = now() where id = p_order;
+  return jsonb_build_object('ok', true, 'planId', o ->> 'planId', 'expiresAt', ends, 'kind', kind);
+end $$;
+
+-- Payment declined / cancelled at checkout / expired (service key). A paid order is never changed here.
+create or replace function public.ll_fail_order(p_order text, p_status text, p_info jsonb default '{}'::jsonb) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare now_ms numeric := round(extract(epoch from now()) * 1000); d jsonb;
+begin
+  if p_status not in ('failed', 'cancelled', 'expired') then return '{"ok":false,"reason":"bad_status"}'::jsonb; end if;
+  update public.orders set data = data || jsonb_build_object('status', p_status, 'failReason', left(coalesce(p_info ->> 'reason', ''), 60),
+      'history', coalesce(data -> 'history', '[]'::jsonb) || jsonb_build_array(jsonb_build_object('at', now_ms, 'status', p_status, 'note', left(coalesce(p_info ->> 'reason', ''), 60)))),
+      updated_at = now()
+    where id = p_order and data ->> 'status' in ('created', 'pending')
+    returning data into d;
+  return case when d is null then '{"ok":false,"reason":"order_not_open"}'::jsonb else d || jsonb_build_object('id', p_order, 'ok', true) end;
+end $$;
+
+-- The learner closes a checkout they did not finish
+create or replace function public.ll_cancel_my_order(p_order text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+begin
+  if not exists (select 1 from public.orders where id = p_order and data ->> 'uid' = auth.uid()::text) then
+    return '{"ok":false,"reason":"order_not_found"}'::jsonb;
+  end if;
+  return public.ll_fail_order(p_order, 'cancelled', '{"reason":"learner_cancelled"}'::jsonb);
+end $$;
+
+-- Refund confirmed by the provider (service key). Policy: the plan bought with this order ends now.
+create or replace function public.ll_refund_order(p_order text, p_info jsonb default '{}'::jsonb) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare now_ms numeric := round(extract(epoch from now()) * 1000); o jsonb; a jsonb; v_uid text; ended boolean := false;
+begin
+  select data into o from public.orders where id = p_order for update;
+  if o is null then return '{"ok":false,"reason":"order_not_found"}'::jsonb; end if;
+  if o ->> 'status' = 'refunded' then return '{"ok":true,"already":true}'::jsonb; end if;
+  if o ->> 'status' <> 'paid' then return '{"ok":false,"reason":"order_not_paid"}'::jsonb; end if;
+  v_uid := o ->> 'uid';
+  update public.payments set data = data || jsonb_build_object('status', 'refunded', 'refundedAt', now_ms), updated_at = now()
+    where data ->> 'orderId' = p_order and data ->> 'status' = 'paid';
+  select data into a from public.access where id = v_uid for update;
+  if a ->> 'orderId' = p_order then
+    update public.access set data = data || jsonb_build_object('expiresAt', now_ms, 'cancelAtPeriodEnd', false, 'scheduledPlanId', null,
+        'updatedAt', now_ms, 'updatedBy', 'refund'), updated_at = now() where id = v_uid;
+    ended := true;
+  end if;
+  update public.orders set data = data || jsonb_build_object('status', 'refunded', 'refundedAt', now_ms,
+      'refundRef', left(coalesce(p_info ->> 'ref', ''), 80), 'refundReason', left(coalesce(p_info ->> 'reason', ''), 300), 'refundedBy', p_info ->> 'by',
+      'history', coalesce(data -> 'history', '[]'::jsonb) || jsonb_build_array(jsonb_build_object('at', now_ms, 'status', 'refunded', 'by', p_info ->> 'by'))),
+      updated_at = now() where id = p_order;
+  insert into public.subscriptions (id, data) values (v_uid || '-' || now_ms::bigint || '-refund',
+    jsonb_build_object('uid', v_uid, 'planId', o ->> 'planId', 'action', 'refund', 'status', case when ended then 'ended' else 'unchanged' end,
+      'source', 'payment', 'orderId', p_order, 'reason', left(coalesce(p_info ->> 'reason', ''), 300), 'by', coalesce(p_info ->> 'by', 'refund'), 'at', now_ms))
+    on conflict (id) do nothing;
+  return jsonb_build_object('ok', true, 'accessEnded', ended);
+end $$;
+
+-- Learner: cancel at period end (the plan stays until it ends and is not renewed), or undo that
+create or replace function public.ll_set_cancel(p_cancel boolean) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare v_uid text := auth.uid()::text; now_ms numeric := round(extract(epoch from now()) * 1000); a jsonb;
+begin
+  select data into a from public.access where id = v_uid for update;
+  if a is null or a ->> 'status' <> 'active' or coalesce(a ->> 'source', '') <> 'payment' or coalesce(public.ll_ms(a -> 'expiresAt'), 0) <= now_ms then
+    return '{"ok":false,"reason":"no_paid_plan"}'::jsonb;
+  end if;
+  update public.access set data = data || jsonb_build_object('cancelAtPeriodEnd', coalesce(p_cancel, false), 'updatedAt', now_ms, 'updatedBy', v_uid), updated_at = now() where id = v_uid;
+  insert into public.subscriptions (id, data) values (v_uid || '-' || now_ms::bigint || '-cancel',
+    jsonb_build_object('uid', v_uid, 'planId', a ->> 'planId', 'action', case when p_cancel then 'cancel_at_period_end' else 'reactivate' end,
+      'expiresAt', a -> 'expiresAt', 'status', 'active', 'source', 'learner', 'by', v_uid, 'at', now_ms))
+    on conflict (id) do nothing;
+  return jsonb_build_object('ok', true, 'cancelAtPeriodEnd', coalesce(p_cancel, false));
+end $$;
+
+-- Learner: switch to a lower plan when the current paid period ends (null = keep the current plan)
+create or replace function public.ll_schedule_plan(p_plan text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare v_uid text := auth.uid()::text; now_ms numeric := round(extract(epoch from now()) * 1000); a jsonb; p jsonb; cur_tier int; exp numeric;
+begin
+  select data into a from public.access where id = v_uid for update;
+  exp := public.ll_ms(a -> 'expiresAt');
+  if a is null or a ->> 'status' <> 'active' or coalesce(a ->> 'source', '') <> 'payment' or coalesce(exp, 0) <= now_ms then
+    return '{"ok":false,"reason":"no_paid_plan"}'::jsonb;
+  end if;
+  if p_plan is not null then
+    select x.data into p from public.plans x where x.id = p_plan;
+    select coalesce(floor(public.ll_num(x.data -> 'tier'))::int, 1) into cur_tier from public.plans x where x.id = a ->> 'planId';
+    if p is null or coalesce(p ->> 'active', 'true') = 'false' or coalesce(floor(public.ll_num(p -> 'tier'))::int, 1) >= coalesce(cur_tier, 1) then
+      return '{"ok":false,"reason":"not_a_downgrade"}'::jsonb;
+    end if;
+  end if;
+  update public.access set data = data || jsonb_build_object('scheduledPlanId', p_plan, 'scheduledFrom', case when p_plan is null then null else exp end,
+      'updatedAt', now_ms, 'updatedBy', v_uid), updated_at = now() where id = v_uid;
+  insert into public.subscriptions (id, data) values (v_uid || '-' || now_ms::bigint || '-schedule',
+    jsonb_build_object('uid', v_uid, 'planId', a ->> 'planId', 'fromPlan', a ->> 'planId', 'nextPlan', p_plan,
+      'action', case when p_plan is null then 'schedule_cleared' else 'schedule_downgrade' end, 'expiresAt', exp, 'status', 'active',
+      'source', 'learner', 'by', v_uid, 'at', now_ms))
+    on conflict (id) do nothing;
+  return jsonb_build_object('ok', true, 'scheduledPlanId', p_plan, 'from', exp);
+end $$;
+
+revoke all on function public.ll_quote(text, text, text, text) from public, anon, authenticated;
+revoke all on function public.ll_order_checkout(text, text, jsonb) from public, anon, authenticated;
+revoke all on function public.ll_activate_order(text, jsonb) from public, anon, authenticated;
+revoke all on function public.ll_fail_order(text, text, jsonb) from public, anon, authenticated;
+revoke all on function public.ll_refund_order(text, jsonb) from public, anon, authenticated;
+grant execute on function public.ll_quote(text, text, text, text) to service_role;
+grant execute on function public.ll_order_checkout(text, text, jsonb) to service_role;
+grant execute on function public.ll_activate_order(text, jsonb) to service_role;
+grant execute on function public.ll_fail_order(text, text, jsonb) to service_role;
+grant execute on function public.ll_refund_order(text, jsonb) to service_role;
+revoke all on function public.ll_my_quote(text, text, text) from public, anon;
+revoke all on function public.ll_create_order(text, text, text, text) from public, anon;
+revoke all on function public.ll_cancel_my_order(text) from public, anon;
+revoke all on function public.ll_set_cancel(boolean) from public, anon;
+revoke all on function public.ll_schedule_plan(text) from public, anon;
+grant execute on function public.ll_my_quote(text, text, text) to authenticated;
+grant execute on function public.ll_create_order(text, text, text, text) to authenticated;
+grant execute on function public.ll_cancel_my_order(text) to authenticated;
+grant execute on function public.ll_set_cancel(boolean) to authenticated;
+grant execute on function public.ll_schedule_plan(text) to authenticated;
+
 -- Learners may edit their own profile, but not status / role / level / email
 create or replace function public.ll_users_protect() returns trigger
 language plpgsql security definer set search_path = public as $$
@@ -354,7 +711,7 @@ begin
              'users','admins','adminNotes','access','plans','subscriptions','settings',
              'lessons','patterns','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon',
              'videos','tones','culture','characters','dictionary',
-             'bundles','progress','reviews','bookmarks','notes','activity','usage','accessLogs','vocab','saved'])
+             'bundles','progress','reviews','bookmarks','notes','activity','usage','accessLogs','orders','payments','vocab','saved'])
   loop
     execute format('drop policy %I on public.%I', r.policyname, r.tablename);
   end loop;
@@ -432,6 +789,11 @@ create policy "ll insert" on public.access for insert with check (
       and not exists (select 1 from public.access x where x.id = auth.uid()::text)));
 create policy "ll support update" on public.access for update using (public.ll_can_support()) with check (public.ll_can_support());
 create policy "ll support delete" on public.access for delete using (public.ll_can_support());
+
+-- Orders and payments: the learner reads their own, support reads all. Nobody writes them directly:
+-- only the payment functions above do (no insert / update / delete policy, so not even admins can mark an order paid by hand).
+create policy "ll own or support read" on public.orders for select using (data ->> 'uid' = auth.uid()::text or public.ll_can_support());
+create policy "ll own or support read" on public.payments for select using (data ->> 'uid' = auth.uid()::text or public.ll_can_support());
 
 -- Usage counters: the learner reads their own; only ll_use() writes (no insert/update policy for anyone)
 create policy "ll own or admin read" on public."usage" for select
@@ -541,6 +903,20 @@ begin
     raise exception 'access self-test decide';
   end if;
   if public.ll_resolve() ->> 'role' <> 'guest' then raise exception 'access self-test: the SQL editor must resolve as a guest'; end if;
+end $$;
+
+-- self-test of the payment helpers (calendar periods and prices)
+do $$
+begin
+  if public.ll_cycle_end(extract(epoch from timestamptz '2026-01-31 10:00:00+00') * 1000, 'month') <> extract(epoch from timestamptz '2026-02-28 10:00:00+00') * 1000
+     or public.ll_cycle_end(extract(epoch from timestamptz '2028-02-29 00:00:00+00') * 1000, 'year') <> extract(epoch from timestamptz '2029-02-28 00:00:00+00') * 1000 then
+    raise exception 'payments self-test: ll_cycle_end';
+  end if;
+  if public.ll_plan_price('{"prices":{"month":{"LAK":90000,"USD":0}}}', 'month', 'lak') <> 90000
+     or public.ll_plan_price('{"prices":{"month":{"LAK":90000,"USD":0}}}', 'month', 'USD') is not null
+     or public.ll_plan_price('{"price":5,"currency":"USD","billingPeriod":"year"}', 'year', 'USD') <> 5 then
+    raise exception 'payments self-test: ll_plan_price';
+  end if;
 end $$;
 
 -- --------------------------------------------------------

@@ -22,7 +22,7 @@ export const L = pair => Array.isArray(pair) ? (lang() === "lo" && pair[1] ? pai
 export const CREDENTIAL_MENUS = ["admins", "settings", "plans", "accessMatrix"];
 
 // Menus showing learner data (support / super only; the database applies the same rule)
-export const LEARNER_MENUS = ["learners", "accessLogs"];
+export const LEARNER_MENUS = ["learners", "accessLogs", "payments"];
 
 // Active effective role (considering Super Admin simulation mode)
 export const getActiveRole = () => {
@@ -84,7 +84,7 @@ export function canViewMenu(menuId) {
 
   // Support Admin can view dashboard, learners, and activity log
   if (role === "support") {
-    return ["dashboard", "learners", "activity", "accessLogs"].includes(menuId);
+    return ["dashboard", "learners", "activity", "accessLogs", "payments"].includes(menuId);
   }
 
   return true;

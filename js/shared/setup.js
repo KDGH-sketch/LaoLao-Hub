@@ -55,6 +55,19 @@ export const DEMO = {
   premium: { email: "learner@demo.laolao", pw: "demo1234", name: "Noy Phommachanh" },
   free: { email: "free@demo.laolao", pw: "demo1234", name: "Somsack Inthavong" }
 };
+// Demo only: sample online prices and the in-app test checkout, so plans can be "bought" without a provider.
+// Real projects set prices in Admin → Pricing Plans and switch payments on in Admin → Payments → Settings.
+export async function addDemoPayments(api){
+  if (api.mode !== "demo") return;
+  const app = await api.db.get("settings/app").catch(() => null) || {};
+  if (!app.payments) await api.db.set("settings/app", { payments:{ enabled:true, methods:["mastercard","visa","onepay"], currency:{ mastercard:"USD", visa:"USD", onepay:"LAK" } } }, true);
+  const SAMPLE = { standard:{ month:{ LAK:50000, USD:2.99 }, year:{ LAK:500000, USD:29 } }, premium:{ month:{ LAK:100000, USD:5.99 }, year:{ LAK:990000, USD:59 } } };
+  for (const [id, prices] of Object.entries(SAMPLE)){
+    const p = await api.db.get(`plans/${id}`).catch(() => null);
+    if (p && !p.prices) await api.db.set(`plans/${id}`, { prices, recommended: id === "premium" }, true);
+  }
+}
+
 export async function ensureDemo(api, onStep=()=>{}){
   if (api.mode !== "demo") return false;
   if (!api._isEmpty()) {
@@ -71,6 +84,7 @@ export async function ensureDemo(api, onStep=()=>{}){
     // demo databases created before the handwriting templates existed
     const chars = await api.db.list("characters").catch(() => []);
     if (!chars.some(c => c.handwriting)) await addSampleHandwriting(api, "admin-demo-owner");
+    await addDemoPayments(api);
     if (!revCount.length) {
       for (const roleKey of ["reviewer", "editor", "support"]) {
         const acc = DEMO[roleKey];
@@ -94,6 +108,7 @@ export async function ensureDemo(api, onStep=()=>{}){
   await bootstrapOwner(api, { uid: adminUid, email: DEMO.admin.email }, DEMO.admin.name);
   await importSeed(api, adminUid, onStep);
   await addSampleHandwriting(api, adminUid);
+  await addDemoPayments(api);
 
   // Seed demo reviewer, editor, and support admin accounts
   for (const roleKey of ["reviewer", "editor", "support"]) {

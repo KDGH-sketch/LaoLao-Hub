@@ -1,11 +1,11 @@
 // LaoLao service worker: network-first for scripts & styles so bug fixes load immediately; offline fallback from cache.
-const SHELL = "laolao-shell-v11", RUNTIME = "laolao-runtime-v11";
+const SHELL = "laolao-shell-v13", RUNTIME = "laolao-runtime-v13";
 const CORE = [
   "./","index.html","admin/index.html","css/app.css","css/admin.css","manifest.webmanifest","icon.svg",
   "js/config.js","js/api/index.js","js/api/supabase.js","js/api/local.js",
-  "js/shared/ui.js","js/shared/i18n.js","js/shared/content.js","js/shared/video.js","js/shared/dict.js","js/shared/engine.js","js/shared/speech.js","js/shared/widgets.js","js/shared/quiz.js","js/shared/setup.js","js/shared/lao-decorations.js","js/shared/scoring.js","js/shared/features.js","js/shared/access.js",
+  "js/shared/ui.js","js/shared/i18n.js","js/shared/content.js","js/shared/video.js","js/shared/dict.js","js/shared/engine.js","js/shared/speech.js","js/shared/widgets.js","js/shared/quiz.js","js/shared/setup.js","js/shared/lao-decorations.js","js/shared/scoring.js","js/shared/features.js","js/shared/access.js","js/shared/billing.js",
   "js/shared/handwriting/geometry.js","js/shared/handwriting/model.js","js/shared/handwriting/recognizer.js","js/shared/handwriting/scorer.js","js/shared/handwriting/pad.js","js/shared/handwriting/animator.js",
-  "js/learner/main.js","js/learner/core.js","js/learner/views-learn.js","js/learner/views-tools.js","js/learner/views-labs.js","js/learner/views-media.js","js/learner/upgrade.js","js/learner/views-handwriting.js",
+  "js/learner/main.js","js/learner/core.js","js/learner/views-learn.js","js/learner/views-tools.js","js/learner/views-labs.js","js/learner/views-media.js","js/learner/upgrade.js","js/learner/views-handwriting.js","js/learner/views-billing.js",
   "js/admin/cms-extended.js",
   "data/dictionary.json","data/chars.json","data/seed.json"
 ];

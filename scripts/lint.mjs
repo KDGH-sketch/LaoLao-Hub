@@ -11,7 +11,7 @@ const walk = d => fs.readdirSync(d, { withFileTypes: true }).forEach(e => {
   const p = path.join(d, e.name);
   if (e.isDirectory()) walk(p); else if (/\.m?js$/.test(e.name)) files.push(p);
 });
-["js", "scripts"].forEach(d => walk(path.join(ROOT, d)));
+["js", "scripts", "supabase/functions"].forEach(d => walk(path.join(ROOT, d)));
 ["server.js", "sw.js", "env-config.js"].forEach(f => files.push(path.join(ROOT, f)));
 
 let failed = 0;

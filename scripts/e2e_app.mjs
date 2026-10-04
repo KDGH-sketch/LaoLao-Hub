@@ -56,7 +56,8 @@ try {
   await ok(await has(/isn't an administrator/) && !(await b.eval(`!!document.querySelector(".side .nav-btn")`)), "a learner opening /admin/ is refused");
   await b.goto(srv.base + "/"); await b.waitFor(`!!document.querySelector(".app")`, 30000);
   await nav(/Account/);
-  await click("main button", /^Sign out$/);
+  await click("main button", /^Sign out$/); await sleep(400);
+  await click(".dialog .dialog-f button", /^Sign out$/);                  // sign-out asks for confirmation
   await b.waitFor(`!!document.querySelector("#em")`, 15000).catch(() => {});
   await ok(await b.eval(`!!document.querySelector("#em") && !document.querySelector(".app")`), "sign out returns to the sign-in screen");
   await b.goto(srv.base + "/"); await b.waitFor(`!!document.querySelector("#em") || !!document.querySelector(".app")`, 30000);

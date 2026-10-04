@@ -1,6 +1,7 @@
 // Demo implementation of the data layer: same interface as js/api/supabase.js, stored in this browser.
 // Used automatically while env-config.js has no Supabase config.
 import { resolveEntitlements, consumeUsage, usageSnapshot, decide } from "../shared/access.js";
+import { METHODS, methodCurrency, quote, createOrder, orderCheckout, activateOrder, failOrder, refundOrder, setCancel, schedulePlan } from "../shared/billing.js";
 const DBKEY = "laolao.demo.db", AUTHKEY = "laolao.demo.auth", SESSKEY = "laolao.demo.session";
 const load = k => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch(e){ return null; } };
 const store = (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){ console.warn("Demo storage full", e); } };
@@ -140,6 +141,49 @@ export async function createLocalApi(){
       }
       const e = new Error("Could not find the function " + name); e.code = "PGRST202"; throw e;
     },
+    // Payments in demo mode: the same rules as the database functions (js/shared/billing.js) and a test checkout
+    // inside the app instead of a provider. No money moves; nothing here exists in Supabase mode.
+    pay: (() => {
+      const store = {
+        get: (t, id) => db[t + "/" + id] ? clone(db[t + "/" + id]) : null,
+        put: (t, id, d) => { const { id: _drop, ...rest } = d; db[t + "/" + id] = toStore(rest); },
+        list: t => Object.keys(db).filter(k => inCol(k, t)).map(k => Object.assign({ id: k.split("/").pop() }, clone(db[k])))
+      };
+      const me = () => session ? session.uid : null;
+      const role = () => { const a = me() && db["admins/" + me()]; return a && a.status !== "disabled" ? a.role : null; };
+      const fail = code => { throw Object.assign(new Error(code), { code }); };
+      const done = r => { persist(); return clone(r); };
+      return {
+        live: false,
+        config: async () => ({ provider: "demo", label: "Demo test checkout", live: false, methods: Object.keys(METHODS) }),
+        quote: async (planId, cycle, method) => Object.assign(quote(store, me(), planId, cycle, methodCurrency(db["settings/app"] || {}, method)), { method }),
+        checkout: async args => {
+          const o = createOrder(store, me(), args || {});
+          if (!o.ok) fail(o.reason);
+          return done({ order: orderCheckout(store, o.id, "demo", { page: "in-app" }), checkout: { kind: "demo" } });
+        },
+        // What a provider would report once the tester picks an outcome on the demo checkout
+        complete: async (id, outcome) => {
+          const o = store.get("orders", id);
+          if (!o || o.uid !== me()) fail("order_not_found");
+          const m = METHODS[o.method] || {};
+          if (outcome === "paid") activateOrder(store, id, { provider: "demo", txnId: "DEMO-" + uidGen().toUpperCase(), amount: o.amount, currency: o.currency,
+            method: o.method, brand: m.brand || "", last4: m.kind === "card" ? "4242" : "", verification: { provider: "demo" } });
+          else if (outcome === "failed" || outcome === "cancelled") failOrder(store, id, outcome, { reason: outcome });
+          return done(Object.assign({ id }, store.get("orders", id)));
+        },
+        status: async id => { const o = store.get("orders", id); if (!o || (o.uid !== me() && !role())) fail("order_not_found"); return Object.assign({ id }, o); },
+        cancelOrder: async id => { const o = store.get("orders", id); if (!o || o.uid !== me()) return { ok: false, reason: "order_not_found" }; return done(failOrder(store, id, "cancelled", { reason: "learner_cancelled" })); },
+        setCancel: async on => done(setCancel(store, me(), on)),
+        schedule: async planId => done(schedulePlan(store, me(), planId)),
+        refund: async ({ orderId, reason, ref, by } = {}) => {
+          if (!["super", "owner"].includes(role())) fail("forbidden");
+          const r = refundOrder(store, orderId, { reason, ref: ref || "DEMO-RF-" + orderId, by });
+          if (!r.ok) fail(r.reason);
+          return done(r);
+        }
+      };
+    })(),
     storage: {
       upload: async file => {
         if (file.size > 1.5e6) throw new Error("In demo mode files must be under 1.5 MB.");

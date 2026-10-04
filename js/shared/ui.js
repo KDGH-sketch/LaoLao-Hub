@@ -168,18 +168,39 @@ export function themeSwitcher(onChange){
   return wrap;
 }
 
+// ----- motion -----
+export const reducedMotion = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Run a DOM update as an animated View Transition (css/app.css "transitions"): kind "page" / "back" slide the page,
+// "theme" reveals the new theme in a circle from (x, y), anything else cross-fades. Without support, or with reduced
+// motion, the update simply happens. Slow updates are not waited for longer than 450 ms, so the screen never freezes.
+export function withTransition(update, { kind = "page", x = null, y = null } = {}){
+  const de = document.documentElement;
+  if (!document.startViewTransition || reducedMotion()) return Promise.resolve().then(update);
+  de.dataset.vt = kind;
+  if (x != null){ de.style.setProperty("--vt-x", x + "px"); de.style.setProperty("--vt-y", y + "px"); }
+  const tr = document.startViewTransition(() => Promise.race([Promise.resolve().then(update), new Promise(r => setTimeout(r, 450))]));
+  tr.finished.catch(() => {}).finally(() => { if (de.dataset.vt === kind) delete de.dataset.vt; });
+  return tr.updateCallbackDone.catch(() => {});
+}
+// Remove an element after its exit animation (class "out")
+export function leave(el, ms = 170){
+  if (!el || el.classList.contains("out")) return;
+  el.classList.add("out");
+  setTimeout(() => el.remove(), reducedMotion() ? 0 : ms);
+}
+
 // ----- feedback -----
 let toastT;
 export function toast(msg, kind){
-  let el = $(".toast"); if (!el){ el = h("div",{class:"toast",role:"status"}); document.body.append(el); }
-  el.textContent = msg; el.className = "toast" + (kind ? " "+kind : ""); clearTimeout(toastT); toastT = setTimeout(()=>el.remove(), 2800);
+  let el = $(".toast:not(.out)"); if (!el){ el = h("div",{class:"toast",role:"status"}); document.body.append(el); }
+  el.textContent = msg; el.className = "toast" + (kind ? " "+kind : ""); clearTimeout(toastT); toastT = setTimeout(()=>leave(el, 220), 2800);
 }
 // In-page dialog (native confirm/prompt are blocked in some viewers)
 export function dialog({ title, body, actions=[], wide=false }){
   return new Promise(resolve => {
     const scrim = h("div",{class:"scrim"});
     const box = h("div",{class:"dialog"+(wide?" wide":""),role:"dialog","aria-modal":"true","aria-label":title||""});
-    const close = v => { scrim.remove(); box.remove(); document.removeEventListener("keydown", onKey); resolve(v); };
+    const close = v => { if (box.classList.contains("out")) return; leave(scrim, 160); leave(box, 160); document.removeEventListener("keydown", onKey); resolve(v); };
     const onKey = e => { if (e.key==="Escape") close(null); };
     document.addEventListener("keydown", onKey);
     scrim.addEventListener("click", () => close(null));

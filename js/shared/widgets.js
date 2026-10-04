@@ -1,5 +1,5 @@
 // Shared learning widgets: sentences with word-by-word breakdown, the word sheet, stroke order.
-import { h, $$, icon, pyHTML, isHan, esc, toast, tr } from "./ui.js";
+import { h, $$, icon, pyHTML, isHan, esc, toast, tr, leave } from "./ui.js";
 import { t, lang } from "./i18n.js";
 import { dict, chars, gloss, meaning, segment } from "./dict.js";
 import { createPad } from "./handwriting/pad.js";
@@ -91,7 +91,8 @@ export function openWord(w, push=true){
     h("div",{class:"sheet-b"}, entryEl(w)));
   document.body.append(scrim, sheet);
 }
-export function closeSheet(all=true){ $$(".sheet-scrim,.sheet").forEach(e=>e.remove()); if (all) stack = []; }
+// Closing slides the sheet out; replacing it with the next word's sheet (all=false) swaps it at once
+export function closeSheet(all=true){ $$(".sheet-scrim:not(.out),.sheet:not(.out)").forEach(e => all ? leave(e, 200) : e.remove()); if (all) stack = []; }
 if (typeof document !== "undefined") document.addEventListener("keydown", e => { if (e.key==="Escape" && document.querySelector(".sheet")) closeSheet(); });
 
 export function entryEl(w){
