@@ -2,23 +2,30 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Noto+Sans+Lao:wght@400;600;700&family=Noto+Serif+Lao:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
 <style>
-/* Layout: sticky glass nav (with Day/Night/Auto switch) -> living hero (sunrise or moonlit Mekong, That Luang, drifting champa petals or fireflies; copy left, sign-in card right)
-   -> greeting marquee + silk (sin) ribbon -> culture-in-motion scenes -> services, resources, plans, news, about. */
+/* Layout: sticky glass nav (Day/Night/Auto) -> living hero (Mekong at Vientiane, That Luang, sunrise/moon, petals/fireflies, fire boats; sign-in card)
+   -> greetings marquee + silk ribbon -> "Journey through Laos" (real map, six landmarks, one animated scene each)
+   -> festival calendar -> services, free resources, plans, news, about.
+   Modern CSS in use: @layer, nesting, container queries, :has(), :user-invalid, @property, color-mix(), oklch gradients, scroll-driven animation,
+   View Transitions (theme switch), Popover API (mobile menu), @starting-style, CSS motion path (fire boats on the Mekong), dvh/svh, logical properties. */
+@layer reset,base,layout,components,scenes,motion,a11y;
+
 :root{
   --bg:#F3F8FD; --surface:#FFFFFF; --surface-2:#E6F0FA; --line:#D3E4F4;
-  --ink:#0A1B2E; --ink-2:#28425C; --ink-3:#4F6D8C;
-  --accent:#0284C7; --accent-hover:#0369A1; --accent-ink:#FFFFFF; --accent-soft:#E0F2FE;
-  --gold:#F59E0B; --gold-ink:#92400E; --gold-soft:#FEF3C7; --red:#CE1126;
+  --ink:#0A1B2E; --ink-2:#28425C; --ink-3:#4A6685;
+  --accent:#0270AC; --accent-hover:#025C8F; --accent-ink:#FFFFFF; --accent-soft:#E0F2FE;
+  --gold:#F59E0B; --gold-ink:#8A3B0A; --gold-soft:#FEF3C7; --red:#CE1126; --red-ink:#B30F20;
   --good:#047857;
   --shadow:0 24px 50px -20px rgba(2,60,100,.35);
   /* hero scene */
   --sky-0:#0C4A6E; --sky-1:#0369A1; --sky-2:#38BDF8; --sky-3:#FDE68A;
   --hill-far:#5AA9A0; --hill-near:#0F766E; --water-a:#0EA5E9; --water-b:#075985;
   --stupa:#FBBF24; --stupa-line:#B45309; --sun:#FDBA3B; --moon:#F1F5F9;
-  --sun-y:0px; --moon-y:150px; --star-o:0; --sun-o:1;
+  --sun-y:0px; --moon-y:150px; --star-o:0; --sun-o:1; --fire-o:0; --mapboat-o:.55;
   --drift-bg:rgba(255,255,255,.92); --drift-glow:none; --drift-r:60% 0 60% 0;
-  /* culture scenes */
-  --sc-bg:linear-gradient(#FEF3C7,#BAE6FD); --sc-ground:#D9BE8E; --sc-ground-2:#9ED39A; --orb:#FBBF24;
+  /* landmark scenes */
+  --sc-a:#BFE6FB; --sc-b:#FFF1C2; --sc-far:#8CC9BE; --sc-mid:#4FA38F; --sc-near:#237A5E; --sc-water:#4DB3E6; --sc-ground:#D9BE8E;
+  --sc-karst-1:#A9C7C0; --sc-karst-2:#7FA79B; --sc-karst-3:#4C7F72; --sc-jar:#9AA3AD; --sc-jar-hi:#C4CAD1; --sc-stone:#CDBB96; --sc-lit-o:.35; --orb:#FBBF24;
+  --map-land:#DCEBF8; --map-line:#9DBFE0; --map-river:#2E9BD6;
   --f-display:"Bricolage Grotesque","Source Sans 3",system-ui,sans-serif;
   --f-ui:"Source Sans 3","Noto Sans Lao",system-ui,sans-serif;
   --f-lo:"Noto Sans Lao","Phetsarath OT",sans-serif;
@@ -28,334 +35,415 @@
   --bg:#070E1C; --surface:#0D1A2E; --surface-2:#13253F; --line:#1D3453;
   --ink:#F0F7FD; --ink-2:#A9C3DE; --ink-3:#8DABCB;
   --accent:#38BDF8; --accent-hover:#7DD3FC; --accent-ink:#061424; --accent-soft:#0E2A44;
-  --gold:#FBBF24; --gold-ink:#FDE68A; --gold-soft:#33260A; --red:#F0455A;
+  --gold:#FBBF24; --gold-ink:#FDE68A; --gold-soft:#33260A; --red:#F0455A; --red-ink:#FF8A98;
   --good:#34D399; --shadow:0 24px 50px -20px rgba(0,0,0,.7);
   --sky-0:#040913; --sky-1:#0A1730; --sky-2:#1B2A5E; --sky-3:#4A3A78;
   --hill-far:#1B2D55; --hill-near:#0A1730; --water-a:#13305E; --water-b:#08142B;
   --stupa:#FDE68A; --stupa-line:#F59E0B; --sun:#FDBA3B;
-  --sun-y:150px; --moon-y:0px; --star-o:1; --sun-o:0;
+  --sun-y:150px; --moon-y:0px; --star-o:1; --sun-o:0; --fire-o:1; --mapboat-o:1;
   --drift-bg:#FDE68A; --drift-glow:0 0 10px 3px rgba(253,224,71,.65); --drift-r:50%;
-  --sc-bg:linear-gradient(#1E2A5A,#0B1A33); --sc-ground:#1B2440; --sc-ground-2:#14203F; --orb:#E2E8F0;
+  --sc-a:#0B1A3A; --sc-b:#2B2F6B; --sc-far:#1E2F57; --sc-mid:#14264A; --sc-near:#0B1730; --sc-water:#12356B; --sc-ground:#1B2440;
+  --sc-karst-1:#26396B; --sc-karst-2:#1A2B55; --sc-karst-3:#101C3B; --sc-jar:#6B7480; --sc-jar-hi:#8C95A1; --sc-stone:#7C6F58; --sc-lit-o:1; --orb:#E2E8F0;
+  --map-land:#13253F; --map-line:#2A4A73; --map-river:#38BDF8;
   color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#070E1C; --surface:#0D1A2E; --surface-2:#13253F; --line:#1D3453;
   --ink:#F0F7FD; --ink-2:#A9C3DE; --ink-3:#8DABCB;
   --accent:#38BDF8; --accent-hover:#7DD3FC; --accent-ink:#061424; --accent-soft:#0E2A44;
-  --gold:#FBBF24; --gold-ink:#FDE68A; --gold-soft:#33260A; --red:#F0455A;
+  --gold:#FBBF24; --gold-ink:#FDE68A; --gold-soft:#33260A; --red:#F0455A; --red-ink:#FF8A98;
   --good:#34D399; --shadow:0 24px 50px -20px rgba(0,0,0,.7);
   --sky-0:#040913; --sky-1:#0A1730; --sky-2:#1B2A5E; --sky-3:#4A3A78;
   --hill-far:#1B2D55; --hill-near:#0A1730; --water-a:#13305E; --water-b:#08142B;
   --stupa:#FDE68A; --stupa-line:#F59E0B; --sun:#FDBA3B;
-  --sun-y:150px; --moon-y:0px; --star-o:1; --sun-o:0;
+  --sun-y:150px; --moon-y:0px; --star-o:1; --sun-o:0; --fire-o:1; --mapboat-o:1;
   --drift-bg:#FDE68A; --drift-glow:0 0 10px 3px rgba(253,224,71,.65); --drift-r:50%;
-  --sc-bg:linear-gradient(#1E2A5A,#0B1A33); --sc-ground:#1B2440; --sc-ground-2:#14203F; --orb:#E2E8F0;
+  --sc-a:#0B1A3A; --sc-b:#2B2F6B; --sc-far:#1E2F57; --sc-mid:#14264A; --sc-near:#0B1730; --sc-water:#12356B; --sc-ground:#1B2440;
+  --sc-karst-1:#26396B; --sc-karst-2:#1A2B55; --sc-karst-3:#101C3B; --sc-jar:#6B7480; --sc-jar-hi:#8C95A1; --sc-stone:#7C6F58; --sc-lit-o:1; --orb:#E2E8F0;
+  --map-land:#13253F; --map-line:#2A4A73; --map-river:#38BDF8;
   color-scheme:dark}
+
+@property --ang{syntax:"<angle>";inherits:false;initial-value:0deg}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--f-ui);padding-inline:16px;padding-block:0;transition:background .6s,color .6s}
-.wrap{max-width:1180px;margin-inline:auto}
-h1,h2,h3,p{margin:0}
-h1,h2,h3{font-family:var(--f-display);text-wrap:balance;letter-spacing:-.015em}
-.lo{font-family:var(--f-lo)}
-a{color:var(--accent)}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
-button{font:inherit;color:inherit;cursor:pointer}
-.ic{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
-.eyebrow{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--accent)}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:9px 18px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:600;text-decoration:none;transition:transform .2s,box-shadow .2s,background .2s,border-color .2s}
-.btn:hover{border-color:var(--accent);transform:translateY(-1px)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.btn.primary:hover{background:var(--accent-hover);border-color:var(--accent-hover);box-shadow:0 8px 22px -8px var(--accent)}
-.btn.sm{min-height:36px;padding:5px 13px;font-size:.88rem}
-.chip{display:inline-flex;align-items:center;border-radius:99px;padding:2px 10px;font-size:.76rem;font-weight:700;background:var(--accent-soft);color:var(--accent)}
-.chip.gold{background:var(--gold-soft);color:var(--gold-ink)}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--f-ui);padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));padding-block:0;transition:background .6s,color .6s;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html{scroll-behavior:smooth;scroll-padding-block-start:76px}
 
-.mock-tag{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:50;background:var(--ink);color:var(--bg);font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:6px 10px;border-radius:99px;opacity:.88}
-
-/* nav */
-.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);border-bottom:1px solid var(--line);margin-inline:-16px;padding-inline:16px}
-.nav-in{max-width:1180px;margin-inline:auto;display:flex;align-items:center;gap:14px;min-height:62px}
-.brand{display:flex;align-items:center;gap:10px;font:800 1.2rem var(--f-display);color:var(--ink);text-decoration:none}
-.brand svg{width:36px;height:36px}
-.brand small{display:block;font:500 .7rem var(--f-lo);color:var(--ink-3);line-height:1.1}
-.links{display:flex;gap:2px;margin-inline:auto}
-.links a{color:var(--ink-2);text-decoration:none;font-weight:600;font-size:.92rem;padding:7px 10px;border-radius:9px;transition:background .2s,color .2s}
-.links a:hover,.links a.on{background:var(--accent-soft);color:var(--accent)}
-.tools{display:flex;align-items:center;gap:8px}
-.seg{display:inline-flex;background:var(--surface-2);border-radius:10px;padding:2px}
-.seg button{border:0;background:none;padding:4px 9px;border-radius:8px;font-size:.78rem;font-weight:700;color:var(--ink-3);display:grid;place-items:center;min-height:30px;min-width:30px}
-.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
-.seg .ic{width:16px;height:16px}
-.menu-btn{display:none}
-
-/* hero */
-.hero{margin-top:16px;border-radius:30px;background:linear-gradient(180deg,var(--sky-0) 0%,var(--sky-1) 58%,var(--sky-2) 84%,var(--sky-3) 100%);color:#fff;position:relative;overflow:hidden;isolation:isolate;
-  padding:clamp(24px,5vw,56px) clamp(18px,4vw,56px) clamp(210px,24vw,260px)}
-.hero-grid{position:relative;z-index:3;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:clamp(24px,4vw,56px);align-items:center}
-.stars{position:absolute;inset:0 0 40% 0;z-index:0;opacity:var(--star-o);transition:opacity 1s;pointer-events:none}
-.stars i{position:absolute;width:var(--s);height:var(--s);border-radius:50%;background:#fff;animation:twinkle 3s ease-in-out infinite;animation-delay:var(--d)}
-@keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
-.drift{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden}
-.drift i{position:absolute;top:-20px;left:var(--x);width:var(--s);height:calc(var(--s)*1.5);background:var(--drift-bg);border-radius:var(--drift-r);box-shadow:var(--drift-glow);opacity:.0;animation:fall var(--t) linear infinite;animation-delay:var(--d)}
-@keyframes fall{0%{transform:translate(0,-10px) rotate(0);opacity:0}10%{opacity:.9}50%{transform:translate(40px,48%) rotate(160deg)}90%{opacity:.7}100%{transform:translate(-30px,105%) rotate(320deg);opacity:0}}
-
-.scene{position:absolute;left:0;right:0;bottom:0;height:clamp(200px,22vw,250px);width:100%;z-index:1;display:block}
-.scene .px{transition:transform .25s ease-out}
-.l-far{transform:translateX(calc(var(--px,0)*-6px))}
-.l-mid{transform:translateX(calc(var(--px,0)*-12px))}
-.l-near{transform:translateX(calc(var(--px,0)*-20px))}
-.orb{transition:transform 1.4s cubic-bezier(.5,0,.2,1),opacity 1.2s}
-.sun-g{transform:translateY(var(--sun-y));opacity:var(--sun-o)}
-.moon-g{transform:translateY(var(--moon-y));opacity:calc(1 - var(--sun-o))}
-.sun-g .rays{animation:spin 60s linear infinite;transform-origin:820px 112px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.stupa{filter:drop-shadow(0 0 14px color-mix(in srgb,var(--stupa) 55%,transparent))}
-.waves{animation:slide 7s linear infinite}
-.waves.b{animation-duration:11s;animation-direction:reverse}
-@keyframes slide{to{transform:translateX(-60px)}}
-.skiff{animation:cross 70s linear infinite}
-@keyframes cross{from{transform:translateX(-120px)}to{transform:translateX(1320px)}}
-.skiff .bob{animation:bobby 3s ease-in-out infinite}
-@keyframes bobby{50%{transform:translateY(2px) rotate(1deg)}}
-
-.hero-copy{display:flex;flex-direction:column;gap:20px;min-width:0}
-.badge{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:5px 14px;border-radius:99px;font-size:.8rem;font-weight:700}
-.badge i{width:8px;height:8px;border-radius:50%;background:#34D399;box-shadow:0 0 0 0 #34D399;animation:ping 2s infinite}
-@keyframes ping{70%{box-shadow:0 0 0 8px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
-.hero h1{font-size:clamp(2.2rem,5vw,3.9rem);line-height:1.04;font-weight:800}
-.hero h1 .lo-word{display:block;font-family:var(--f-lo-display);font-size:1.12em;line-height:1.25;margin-bottom:.1em;letter-spacing:0;
-  color:#FBBF24;background:linear-gradient(100deg,#FBBF24 20%,#FFF7D6 45%,#FBBF24 70%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 5s linear infinite}
-@keyframes shimmer{from{background-position:120% 0}to{background-position:-100% 0}}
-.hero h1 em{font-style:normal;position:relative;white-space:nowrap}
-.hero h1 em::after{content:"";position:absolute;left:0;right:0;bottom:-.1em;height:.16em;border-radius:99px;background:linear-gradient(90deg,#FBBF24,#F97316);transform-origin:left;animation:draw 1.1s .6s cubic-bezier(.2,.8,.2,1) both}
-@keyframes draw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-.hero p.lead{font-size:1.1rem;color:rgba(255,255,255,.88);max-width:46ch}
-.hero-cta{display:flex;flex-wrap:wrap;gap:10px}
-.hero .btn.gold{background:#FBBF24;border-color:#FBBF24;color:#3A2A08;font-weight:700}
-.hero .btn.gold:hover{background:#FDE68A;box-shadow:0 10px 26px -8px rgba(251,191,36,.7)}
-.hero .btn.ghost{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.34);color:#fff;backdrop-filter:blur(6px)}
-.hear{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);border-radius:16px;padding:10px 16px;text-align:left;width:fit-content;max-width:100%;color:#fff;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.hear:hover{background:rgba(255,255,255,.22)}
-.hear b{font:700 1.2rem var(--f-lo)}
-.hear small{display:block;font-size:.78rem;color:rgba(255,255,255,.82)}
-.bars{display:flex;align-items:flex-end;gap:3px;height:18px}
-.bars span{width:3.5px;height:5px;background:#fff;border-radius:2px}
-.hear.playing .bars span{animation:eq .7s infinite ease-in-out}
-.hear.playing .bars span:nth-child(2){animation-delay:.15s}.hear.playing .bars span:nth-child(3){animation-delay:.3s}.hear.playing .bars span:nth-child(4){animation-delay:.1s}
-@keyframes eq{0%,100%{height:4px}50%{height:18px}}
-.chips{display:flex;flex-wrap:wrap;gap:7px}
-.chips button{display:flex;flex-direction:column;align-items:center;min-width:48px;padding:6px 7px;border-radius:11px;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.1);color:#fff;transition:transform .2s,background .2s}
-.chips button:hover{transform:translateY(-3px) scale(1.06)}
-.chips button b{font:700 1.3rem/1 var(--f-lo)}
-.chips button small{font-size:.64rem;margin-top:3px;opacity:.92}
-.chips button[aria-pressed="true"]{background:#fff;color:#0369A1}
-.chip-note{font-size:.88rem;color:rgba(255,255,255,.88);min-height:22px;margin-top:8px}
-.chip-note b{color:#FDE68A}
-
-/* auth */
-.auth-wrap{position:relative;min-width:0}
-.bloom{position:absolute;z-index:4;width:92px;height:92px;top:-46px;right:-8px;filter:drop-shadow(0 8px 14px rgba(0,0,0,.28))}
-.bloom svg{width:100%;height:100%;animation:spin 48s linear infinite}
-.petal{transform-origin:0 0;animation:bloom 1.1s cubic-bezier(.2,1.2,.3,1) both;animation-delay:calc(.15s*var(--i))}
-@keyframes bloom{from{transform:scale(0) rotate(-50deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
-.core{transform-origin:0 0;animation:bloom 1s .9s cubic-bezier(.2,1.2,.3,1) both}
-.auth{position:relative;background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);color:var(--ink);border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:24px;padding:clamp(22px,3.5vw,32px);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px;min-width:0}
-.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--surface-2);border-radius:12px;padding:3px}
-.tabs button{border:0;background:none;border-radius:10px;padding:9px;font-weight:700;color:var(--ink-3);transition:background .2s,color .2s}
-.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.18)}
-.auth h2{font-size:1.55rem;font-weight:800}
-.auth .sub{color:var(--ink-3);font-size:.92rem;margin-top:-6px}
-.field{display:flex;flex-direction:column;gap:5px}
-.field label{font-size:.82rem;font-weight:700;color:var(--ink-2)}
-.input{width:100%;min-height:46px;padding:9px 13px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;transition:border-color .2s,box-shadow .2s}
-.input:focus{border-color:var(--accent);outline:0;box-shadow:0 0 0 4px var(--accent-soft)}
-.pw{position:relative}
-.pw .input{padding-right:46px}
-.pw button{position:absolute;right:6px;top:7px;width:32px;height:32px;border:0;background:none;border-radius:8px;color:var(--ink-3);display:grid;place-items:center}
-.row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.linkbtn{border:0;background:none;padding:0;color:var(--accent);font-weight:600;font-size:.88rem;text-decoration:underline;text-underline-offset:3px}
-.msg{font-size:.88rem;border-radius:12px;padding:9px 12px;background:var(--accent-soft);color:var(--ink-2)}
-.msg.ok{background:color-mix(in srgb,var(--good) 16%,var(--surface));color:var(--ink)}
-.demo{border:1px dashed var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
-.demo-h{display:flex;justify-content:space-between;font-size:.8rem;font-weight:700;color:var(--ink-3);flex-wrap:wrap;gap:6px}
-.demo-b{display:flex;gap:8px;flex-wrap:wrap}
-.perks{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.84rem;color:var(--ink-2);list-style:none;margin:0;padding:0}
-.perks li{display:flex;align-items:center;gap:6px}
-.perks .ic{width:15px;height:15px;color:var(--good)}
-
-/* greetings marquee + silk ribbon */
-.marquee{margin-top:18px;overflow:hidden;border-radius:18px;border:1px solid var(--line);background:var(--surface);-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
-.track{display:flex;gap:12px;width:max-content;padding:12px 6px;animation:marq 48s linear infinite}
-.marquee:hover .track{animation-play-state:paused}
-@keyframes marq{to{transform:translateX(-50%)}}
-.greet{display:flex;align-items:baseline;gap:10px;padding:6px 16px;border-radius:99px;background:var(--surface-2);white-space:nowrap}
-.greet b{font:700 1.15rem var(--f-lo)}
-.greet span{font-size:.84rem;color:var(--ink-3)}
-.silk{height:14px;margin-top:14px;border-radius:4px;background-size:28px 14px;background-repeat:repeat-x;animation:silk 8s linear infinite;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='14' viewBox='0 0 28 14'%3E%3Crect width='28' height='14' fill='%23CE1126'/%3E%3Cpath d='M14 1 L21 7 L14 13 L7 7Z' fill='%23FBBF24'/%3E%3Cpath d='M14 4 L18 7 L14 10 L10 7Z' fill='%230284C7'/%3E%3Cpath d='M0 0 L4 0 L0 4Z M28 0 L24 0 L28 4Z M0 14 L4 14 L0 10Z M28 14 L24 14 L28 10Z' fill='%23FFFFFF'/%3E%3C/svg%3E")}
-@keyframes silk{to{background-position-x:-28px}}
-
-.strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding-block:24px}
-.strip div{display:flex;flex-direction:column;gap:2px;padding-left:14px;border-left:3px solid var(--gold)}
-.strip b{font:800 1.7rem var(--f-display);font-variant-numeric:tabular-nums}
-.strip span{font-size:.86rem;color:var(--ink-3)}
-
-section{padding-block:clamp(36px,6vw,72px)}
-.sec-h{display:flex;flex-direction:column;gap:8px;margin-bottom:28px;max-width:62ch}
-.sec-h h2{font-size:clamp(1.8rem,3.6vw,2.7rem);line-height:1.08;font-weight:800}
-.sec-h p{color:var(--ink-2)}
-.sec-h .lo-sub{font:600 1.05rem var(--f-lo);color:var(--ink-3)}
-
-/* culture */
-.cult{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
-.cult-card{background:var(--surface);border:1px solid var(--line);border-radius:22px;overflow:hidden;display:flex;flex-direction:column;transition:transform .3s,box-shadow .3s}
-.cult-card:hover{transform:translateY(-6px);box-shadow:var(--shadow)}
-.cult-card svg.scn{display:block;width:100%;height:auto;background:var(--sc-bg);aspect-ratio:3/2;transition:background .8s}
-.cult-body{padding:16px 18px 18px;display:flex;flex-direction:column;gap:6px;flex:1}
-.cult-body h3{font-size:1.1rem}
-.cult-body .lo-t{font:700 1.15rem var(--f-lo-display);color:var(--accent)}
-.cult-body p{font-size:.9rem;color:var(--ink-2)}
-.cult-body .btn{margin-top:auto;align-self:flex-start}
-/* scene animations */
-.sun-rise{animation:rise 12s ease-in-out infinite alternate}
-@keyframes rise{from{transform:translateY(22px)}to{transform:translateY(-8px)}}
-.monk{animation:bob 1.05s ease-in-out infinite;animation-delay:var(--d)}
-@keyframes bob{50%{transform:translateY(-3px)}}
-.sway{transform-box:fill-box;transform-origin:50% 0;animation:sway 3.2s ease-in-out infinite alternate;animation-delay:var(--d)}
-@keyframes sway{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}
-.pipe{transform-box:fill-box;transform-origin:50% 100%;animation:pulse 1.8s ease-in-out infinite;animation-delay:var(--d)}
-@keyframes pulse{50%{transform:scaleY(1.05)}}
-.note{font:700 20px var(--f-ui);fill:var(--red);opacity:0;animation:note 3.6s ease-out infinite;animation-delay:var(--d)}
-@keyframes note{0%{transform:translate(0,0);opacity:0}15%{opacity:1}100%{transform:translate(var(--dx),-52px);opacity:0}}
-.rock{transform-box:fill-box;transform-origin:50% 100%;animation:rock 2.4s ease-in-out infinite}
-@keyframes rock{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-3px) rotate(1.2deg)}}
-.paddle{animation:paddle .9s ease-in-out infinite alternate;animation-delay:var(--d)}
-@keyframes paddle{from{transform:rotate(-24deg)}to{transform:rotate(26deg)}}
-.cult-card:hover .monk,.cult-card:hover .paddle{animation-duration:.55s}
-.cult-card:hover .sway{animation-duration:1.6s}
-.twinkle{animation:twinkle 1.6s ease-in-out infinite}
-
-/* bento */
-.bento{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:10px;min-width:0;transition:transform .3s,box-shadow .3s,border-color .3s}
-.card:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
-.card h3{font-size:1.15rem}
-.card p{color:var(--ink-2);font-size:.94rem}
-.tile{width:42px;height:42px;border-radius:13px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center}
-.tile .ic{width:20px;height:20px}
-.b-big{grid-column:span 3;grid-row:span 2}
-.b-mid{grid-column:span 3}
-.b-sm{grid-column:span 2}
-.pattern{margin-top:auto;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
-.words{display:flex;flex-wrap:wrap;gap:8px}
-.words button{border:1px solid var(--line);background:var(--surface);border-radius:11px;padding:6px 11px;text-align:center;line-height:1.2;transition:transform .2s,border-color .2s}
-.words button:hover{transform:translateY(-2px)}
-.words button b{display:block;font:700 1.15rem var(--f-lo)}
-.words button small{font-size:.72rem;color:var(--ink-3)}
-.words button.sel{border-color:var(--accent);background:var(--accent-soft)}
-.pattern .tr{color:var(--ink-2);font-size:.92rem}
-.lock{display:inline-flex;align-items:center;gap:4px;font-size:.74rem;font-weight:700;color:var(--gold-ink);background:var(--gold-soft);border-radius:99px;padding:2px 8px;width:fit-content}
-.lock .ic{width:12px;height:12px}
-
-/* resources */
-.res{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
-.res .card{gap:12px}
-.cover{height:132px;border-radius:14px;display:grid;place-items:center;font:700 3.2rem var(--f-lo-display);color:#fff;position:relative;overflow:hidden}
-.cover::after{content:"";position:absolute;inset:auto 0 0 0;height:8px;background-size:28px 8px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='14' viewBox='0 0 28 14'%3E%3Crect width='28' height='14' fill='%23CE1126'/%3E%3Cpath d='M14 1 L21 7 L14 13 L7 7Z' fill='%23FBBF24'/%3E%3C/svg%3E")}
-.cover.c1{background:linear-gradient(140deg,#0284C7,#075985)}
-.cover.c2{background:linear-gradient(140deg,#F59E0B,#B45309)}
-.cover.c3{background:linear-gradient(140deg,#0E7490,#164E63)}
-.cover.c4{background:linear-gradient(140deg,#6D5BD0,#312E81)}
-.cover .chip{position:absolute;left:10px;top:10px;background:rgba(255,255,255,.94);color:#0A1B2E;font-family:var(--f-ui)}
-.res .btn{margin-top:auto}
-
-/* promotions */
-.promo{background:linear-gradient(120deg,var(--gold-soft),var(--accent-soft));border:1px solid var(--line);border-radius:24px;padding:clamp(20px,4vw,34px);display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:18px;position:relative;overflow:hidden}
-.promo::after{content:"";position:absolute;right:-30px;top:-30px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--gold) 35%,transparent),transparent 70%);animation:glow 4s ease-in-out infinite}
-@keyframes glow{50%{transform:scale(1.25)}}
-.promo>*{position:relative;z-index:1}
-.promo h3{font-size:clamp(1.3rem,2.6vw,1.9rem)}
-.promo p{color:var(--ink-2);max-width:56ch;margin-top:6px}
-.count{display:flex;gap:8px}
-.count div{background:var(--surface);border:1px solid var(--line);border-radius:14px;min-width:60px;padding:8px 6px;text-align:center}
-.count b{display:block;font:800 1.4rem var(--f-display);font-variant-numeric:tabular-nums}
-.count small{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3)}
-.plans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-.plan{position:relative}
-.plan.feat{border:2px solid var(--accent);box-shadow:var(--shadow)}
-.plan .tag{position:absolute;top:-12px;right:16px}
-.price{font:800 2.4rem var(--f-display);font-variant-numeric:tabular-nums;line-height:1}
-.price small{font:600 .9rem var(--f-ui);color:var(--ink-3)}
-.plan ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;font-size:.93rem;color:var(--ink-2)}
-.plan li{display:flex;gap:8px;align-items:flex-start}
-.plan li .ic{width:16px;height:16px;color:var(--good);margin-top:3px}
-.plan .btn{margin-top:auto}
-
-/* news */
-.news{display:grid;grid-template-columns:1.3fr 1fr;gap:14px}
-.news-l{display:flex;flex-direction:column;gap:14px}
-.story{display:flex;gap:16px;align-items:stretch}
-.story .thumb{width:112px;flex:none;border-radius:14px;display:grid;place-items:center;font:700 2.2rem var(--f-lo-display);color:#fff}
-.story .tx{display:flex;flex-direction:column;gap:6px;min-width:0}
-.story .meta{font-size:.78rem;color:var(--ink-3);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.story h3{font-size:1.08rem}
-.story .lo-t{font:600 .9rem var(--f-lo);color:var(--ink-3)}
-.story.lead{flex-direction:column}
-.story.lead .thumb{width:100%;height:180px;font-size:4.2rem}
-.story.lead h3{font-size:1.35rem}
-
-/* about */
-.about{display:grid;grid-template-columns:1fr 1fr;gap:clamp(20px,4vw,48px);align-items:center}
-.about-art{border-radius:26px;background:var(--surface-2);border:1px solid var(--line);aspect-ratio:1.15/1;max-width:100%;display:grid;place-items:center;position:relative;overflow:hidden}
-.about-art svg{width:56%;height:auto;animation:spin 60s linear infinite}
-.about-art .tagline{position:absolute;left:16px;right:16px;bottom:14px;text-align:center;font:600 .95rem var(--f-lo-display);color:var(--ink-2)}
-.about ul{margin:14px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
-.about li{display:flex;gap:10px;color:var(--ink-2)}
-.about li .ic{color:var(--accent);margin-top:3px}
-
-.closing{border-radius:26px;background:linear-gradient(150deg,var(--sky-1),var(--sky-0));color:#fff;padding:clamp(26px,5vw,52px);display:flex;gap:20px;justify-content:space-between;align-items:center;flex-wrap:wrap;position:relative;overflow:hidden}
-.closing h2{font-size:clamp(1.6rem,3.2vw,2.4rem);max-width:22ch;font-weight:800}
-.closing .btn.gold{background:#FBBF24;border-color:#FBBF24;color:#3A2A08;font-weight:700}
-footer{padding-block:34px 90px;color:var(--ink-3);font-size:.88rem;display:flex;gap:18px;flex-wrap:wrap;justify-content:space-between}
-footer nav{display:flex;gap:16px;flex-wrap:wrap}
-footer a{color:var(--ink-2)}
-
-/* scroll reveal: always readable, eases in where supported */
-@supports (animation-timeline:view()){
-  .rv{animation:rv linear both;animation-timeline:view();animation-range:entry 0% entry 35%}
-  @keyframes rv{from{opacity:.35;transform:translateY(26px)}to{opacity:1;transform:none}}
+@layer reset{
+  h1,h2,h3,h4,p,figure,ul{margin:0}
+  ul{padding:0;list-style:none}
+  button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  a{color:var(--accent)}
+  svg{display:block}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
 }
 
-.sheet{display:none;flex-direction:column;padding:8px 0 12px}
-.sheet.open{display:flex}
-.sheet a{padding:10px 4px;color:var(--ink);text-decoration:none;font-weight:600;border-top:1px solid var(--line)}
-@media (max-width:1080px){
-  .links{display:none}.menu-btn{display:inline-grid}.tools{margin-left:auto}
-  .cult,.res{grid-template-columns:repeat(2,minmax(0,1fr))}
+@layer base{
+  .wrap{max-inline-size:1180px;margin-inline:auto}
+  h1,h2,h3{font-family:var(--f-display);text-wrap:balance;letter-spacing:-.015em}
+  p{text-wrap:pretty}
+  .lo{font-family:var(--f-lo)}
+  .ic{inline-size:18px;block-size:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  .eyebrow{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--accent)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-block-size:44px;padding:9px 18px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:600;text-decoration:none;transition:transform .2s,box-shadow .2s,background .2s,border-color .2s;
+    &:hover{border-color:var(--accent)}
+    &.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);&:hover{background:var(--accent-hover);border-color:var(--accent-hover)}}
+    &.sm{min-block-size:40px;padding:5px 14px;font-size:.9rem}
+  }
+  @media (hover:hover){.btn:hover{transform:translateY(-1px)}.btn.primary:hover{box-shadow:0 8px 22px -8px var(--accent)}}
+  .chip{display:inline-flex;align-items:center;border-radius:99px;padding:2px 10px;font-size:.76rem;font-weight:700;background:var(--accent-soft);color:var(--accent);&.gold{background:var(--gold-soft);color:var(--gold-ink)}}
+  .mock-tag{position:fixed;inset-inline-start:12px;inset-block-end:calc(12px + env(safe-area-inset-bottom,0px));z-index:50;background:var(--ink);color:var(--bg);font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:6px 10px;border-radius:99px;opacity:.9;pointer-events:none;max-inline-size:calc(100% - 24px)}
+  section{padding-block:clamp(36px,6vw,72px)}
+  .sec-h{display:flex;flex-direction:column;gap:8px;margin-block-end:28px;max-inline-size:62ch;
+    h2{font-size:clamp(1.7rem,1.1rem + 2.4vw,2.7rem);line-height:1.08;font-weight:800}
+    p{color:var(--ink-2)}
+    .lo-sub{font:600 1.05rem var(--f-lo);color:var(--ink-3)}
+  }
+  .skip{position:fixed;inset-block-start:-120px;inset-inline-start:8px;z-index:100;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:700;text-decoration:none;transition:inset-block-start .2s;&:focus{inset-block-start:8px}}
+  .sr{position:absolute;inline-size:1px;block-size:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 }
-@media (min-width:1081px){.sheet{display:none!important}}
-@media (max-width:900px){
-  .hero-grid{grid-template-columns:1fr}
-  .bloom{right:12px}
-  .bento{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .b-big,.b-mid{grid-column:span 2;grid-row:auto}.b-sm{grid-column:span 1}
-  .plans,.news,.about{grid-template-columns:1fr}
-  .strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+/* ---------- nav ---------- */
+@layer layout{
+  .nav{container-type:inline-size;container-name:nav;position:sticky;inset-block-start:env(safe-area-inset-top,0px);z-index:30;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);border-block-end:1px solid var(--line);margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px))) calc(-1*max(16px,env(safe-area-inset-right,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px))}
+  .nav-in{max-inline-size:1180px;margin-inline:auto;display:flex;align-items:center;gap:12px;min-block-size:62px}
+  .brand{display:flex;align-items:center;gap:10px;font:800 1.2rem var(--f-display);color:var(--ink);text-decoration:none;
+    svg{inline-size:36px;block-size:36px;flex:none}
+    small{display:block;font:500 .75rem var(--f-lo);color:var(--ink-3);line-height:1.1}
+  }
+  .links{display:flex;gap:2px;margin-inline:auto;
+    a{color:var(--ink-2);text-decoration:none;font-weight:600;font-size:.92rem;padding:8px 10px;border-radius:9px;transition:background .2s,color .2s;
+      &:hover,&[aria-current="true"]{background:var(--accent-soft);color:var(--accent)}}
+  }
+  .tools{display:flex;align-items:center;gap:8px}
+  .seg{display:inline-flex;background:var(--surface-2);border-radius:10px;padding:2px;
+    button{border:0;background:none;padding:4px 9px;border-radius:8px;font-size:.78rem;font-weight:700;color:var(--ink-2);display:grid;place-items:center;min-block-size:36px;min-inline-size:36px;
+      &[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}}
+    .ic{inline-size:16px;block-size:16px}
+  }
+  .menu-btn{display:none;min-inline-size:44px;padding-inline:0}
+  .sheet{position:fixed;inset:calc(env(safe-area-inset-top,0px) + 66px) 12px auto 12px;margin:0;max-block-size:calc(100dvh - 90px);overflow:auto;overscroll-behavior:contain;border:1px solid var(--line);border-radius:18px;background:var(--surface);color:var(--ink);padding:8px;box-shadow:var(--shadow);
+    opacity:0;transform:translateY(-8px) scale(.98);transition:opacity .2s,transform .2s,display .2s allow-discrete,overlay .2s allow-discrete;
+    a{display:flex;align-items:center;min-block-size:48px;padding:6px 12px;color:var(--ink);text-decoration:none;font-weight:600;border-radius:10px;&:hover{background:var(--accent-soft)}}
+    .seg{margin:6px 6px 4px}
+    &:popover-open{opacity:1;transform:none;@starting-style{opacity:0;transform:translateY(-8px) scale(.98)}}
+  }
+  @container nav (max-width:66rem){.links{display:none}.menu-btn{display:inline-flex}.tools{margin-inline-start:auto}}
+  @container nav (min-width:66.0625rem){.sheet{display:none!important}}
+  @container nav (max-width:33rem){#goSignin{display:none}.brand span{display:none}}
+  @container nav (max-width:24.99rem){.nav-lang{display:none}}
+  @container nav (min-width:25rem){.sheet-lang{display:none}}
 }
-@media (max-width:560px){
-  .bento,.cult,.res{grid-template-columns:1fr}.b-sm,.b-big,.b-mid{grid-column:span 1}
-  .story{flex-direction:column}.story .thumb{width:100%;height:96px}
-  .brand small{display:none}
-  .seg button[data-lang]{padding:4px 6px}
-  #goSignin{display:none}
-  .brand span{display:none}
-  .nav-in{gap:8px}
+
+/* ---------- hero ---------- */
+@layer components{
+  .hero{margin-block-start:16px;border-radius:30px;background:var(--sky-1);background:linear-gradient(in oklch 180deg,var(--sky-0) 0%,var(--sky-1) 58%,var(--sky-2) 84%,var(--sky-3) 100%);color:#fff;position:relative;overflow:hidden;isolation:isolate;
+    padding:clamp(18px,3.5vw,44px) clamp(16px,4vw,56px) clamp(190px,21vw,250px);container-type:inline-size;container-name:hero}
+  .hero-grid{position:relative;z-index:3;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:clamp(24px,4vw,56px);align-items:start}
+  @container hero (max-width:55rem){.hero-grid{grid-template-columns:minmax(0,1fr)}}
+  @container hero (max-width:24rem){.hero h1 em{white-space:normal}}
+  .stars{position:absolute;inset:0 0 40% 0;z-index:0;opacity:var(--star-o);transition:opacity 1s;pointer-events:none;
+    i{position:absolute;inline-size:var(--s);block-size:var(--s);border-radius:50%;background:#fff;animation:twinkle 3s ease-in-out infinite;animation-delay:var(--d)}}
+  .drift{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden;
+    i{position:absolute;inset-block-start:0;inset-inline-start:var(--x);inline-size:var(--s);block-size:calc(var(--s)*1.5);background:var(--drift-bg);border-radius:var(--drift-r);box-shadow:var(--drift-glow);opacity:0;animation:fall var(--t) linear infinite;animation-delay:var(--d)}}
+  .scene{position:absolute;inset-inline:0;inset-block-end:0;block-size:clamp(190px,21vw,250px);inline-size:100%;z-index:1}
+  .hero-copy{display:flex;flex-direction:column;gap:20px;min-inline-size:0}
+  .badge{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:5px 14px;border-radius:99px;font-size:.8rem;font-weight:700;
+    i{inline-size:8px;block-size:8px;border-radius:50%;background:#34D399;box-shadow:0 0 0 0 #34D399;animation:ping 2s infinite;flex:none}}
+  .hero h1{font-size:clamp(2.05rem,1.2rem + 3.8vw,3.9rem);line-height:1.06;font-weight:800;overflow-wrap:anywhere;
+    .lo-word{display:block;font-family:var(--f-lo-display);font-size:1.1em;line-height:1.3;margin-block-end:.1em;letter-spacing:0;
+      color:#FBBF24;background:linear-gradient(100deg,#FBBF24 20%,#FFF7D6 45%,#FBBF24 70%) 0 0/220% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 5s linear infinite}
+    em{font-style:normal;white-space:nowrap;background:linear-gradient(90deg,#FBBF24,#F97316) no-repeat 0 100%/100% .14em;padding-block-end:.06em;-webkit-box-decoration-break:clone;box-decoration-break:clone;animation:underline 1.1s .6s cubic-bezier(.2,.8,.2,1) both}
+  }
+  .hero p.lead{font-size:1.1rem;color:rgba(255,255,255,.92);max-inline-size:46ch}
+  .hero-cta{display:flex;flex-wrap:wrap;gap:10px}
+  .hero .btn.gold{background:#FBBF24;border-color:#FBBF24;color:#3A2A08;font-weight:700;&:hover{background:#FDE68A;box-shadow:0 10px 26px -8px rgba(251,191,36,.7)}}
+  .hero .btn.ghost{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.4);color:#fff;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  .hear{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:18px;padding:8px 16px 8px 10px;text-align:start;inline-size:fit-content;max-inline-size:100%;color:#fff;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:background .2s;
+    &:hover{background:rgba(255,255,255,.22)}
+    b{font:700 1.15rem var(--f-lo);display:block}
+    small{display:block;font-size:.8rem;color:rgba(255,255,255,.9)}
+    .nop{inline-size:46px;block-size:54px;flex:none;border-radius:12px;background:rgba(255,255,255,.12)}
+  }
+  .bars{display:flex;align-items:flex-end;gap:3px;block-size:18px;span{inline-size:3.5px;block-size:5px;background:#fff;border-radius:2px}}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;
+    button{display:flex;flex-direction:column;align-items:center;min-inline-size:48px;min-block-size:48px;padding:6px 7px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);transition:transform .2s,background .2s;
+      b{font:700 1.3rem/1 var(--f-lo)}small{font-size:.75rem;margin-block-start:3px}
+      &[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}}}
+  @media (hover:hover){.chips button:hover{transform:translateY(-3px) scale(1.06)}}
+  .alpha{display:flex;gap:14px 28px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px 20px;margin-block-start:18px}
+  .chip-note{font-size:.92rem;color:var(--ink-2);min-block-size:22px;margin-block-start:4px;b{color:var(--accent)}}
+
+  /* sign-in card */
+  .auth-wrap{position:relative;min-inline-size:0}
+  .bloom{animation:bloomin 1.3s .3s cubic-bezier(.2,1.2,.3,1) both;position:absolute;z-index:4;inline-size:92px;block-size:92px;inset-block-start:-46px;inset-inline-end:-8px;filter:drop-shadow(0 8px 14px rgba(0,0,0,.28));svg{inline-size:100%;block-size:100%;animation:spin 48s linear infinite}}
+  .auth{position:relative;background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);color:var(--ink);border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:24px;padding:clamp(20px,3.5vw,32px);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px;min-inline-size:0;
+    h2{font-size:1.5rem;font-weight:800}
+    .sub{color:var(--ink-3);font-size:.92rem;margin-block-start:-6px}
+  }
+  .tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--surface-2);border-radius:12px;padding:3px;
+    button{border:0;background:none;border-radius:10px;min-block-size:42px;padding:6px;font-weight:700;color:var(--ink-2);transition:background .2s,color .2s;
+      &[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.18)}}}
+  .field{display:flex;flex-direction:column;gap:5px;
+    label{font-size:.84rem;font-weight:700;color:var(--ink-2)}
+    &:has(.input:user-invalid) label{color:var(--red-ink)}
+  }
+  .input{inline-size:100%;min-block-size:46px;padding:9px 13px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:max(16px,1rem);transition:border-color .2s,box-shadow .2s;
+    &:focus{border-color:var(--accent);outline:0;box-shadow:0 0 0 4px var(--accent-soft)}
+    &:user-invalid{border-color:var(--red)}
+  }
+  .pw{position:relative;.input{padding-inline-end:48px}
+    button{position:absolute;inset-inline-end:5px;inset-block-start:50%;translate:0 -50%;inline-size:40px;block-size:40px;border:0;background:none;border-radius:10px;color:var(--ink-3);display:grid;place-items:center}}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .linkbtn{border:0;background:none;padding:10px 0;color:var(--accent);font-weight:600;font-size:.9rem;text-decoration:underline;text-underline-offset:3px;min-block-size:44px}
+  .msg{font-size:.9rem;border-radius:12px;padding:9px 12px;background:var(--accent-soft);color:var(--ink-2);transition:opacity .3s,transform .3s;@starting-style{opacity:0;transform:translateY(-6px)}
+    &.ok{background:color-mix(in srgb,var(--good) 16%,var(--surface));color:var(--ink)}}
+  .demo{border:1px dashed var(--line);border-radius:14px;padding:8px 12px;display:flex;flex-direction:column;gap:6px}
+  .demo-h{display:flex;justify-content:space-between;align-items:center;font-size:.82rem;font-weight:700;color:var(--ink-3);flex-wrap:wrap;gap:6px}
+  .demo-b{display:flex;gap:8px;flex-wrap:wrap}
+  .perks{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.86rem;color:var(--ink-2);li{display:flex;align-items:center;gap:6px}.ic{inline-size:15px;block-size:15px;color:var(--good)}}
+
+  /* ribbons */
+  .marquee{margin-block-start:18px;overflow:hidden;border-radius:18px;border:1px solid var(--line);background:var(--surface);-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+  .track{display:flex;gap:12px;inline-size:max-content;padding:12px 6px;animation:marq 52s linear infinite}
+  .marquee:hover .track{animation-play-state:paused}
+  .greet{display:flex;align-items:baseline;gap:10px;padding:6px 16px;border-radius:99px;background:var(--surface-2);white-space:nowrap;b{font:700 1.15rem var(--f-lo)}span{font-size:.86rem;color:var(--ink-2)}}
+  /* Lao silk (sin) border: stepped diamond (lai kho) on red, navy centre, white dots between motifs */
+  .silk{block-size:16px;margin-block-start:14px;border-radius:3px;background-repeat:repeat-x;background-size:40px 16px;animation:silk 10s linear infinite;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='16' viewBox='0 0 40 16' shape-rendering='crispEdges'%3E%3Crect width='40' height='16' fill='%23CE1126'/%3E%3Cg fill='%23FBBF24'%3E%3Crect x='18' y='1' width='4' height='2'/%3E%3Crect x='14' y='3' width='12' height='2'/%3E%3Crect x='10' y='5' width='20' height='6'/%3E%3Crect x='14' y='11' width='12' height='2'/%3E%3Crect x='18' y='13' width='4' height='2'/%3E%3C/g%3E%3Cg fill='%230B2A6B'%3E%3Crect x='18' y='4' width='4' height='2'/%3E%3Crect x='14' y='6' width='12' height='4'/%3E%3Crect x='18' y='10' width='4' height='2'/%3E%3C/g%3E%3Cg fill='%23FFFFFF'%3E%3Crect x='19' y='7' width='2' height='2'/%3E%3Crect x='0' y='7' width='2' height='2'/%3E%3Crect x='38' y='7' width='2' height='2'/%3E%3C/g%3E%3C/svg%3E")}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:14px 12px;padding-block:24px;
+    div{display:flex;flex-direction:column;gap:2px;padding-inline-start:14px;border-inline-start:3px solid var(--gold)}
+    b{font:800 1.7rem var(--f-display);font-variant-numeric:tabular-nums}
+    span{font-size:.88rem;color:var(--ink-2)}}
+
+  /* ---------- journey through Laos ---------- */
+  .journey{container-type:inline-size;container-name:journey}
+  .j-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start}
+  @container journey (min-width:48.75rem){.j-grid{grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);gap:28px}.j-map{position:sticky;inset-block-start:84px}}
+  .j-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-block-end:16px;
+    button{display:inline-flex;align-items:center;gap:8px;min-block-size:44px;padding:6px 14px;border-radius:99px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:.92rem;color:var(--ink-2);transition:background .2s,border-color .2s,color .2s;
+      &[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+      .lo{font-size:.98rem}}}
+  .j-map{max-inline-size:460px;inline-size:100%;margin-inline:auto}
+  .map{position:relative;aspect-ratio:740/880;container-type:inline-size;
+    --river:path("M65.5 144.0 L59.4 154.6 L51.6 157.2 L52.9 160.8 L50.2 163.1 L49.1 169.3 L48.9 171.3 L50.7 172.6 L59.1 171.1 L61.9 172.3 L56.9 176.6 L51.0 179.2 L34.6 177.2 L31.3 181.4 L26.1 183.8 L20.0 190.2 L16.4 197.8 L11.5 221.1 L9.2 225.1 L9.7 233.6 L12.8 236.1 L14.5 236.1 L15.9 234.6 L15.9 230.7 L19.8 228.7 L22.8 222.7 L29.1 220.0 L32.7 221.0 L43.8 240.9 L50.2 245.0 L52.7 243.0 L55.5 243.6 L56.5 247.2 L55.5 258.7 L57.1 279.7 L64.4 278.1 L76.6 270.8 L88.2 272.7 L92.6 274.0 L95.9 276.6 L97.1 274.4 L99.1 275.9 L100.7 275.4 L106.3 271.1 L119.5 277.9 L148.1 277.6 L151.7 276.9 L153.8 274.4 L152.6 273.7 L153.8 272.6 L158.3 270.5 L162.2 266.9 L177.2 264.2 L187.6 254.6 L194.5 254.6 L201.3 251.2 L205.0 250.8 L208.1 251.9 L212.4 257.4 L213.4 261.2 L211.1 266.4 L205.2 269.7 L201.2 273.6 L193.7 275.1 L191.1 279.4 L179.9 289.4 L179.1 291.3 L173.3 295.0 L172.4 298.5 L173.0 313.3 L174.9 315.9 L181.1 319.7 L177.3 324.0 L173.3 332.1 L173.9 339.9 L171.3 358.9 L172.6 363.6 L171.3 371.4 L175.8 377.3 L176.9 380.7 L173.3 389.6 L172.0 397.8 L165.5 409.8 L162.2 412.9 L157.7 412.9 L156.2 414.2 L153.4 419.4 L149.9 421.5 L149.2 424.5 L147.0 427.5 L140.7 430.6 L133.3 441.8 L132.9 445.9 L135.6 451.6 L136.1 458.8 L135.2 467.1 L137.7 471.5 L142.9 472.4 L143.4 473.9 L147.4 472.5 L147.9 473.5 L146.0 477.9 L147.9 478.4 L149.6 476.0 L149.8 473.2 L152.0 474.5 L155.4 470.5 L164.2 468.8 L167.7 456.0 L170.1 452.6 L178.9 456.9 L180.9 456.3 L197.4 438.6 L204.6 439.0 L206.3 439.9 L208.2 444.8 L219.1 454.8 L221.9 456.3 L224.8 456.1 L229.1 460.6 L232.3 462.2 L243.9 462.9 L246.9 464.5 L248.1 468.5 L246.5 475.9 L254.8 479.0 L253.4 475.0 L253.9 473.4 L260.0 470.9 L271.0 462.8 L280.7 458.8 L286.9 461.6 L288.6 460.9 L291.9 456.4 L291.7 447.4 L298.1 443.3 L300.9 435.0 L313.0 431.2 L312.5 429.5 L307.8 426.4 L307.2 424.4 L309.7 420.0 L314.1 417.4 L322.6 415.8 L337.1 418.4 L342.6 419.9 L351.0 424.7 L361.1 426.2 L364.0 427.9 L366.4 431.3 L368.0 431.7 L373.3 427.2 L377.6 426.9 L380.0 428.1 L386.5 438.4 L391.6 450.5 L400.0 459.1 L406.4 473.5 L413.5 478.0 L420.1 490.0 L425.7 495.9 L446.7 507.2 L451.8 515.0 L454.9 517.1 L457.5 522.7 L456.9 542.8 L450.3 559.7 L451.2 568.9 L452.8 573.2 L451.9 580.1 L453.9 588.4 L451.1 602.8 L452.6 608.8 L461.2 614.6 L466.2 624.6 L476.4 632.3 L477.5 634.2 L478.1 643.5 L480.5 647.9 L497.5 654.9 L502.4 655.2 L515.0 659.0 L514.7 660.5 L509.4 664.5 L509.2 668.0 L514.1 680.0 L517.5 683.5 L524.9 683.6 L529.0 685.0 L533.2 687.8 L535.9 691.8 L536.8 696.5 L533.5 707.9 L532.4 716.1 L527.5 719.8 L521.1 722.5 L520.3 724.7 L522.4 727.5 L531.4 726.8 L535.1 728.0 L537.7 731.1 L539.2 737.0 L547.8 746.7 L554.2 750.8 L556.2 755.9 L560.2 759.6 L560.8 777.6 L563.7 782.2 L563.8 784.5 L562.1 788.8 L558.3 792.9 L557.9 798.9 L556.0 804.8 L555.9 812.2 L558.6 827.8 L555.0 836.9 L554.8 843.5 L552.5 849.7 L553.6 852.9 L558.5 858.6 L563.7 860.0 L567.4 862.8 L568.1 869.2");
+    svg.map-svg{position:absolute;inset:0;inline-size:100%;block-size:100%}
+    .land{fill:var(--map-land);stroke:var(--map-line);stroke-width:3;stroke-linejoin:round}
+    .river{fill:none;stroke:var(--map-river);stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+    .nb{font:700 22px var(--f-ui);letter-spacing:.2em;fill:var(--ink-3);opacity:.8}
+    .fb{offset-path:var(--river);offset-rotate:0deg;opacity:var(--mapboat-o)}
+    .pin{position:absolute;inset-inline-start:var(--x);inset-block-start:var(--y);translate:-50% -50%;inline-size:44px;block-size:44px;border-radius:50%;border:0;background:none;padding:0;display:grid;place-items:center;
+      &::before{content:"";inline-size:18px;block-size:18px;border-radius:50%;background:#fff;border:3px solid var(--gold);box-shadow:0 2px 8px rgba(0,0,0,.35);transition:transform .25s,background .25s}
+      &[data-on="true"]::before{background:var(--gold);transform:scale(1.3)}
+      &[data-on="true"]::after{content:"";position:absolute;inline-size:18px;block-size:18px;border-radius:50%;border:2px solid var(--gold);animation:ring 1.8s ease-out infinite}
+      span{position:absolute;inset-inline-start:calc(50% + 14px);inset-block-start:50%;translate:0 -50%;white-space:nowrap;font:700 .8rem var(--f-lo);color:var(--ink);background:color-mix(in srgb,var(--surface) 88%,transparent);padding:1px 7px;border-radius:99px;border:1px solid var(--line);display:none}
+    }
+    .pin.left span{inset-inline-start:auto;inset-inline-end:calc(50% + 14px)}
+    @container (min-width:18.75rem){.pin span{display:block}}
+  }
+  .j-panel{background:var(--surface);border:1px solid var(--line);border-radius:26px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column}
+  .stage{position:relative;aspect-ratio:400/260;background:var(--sc-a);overflow:hidden;
+    .scn-svg{position:absolute;inset:0;inline-size:100%;block-size:100%;display:none}
+    .scn-svg.on{display:block;transition:opacity .6s;@starting-style{opacity:0}}}
+  .stage-badge{position:absolute;inset-block-start:10px;inset-inline-start:10px;z-index:2}
+  .j-body{padding:clamp(16px,3vw,26px);display:flex;flex-direction:column;gap:12px;
+    h3{font-size:clamp(1.35rem,1rem + 1.2vw,1.8rem);font-weight:800;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+    h3 .lo-t{font:700 1.2em var(--f-lo-display);color:var(--accent)}
+    p{color:var(--ink-2);max-inline-size:60ch}
+  }
+  .j-facts{display:flex;flex-wrap:wrap;gap:8px}
+  .j-words{display:flex;flex-wrap:wrap;gap:10px;margin-block-start:4px}
+  .word{display:flex;align-items:center;gap:12px;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:8px 8px 8px 16px;
+    b{font:700 1.3rem var(--f-lo);display:block;line-height:1.3}
+    small{display:block;color:var(--ink-2);font-size:.84rem}}
+  .word .btn{min-inline-size:44px;padding-inline:12px}
+
+  /* festival calendar */
+  .fest-wrap{margin-block-start:34px;container-type:inline-size;container-name:fest}
+  .fest-head{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;margin-block-end:14px;h3{font-size:1.4rem;font-weight:800}p{color:var(--ink-2);font-size:.92rem}}
+  .fest{display:grid;grid-auto-flow:column;grid-auto-columns:min(78%,290px);gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;padding-block:6px 14px;margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px));scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  @container fest (min-width:72rem){.fest{grid-auto-flow:row;grid-template-columns:repeat(6,minmax(0,1fr));grid-auto-columns:auto;overflow:visible;margin-inline:0;padding-inline:0}}
+  .fcard{scroll-snap-align:start;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:14px;display:flex;flex-direction:column;gap:6px;position:relative;transition:transform .3s,box-shadow .3s,border-color .3s;
+    &[data-now="true"]{border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 30%,transparent)}
+    svg{inline-size:100%;block-size:auto;aspect-ratio:96/72;background:var(--sc-a);border-radius:14px}
+    .mo{font-size:.78rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-ink)}
+    h4{font:800 1.02rem var(--f-display)}
+    .lo-t{font:700 1rem var(--f-lo-display);color:var(--accent)}
+    p{font-size:.86rem;color:var(--ink-2)}
+    .now{position:absolute;inset-block-start:22px;inset-inline-end:22px;z-index:2}
+  }
+  @media (hover:hover){.fcard:hover{transform:translateY(-5px);box-shadow:var(--shadow)}}
+
+  /* services: container-query bento */
+  .bento-wrap{container-type:inline-size}
+  .bento{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:10px;min-inline-size:0;transition:transform .3s,box-shadow .3s,border-color .3s;
+    h3{font-size:1.15rem}p{color:var(--ink-2);font-size:.94rem}}
+  @media (hover:hover){.card:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}}
+  .tile{inline-size:42px;block-size:42px;border-radius:13px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;.ic{inline-size:20px;block-size:20px}}
+  .b-big{grid-column:span 3;grid-row:span 2}.b-mid{grid-column:span 3}.b-sm{grid-column:span 2}
+  @container (max-width:51.25rem){.bento{grid-template-columns:repeat(2,minmax(0,1fr))}.b-big,.b-mid{grid-column:span 2;grid-row:auto}.b-sm{grid-column:span 1}}
+  @container (max-width:32.5rem){.bento{grid-template-columns:minmax(0,1fr)}.b-sm,.b-big,.b-mid{grid-column:span 1}}
+  .pattern{margin-block-start:auto;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
+  .words{display:flex;flex-wrap:wrap;gap:8px;
+    button{border:1px solid var(--line);background:var(--surface);border-radius:12px;min-block-size:48px;padding:6px 12px;text-align:center;line-height:1.2;transition:transform .2s,border-color .2s;
+      b{display:block;font:700 1.15rem var(--f-lo)}small{font-size:.78rem;color:var(--ink-2)}
+      &.sel{border-color:var(--accent);background:var(--accent-soft)}}}
+  .pattern .tr{color:var(--ink-2);font-size:.94rem}
+  .lock{display:inline-flex;align-items:center;gap:4px;font-size:.76rem;font-weight:700;color:var(--gold-ink);background:var(--gold-soft);border-radius:99px;padding:2px 8px;inline-size:fit-content;.ic{inline-size:12px;block-size:12px}}
+
+  .res{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px;.card{gap:12px}.btn{margin-block-start:auto}}
+  .cover{block-size:132px;border-radius:14px;display:grid;place-items:center;font:700 3.2rem var(--f-lo-display);color:#fff;position:relative;overflow:hidden;
+    &::after{content:"";position:absolute;inset:auto 0 0 0;block-size:8px;background-size:28px 8px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='14' viewBox='0 0 28 14'%3E%3Crect width='28' height='14' fill='%23CE1126'/%3E%3Cpath d='M14 1 L21 7 L14 13 L7 7Z' fill='%23FBBF24'/%3E%3C/svg%3E")}
+    &.c1{background:linear-gradient(140deg,#0270AC,#075985)}&.c2{background:linear-gradient(140deg,#B45309,#7C2D12)}&.c3{background:linear-gradient(140deg,#0E7490,#164E63)}&.c4{background:linear-gradient(140deg,#6D5BD0,#312E81)}
+    .chip{position:absolute;inset-block-start:10px;inset-inline-start:10px;background:rgba(255,255,255,.94);color:#0A1B2E;font-family:var(--f-ui)}}
+
+  .promo{background:var(--gold-soft);background:linear-gradient(in oklch 120deg,var(--gold-soft),var(--accent-soft));border:1px solid var(--line);border-radius:24px;padding:clamp(20px,4vw,34px);display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-block-end:18px;position:relative;overflow:hidden;
+    &::after{content:"";position:absolute;inset-inline-end:-30px;inset-block-start:-30px;inline-size:150px;block-size:150px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--gold) 35%,transparent),transparent 70%);animation:glow 4s ease-in-out infinite}
+    >*{position:relative;z-index:1}
+    h3{font-size:clamp(1.3rem,1rem + 1.2vw,1.9rem)}p{color:var(--ink-2);max-inline-size:56ch;margin-block-start:6px}}
+  .count{display:flex;gap:8px;div{background:var(--surface);border:1px solid var(--line);border-radius:14px;min-inline-size:60px;padding:8px 6px;text-align:center}b{display:block;font:800 1.4rem var(--f-display);font-variant-numeric:tabular-nums}small{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2)}}
+  .plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px}
+  .plan{position:relative;
+    &.feat{border:2px solid transparent;background:linear-gradient(var(--surface),var(--surface)) padding-box,conic-gradient(from var(--ang),var(--gold),var(--accent),var(--red),var(--gold)) border-box;animation:ang 7s linear infinite;box-shadow:var(--shadow)}
+    .tag{position:absolute;inset-block-start:-12px;inset-inline-end:16px}
+    ul{display:flex;flex-direction:column;gap:7px;font-size:.94rem;color:var(--ink-2)}
+    li{display:flex;gap:8px;align-items:flex-start}li .ic{inline-size:16px;block-size:16px;color:var(--good);margin-block-start:3px}
+    .btn{margin-block-start:auto}}
+  .price{font:800 2.4rem var(--f-display);font-variant-numeric:tabular-nums;line-height:1;small{font:600 .9rem var(--f-ui);color:var(--ink-2)}}
+
+  .news{container-type:inline-size;container-name:news;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:14px}
+  .news>*,.news-l{min-inline-size:0}
+  .news-l{display:flex;flex-direction:column;gap:14px}
+  .story{overflow-wrap:anywhere}
+  .story{display:flex;gap:16px;align-items:stretch;
+    .thumb{inline-size:112px;flex:none;border-radius:14px;display:grid;place-items:center;font:700 2.2rem var(--f-lo-display);color:#fff}
+    .tx{display:flex;flex-direction:column;gap:6px;min-inline-size:0}
+    .meta{font-size:.8rem;color:var(--ink-2);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    h3{font-size:1.08rem}.lo-t{font:600 .92rem var(--f-lo);color:var(--ink-2)}
+    &.lead{flex-direction:column;.thumb{inline-size:100%;block-size:180px;font-size:4.2rem}h3{font-size:1.35rem}}}
+  @container news (max-width:34rem){.story:not(.lead){flex-direction:column;.thumb{inline-size:100%;block-size:96px}}}
+
+  .about{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:clamp(20px,4vw,48px);align-items:center;
+    ul{margin-block-start:14px;display:flex;flex-direction:column;gap:9px}li{display:flex;gap:10px;color:var(--ink-2)}li .ic{color:var(--accent);margin-block-start:3px}}
+  .about-art{border-radius:26px;background:var(--surface-2);border:1px solid var(--line);aspect-ratio:1.15/1;max-inline-size:100%;display:grid;place-items:center;position:relative;overflow:hidden;
+    svg{inline-size:56%;block-size:auto;animation:spin 60s linear infinite}
+    .tagline{position:absolute;inset-inline:16px;inset-block-end:14px;text-align:center;font:600 .95rem var(--f-lo-display);color:var(--ink-2)}}
+
+  .closing{border-radius:26px;background:var(--sky-1);background:linear-gradient(in oklch 150deg,var(--sky-1),var(--sky-0));color:#fff;padding:clamp(24px,5vw,52px);display:flex;gap:20px;justify-content:space-between;align-items:center;flex-wrap:wrap;
+    h2{font-size:clamp(1.55rem,1.1rem + 2vw,2.4rem);max-inline-size:22ch;font-weight:800}
+    .btn.gold{background:#FBBF24;border-color:#FBBF24;color:#3A2A08;font-weight:700}}
+  footer{padding-block:34px 90px;color:var(--ink-2);font-size:.9rem;display:flex;gap:18px;flex-wrap:wrap;justify-content:space-between;nav{display:flex;gap:6px 16px;flex-wrap:wrap}a{color:var(--ink-2);display:inline-flex;min-block-size:32px;align-items:center}}
+  .flagbar{block-size:6px;border-radius:99px;margin-block-start:26px;background:linear-gradient(90deg,var(--red) 0 25%,#0B2A6B 25% 75%,var(--red) 75%)}
+
 }
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* ---------- landmark scene art (inline SVG, themed by tokens) ---------- */
+@layer scenes{
+  .px{transition:transform .25s ease-out}
+  .l-far{transform:translateX(calc(var(--px,0)*-6px))}
+  .l-mid{transform:translateX(calc(var(--px,0)*-12px))}
+  .l-near{transform:translateX(calc(var(--px,0)*-20px))}
+  .orb{transition:transform 1.4s cubic-bezier(.5,0,.2,1),opacity 1.2s}
+  .sun-g{transform:translateY(var(--sun-y));opacity:var(--sun-o)}
+  .moon-g{transform:translateY(var(--moon-y));opacity:calc(1 - var(--sun-o))}
+  .stupa{filter:drop-shadow(0 0 14px color-mix(in srgb,var(--stupa) 55%,transparent))}
+  .fires{opacity:var(--fire-o);transition:opacity 1s}
+  .fire{animation:floatby var(--t) ease-in-out infinite alternate;animation-delay:var(--d)}
+  .fire .flick{transform-box:fill-box;transform-origin:50% 100%;animation:flicker .9s ease-in-out infinite alternate}
+  .lit{opacity:var(--sc-lit-o);transition:opacity 1s}
+  .glow{filter:drop-shadow(0 0 5px #FDE047)}
+  .sun-rise{animation:rise 14s ease-in-out infinite alternate}
+  .monk{animation:bob 1.05s ease-in-out infinite;animation-delay:var(--d)}
+  .mist{animation:mist 26s ease-in-out infinite alternate}
+  .mist.b{animation-duration:34s;animation-direction:alternate-reverse}
+  .balloon{animation:balloon 46s linear infinite}
+  .balloon .bb{animation:bobby 4s ease-in-out infinite}
+  .flame-c{transform-box:fill-box;transform-origin:50% 100%;animation:flicker .7s ease-in-out infinite alternate;animation-delay:var(--d)}
+  .petalfall{animation:petalfall var(--t) linear infinite;animation-delay:var(--d);transform-box:fill-box;transform-origin:center}
+  .cascade{stroke-dasharray:6 8;animation:dash 1s linear infinite}
+  .longtail{animation:cross2 22s linear infinite}
+  .wake{animation:wake 1.6s ease-out infinite}
+  .ripple{stroke-dasharray:10 14;animation:dash 3s linear infinite}
+  .waves{animation:slide 7s linear infinite;&.b{animation-duration:11s;animation-direction:reverse}}
+  .skiff{animation:cross 70s linear infinite}
+  .skiff .bob{animation:bobby 3s ease-in-out infinite}
+  .nop-arm{transition:transform .5s cubic-bezier(.3,1.4,.5,1)}
+  .nop-head{transition:transform .5s;transform-origin:24px 18px}
+  .hear.playing{
+    .nop-arm.l{transform:rotate(-134deg)}.nop-arm.r{transform:rotate(134deg)}
+    .nop-head{transform:rotate(9deg)}
+    .bars span{animation:eq .7s infinite ease-in-out;&:nth-child(2){animation-delay:.15s}&:nth-child(3){animation-delay:.3s}&:nth-child(4){animation-delay:.1s}}
+  }
+  .nop-arm.l{transform-origin:15px 34px}.nop-arm.r{transform-origin:33px 34px}
+  /* festival micro-scenes */
+  .drop{animation:splash 1.8s ease-out infinite;animation-delay:var(--d);transform-box:fill-box}
+  .rocket{animation:rocket 3.4s ease-in infinite}
+  .smoke{animation:smoke 3.4s ease-out infinite;animation-delay:var(--d);transform-box:fill-box;transform-origin:center}
+  .boatbob{animation:bobby 2.6s ease-in-out infinite}
+  .cand{animation:flicker .8s ease-in-out infinite alternate;animation-delay:var(--d);transform-box:fill-box;transform-origin:50% 100%}
+}
+
+@layer motion{
+  @keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
+  @keyframes fall{0%{transform:translate(0,10px) rotate(0);opacity:0}12%{opacity:.9}50%{transform:translate(40px,48%) rotate(160deg)}90%{opacity:.7}100%{transform:translate(-30px,105%) rotate(320deg);opacity:0}}
+  @keyframes ping{70%{box-shadow:0 0 0 8px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
+  @keyframes shimmer{from{background-position:120% 0}to{background-position:-100% 0}}
+  @keyframes underline{from{background-size:0% .14em}to{background-size:100% .14em}}
+  @keyframes eq{0%,100%{block-size:4px}50%{block-size:18px}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes marq{to{transform:translateX(-50%)}}
+  @keyframes silk{to{background-position-x:-40px}}
+  @keyframes glow{50%{transform:scale(1.25)}}
+  @keyframes ang{to{--ang:360deg}}
+  @keyframes ring{from{transform:scale(1);opacity:.9}to{transform:scale(3);opacity:0}}
+  @keyframes slide{to{transform:translateX(-60px)}}
+  @keyframes floatriver{from{offset-distance:0%}to{offset-distance:100%}}
+  @keyframes bloomin{from{transform:scale(0) rotate(-120deg);opacity:0}to{transform:none;opacity:1}}
+  @keyframes cross{from{transform:translateX(-120px)}to{transform:translateX(1320px)}}
+  @keyframes bobby{50%{transform:translateY(2px) rotate(1deg)}}
+  @keyframes floatby{from{transform:translateX(0)}to{transform:translateX(-90px)}}
+  @keyframes flicker{from{transform:scale(1,1)}to{transform:scale(.82,1.22)}}
+  @keyframes rise{from{transform:translateY(22px)}to{transform:translateY(-8px)}}
+  @keyframes bob{50%{transform:translateY(-3px)}}
+  @keyframes mist{from{transform:translateX(-40px)}to{transform:translateX(60px)}}
+  @keyframes balloon{from{transform:translateX(-60px)}to{transform:translateX(470px)}}
+  @keyframes petalfall{0%{transform:translate(0,-20px) rotate(0);opacity:0}15%{opacity:1}100%{transform:translate(var(--dx),250px) rotate(300deg);opacity:0}}
+  @keyframes dash{to{stroke-dashoffset:-28}}
+  @keyframes cross2{from{transform:translateX(-90px)}to{transform:translateX(460px)}}
+  @keyframes wake{from{transform:scaleX(.4);opacity:.9}to{transform:scaleX(1.5);opacity:0}}
+  @keyframes splash{0%{transform:translate(0,0);opacity:0}15%{opacity:1}50%{transform:translate(calc(var(--dx)*.6),-24px)}100%{transform:translate(var(--dx),4px);opacity:0}}
+  @keyframes rocket{0%{transform:translate(0,0)}70%{transform:translate(28px,-46px);opacity:1}100%{transform:translate(34px,-56px);opacity:0}}
+  @keyframes smoke{0%{transform:scale(.3);opacity:.8}100%{transform:scale(1.6);opacity:0}}
+
+  /* scroll-driven: hero scene parallax, river draw-in, section reveal */
+  @supports (animation-timeline:view()){
+    .sp-1{animation:par1 linear both;animation-timeline:scroll(root);animation-range:0 600px}
+    .sp-2{animation:par2 linear both;animation-timeline:scroll(root);animation-range:0 600px}
+    .sp-3{animation:par3 linear both;animation-timeline:scroll(root);animation-range:0 600px}
+    @keyframes par1{to{transform:translateY(10px)}}@keyframes par2{to{transform:translateY(22px)}}@keyframes par3{to{transform:translateY(38px)}}
+    .river{stroke-dasharray:1;stroke-dashoffset:.35;animation:draw linear both;animation-timeline:view();animation-range:entry 0% cover 45%}
+    @keyframes draw{to{stroke-dashoffset:0}}
+    .rv{animation:rv linear both;animation-timeline:view();animation-range:entry 0% entry 35%}
+    @keyframes rv{from{transform:translateY(26px)}to{transform:none}}
+  }
+  [data-off] *{animation-play-state:paused!important}
+
+  ::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
+  ::view-transition-old(root){z-index:1}::view-transition-new(root){z-index:2}
+}
+
+@layer a11y{
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.river{stroke-dashoffset:0}*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
+  @media (prefers-contrast:more){:root{--line:currentColor}.card,.fcard,.j-panel{border-width:2px}}
+  @media (forced-colors:active){.btn,.input,.fcard,.card{border:1px solid CanvasText}.pin::before{background:Highlight}}
+  @media (pointer:coarse){.chips button,.words button,.seg button,.btn.sm,.tabs button,.linkbtn,.menu-btn,.sheet a,footer a,.brand{min-block-size:44px;min-inline-size:44px}.pw button{inline-size:44px;block-size:44px}.seg button{min-inline-size:44px}.links a{min-block-size:44px;display:inline-flex;align-items:center}}
+  @media (orientation:landscape) and (max-height:520px){.hero{padding-block-end:clamp(120px,24vw,200px)}.scene{block-size:150px}}
+}
 </style>
 
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs>
     <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M9 7h6"/></symbol>
     <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
@@ -384,20 +472,31 @@ footer a{color:var(--ink-2)}
         <text y="8" font-family="Noto Sans Lao, sans-serif" font-size="22" font-weight="700" fill="#92400E" text-anchor="middle">ລ</text>
       </g>
     </symbol>
+    <!-- a monk on alms round -->
+    <symbol id="monk" viewBox="-14 -48 28 48" overflow="visible"><circle cy="-40" r="6.5" fill="#E0A96D"/><path d="M-10,-32 Q0,-37 10,-32 L14,0 H-14Z" fill="#F97316"/><path d="M-10,-32 L8,-6" stroke="#C2410C" stroke-width="3" fill="none"/><ellipse cx="8" cy="-16" rx="5" ry="3.5" fill="#1F2937"/></symbol>
+    <!-- stone jar of the Plain of Jars -->
+    <symbol id="jar" viewBox="-20 -34 40 52" overflow="visible"><path d="M-12,-26 C-20,-10 -21,4 -12,17 H12 C21,4 20,-10 12,-26Z" fill="var(--sc-jar)"/><path d="M-12,-26 C-18,-10 -19,0 -15,10 L-9,10 C-12,0 -11,-10 -8,-26Z" fill="var(--sc-jar-hi)" opacity=".7"/><ellipse cy="-26" rx="12" ry="4" fill="var(--sc-jar-hi)"/><ellipse cy="-26" rx="8.5" ry="2.4" fill="var(--sc-jar)"/></symbol>
+    <!-- candle flame -->
+    <symbol id="flame" viewBox="-6 -16 12 16" overflow="visible"><path d="M0,-16 C5,-9 6,-4 0,0 C-6,-4 -5,-9 0,-16Z" fill="#FDE047"/><path d="M0,-9 C2.5,-5 2.5,-2 0,0 C-2.5,-2 -2.5,-5 0,-9Z" fill="#F97316"/></symbol>
+    <linearGradient id="scsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--sc-a)"/><stop offset="1" stop-color="var(--sc-b)"/></linearGradient>
+    <linearGradient id="riv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--water-a)"/><stop offset="1" stop-color="var(--water-b)"/></linearGradient>
+    <pattern id="wv" width="60" height="16" patternUnits="userSpaceOnUse"><path d="M0 8 Q15 0 30 8 T60 8" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="2"/></pattern>
+    <radialGradient id="sunglow"><stop offset="0" stop-color="#FFF3B0"/><stop offset=".55" stop-color="var(--sun)"/><stop offset="1" stop-color="var(--sun)" stop-opacity="0"/></radialGradient>
+    <radialGradient id="warm"><stop offset="0" stop-color="#FDE68A" stop-opacity=".75"/><stop offset="1" stop-color="#FDE68A" stop-opacity="0"/></radialGradient>
   </defs>
 </svg>
 
-<div class="mock-tag">Design mockup · not wired to data</div>
+<a class="skip" href="#home">Skip to main content</a>
 
 <header class="nav">
   <div class="nav-in">
     <a class="brand" href="#home" aria-label="LaoLao home">
-      <svg viewBox="0 0 200 200"><use href="#champa"/></svg>
-      <span>LaoLao<small>ຮຽນພາສາລາວ</small></span>
+      <svg viewBox="0 0 200 200" aria-hidden="true"><use href="#champa"/></svg>
+      <span>LaoLao<small lang="lo">ຮຽນພາສາລາວ</small></span>
     </a>
     <nav class="links" aria-label="Main">
-      <a href="#home" class="on" data-i="nav_home">Home</a>
-      <a href="#culture" data-i="nav_culture">Culture</a>
+      <a href="#home" aria-current="true" data-i="nav_home">Home</a>
+      <a href="#culture" data-i="nav_culture">Journey</a>
       <a href="#services" data-i="nav_services">Services</a>
       <a href="#resources" data-i="nav_free">Free resources</a>
       <a href="#promotions" data-i="nav_promo">Promotions</a>
@@ -406,97 +505,99 @@ footer a{color:var(--ink-2)}
     </nav>
     <div class="tools">
       <div class="seg" role="group" aria-label="Theme">
-        <button type="button" data-theme-set="light" aria-pressed="false" aria-label="Day theme" title="Day"><svg class="ic"><use href="#i-sun"/></svg></button>
-        <button type="button" data-theme-set="dark" aria-pressed="false" aria-label="Night theme" title="Night"><svg class="ic"><use href="#i-moon"/></svg></button>
-        <button type="button" data-theme-set="auto" aria-pressed="true" aria-label="Match system theme" title="Auto"><svg class="ic"><use href="#i-auto"/></svg></button>
+        <button type="button" data-theme-set="light" aria-pressed="false" aria-label="Day theme" title="Day"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg></button>
+        <button type="button" data-theme-set="dark" aria-pressed="false" aria-label="Night theme" title="Night"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg></button>
+        <button type="button" data-theme-set="auto" aria-pressed="true" aria-label="Match system theme" title="Auto"><svg class="ic" aria-hidden="true"><use href="#i-auto"/></svg></button>
       </div>
-      <div class="seg" role="group" aria-label="Language">
+      <div class="seg nav-lang" role="group" aria-label="Language">
         <button type="button" data-lang="en" aria-pressed="true">EN</button>
-        <button type="button" data-lang="lo" aria-pressed="false">ລາວ</button>
-        <button type="button" data-lang="zh" aria-pressed="false">中文</button>
+        <button type="button" data-lang="lo" aria-pressed="false" lang="lo">ລາວ</button>
+        <button type="button" data-lang="zh" aria-pressed="false" lang="zh">中文</button>
       </div>
       <button class="btn sm" type="button" id="goSignin" data-i="signin_short">Sign in</button>
-      <button class="btn sm menu-btn" type="button" id="menuBtn" aria-label="Menu" aria-expanded="false"><svg class="ic"><use href="#i-menu"/></svg></button>
+      <button class="btn sm menu-btn" type="button" popovertarget="sheet" aria-label="Menu"><svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg></button>
     </div>
   </div>
-  <div class="wrap"><nav class="sheet" id="sheet" aria-label="Mobile">
-    <a href="#home">Home</a><a href="#culture">Culture</a><a href="#services">Services</a><a href="#resources">Free resources</a><a href="#promotions">Promotions</a><a href="#news">News</a><a href="#about">About</a>
-  </nav></div>
+  <nav id="sheet" class="sheet" popover aria-label="Mobile">
+    <a href="#home">Home</a><a href="#culture">Journey</a><a href="#services">Services</a><a href="#resources">Free resources</a><a href="#promotions">Promotions</a><a href="#news">News</a><a href="#about">About</a>
+    <div class="seg sheet-lang" role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true">EN</button>
+      <button type="button" data-lang="lo" aria-pressed="false" lang="lo">ລາວ</button>
+      <button type="button" data-lang="zh" aria-pressed="false" lang="zh">中文</button>
+    </div>
+  </nav>
 </header>
 
-<main class="wrap" id="home">
+<main class="wrap" id="home" tabindex="-1">
+  <div class="mock-tag">Design mockup · not wired to data</div>
   <div class="hero" id="hero">
     <div class="stars" id="stars" aria-hidden="true"></div>
     <div class="drift" id="drift" aria-hidden="true"></div>
 
-    <!-- Mekong scene: far hills, sun and moon, That Luang, near hills, river with a drifting skiff -->
-    <svg class="scene" viewBox="0 0 1200 250" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-      <defs>
-        <pattern id="wv" width="60" height="16" patternUnits="userSpaceOnUse"><path d="M0 8 Q15 0 30 8 T60 8" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="2"/></pattern>
-        <linearGradient id="riv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--water-a)"/><stop offset="1" stop-color="var(--water-b)"/></linearGradient>
-        <radialGradient id="sunglow"><stop offset="0" stop-color="#FFF3B0"/><stop offset=".55" stop-color="var(--sun)"/><stop offset="1" stop-color="var(--sun)" stop-opacity="0"/></radialGradient>
-      </defs>
-      <g class="orb sun-g"><circle cx="820" cy="118" r="120" fill="url(#sunglow)" opacity=".55"/><circle cx="820" cy="118" r="44" fill="var(--sun)"/></g>
-      <g class="orb moon-g"><circle cx="980" cy="62" r="34" fill="#C7D2FE" opacity=".18"/><circle cx="980" cy="62" r="24" fill="var(--moon)"/><circle cx="972" cy="56" r="4" fill="#CBD5E1"/><circle cx="988" cy="70" r="3" fill="#CBD5E1"/><circle cx="984" cy="52" r="2" fill="#CBD5E1"/></g>
-      <g class="px l-far"><path d="M-40,150 C100,96 220,128 330,100 C460,66 560,126 700,104 C840,84 960,120 1240,88 L1240,260 L-40,260Z" fill="var(--hill-far)"/></g>
-      <g class="px l-mid"><g class="stupa" transform="translate(820 40)" fill="var(--stupa)" stroke="var(--stupa-line)" stroke-width="1.2" stroke-linejoin="round">
-        <rect x="-74" y="158" width="148" height="16"/><rect x="-60" y="144" width="120" height="14"/><rect x="-46" y="132" width="92" height="12"/>
-        <path d="M-32,132 C-38,104 -20,88 -9,72 L-5,42 L-2,22 L0,2 L2,22 L5,42 L9,72 C20,88 38,104 32,132Z"/>
+    <!-- The Mekong at Vientiane: hills, sun/moon, Pha That Luang with its cloister of small stupas, river, Lai Heua Fai fire boats -->
+    <svg class="scene" viewBox="0 0 1200 250" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
+      <g class="orb sun-g"><circle cx="600" cy="118" r="120" fill="url(#sunglow)" opacity=".55"/><circle cx="600" cy="118" r="44" fill="var(--sun)"/></g>
+      <g class="orb moon-g"><circle cx="770" cy="62" r="34" fill="#C7D2FE" opacity=".18"/><circle cx="770" cy="62" r="24" fill="var(--moon)"/><circle cx="762" cy="56" r="4" fill="#CBD5E1"/><circle cx="778" cy="70" r="3" fill="#CBD5E1"/><circle cx="774" cy="52" r="2" fill="#CBD5E1"/></g>
+      <g class="sp-1"><g class="px l-far"><path d="M-40,150 C100,96 220,128 330,100 C460,66 560,126 700,104 C840,84 960,120 1240,88 L1240,260 L-40,260Z" fill="var(--hill-far)"/></g></g>
+      <g class="sp-2"><g class="px l-mid"><g class="stupa" transform="translate(600 40)" fill="var(--stupa)" stroke="var(--stupa-line)" stroke-width="1.2" stroke-linejoin="round">
+        <rect x="-100" y="160" width="200" height="14"/>
+        <g id="ministupas"><path d="M-96,160 v-10 q2,-12 4,-16 q2,4 4,16 v10Z"/><path d="M-80,160 v-10 q2,-12 4,-16 q2,4 4,16 v10Z"/><path d="M-64,160 v-10 q2,-12 4,-16 q2,4 4,16 v10Z"/><path d="M-48,160 v-10 q2,-12 4,-16 q2,4 4,16 v10Z"/></g>
+        <use href="#ministupas" transform="translate(144 0)"/>
+        <rect x="-60" y="144" width="120" height="16"/><rect x="-46" y="132" width="92" height="12"/><rect x="-36" y="122" width="72" height="10"/>
+        <path d="M-30,122 C-36,100 -20,88 -9,72 L-5,42 L-2,22 L0,2 L2,22 L5,42 L9,72 C20,88 36,100 30,122Z"/>
         <path d="M-12,60 H12M-16,76 H16M-22,92 H22M-27,108 H27" fill="none" stroke-width="1.6"/>
-        <g transform="translate(-92 0)"><path d="M-10,174 L-9,150 C-14,138 -4,132 0,112 C4,132 14,138 9,150 L10,174Z"/></g>
-        <g transform="translate(92 0)"><path d="M-10,174 L-9,150 C-14,138 -4,132 0,112 C4,132 14,138 9,150 L10,174Z"/></g>
-      </g></g>
-      <g class="px l-near"><path d="M-40,200 C200,172 420,196 620,184 C820,172 1000,200 1240,178 L1240,260 L-40,260Z" fill="var(--hill-near)"/></g>
+      </g></g></g>
+      <g class="sp-3"><g class="px l-near"><path d="M-40,200 C200,172 420,196 620,184 C820,172 1000,200 1240,178 L1240,260 L-40,260Z" fill="var(--hill-near)"/></g></g>
       <rect x="0" y="206" width="1200" height="60" fill="url(#riv)"/>
       <g opacity=".9"><rect class="waves" x="-60" y="212" width="1320" height="16" fill="url(#wv)"/><rect class="waves b" x="-60" y="232" width="1320" height="16" fill="url(#wv)" opacity=".6"/></g>
+      <g class="fires">
+        <g class="fire" style="--t:34s;--d:-4s" transform="translate(180 226)"><path d="M0,0 h26 l-4,6 h-18Z" fill="#7C2D12"/><use class="flick" href="#flame" x="7" y="-1" width="12" height="16"/><circle cx="13" cy="-6" r="16" fill="url(#warm)"/></g>
+        <g class="fire" style="--t:42s;--d:-18s" transform="translate(420 236)"><path d="M0,0 h26 l-4,6 h-18Z" fill="#7C2D12"/><use class="flick" href="#flame" x="7" y="-1" width="12" height="16"/><circle cx="13" cy="-6" r="16" fill="url(#warm)"/></g>
+        <g class="fire" style="--t:38s;--d:-9s" transform="translate(640 230)"><path d="M0,0 h26 l-4,6 h-18Z" fill="#7C2D12"/><use class="flick" href="#flame" x="7" y="-1" width="12" height="16"/><circle cx="13" cy="-6" r="16" fill="url(#warm)"/></g>
+        <g class="fire" style="--t:46s;--d:-26s" transform="translate(900 238)"><path d="M0,0 h26 l-4,6 h-18Z" fill="#7C2D12"/><use class="flick" href="#flame" x="7" y="-1" width="12" height="16"/><circle cx="13" cy="-6" r="16" fill="url(#warm)"/></g>
+        <g class="fire" style="--t:36s;--d:-13s" transform="translate(1100 228)"><path d="M0,0 h26 l-4,6 h-18Z" fill="#7C2D12"/><use class="flick" href="#flame" x="7" y="-1" width="12" height="16"/><circle cx="13" cy="-6" r="16" fill="url(#warm)"/></g>
+      </g>
       <g class="skiff"><g class="bob" transform="translate(0 222)"><path d="M0,0 Q30,10 64,0 L58,8 Q30,14 6,8Z" fill="#7C2D12"/><path d="M32,0 V-26 L50,-6Z" fill="#FDE68A" opacity=".95"/><circle cx="10" cy="-4" r="3" fill="#E0A96D"/></g></g>
     </svg>
 
     <div class="hero-grid">
       <div class="hero-copy">
         <span class="badge"><i></i><span data-i="badge">Lao for real conversations · 27 consonants, 6 tones</span></span>
-        <h1><span class="lo-word">ສະບາຍດີ</span><span data-i="h1a">Learn Lao, one</span> <em data-i="h1b">real sentence</em> <span data-i="h1c">at a time.</span></h1>
+        <h1><span class="lo-word" lang="lo">ສະບາຍດີ</span><span data-i="h1a">Learn Lao, one</span> <em data-i="h1b">real sentence</em> <span data-i="h1c">at a time.</span></h1>
         <p class="lead" data-i="lead">Sentence patterns with native audio, a handwriting studio and spaced review. Start free, no card needed. Works offline.</p>
         <div class="hero-cta">
-          <button class="btn gold" type="button" id="ctaStart"><span data-i="cta_start">Start free</span><svg class="ic"><use href="#i-arrow"/></svg></button>
-          <a class="btn ghost" href="#culture" data-i="cta_tour">Explore Lao culture</a>
+          <button class="btn gold" type="button" id="ctaStart"><span data-i="cta_start">Start free</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+          <a class="btn ghost" href="#culture" data-i="cta_tour">Take the journey through Laos</a>
         </div>
+        <!-- Nop (ນົບ): the Lao greeting with pressed palms; the figure greets when you tap -->
         <button class="hear" type="button" id="hear">
-          <svg class="ic" style="width:22px;height:22px"><use href="#i-speaker"/></svg>
-          <span><b>ສະບາຍດີ! · Sabaidee</b><small data-i="hear">Tap to hear the greeting</small></span>
+          <svg class="nop" viewBox="0 0 48 56" aria-hidden="true" focusable="false">
+            <path d="M12,56 L14,38 H34 L36,56Z" fill="#CE1126"/><path d="M13,50 H35 L35.6,53 H12.4Z" fill="#FBBF24"/><path d="M14,38 H34 L34.4,41 H13.6Z" fill="#0B2A6B"/>
+            <path d="M16,24 Q24,20 32,24 L34,40 H14Z" fill="#F8FAFC"/><path d="M16,24 L33,38" stroke="#FBBF24" stroke-width="3.2"/>
+            <g class="nop-head"><circle cx="24" cy="12" r="6.5" fill="#E0A96D"/><circle cx="24" cy="5.5" r="4" fill="#1F2937"/><path d="M17.5,11 Q24,0 30.5,11 Q24,6 17.5,11Z" fill="#1F2937"/></g>
+            <path d="M17,25 L15,34" stroke="#E0A96D" stroke-width="3.2" stroke-linecap="round"/><path d="M31,25 L33,34" stroke="#E0A96D" stroke-width="3.2" stroke-linecap="round"/>
+            <path class="nop-arm l" d="M15,34 L14,43" stroke="#E0A96D" stroke-width="3.2" stroke-linecap="round"/><path class="nop-arm r" d="M33,34 L34,43" stroke="#E0A96D" stroke-width="3.2" stroke-linecap="round"/>
+          </svg>
+          <span><b lang="lo">ສະບາຍດີ! · Sabaidee</b><small data-i="hear">Tap to hear the greeting</small></span>
           <span class="bars" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
         </button>
-        <div>
-          <div class="chips" id="chips" role="group" aria-label="Lao consonant preview"></div>
-          <p class="chip-note" id="chipNote" aria-live="polite" data-i="chip_default">Tap a consonant to hear it.</p>
-        </div>
       </div>
 
       <div class="auth-wrap">
-        <!-- Dok Champa blooms petal by petal on load -->
         <div class="bloom" aria-hidden="true">
-          <svg viewBox="0 0 200 200"><g transform="translate(100 100)">
-            <g fill="#fff" stroke="#BAE6FD" stroke-width="1.6">
-              <g transform="rotate(0)"><path class="petal" style="--i:0" d="M0-15C-24-34-34-74 0-92 34-74 24-34 0-15Z"/></g>
-              <g transform="rotate(72)"><path class="petal" style="--i:1" d="M0-15C-24-34-34-74 0-92 34-74 24-34 0-15Z"/></g>
-              <g transform="rotate(144)"><path class="petal" style="--i:2" d="M0-15C-24-34-34-74 0-92 34-74 24-34 0-15Z"/></g>
-              <g transform="rotate(216)"><path class="petal" style="--i:3" d="M0-15C-24-34-34-74 0-92 34-74 24-34 0-15Z"/></g>
-              <g transform="rotate(288)"><path class="petal" style="--i:4" d="M0-15C-24-34-34-74 0-92 34-74 24-34 0-15Z"/></g>
-            </g>
-            <g class="core"><circle r="32" fill="#FBBF24"/><circle r="14" fill="#D97706" fill-opacity=".3"/><text y="8" font-family="Noto Sans Lao, sans-serif" font-size="22" font-weight="700" fill="#92400E" text-anchor="middle">ລ</text></g>
-          </g></svg>
+          <svg viewBox="0 0 200 200"><use href="#champa"/></svg>
         </div>
         <form class="auth" id="auth" novalidate aria-labelledby="authTitle">
-          <div class="tabs" role="tablist">
+          <div class="tabs" role="tablist" aria-label="Account">
             <button type="button" role="tab" id="tabIn" aria-selected="true" data-i="tab_in">Sign in</button>
             <button type="button" role="tab" id="tabUp" aria-selected="false" data-i="tab_up">Create account</button>
           </div>
           <h2 id="authTitle">Welcome back</h2>
           <p class="sub" id="authSub">Pick up your lesson where you left it.</p>
           <div class="field" id="fName" hidden><label for="nm">Name</label><input class="input" id="nm" autocomplete="name" placeholder="Your name"></div>
-          <div class="field"><label for="em">Email</label><input class="input" id="em" type="email" autocomplete="username" placeholder="name@example.com"></div>
+          <div class="field"><label for="em">Email</label><input class="input" id="em" type="email" inputmode="email" enterkeyhint="next" autocomplete="username" placeholder="name@example.com" required></div>
           <div class="field" id="fPw"><label for="pw">Password</label>
-            <div class="pw"><input class="input" id="pw" type="password" autocomplete="current-password" placeholder="••••••••"><button type="button" id="eye" aria-label="Show password"><svg class="ic"><use href="#i-eye"/></svg></button></div>
+            <div class="pw"><input class="input" id="pw" type="password" enterkeyhint="go" autocomplete="current-password" placeholder="••••••••" minlength="6" required><button type="button" id="eye" aria-label="Show password"><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg></button></div>
           </div>
           <div class="msg" id="msg" role="status" hidden></div>
           <button class="btn primary" type="submit" id="submit">Sign in</button>
@@ -505,11 +606,11 @@ footer a{color:var(--ink-2)}
             <span class="chip gold" id="planChip" hidden>Free plan</span>
           </div>
           <ul class="perks" id="perks" hidden>
-            <li><svg class="ic"><use href="#i-check"/></svg>Free plan, no card</li>
-            <li><svg class="ic"><use href="#i-check"/></svg>Progress saved to your account</li>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Free plan, no card</li>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Progress saved to your account</li>
           </ul>
           <div class="demo" id="demo">
-            <div class="demo-h"><span>Demo accounts</span><a href="#" class="linkbtn" onclick="return false">Admin portal →</a></div>
+            <div class="demo-h"><span>Demo accounts</span><a href="#home" class="linkbtn" id="adminLink">Admin portal →</a></div>
             <div class="demo-b"><button class="btn primary sm" type="button" data-demo="Premium Learner">Premium learner</button><button class="btn sm" type="button" data-demo="Free Learner">Free learner</button></div>
           </div>
         </form>
@@ -520,6 +621,11 @@ footer a{color:var(--ink-2)}
   <div class="marquee" aria-label="Everyday Lao greetings"><div class="track" id="track"></div></div>
   <div class="silk" aria-hidden="true"></div>
 
+  <div class="alpha rv" lang="en">
+    <div><span class="eyebrow">Hear the alphabet</span><p class="chip-note" id="chipNote" aria-live="polite" data-i="chip_default">Tap a consonant to hear it.</p></div>
+    <div class="chips" id="chips" role="group" aria-label="Lao consonant preview"></div>
+  </div>
+
   <div class="strip rv" aria-label="At a glance">
     <div><b>27</b><span>consonants by class, with mnemonic names</span></div>
     <div><b>6</b><span>Vientiane tones with audio</span></div>
@@ -527,120 +633,257 @@ footer a{color:var(--ink-2)}
     <div><b>3</b><span>interface languages: English, ລາວ, 中文</span></div>
   </div>
 
-  <!-- CULTURE IN MOTION -->
-  <section id="culture">
-    <div class="sec-h rv"><span class="eyebrow">Lao culture</span><h2>Learn the words behind the traditions</h2><p class="lo-sub">ຮຽນຄຳສັບຈາກວັດທະນະທຳລາວ</p><p>Every lesson is tied to something real you will see, hear or join in Laos. Tap Listen to hear the key word.</p></div>
-    <div class="cult">
-      <article class="cult-card rv">
-        <svg class="scn" viewBox="0 0 240 160" role="img" aria-label="Monks walking in a line at dawn while a villager offers sticky rice">
-          <circle class="sun-rise" cx="176" cy="96" r="26" fill="var(--orb)"/>
-          <path d="M0,112 Q60,98 120,108 T240,102 V160H0Z" fill="var(--sc-ground-2)"/>
-          <rect y="120" width="240" height="40" fill="var(--sc-ground)"/>
-          <g transform="translate(22 142)"><circle cy="-21" r="5.5" fill="#E0A96D"/><path d="M-9,-14 Q0,-19 9,-14 L12,0 H-12Z" fill="#F8FAFC"/><ellipse cx="14" cy="-2" rx="7" ry="4" fill="#B45309"/></g>
-          <g class="monks">
-            <g transform="translate(70 142)"><g class="monk" style="--d:0s"><circle cy="-40" r="6.5" fill="#E0A96D"/><path d="M-10,-32 Q0,-37 10,-32 L14,0 H-14Z" fill="#F97316"/><path d="M-10,-32 L8,-6" stroke="#C2410C" stroke-width="3" fill="none"/><ellipse cx="8" cy="-16" rx="5" ry="3.5" fill="#1F2937"/></g></g>
-            <g transform="translate(106 142)"><g class="monk" style="--d:.2s"><circle cy="-40" r="6.5" fill="#E0A96D"/><path d="M-10,-32 Q0,-37 10,-32 L14,0 H-14Z" fill="#F97316"/><path d="M-10,-32 L8,-6" stroke="#C2410C" stroke-width="3" fill="none"/><ellipse cx="8" cy="-16" rx="5" ry="3.5" fill="#1F2937"/></g></g>
-            <g transform="translate(142 142)"><g class="monk" style="--d:.4s"><circle cy="-40" r="6.5" fill="#E0A96D"/><path d="M-10,-32 Q0,-37 10,-32 L14,0 H-14Z" fill="#F97316"/><path d="M-10,-32 L8,-6" stroke="#C2410C" stroke-width="3" fill="none"/><ellipse cx="8" cy="-16" rx="5" ry="3.5" fill="#1F2937"/></g></g>
-            <g transform="translate(178 142)"><g class="monk" style="--d:.6s"><circle cy="-40" r="6.5" fill="#E0A96D"/><path d="M-10,-32 Q0,-37 10,-32 L14,0 H-14Z" fill="#F97316"/><path d="M-10,-32 L8,-6" stroke="#C2410C" stroke-width="3" fill="none"/><ellipse cx="8" cy="-16" rx="5" ry="3.5" fill="#1F2937"/></g></g>
-            <g transform="translate(212 142)"><g class="monk" style="--d:.8s"><circle cy="-40" r="6.5" fill="#E0A96D"/><path d="M-10,-32 Q0,-37 10,-32 L14,0 H-14Z" fill="#F97316"/><path d="M-10,-32 L8,-6" stroke="#C2410C" stroke-width="3" fill="none"/><ellipse cx="8" cy="-16" rx="5" ry="3.5" fill="#1F2937"/></g></g>
-          </g>
-        </svg>
-        <div class="cult-body"><span class="eyebrow">Tak Bat</span><div class="lo-t">ຕັກບາດ</div><p>Dawn almsgiving in Luang Prabang. Learn to say ໃສ່ບາດ (sai bat), to offer alms.</p><button class="btn sm" type="button" data-say="ໃສ່ບາດ"><svg class="ic"><use href="#i-speaker"/></svg>Listen</button></div>
-      </article>
-
-      <article class="cult-card rv">
-        <svg class="scn" viewBox="0 0 240 160" role="img" aria-label="A Baci flower cone with white cotton strings swaying">
-          <rect y="136" width="240" height="24" fill="var(--sc-ground)"/>
-          <ellipse cx="120" cy="140" rx="74" ry="10" fill="#B45309"/><ellipse cx="120" cy="136" rx="66" ry="8" fill="#F59E0B"/>
-          <path d="M80,132 L120,74 L160,132Z" fill="#15803D"/><path d="M92,114 L120,74 L148,114Z" fill="#22C55E"/><path d="M103,98 L120,60 L137,98Z" fill="#4ADE80"/>
-          <circle cx="120" cy="54" r="7" fill="#FBBF24"/><circle cx="111" cy="60" r="6" fill="#F97316"/><circle cx="129" cy="60" r="6" fill="#FBBF24"/><circle cx="120" cy="54" r="2.6" fill="#fff"/>
-          <g stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" fill="none">
-            <line class="sway" style="--d:0s" x1="116" y1="66" x2="92" y2="140"/><line class="sway" style="--d:.5s" x1="114" y1="68" x2="78" y2="132"/><line class="sway" style="--d:1s" x1="118" y1="66" x2="104" y2="144"/>
-            <line class="sway" style="--d:.3s" x1="124" y1="66" x2="148" y2="140"/><line class="sway" style="--d:.8s" x1="126" y1="68" x2="162" y2="132"/><line class="sway" style="--d:1.2s" x1="122" y1="66" x2="136" y2="144"/>
-          </g>
-          <path class="twinkle" d="M200,40 l3,8 8,3 -8,3 -3,8 -3,-8 -8,-3 8,-3z" fill="#FBBF24"/>
-          <path class="twinkle" style="animation-delay:.7s" d="M40,56 l2,6 6,2 -6,2 -2,6 -2,-6 -6,-2 6,-2z" fill="#FBBF24"/>
-        </svg>
-        <div class="cult-body"><span class="eyebrow">Baci</span><div class="lo-t">ບາສີ</div><p>Cotton strings tied on the wrist to call the soul back. The act is ຜູກແຂນ (phuk khen).</p><button class="btn sm" type="button" data-say="ຜູກແຂນ"><svg class="ic"><use href="#i-speaker"/></svg>Listen</button></div>
-      </article>
-
-      <article class="cult-card rv">
-        <svg class="scn" viewBox="0 0 240 160" role="img" aria-label="A khene bamboo mouth organ with musical notes rising">
-          <rect y="140" width="240" height="20" fill="var(--sc-ground)"/>
-          <g>
-            <rect class="pipe" style="--d:0s" x="78" y="40" width="9" height="86" rx="4.5" fill="#D6A24F"/><rect class="pipe" style="--d:.15s" x="90" y="50" width="9" height="76" rx="4.5" fill="#E0B25F"/><rect class="pipe" style="--d:.3s" x="102" y="58" width="9" height="68" rx="4.5" fill="#D6A24F"/><rect class="pipe" style="--d:.45s" x="114" y="64" width="9" height="62" rx="4.5" fill="#E0B25F"/>
-            <rect class="pipe" style="--d:.6s" x="126" y="70" width="9" height="56" rx="4.5" fill="#D6A24F"/><rect class="pipe" style="--d:.75s" x="138" y="76" width="9" height="50" rx="4.5" fill="#E0B25F"/><rect class="pipe" style="--d:.9s" x="150" y="82" width="9" height="44" rx="4.5" fill="#D6A24F"/>
-            <rect x="74" y="84" width="90" height="5" rx="2.5" fill="#7C2D12"/><rect x="74" y="104" width="90" height="5" rx="2.5" fill="#7C2D12"/>
-            <path d="M70,122 Q119,150 168,122 L164,112 H74Z" fill="#92400E"/><rect x="111" y="136" width="16" height="16" rx="5" fill="#7C2D12"/>
-          </g>
-          <text class="note" style="--d:0s;--dx:-18px" x="62" y="80">♪</text><text class="note" style="--d:1.2s;--dx:10px" x="172" y="86">♫</text><text class="note" style="--d:2.2s;--dx:-8px" x="180" y="60">♪</text>
-        </svg>
-        <div class="cult-body"><span class="eyebrow">Khene</span><div class="lo-t">ແຄນ</div><p>The bamboo mouth organ behind mor lam music. Say ແຄນ (khaen) and feel the breath.</p><button class="btn sm" type="button" data-say="ແຄນ"><svg class="ic"><use href="#i-speaker"/></svg>Listen</button></div>
-      </article>
-
-      <article class="cult-card rv">
-        <svg class="scn" viewBox="0 0 240 160" role="img" aria-label="A long Mekong racing boat with paddlers">
-          <circle cx="40" cy="42" r="16" fill="var(--orb)"/>
-          <rect y="104" width="240" height="56" fill="#0284C7"/><rect y="104" width="240" height="56" fill="url(#riv)" opacity=".6"/>
-          <g class="rock">
-            <g transform="translate(0 6)">
-              <g transform="translate(48 100)"><circle cy="-22" r="5" fill="#E0A96D"/><rect x="-5" y="-17" width="10" height="16" rx="3" fill="#2563EB"/><line class="paddle" style="--d:0s" x1="0" y1="-10" x2="10" y2="20" stroke="#FDE68A" stroke-width="2.6" stroke-linecap="round"/></g>
-              <g transform="translate(72 100)"><circle cy="-22" r="5" fill="#E0A96D"/><rect x="-5" y="-17" width="10" height="16" rx="3" fill="#2563EB"/><line class="paddle" style="--d:.1s" x1="0" y1="-10" x2="10" y2="20" stroke="#FDE68A" stroke-width="2.6" stroke-linecap="round"/></g>
-              <g transform="translate(96 100)"><circle cy="-22" r="5" fill="#E0A96D"/><rect x="-5" y="-17" width="10" height="16" rx="3" fill="#2563EB"/><line class="paddle" style="--d:.2s" x1="0" y1="-10" x2="10" y2="20" stroke="#FDE68A" stroke-width="2.6" stroke-linecap="round"/></g>
-              <g transform="translate(120 100)"><circle cy="-22" r="5" fill="#E0A96D"/><rect x="-5" y="-17" width="10" height="16" rx="3" fill="#2563EB"/><line class="paddle" style="--d:.3s" x1="0" y1="-10" x2="10" y2="20" stroke="#FDE68A" stroke-width="2.6" stroke-linecap="round"/></g>
-              <g transform="translate(144 100)"><circle cy="-22" r="5" fill="#E0A96D"/><rect x="-5" y="-17" width="10" height="16" rx="3" fill="#2563EB"/><line class="paddle" style="--d:.4s" x1="0" y1="-10" x2="10" y2="20" stroke="#FDE68A" stroke-width="2.6" stroke-linecap="round"/></g>
-              <g transform="translate(168 100)"><circle cy="-22" r="5" fill="#E0A96D"/><rect x="-5" y="-17" width="10" height="16" rx="3" fill="#2563EB"/><line class="paddle" style="--d:.5s" x1="0" y1="-10" x2="10" y2="20" stroke="#FDE68A" stroke-width="2.6" stroke-linecap="round"/></g>
-              <path d="M26,100 Q120,118 206,94 L202,106 Q120,128 32,112Z" fill="#CE1126"/><path d="M206,94 Q222,84 218,70 Q232,80 228,96Z" fill="#FBBF24"/><path d="M26,100 Q120,118 206,94" stroke="#FBBF24" stroke-width="2" fill="none"/>
+  <!-- JOURNEY THROUGH LAOS -->
+  <section id="culture" class="journey">
+    <div class="sec-h rv"><span class="eyebrow">Journey through Laos</span><h2>Follow the Mekong, learn the words on the way</h2><p class="lo-sub" lang="lo">ຕາມແມ່ນ້ຳຂອງ ຮຽນຄຳສັບລາວຕະຫຼອດທາງ</p><p>Six real places, from Luang Prabang to the Four Thousand Islands. Pick a place, watch it come alive, and learn the Lao words that belong to it.</p></div>
+    <div class="j-tabs" id="jtabs" role="tablist" aria-label="Places in Laos"></div>
+    <div class="j-grid">
+      <div class="j-map rv">
+        <div class="map" id="map">
+          <svg class="map-svg" viewBox="0 0 740 880" aria-hidden="true" focusable="false">
+            <path class="land" d="M202.1 22.1 L207.4 31.6 L232.0 57.3 L236.3 64.2 L245.3 69.6 L252.9 92.4 L256.0 93.8 L260.2 92.2 L263.2 89.0 L265.8 80.2 L267.5 79.3 L270.3 86.5 L277.2 88.7 L280.2 91.9 L281.1 97.4 L280.1 103.0 L274.3 116.0 L270.9 133.4 L294.9 170.8 L305.0 175.9 L329.0 182.0 L345.3 190.3 L352.9 188.3 L360.1 179.0 L368.8 173.9 L384.9 165.9 L389.6 165.4 L398.5 168.6 L413.2 177.9 L435.4 195.3 L434.6 200.0 L430.6 204.5 L418.7 211.4 L414.9 215.9 L417.2 217.5 L427.1 218.6 L438.8 222.5 L442.3 227.1 L444.3 237.5 L446.4 239.5 L457.2 238.3 L460.5 239.8 L464.4 243.1 L468.3 251.7 L468.1 258.2 L457.4 269.6 L456.2 276.4 L450.6 284.5 L435.8 298.1 L431.9 298.9 L404.7 291.5 L383.0 292.5 L381.3 295.4 L384.9 303.6 L386.0 311.7 L382.6 318.0 L370.1 326.0 L369.7 329.5 L372.2 333.1 L390.3 340.4 L448.1 379.7 L474.3 387.2 L485.9 392.1 L488.9 394.9 L488.8 398.3 L485.8 402.7 L483.3 410.4 L483.1 415.0 L485.9 419.5 L490.5 426.1 L506.7 441.0 L518.5 444.6 L530.9 461.6 L534.6 476.6 L540.7 486.2 L570.6 518.5 L595.6 538.3 L610.4 559.7 L617.7 564.6 L619.9 572.3 L621.9 594.9 L630.5 606.2 L632.3 610.7 L636.1 614.1 L640.2 614.7 L649.1 607.4 L650.8 608.4 L654.8 620.3 L658.4 624.7 L671.6 632.0 L685.6 646.4 L693.1 651.6 L702.6 655.7 L703.9 660.2 L702.2 664.8 L699.2 667.8 L682.9 676.1 L680.7 679.8 L691.5 698.1 L718.6 720.8 L727.0 734.5 L725.2 741.0 L717.7 754.3 L712.1 757.9 L710.6 762.0 L714.8 772.8 L714.3 789.5 L709.2 793.5 L704.4 803.7 L701.1 804.5 L692.8 800.8 L675.4 818.3 L667.8 817.4 L659.1 827.3 L647.9 828.5 L640.1 821.2 L623.5 809.5 L617.6 802.2 L612.4 808.5 L603.7 814.5 L591.4 812.4 L588.1 821.2 L585.7 822.8 L570.8 824.3 L568.0 825.7 L570.4 833.7 L579.2 847.3 L581.8 855.1 L576.3 867.9 L560.9 867.5 L554.0 862.3 L545.3 851.5 L525.5 844.4 L512.3 849.3 L508.3 849.0 L498.3 839.9 L494.7 834.1 L492.4 825.4 L498.1 823.2 L515.1 812.8 L520.2 807.0 L522.2 800.9 L524.7 775.7 L526.9 766.8 L525.7 755.8 L521.6 747.2 L521.6 734.3 L523.7 723.9 L529.5 718.7 L533.5 711.2 L535.9 694.3 L534.1 690.0 L528.4 685.9 L518.9 682.0 L512.9 677.0 L510.4 671.0 L510.7 665.8 L513.6 661.3 L506.4 656.2 L489.1 650.6 L479.5 644.0 L477.4 636.2 L470.2 626.0 L457.8 613.4 L451.3 595.2 L450.6 571.6 L452.1 552.3 L457.5 530.0 L450.3 513.8 L442.3 505.3 L431.2 499.1 L420.7 490.1 L398.6 461.2 L384.6 438.3 L375.2 428.1 L370.4 430.5 L360.3 428.3 L344.8 421.7 L331.3 418.2 L319.9 417.7 L312.4 419.2 L308.9 422.7 L308.6 426.1 L311.6 429.5 L310.0 432.2 L304.0 434.1 L299.1 437.8 L293.7 446.2 L289.9 457.1 L284.2 461.4 L275.4 462.3 L266.7 465.4 L258.2 470.8 L254.1 474.8 L254.6 477.6 L252.8 478.2 L248.6 476.7 L246.6 473.0 L246.8 467.3 L242.5 463.5 L233.6 461.5 L223.4 455.4 L204.1 439.6 L199.6 438.9 L193.3 443.0 L185.0 451.9 L178.2 455.4 L172.8 453.5 L168.6 456.7 L165.7 464.7 L160.3 471.1 L134.3 488.1 L110.9 510.1 L105.0 512.0 L90.8 505.9 L86.3 501.6 L105.8 456.6 L108.7 445.7 L108.1 431.3 L99.8 419.3 L99.5 415.8 L100.7 412.1 L110.7 398.2 L122.2 362.3 L121.6 351.1 L116.5 338.8 L113.8 327.2 L116.0 311.3 L115.1 305.2 L109.7 302.1 L91.8 298.9 L81.5 301.5 L76.6 305.8 L70.7 308.5 L59.4 310.0 L48.8 304.7 L39.9 295.6 L37.8 284.4 L48.9 260.4 L51.6 251.1 L51.3 246.8 L49.4 242.2 L46.7 241.6 L41.0 235.9 L35.4 226.0 L30.2 221.4 L25.3 222.3 L20.7 226.0 L13.3 235.5 L10.9 234.2 L17.5 201.1 L23.7 187.0 L31.0 180.4 L38.7 177.7 L46.9 178.7 L53.7 177.5 L59.2 174.0 L58.7 172.1 L52.2 171.6 L49.6 167.8 L50.9 160.8 L53.8 156.2 L58.3 154.1 L62.6 147.0 L66.8 134.9 L71.9 128.7 L77.9 128.6 L88.1 123.4 L102.6 113.1 L108.2 103.3 L113.7 107.8 L111.7 119.2 L114.5 121.7 L115.9 125.8 L115.1 132.2 L116.3 137.6 L118.5 140.3 L121.7 141.6 L137.1 136.9 L146.5 136.6 L161.9 145.0 L171.1 138.7 L171.2 136.4 L163.7 128.5 L166.0 99.4 L165.0 77.3 L152.3 61.0 L149.7 54.5 L148.4 43.8 L144.8 34.6 L153.9 27.3 L158.8 13.8 L165.2 10.5 L167.2 11.0 L175.0 21.2 L184.8 16.1 L192.3 16.1 L198.7 18.8Z"/>
+            <text class="nb" x="70" y="640">THAILAND</text><text class="nb" x="560" y="410">VIETNAM</text><text class="nb" x="290" y="866">CAMBODIA</text><text class="nb" x="400" y="70">CHINA</text>
+            <path class="river" pathLength="1" d="M65.5 144.0 L59.4 154.6 L51.6 157.2 L52.9 160.8 L50.2 163.1 L49.1 169.3 L48.9 171.3 L50.7 172.6 L59.1 171.1 L61.9 172.3 L56.9 176.6 L51.0 179.2 L34.6 177.2 L31.3 181.4 L26.1 183.8 L20.0 190.2 L16.4 197.8 L11.5 221.1 L9.2 225.1 L9.7 233.6 L12.8 236.1 L14.5 236.1 L15.9 234.6 L15.9 230.7 L19.8 228.7 L22.8 222.7 L29.1 220.0 L32.7 221.0 L43.8 240.9 L50.2 245.0 L52.7 243.0 L55.5 243.6 L56.5 247.2 L55.5 258.7 L57.1 279.7 L64.4 278.1 L76.6 270.8 L88.2 272.7 L92.6 274.0 L95.9 276.6 L97.1 274.4 L99.1 275.9 L100.7 275.4 L106.3 271.1 L119.5 277.9 L148.1 277.6 L151.7 276.9 L153.8 274.4 L152.6 273.7 L153.8 272.6 L158.3 270.5 L162.2 266.9 L177.2 264.2 L187.6 254.6 L194.5 254.6 L201.3 251.2 L205.0 250.8 L208.1 251.9 L212.4 257.4 L213.4 261.2 L211.1 266.4 L205.2 269.7 L201.2 273.6 L193.7 275.1 L191.1 279.4 L179.9 289.4 L179.1 291.3 L173.3 295.0 L172.4 298.5 L173.0 313.3 L174.9 315.9 L181.1 319.7 L177.3 324.0 L173.3 332.1 L173.9 339.9 L171.3 358.9 L172.6 363.6 L171.3 371.4 L175.8 377.3 L176.9 380.7 L173.3 389.6 L172.0 397.8 L165.5 409.8 L162.2 412.9 L157.7 412.9 L156.2 414.2 L153.4 419.4 L149.9 421.5 L149.2 424.5 L147.0 427.5 L140.7 430.6 L133.3 441.8 L132.9 445.9 L135.6 451.6 L136.1 458.8 L135.2 467.1 L137.7 471.5 L142.9 472.4 L143.4 473.9 L147.4 472.5 L147.9 473.5 L146.0 477.9 L147.9 478.4 L149.6 476.0 L149.8 473.2 L152.0 474.5 L155.4 470.5 L164.2 468.8 L167.7 456.0 L170.1 452.6 L178.9 456.9 L180.9 456.3 L197.4 438.6 L204.6 439.0 L206.3 439.9 L208.2 444.8 L219.1 454.8 L221.9 456.3 L224.8 456.1 L229.1 460.6 L232.3 462.2 L243.9 462.9 L246.9 464.5 L248.1 468.5 L246.5 475.9 L254.8 479.0 L253.4 475.0 L253.9 473.4 L260.0 470.9 L271.0 462.8 L280.7 458.8 L286.9 461.6 L288.6 460.9 L291.9 456.4 L291.7 447.4 L298.1 443.3 L300.9 435.0 L313.0 431.2 L312.5 429.5 L307.8 426.4 L307.2 424.4 L309.7 420.0 L314.1 417.4 L322.6 415.8 L337.1 418.4 L342.6 419.9 L351.0 424.7 L361.1 426.2 L364.0 427.9 L366.4 431.3 L368.0 431.7 L373.3 427.2 L377.6 426.9 L380.0 428.1 L386.5 438.4 L391.6 450.5 L400.0 459.1 L406.4 473.5 L413.5 478.0 L420.1 490.0 L425.7 495.9 L446.7 507.2 L451.8 515.0 L454.9 517.1 L457.5 522.7 L456.9 542.8 L450.3 559.7 L451.2 568.9 L452.8 573.2 L451.9 580.1 L453.9 588.4 L451.1 602.8 L452.6 608.8 L461.2 614.6 L466.2 624.6 L476.4 632.3 L477.5 634.2 L478.1 643.5 L480.5 647.9 L497.5 654.9 L502.4 655.2 L515.0 659.0 L514.7 660.5 L509.4 664.5 L509.2 668.0 L514.1 680.0 L517.5 683.5 L524.9 683.6 L529.0 685.0 L533.2 687.8 L535.9 691.8 L536.8 696.5 L533.5 707.9 L532.4 716.1 L527.5 719.8 L521.1 722.5 L520.3 724.7 L522.4 727.5 L531.4 726.8 L535.1 728.0 L537.7 731.1 L539.2 737.0 L547.8 746.7 L554.2 750.8 L556.2 755.9 L560.2 759.6 L560.8 777.6 L563.7 782.2 L563.8 784.5 L562.1 788.8 L558.3 792.9 L557.9 798.9 L556.0 804.8 L555.9 812.2 L558.6 827.8 L555.0 836.9 L554.8 843.5 L552.5 849.7 L553.6 852.9 L558.5 858.6 L563.7 860.0 L567.4 862.8 L568.1 869.2"/>
+            <g class="fbs">
+              <g class="fb" style="animation:floatriver 120s linear infinite;animation-delay:-8s"><path d="M-9,0 h18 l-3,5 h-12Z" fill="#7C2D12"/><circle cy="-5" r="9" fill="url(#warm)"/><use href="#flame" x="-4" y="-12" width="8" height="12"/></g>
+              <g class="fb" style="animation:floatriver 120s linear infinite;animation-delay:-45s"><path d="M-9,0 h18 l-3,5 h-12Z" fill="#7C2D12"/><circle cy="-5" r="9" fill="url(#warm)"/><use href="#flame" x="-4" y="-12" width="8" height="12"/></g>
+              <g class="fb" style="animation:floatriver 120s linear infinite;animation-delay:-80s"><path d="M-9,0 h18 l-3,5 h-12Z" fill="#7C2D12"/><circle cy="-5" r="9" fill="url(#warm)"/><use href="#flame" x="-4" y="-12" width="8" height="12"/></g>
+              <g class="fb" style="animation:floatriver 120s linear infinite;animation-delay:-105s"><path d="M-9,0 h18 l-3,5 h-12Z" fill="#7C2D12"/><circle cy="-5" r="9" fill="url(#warm)"/><use href="#flame" x="-4" y="-12" width="8" height="12"/></g>
             </g>
-          </g>
-          <g opacity=".85"><rect class="waves" x="-60" y="120" width="360" height="16" fill="url(#wv)"/><rect class="waves b" x="-60" y="140" width="360" height="16" fill="url(#wv)" opacity=".6"/></g>
-        </svg>
-        <div class="cult-body"><span class="eyebrow">Boat racing festival</span><div class="lo-t">ແຂ່ງເຮືອ</div><p>Long boats race the Mekong after the end of Buddhist Lent. ແຂ່ງເຮືອ (khaeng heua).</p><button class="btn sm" type="button" data-say="ແຂ່ງເຮືອ"><svg class="ic"><use href="#i-speaker"/></svg>Listen</button></div>
+          </svg>
+          <button class="pin" type="button" tabindex="-1" aria-hidden="true" data-id="luangprabang" data-on="false" style="--x:27.49%;--y:30.86%"><span lang="lo">ຫຼວງພະບາງ</span></button>
+          <button class="pin" type="button" tabindex="-1" aria-hidden="true" data-id="vangvieng" data-on="false" style="--x:31.43%;--y:41.78%"><span lang="lo">ວັງວຽງ</span></button>
+          <button class="pin" type="button" tabindex="-1" aria-hidden="true" data-id="phonsavan" data-on="false" style="--x:41.03%;--y:35.77%"><span lang="lo">ທົ່ງໄຫຫີນ</span></button>
+          <button class="pin" type="button" tabindex="-1" aria-hidden="true" data-id="vientiane" data-on="false" style="--x:33.38%;--y:52.65%"><span lang="lo">ວຽງຈັນ</span></button>
+          <button class="pin" type="button" tabindex="-1" aria-hidden="true" data-id="champasak" data-on="false" style="--x:74.74%;--y:88.10%"><span lang="lo">ວັດພູ</span></button>
+          <button class="pin" type="button" tabindex="-1" aria-hidden="true" data-id="siphandon" data-on="false" style="--x:76.26%;--y:96.59%"><span lang="lo">ສີ່ພັນດອນ</span></button>
+        </div>
+        <p class="eyebrow" style="margin-block-start:10px;text-align:center">The Mekong, ແມ່ນ້ຳຂອງ, flowing south</p>
+      </div>
+
+      <article class="j-panel rv" id="jpanel" aria-live="polite">
+        <div class="stage" id="stage">
+          <span class="chip gold stage-badge" id="jbadge">UNESCO World Heritage</span>
+
+          <!-- 1. Luang Prabang: Phou Si with the golden stupa of Wat Chom Si, temple roofs, monks on Tak Bat -->
+          <svg class="scn-svg on" id="sc-luangprabang" viewBox="0 0 400 260" role="img" aria-label="Monks walking at dawn below Phou Si hill and its golden stupa in Luang Prabang">
+            <rect width="400" height="260" fill="url(#scsky)"/>
+            <circle class="sun-rise" cx="300" cy="136" r="30" fill="var(--orb)"/>
+            <path d="M0,168 Q60,140 130,160 T260,150 T400,160 V260H0Z" fill="var(--sc-far)"/>
+            <path d="M50,196 C74,150 118,118 164,122 C214,126 246,160 270,196Z" fill="var(--sc-mid)"/>
+            <path d="M118,196 Q146,160 164,124" fill="none" stroke="#EAD9A0" stroke-width="2" stroke-dasharray="3 3"/>
+            <g fill="#FBBF24" stroke="#B45309" stroke-width=".8"><rect x="154" y="118" width="22" height="6"/><path d="M158,118 L160,104 L164,92 L168,104 L170,118Z"/><path d="M164,92 V80" stroke-width="1.4"/></g>
+            <g transform="translate(286 150)" fill="var(--sc-near)"><rect x="4" y="34" width="100" height="22"/><path d="M-6,36 Q10,36 18,22 H90 Q98,36 114,36Z"/><path d="M18,22 Q26,22 32,10 H76 Q82,22 90,22Z"/><path d="M54,10 V0" stroke="#FBBF24" stroke-width="2"/><rect x="48" y="38" width="12" height="18" fill="#FBBF24" opacity=".7"/></g>
+            <rect y="206" width="400" height="54" fill="var(--sc-ground)"/>
+            <g class="mist" opacity=".35"><ellipse cx="120" cy="206" rx="120" ry="9" fill="#fff"/></g>
+            <use class="monk" style="--d:0s" href="#monk" x="30" y="198" width="28" height="48"/><use class="monk" style="--d:.15s" href="#monk" x="78" y="198" width="28" height="48"/><use class="monk" style="--d:.3s" href="#monk" x="126" y="198" width="28" height="48"/><use class="monk" style="--d:.45s" href="#monk" x="174" y="198" width="28" height="48"/><use class="monk" style="--d:.6s" href="#monk" x="222" y="198" width="28" height="48"/><use class="monk" style="--d:.75s" href="#monk" x="270" y="198" width="28" height="48"/>
+            <g transform="translate(352 238)"><circle cy="-22" r="5.5" fill="#E0A96D"/><path d="M-9,-15 Q0,-20 9,-15 L12,0 H-12Z" fill="#F8FAFC"/><ellipse cx="-14" cy="-3" rx="8" ry="4.5" fill="#B45309"/></g>
+          </svg>
+
+          <!-- 2. Vang Vieng: karst towers, Nam Song, a balloon at sunrise -->
+          <svg class="scn-svg" id="sc-vangvieng" viewBox="0 0 400 260" role="img" aria-label="Limestone karst peaks above the Nam Song river with a hot-air balloon in Vang Vieng">
+            <rect width="400" height="260" fill="url(#scsky)"/>
+            <circle class="sun-rise" cx="330" cy="62" r="24" fill="var(--orb)"/>
+            <path d="M0,170 C20,120 40,80 60,110 C80,140 95,100 120,60 C140,30 160,70 170,110 C190,140 210,90 240,70 C260,55 280,100 300,130 C330,160 350,110 370,90 C385,80 395,100 400,110 V260H0Z" fill="var(--sc-karst-1)"/>
+            <g class="mist" opacity=".4"><ellipse cx="200" cy="150" rx="150" ry="10" fill="#fff"/></g>
+            <path d="M0,200 C30,150 60,130 90,150 C120,170 150,120 190,110 C230,100 240,150 270,160 C310,170 340,120 370,140 C385,150 395,170 400,175 V260H0Z" fill="var(--sc-karst-2)"/>
+            <path d="M0,226 C70,196 150,214 230,204 C310,194 360,206 400,200 V260H0Z" fill="var(--sc-karst-3)"/>
+            <path d="M-10,244 C80,222 160,240 240,228 C320,216 360,230 410,220 V260H-10Z" fill="var(--sc-water)"/>
+            <path class="ripple" d="M20,248 Q80,238 140,246 T260,240 T390,236" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="2"/>
+            <g class="balloon"><g class="bb" transform="translate(0 70)"><path d="M0,-30 C-24,-30 -26,-2 -10,16 L10,16 C26,-2 24,-30 0,-30Z" fill="#CE1126"/><path d="M0,-30 C-9,-30 -10,-2 -4,16 H4 C10,-2 9,-30 0,-30Z" fill="#FBBF24"/><path d="M-10,16 L-5,28 M10,16 L5,28" stroke="#475569" stroke-width="1"/><rect x="-6" y="28" width="12" height="8" rx="1.5" fill="#92400E"/></g></g>
+          </svg>
+
+          <!-- 3. Plain of Jars -->
+          <svg class="scn-svg" id="sc-phonsavan" viewBox="0 0 400 260" role="img" aria-label="Ancient stone jars on the misty hills of the Plain of Jars">
+            <rect width="400" height="260" fill="url(#scsky)"/>
+            <circle class="sun-rise" cx="320" cy="120" r="26" fill="var(--orb)"/>
+            <path d="M0,150 Q90,118 190,142 T400,128 V260H0Z" fill="var(--sc-far)"/>
+            <path d="M0,176 Q120,146 230,170 T400,160 V260H0Z" fill="var(--sc-mid)"/>
+            <g class="mist" opacity=".4"><ellipse cx="150" cy="176" rx="170" ry="12" fill="#fff"/></g>
+            <path d="M0,214 Q130,186 250,208 T400,196 V260H0Z" fill="var(--sc-near)"/>
+            <use href="#jar" x="214" y="150" width="20" height="26"/><use href="#jar" x="250" y="142" width="16" height="21"/><use href="#jar" x="130" y="164" width="26" height="34"/>
+            <use href="#jar" x="296" y="164" width="24" height="31"/><use href="#jar" x="60" y="182" width="36" height="47"/><use href="#jar" x="176" y="188" width="44" height="57"/>
+            <use href="#jar" x="338" y="198" width="46" height="60"/><use href="#jar" x="16" y="210" width="30" height="39"/>
+            <g class="mist b" opacity=".35"><ellipse cx="260" cy="206" rx="170" ry="9" fill="#fff"/></g>
+          </svg>
+
+          <!-- 4. Vientiane: Pha That Luang under the full moon, candles for Boun That Luang -->
+          <svg class="scn-svg" id="sc-vientiane" viewBox="0 0 400 260" role="img" aria-label="Pha That Luang golden stupa under a full moon with rows of candles in Vientiane">
+            <rect width="400" height="260" fill="url(#scsky)"/>
+            <circle class="sun-rise" cx="324" cy="64" r="26" fill="var(--orb)"/>
+            <path d="M0,170 Q100,150 200,166 T400,156 V260H0Z" fill="var(--sc-far)"/>
+            <circle cx="200" cy="170" r="110" fill="url(#warm)" class="lit"/>
+            <g fill="#FBBF24" stroke="#B45309" stroke-width=".9" stroke-linejoin="round">
+              <rect x="70" y="190" width="260" height="14"/>
+              <g id="vs"><path d="M78,190 v-12 q3,-14 6,-20 q3,6 6,20 v12Z"/><path d="M102,190 v-12 q3,-14 6,-20 q3,6 6,20 v12Z"/><path d="M126,190 v-12 q3,-14 6,-20 q3,6 6,20 v12Z"/></g>
+              <use href="#vs" transform="translate(172 0)"/>
+              <rect x="150" y="176" width="100" height="14"/><rect x="164" y="164" width="72" height="12"/><rect x="174" y="154" width="52" height="10"/>
+              <path d="M178,154 C172,132 186,122 194,108 L197,80 L199,56 L200,34 L201,56 L203,80 L206,108 C214,122 228,132 222,154Z"/>
+              <path d="M192,90 H208M189,106 H211M184,122 H216M180,138 H220" fill="none" stroke-width="1.3"/>
+            </g>
+            <rect y="206" width="400" height="54" fill="var(--sc-ground)"/>
+            <g class="lit">
+              <rect x="27.5" y="239" width="5" height="9" rx="1" fill="#FBBF24"/><use class="flame-c" style="--d:0s" href="#flame" x="26" y="226" width="8" height="14"/><rect x="65.5" y="249" width="5" height="9" rx="1" fill="#FBBF24"/><use class="flame-c" style="--d:0.2s" href="#flame" x="64" y="236" width="8" height="14"/><rect x="105.5" y="237" width="5" height="9" rx="1" fill="#FBBF24"/><use class="flame-c" style="--d:0.4s" href="#flame" x="104" y="224" width="8" height="14"/><rect x="143.5" y="251" width="5" height="9" rx="1" fill="#FBBF24"/><use class="flame-c" style="--d:0.1s" href="#flame" x="142" y="238" width="8" height="14"/><rect x="183.5" y="241" width="5" height="9" rx="1" fill="#FBBF24"/><use class="flame-c" style="--d:0.5s" href="#flame" x="182" y="228" width="8" height="14"/><rect x="223.5" y="251" width="5" height="9" rx="1" fill="#FBBF24"/><use class="flame-c" style="--d:0.3s" href="#flame" x="222" y="238" width="8" height="14"/><rect x="263.5" y="237" width="5" height="9" rx="1" fill="#FBBF24"/><use class="flame-c" style="--d:0.6s" href="#flame" x="262" y="224" width="8" height="14"/><rect x="303.5" y="249" width="5" height="9" rx="1" fill="#FBBF24"/><use class="flame-c" style="--d:0.15s" href="#flame" x="302" y="236" width="8" height="14"/><rect x="343.5" y="241" width="5" height="9" rx="1" fill="#FBBF24"/><use class="flame-c" style="--d:0.45s" href="#flame" x="342" y="228" width="8" height="14"/><rect x="377.5" y="251" width="5" height="9" rx="1" fill="#FBBF24"/><use class="flame-c" style="--d:0.25s" href="#flame" x="376" y="238" width="8" height="14"/>
+            </g>
+          </svg>
+
+          <!-- 5. Champasak: Wat Phou below Phou Kao, frangipani (dok champa) trees -->
+          <svg class="scn-svg" id="sc-champasak" viewBox="0 0 400 260" role="img" aria-label="Wat Phou temple terraces below the lingam-shaped peak of Phou Kao, with frangipani trees">
+            <rect width="400" height="260" fill="url(#scsky)"/>
+            <circle class="sun-rise" cx="70" cy="86" r="24" fill="var(--orb)"/>
+            <path d="M40,214 L120,140 C140,118 150,96 160,66 C166,46 176,34 190,34 C204,34 212,46 216,64 C224,96 236,120 258,142 L360,214Z" fill="var(--sc-far)"/>
+            <path d="M0,214 L110,160 C150,140 250,140 290,160 L400,214V260H0Z" fill="var(--sc-mid)"/>
+            <g fill="var(--sc-stone)"><rect x="124" y="176" width="152" height="14"/><rect x="144" y="162" width="112" height="14"/><rect x="164" y="148" width="72" height="14"/><rect x="180" y="132" width="40" height="16"/></g>
+            <path d="M194,190 L196,132 H204 L206,190Z" fill="#fff" opacity=".35"/>
+            <rect x="188" y="116" width="24" height="16" fill="var(--sc-stone)"/><rect x="195" y="121" width="10" height="11" fill="#1F2937" opacity=".8"/>
+            <path d="M178,230 L192,190 M222,230 L208,190" stroke="var(--sc-stone)" stroke-width="3" fill="none"/>
+            <path d="M0,260 L0,222 C60,214 130,226 200,222 C270,218 340,214 400,222 V260Z" fill="var(--sc-near)"/>
+            <g><path d="M44,230 C42,210 48,196 50,184" stroke="#5B4636" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="50" cy="178" rx="34" ry="22" fill="#2F8F5B"/><g fill="#fff"><circle cx="38" cy="172" r="5"/><circle cx="52" cy="166" r="5"/><circle cx="64" cy="176" r="5"/><circle cx="46" cy="184" r="5"/></g><g fill="#FBBF24"><circle cx="38" cy="172" r="1.8"/><circle cx="52" cy="166" r="1.8"/><circle cx="64" cy="176" r="1.8"/><circle cx="46" cy="184" r="1.8"/></g></g>
+            <g><path d="M352,232 C354,212 348,198 346,186" stroke="#5B4636" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="346" cy="180" rx="34" ry="22" fill="#2F8F5B"/><g fill="#fff"><circle cx="334" cy="174" r="5"/><circle cx="348" cy="168" r="5"/><circle cx="360" cy="178" r="5"/><circle cx="342" cy="186" r="5"/></g><g fill="#FBBF24"><circle cx="334" cy="174" r="1.8"/><circle cx="348" cy="168" r="1.8"/><circle cx="360" cy="178" r="1.8"/><circle cx="342" cy="186" r="1.8"/></g></g>
+            <g fill="#fff"><ellipse class="petalfall" style="--t:7s;--d:0s;--dx:-24px" cx="60" cy="180" rx="4" ry="2.4"/><ellipse class="petalfall" style="--t:9s;--d:-3s;--dx:18px" cx="340" cy="176" rx="4" ry="2.4"/><ellipse class="petalfall" style="--t:8s;--d:-5s;--dx:-12px" cx="44" cy="176" rx="4" ry="2.4"/><ellipse class="petalfall" style="--t:10s;--d:-7s;--dx:22px" cx="356" cy="182" rx="4" ry="2.4"/><ellipse class="petalfall" style="--t:8.5s;--d:-1s;--dx:10px" cx="68" cy="172" rx="4" ry="2.4"/></g>
+          </svg>
+
+          <!-- 6. Si Phan Don: islands, Li Phi falls, long-tail boat -->
+          <svg class="scn-svg" id="sc-siphandon" viewBox="0 0 400 260" role="img" aria-label="Islands in the wide Mekong at Si Phan Don with a long-tail boat and a waterfall">
+            <rect width="400" height="260" fill="url(#scsky)"/>
+            <circle class="sun-rise" cx="300" cy="118" r="28" fill="var(--orb)"/>
+            <path d="M0,150 Q90,132 190,146 T400,140 V260H0Z" fill="var(--sc-far)"/>
+            <rect y="150" width="400" height="110" fill="var(--sc-water)"/>
+            <g fill="var(--sc-mid)"><path d="M120,170 Q150,138 190,152 Q220,160 230,170Z"/><path d="M240,176 Q268,152 306,162 Q330,168 340,176Z"/><path d="M20,182 Q50,156 90,168 Q110,174 116,182Z"/></g>
+            <g stroke="#3F2F25" stroke-width="3" fill="none" stroke-linecap="round"><path d="M160,152 C158,140 160,132 164,124"/><path d="M284,162 C282,150 284,142 288,134"/></g>
+            <g stroke="var(--sc-near)" stroke-width="3" fill="none" stroke-linecap="round"><path d="M164,124 q-14,-2 -20,8 M164,124 q14,-4 22,6 M164,124 q-4,-12 6,-16 M164,124 q8,-10 18,-6"/><path d="M288,134 q-14,-2 -20,8 M288,134 q14,-4 22,6 M288,134 q-4,-12 6,-16 M288,134 q8,-10 18,-6"/></g>
+            <g><path d="M0,184 L62,184 Q72,196 66,214 L50,224 L0,224Z" fill="#6B5B4B"/><path d="M0,184 L62,184 L58,190 L0,190Z" fill="#8A7762"/>
+              <g stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".92"><path class="cascade" d="M10,190 V236"/><path class="cascade" style="animation-delay:-.3s" d="M26,190 V240"/><path class="cascade" style="animation-delay:-.6s" d="M42,190 V236"/><path class="cascade" style="animation-delay:-.2s" d="M56,190 V232"/></g>
+              <ellipse class="mist" cx="34" cy="244" rx="44" ry="9" fill="#fff" opacity=".55"/></g>
+            <path class="ripple" d="M90,232 Q160,222 230,230 T390,226" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="2"/>
+            <path class="ripple" style="animation-direction:reverse" d="M110,248 Q180,240 250,246 T400,242" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2"/>
+            <g class="longtail"><g transform="translate(0 206)"><path class="wake" style="transform-origin:0 22px" d="M-14,22 H-60" stroke="#fff" stroke-width="3" opacity=".8"/><path d="M0,10 Q30,26 74,8 L68,20 Q34,30 6,20Z" fill="#CE1126"/><path d="M60,12 L98,26" stroke="#475569" stroke-width="3" stroke-linecap="round"/><circle cx="26" cy="2" r="4.5" fill="#E0A96D"/><path d="M20,6 H34 L36,14 H18Z" fill="#2563EB"/><path d="M14,-2 Q30,-16 46,-2Z" fill="#F8FAFC"/></g></g>
+          </svg>
+        </div>
+        <div class="j-body" id="jbody">
+          <h3><span id="jname">Luang Prabang</span><span class="lo-t" id="jlo" lang="lo">ຫຼວງພະບາງ</span></h3>
+          <p id="jtext"></p>
+          <div class="j-facts" id="jfacts"></div>
+          <div class="j-words" id="jwords"></div>
+        </div>
       </article>
+    </div>
+
+    <!-- festival calendar -->
+    <div class="fest-wrap">
+      <div class="fest-head rv"><div><span class="eyebrow">Festival calendar</span><h3>The Lao year, month by month</h3></div><p>Lunar festival dates move each year. The current one is highlighted.</p></div>
+      <ul class="fest" id="fest" aria-label="Lao festival calendar">
+
+        <li class="fcard" data-m="3">
+          <svg viewBox="0 0 96 72" role="img" aria-label="Water splashing from a silver bowl for Lao New Year"><rect width="96" height="72" fill="url(#scsky)"/>
+            <path d="M22,44 Q48,72 74,44Z" fill="#CBD5E1"/><ellipse cx="48" cy="44" rx="26" ry="5" fill="#E2E8F0"/><ellipse cx="48" cy="45" rx="22" ry="3.4" fill="#38BDF8"/>
+            <g fill="#38BDF8"><circle class="drop" style="--d:0s;--dx:-26px" cx="48" cy="42" r="2.6"/><circle class="drop" style="--d:.3s;--dx:-12px" cx="48" cy="42" r="2.2"/><circle class="drop" style="--d:.6s;--dx:4px" cx="48" cy="42" r="2.8"/><circle class="drop" style="--d:.9s;--dx:20px" cx="48" cy="42" r="2.2"/><circle class="drop" style="--d:1.2s;--dx:30px" cx="48" cy="42" r="2.6"/></g>
+            <g fill="#F59E0B"><circle cx="30" cy="46" r="3"/><circle cx="68" cy="47" r="3"/></g>
+          </svg>
+          <span class="mo">13–16 April</span><h4>Boun Pi Mai Lao</h4><div class="lo-t" lang="lo">ບຸນປີໃໝ່ລາວ</div>
+          <p>Lao New Year. Neighbors splash water to wash away the old year, and Nang Sangkhan parades through Luang Prabang.</p>
+        </li>
+
+        <li class="fcard" data-m="4">
+          <svg viewBox="0 0 96 72" role="img" aria-label="A bamboo rocket rising with smoke for the rocket festival"><rect width="96" height="72" fill="url(#scsky)"/>
+            <path d="M0,62 Q30,52 60,60 T96,56 V72H0Z" fill="var(--sc-mid)"/>
+            <g class="rocket"><g transform="translate(26 58) rotate(32)"><rect x="-3" y="-30" width="6" height="30" rx="1.5" fill="#B45309"/><path d="M-3,-30 L0,-37 L3,-30Z" fill="#CE1126"/><rect x="-3" y="-20" width="6" height="2.4" fill="#FBBF24"/><path d="M-3,0 L0,10 L3,0Z" fill="#F97316"/></g></g>
+            <g fill="#E2E8F0"><circle class="smoke" style="--d:.2s" cx="30" cy="56" r="5"/><circle class="smoke" style="--d:.6s" cx="38" cy="46" r="6"/><circle class="smoke" style="--d:1s" cx="46" cy="34" r="7"/></g>
+          </svg>
+          <span class="mo">May</span><h4>Boun Bang Fai</h4><div class="lo-t" lang="lo">ບຸນບັ້ງໄຟ</div>
+          <p>The rocket festival. Villages launch bamboo rockets to call the rains before rice planting.</p>
+        </li>
+
+        <li class="fcard" data-m="6">
+          <svg viewBox="0 0 96 72" role="img" aria-label="A carved wax candle with a flickering flame for the start of Buddhist Lent"><rect width="96" height="72" fill="url(#scsky)"/>
+            <ellipse cx="48" cy="64" rx="22" ry="4" fill="var(--sc-ground)"/>
+            <rect x="40" y="28" width="16" height="36" rx="2" fill="#FBBF24"/><g fill="#CE1126"><rect x="40" y="33" width="16" height="3"/><rect x="40" y="42" width="16" height="3"/><rect x="40" y="51" width="16" height="3"/></g><path d="M48,28 V23" stroke="#1F2937" stroke-width="1.4"/>
+            <circle cx="48" cy="17" r="14" fill="url(#warm)"/><g class="cand" style="--d:0s"><path d="M48,6 C53,12 54,17 48,23 C42,17 43,12 48,6Z" fill="#FDE047"/><path d="M48,13 C51,17 51,20 48,23 C45,20 45,17 48,13Z" fill="#F97316"/></g>
+          </svg>
+          <span class="mo">July, full moon</span><h4>Boun Khao Phansa</h4><div class="lo-t" lang="lo">ບຸນເຂົ້າພັນສາ</div>
+          <p>The start of Buddhist Lent. Families bring candles and offerings to the temple.</p>
+        </li>
+
+        <li class="fcard" data-m="9">
+          <svg viewBox="0 0 96 72" role="img" aria-label="A lit fire boat floating on the river for Ok Phansa"><rect width="96" height="72" fill="url(#scsky)"/>
+            <rect y="44" width="96" height="28" fill="var(--sc-water)"/>
+            <g class="boatbob"><path d="M26,46 H70 L64,54 H32Z" fill="#7C2D12"/><rect x="34" y="40" width="3" height="6" fill="#FBBF24"/><rect x="46" y="38" width="3" height="8" fill="#FBBF24"/><rect x="58" y="40" width="3" height="6" fill="#FBBF24"/>
+              <g class="cand" style="--d:0s"><path d="M35.5,32 C38,36 38,39 35.5,40.5 C33,39 33,36 35.5,32Z" fill="#FDE047"/></g><g class="cand" style="--d:.2s"><path d="M47.5,29 C50,33 50,37 47.5,38.5 C45,37 45,33 47.5,29Z" fill="#FDE047"/></g><g class="cand" style="--d:.4s"><path d="M59.5,32 C62,36 62,39 59.5,40.5 C57,39 57,36 59.5,32Z" fill="#FDE047"/></g></g>
+            <circle cx="48" cy="40" r="30" fill="url(#warm)" opacity=".6"/>
+            <rect class="waves" x="-60" y="56" width="216" height="16" fill="url(#wv)" opacity=".7"/>
+          </svg>
+          <span class="mo">October</span><h4>Boun Ok Phansa and Suang Heua</h4><div class="lo-t" lang="lo">ບຸນອອກພັນສາ · ບຸນສ່ວງເຮືອ</div>
+          <p>End of Lent. Lit boats float on the Mekong the night before, and crews race long boats the next day.</p>
+        </li>
+
+        <li class="fcard" data-m="10">
+          <svg viewBox="0 0 96 72" role="img" aria-label="Pha That Luang stupa surrounded by candles for Boun That Luang"><rect width="96" height="72" fill="url(#scsky)"/>
+            <circle cx="74" cy="14" r="7" fill="var(--orb)"/>
+            <g fill="#FBBF24" stroke="#B45309" stroke-width=".5"><rect x="26" y="52" width="44" height="5"/><rect x="31" y="47" width="34" height="5"/><path d="M38,47 C36,38 42,34 45,28 L47,12 L48,6 L49,12 L51,28 C54,34 60,38 58,47Z"/></g>
+            <rect y="58" width="96" height="14" fill="var(--sc-ground)"/>
+            <g><use class="cand" style="--d:0s" href="#flame" x="10" y="62" width="4" height="6"/><use class="cand" style="--d:.2s" href="#flame" x="22" y="64" width="4" height="6"/><use class="cand" style="--d:.4s" href="#flame" x="34" y="62" width="4" height="6"/><use class="cand" style="--d:.1s" href="#flame" x="46" y="65" width="4" height="6"/><use class="cand" style="--d:.5s" href="#flame" x="58" y="62" width="4" height="6"/><use class="cand" style="--d:.3s" href="#flame" x="70" y="64" width="4" height="6"/><use class="cand" style="--d:.6s" href="#flame" x="82" y="62" width="4" height="6"/></g>
+          </svg>
+          <span class="mo">November, full moon</span><h4>Boun That Luang</h4><div class="lo-t" lang="lo">ບຸນທາດຫຼວງ</div>
+          <p>Candlelit processions and a fair at Pha That Luang in Vientiane, for up to a week.</p>
+        </li>
+
+        <li class="fcard" data-m="11">
+          <svg viewBox="0 0 96 72" role="img" aria-label="The Lao flag waving for National Day"><rect width="96" height="72" fill="url(#scsky)"/>
+            <defs><filter id="flagwave" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".006 .03" numOctaves="1" seed="2" result="t"><animate attributeName="baseFrequency" dur="4s" values=".006 .03;.01 .04;.006 .03" repeatCount="indefinite"/></feTurbulence><feDisplacementMap in="SourceGraphic" in2="t" scale="3.2" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+            <rect x="14" y="8" width="3" height="62" fill="#92400E"/>
+            <g filter="url(#flagwave)"><rect x="17" y="12" width="66" height="12" fill="#CE1126"/><rect x="17" y="24" width="66" height="24" fill="#0B2A6B"/><rect x="17" y="48" width="66" height="12" fill="#CE1126"/><circle cx="50" cy="36" r="9.6" fill="#fff"/></g>
+          </svg>
+          <span class="mo">2 December</span><h4>Lao National Day</h4><div class="lo-t" lang="lo">ວັນຊາດ</div>
+          <p>Marks the founding of the Lao People's Democratic Republic in 1975.</p>
+        </li>
+
+      </ul>
     </div>
   </section>
 
   <section id="services">
-    <div class="sec-h rv"><span class="eyebrow">Services</span><h2>Everything you need to read, write and speak</h2><p class="lo-sub">ທຸກຢ່າງທີ່ຕ້ອງການເພື່ອຮຽນພາສາລາວ</p><p>Each tool runs on the same sentence patterns, so what you hear in a lesson turns up in practice, review and the dictionary.</p></div>
+    <div class="sec-h rv"><span class="eyebrow">Services</span><h2>Everything you need to read, write and speak</h2><p class="lo-sub" lang="lo">ທຸກຢ່າງທີ່ຕ້ອງການເພື່ອຮຽນພາສາລາວ</p><p>Each tool runs on the same sentence patterns, so what you hear in a lesson turns up in practice, review and the dictionary.</p></div>
+    <div class="bento-wrap">
     <div class="bento">
       <article class="card b-big rv">
-        <span class="tile"><svg class="ic"><use href="#i-book"/></svg></span>
+        <span class="tile"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg></span>
         <h3>Sentence patterns and generator</h3>
         <p>Learn a pattern once, then swap words in and out. Every sentence has Lao script, romanization, audio and a translation.</p>
         <div class="pattern" aria-label="Interactive sentence pattern">
           <div class="words" id="words"></div>
-          <div class="lo" id="pLao" style="font-size:1.3rem;font-weight:700">ຂ້ອຍຢາກກິນເຂົ້າໜຽວ</div>
+          <div class="lo" id="pLao" lang="lo" style="font-size:1.3rem;font-weight:700">ຂ້ອຍຢາກກິນເຂົ້າໜຽວ</div>
           <div class="tr" id="pTr">khoy yak kin khao niao · I want to eat sticky rice.</div>
         </div>
       </article>
-      <article class="card b-mid rv"><span class="tile"><svg class="ic"><use href="#i-wave"/></svg></span><h3>Alphabet, vowels and tones</h3><p>All 27 consonants by Middle, High and Low class, short and long vowels, and six tones you can hear.</p></article>
-      <article class="card b-sm rv"><span class="tile"><svg class="ic"><use href="#i-pen"/></svg></span><h3>Handwriting studio</h3><p>Trace each stroke and get scored.</p><span class="lock"><svg class="ic"><use href="#i-lock"/></svg>Standard</span></article>
-      <article class="card b-sm rv"><span class="tile"><svg class="ic"><use href="#i-search"/></svg></span><h3>Dictionary</h3><p>Search in Lao, romanization or English.</p></article>
-      <article class="card b-sm rv"><span class="tile"><svg class="ic"><use href="#i-repeat"/></svg></span><h3>Spaced review</h3><p>Flashcards come back just before you forget.</p></article>
-      <article class="card b-mid rv"><span class="tile"><svg class="ic"><use href="#i-lamp"/></svg></span><h3>Culture and pronunciation labs</h3><p>Tone drills, minimal pairs, kinship terms, classifiers and etiquette such as the Baci ceremony.</p></article>
+      <article class="card b-mid rv"><span class="tile"><svg class="ic" aria-hidden="true"><use href="#i-wave"/></svg></span><h3>Alphabet, vowels and tones</h3><p>All 27 consonants by Middle, High and Low class, short and long vowels, and six tones you can hear.</p></article>
+      <article class="card b-sm rv"><span class="tile"><svg class="ic" aria-hidden="true"><use href="#i-pen"/></svg></span><h3>Handwriting studio</h3><p>Trace each stroke and get scored.</p><span class="lock"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg>Standard</span></article>
+      <article class="card b-sm rv"><span class="tile"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg></span><h3>Dictionary</h3><p>Search in Lao, romanization or English.</p></article>
+      <article class="card b-sm rv"><span class="tile"><svg class="ic" aria-hidden="true"><use href="#i-repeat"/></svg></span><h3>Spaced review</h3><p>Flashcards come back just before you forget.</p></article>
+      <article class="card b-mid rv"><span class="tile"><svg class="ic" aria-hidden="true"><use href="#i-lamp"/></svg></span><h3>Culture and pronunciation labs</h3><p>Tone drills, minimal pairs, kinship terms, classifiers and etiquette such as the Baci ceremony.</p></article>
+    </div>
     </div>
   </section>
 
   <section id="resources">
     <div class="sec-h rv"><span class="eyebrow">Free resources</span><h2>Take something home today</h2><p>Free with a free account. Your download appears in your library after sign-up.</p></div>
     <div class="res">
-      <article class="card rv"><div class="cover c1 lo"><span class="chip">PDF</span>ກ</div><h3>30-day Lao starter guide</h3><p>Script, tones and survival conversation in one reference.</p><button class="btn primary sm" type="button" data-res="the 30-day starter guide"><svg class="ic"><use href="#i-down"/></svg>Get it free</button></article>
-      <article class="card rv"><div class="cover c2 lo"><span class="chip">Chart</span>ຂ ຄ</div><h3>Consonant chart</h3><p>27 letters with class, sound and mnemonic.</p><button class="btn sm" type="button" data-res="the consonant chart"><svg class="ic"><use href="#i-down"/></svg>Get it free</button></article>
-      <article class="card rv"><div class="cover c3 lo"><span class="chip">Cheat sheet</span>໊ ໋</div><h3>Six tones, one page</h3><p>Marks, pitch shapes and example words.</p><button class="btn sm" type="button" data-res="the tone cheat sheet"><svg class="ic"><use href="#i-down"/></svg>Get it free</button></article>
-      <article class="card rv"><div class="cover c4 lo"><span class="chip">Audio</span>ສ</div><h3>Greetings audio pack</h3><p>20 everyday phrases by a native speaker.</p><button class="btn sm" type="button" data-res="the greetings audio pack"><svg class="ic"><use href="#i-down"/></svg>Get it free</button></article>
+      <article class="card rv"><div class="cover c1 lo" lang="lo"><span class="chip">PDF</span>ກ</div><h3>30-day Lao starter guide</h3><p>Script, tones and survival conversation in one reference.</p><button class="btn primary sm" type="button" data-res="the 30-day starter guide"><svg class="ic" aria-hidden="true"><use href="#i-down"/></svg>Get it free</button></article>
+      <article class="card rv"><div class="cover c2 lo" lang="lo"><span class="chip">Chart</span>ຂ ຄ</div><h3>Consonant chart</h3><p>27 letters with class, sound and mnemonic.</p><button class="btn sm" type="button" data-res="the consonant chart"><svg class="ic" aria-hidden="true"><use href="#i-down"/></svg>Get it free</button></article>
+      <article class="card rv"><div class="cover c3 lo" lang="lo"><span class="chip">Cheat sheet</span>໊ ໋</div><h3>Six tones, one page</h3><p>Marks, pitch shapes and example words.</p><button class="btn sm" type="button" data-res="the tone cheat sheet"><svg class="ic" aria-hidden="true"><use href="#i-down"/></svg>Get it free</button></article>
+      <article class="card rv"><div class="cover c4 lo" lang="lo"><span class="chip">Audio</span>ສ</div><h3>Greetings audio pack</h3><p>20 everyday phrases by a native speaker.</p><button class="btn sm" type="button" data-res="the greetings audio pack"><svg class="ic" aria-hidden="true"><use href="#i-down"/></svg>Get it free</button></article>
     </div>
   </section>
 
   <section id="promotions">
     <div class="sec-h rv"><span class="eyebrow">Promotions and plans</span><h2>Start free, upgrade when you want more</h2></div>
     <div class="promo rv">
-      <div><span class="chip gold">Limited offer · placeholder copy</span><h3 style="margin-top:10px">Save 30% on Premium for your first 3 months</h3><p>Applies automatically at checkout when you upgrade from the Free plan. Editable from the admin portal.</p></div>
-      <div class="count" aria-label="Offer ends in"><div><b>12</b><small>Days</small></div><div><b>08</b><small>Hours</small></div><div><b>41</b><small>Min</small></div></div>
+      <div><span class="chip gold">Limited offer · placeholder copy</span><h3 style="margin-block-start:10px">Save 30% on Premium for your first 3 months</h3><p>Applies automatically at checkout when you upgrade from the Free plan. Editable from the admin portal.</p></div>
+      <div class="count" role="timer" aria-label="Offer ends in 12 days, 8 hours, 41 minutes"><div><b>12</b><small>Days</small></div><div><b>08</b><small>Hours</small></div><div><b>41</b><small>Min</small></div></div>
     </div>
     <div class="plans">
-      <article class="card plan rv"><h3>Free</h3><div class="price">$0</div><ul><li><svg class="ic"><use href="#i-check"/></svg>Basic Lao patterns</li><li><svg class="ic"><use href="#i-check"/></svg>Alphabet and audio</li><li><svg class="ic"><use href="#i-check"/></svg>Essential dictionary</li></ul><button class="btn" type="button" data-plan="Free">Create free account</button></article>
-      <article class="card plan feat rv"><span class="chip tag">Most popular</span><h3>Standard</h3><div class="price">$9<small> / month</small></div><ul><li><svg class="ic"><use href="#i-check"/></svg>All Lao patterns</li><li><svg class="ic"><use href="#i-check"/></svg>Sentence generator</li><li><svg class="ic"><use href="#i-check"/></svg>Handwriting studio</li><li><svg class="ic"><use href="#i-check"/></svg>Spaced repetition</li></ul><button class="btn primary" type="button" data-plan="Standard">Choose Standard</button></article>
-      <article class="card plan rv"><h3>Premium</h3><div class="price">$19<small> / month</small></div><ul><li><svg class="ic"><use href="#i-check"/></svg>Full curriculum</li><li><svg class="ic"><use href="#i-check"/></svg>All dialogues and audio</li><li><svg class="ic"><use href="#i-check"/></svg>Offline pack</li><li><svg class="ic"><use href="#i-check"/></svg>VIP support</li></ul><button class="btn" type="button" data-plan="Premium">Choose Premium</button></article>
+      <article class="card plan rv"><h3>Free</h3><div class="price">$0</div><ul><li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Basic Lao patterns</li><li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Alphabet and audio</li><li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Essential dictionary</li></ul><button class="btn" type="button" data-plan="Free">Create free account</button></article>
+      <article class="card plan feat rv"><span class="chip tag">Most popular</span><h3>Standard</h3><div class="price">$9<small> / month</small></div><ul><li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>All Lao patterns</li><li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Sentence generator</li><li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Handwriting studio</li><li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Spaced repetition</li></ul><button class="btn primary" type="button" data-plan="Standard">Choose Standard</button></article>
+      <article class="card plan rv"><h3>Premium</h3><div class="price">$19<small> / month</small></div><ul><li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Full curriculum</li><li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>All dialogues and audio</li><li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Offline pack</li><li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>VIP support</li></ul><button class="btn" type="button" data-plan="Premium">Choose Premium</button></article>
     </div>
   </section>
 
@@ -648,38 +891,39 @@ footer a{color:var(--ink-2)}
     <div class="sec-h rv"><span class="eyebrow">News</span><h2>Updates and stories from Laos</h2></div>
     <div class="news">
       <article class="card story lead rv">
-        <div class="thumb lo" style="background:linear-gradient(140deg,#0284C7,#0C4A6E)">ສະບາຍດີ</div>
-        <div class="tx"><div class="meta"><span class="chip">Release</span><svg class="ic" style="width:14px;height:14px"><use href="#i-cal"/></svg>28 Sep 2026</div><h3>Welcome to LaoLao</h3><p class="lo-t">ຍິນດີຕ້ອນຮັບສູ່ ລາວລາວ!</p><p>Lao script, phonetics, sentence patterns, native audio, a stroke handwriting studio, a dictionary and quizzes, all in one place.</p></div>
+        <div class="thumb lo" lang="lo" style="background:linear-gradient(140deg,#0270AC,#0C4A6E)">ສະບາຍດີ</div>
+        <div class="tx"><div class="meta"><span class="chip">Release</span><svg class="ic" style="inline-size:14px;block-size:14px" aria-hidden="true"><use href="#i-cal"/></svg>28 Sep 2026</div><h3>Welcome to LaoLao</h3><p class="lo-t" lang="lo">ຍິນດີຕ້ອນຮັບສູ່ ລາວລາວ!</p><p>Lao script, phonetics, sentence patterns, native audio, a stroke handwriting studio, a dictionary and quizzes, all in one place.</p></div>
       </article>
       <div class="news-l">
-        <article class="card story rv"><div class="thumb lo" style="background:linear-gradient(140deg,#F59E0B,#B45309)">ບ</div><div class="tx"><div class="meta"><span class="chip gold">Culture</span></div><h3>Tak Bat: morning almsgiving in Luang Prabang</h3><p class="lo-t">ພິທີໃສ່ບາດເຂົ້າໜຽວຍາມເຊົ້າ</p></div></article>
-        <article class="card story rv"><div class="thumb lo" style="background:linear-gradient(140deg,#0E7490,#164E63)">ສ</div><div class="tx"><div class="meta"><span class="chip gold">Culture</span></div><h3>The Baci ceremony and the calling of the soul</h3><p class="lo-t">ພິທີບາສີສູ່ຂວັນ</p></div></article>
-        <article class="card story rv"><div class="thumb lo" style="background:linear-gradient(140deg,#6D5BD0,#312E81)">ຕ</div><div class="tx"><div class="meta"><span class="chip gold">Culture</span></div><h3>Sticky rice etiquette at the table</h3><p class="lo-t">ມາລະຍາດການກິນເຂົ້າໜຽວ</p></div></article>
+        <article class="card story rv"><div class="thumb lo" lang="lo" style="background:linear-gradient(140deg,#B45309,#7C2D12)">ບ</div><div class="tx"><div class="meta"><span class="chip gold">Culture</span></div><h3>Tak Bat: morning almsgiving in Luang Prabang</h3><p class="lo-t" lang="lo">ພິທີໃສ່ບາດເຂົ້າໜຽວຍາມເຊົ້າ</p></div></article>
+        <article class="card story rv"><div class="thumb lo" lang="lo" style="background:linear-gradient(140deg,#0E7490,#164E63)">ສ</div><div class="tx"><div class="meta"><span class="chip gold">Culture</span></div><h3>The Baci ceremony and the calling of the soul</h3><p class="lo-t" lang="lo">ພິທີບາສີສູ່ຂວັນ</p></div></article>
+        <article class="card story rv"><div class="thumb lo" lang="lo" style="background:linear-gradient(140deg,#6D5BD0,#312E81)">ຕ</div><div class="tx"><div class="meta"><span class="chip gold">Culture</span></div><h3>Sticky rice etiquette at the table</h3><p class="lo-t" lang="lo">ມາລະຍາດການກິນເຂົ້າໜຽວ</p></div></article>
       </div>
     </div>
   </section>
 
   <section id="about">
     <div class="about">
-      <div class="about-art rv"><svg viewBox="0 0 200 200" aria-label="Dok Champa"><use href="#champa"/></svg><div class="tagline">ຮຽນພາສາລາວດ້ວຍຄວາມສຸກ</div></div>
+      <div class="about-art rv"><svg viewBox="0 0 200 200" role="img" aria-label="Dok Champa, the national flower of Laos"><use href="#champa"/></svg><div class="tagline" lang="lo">ຮຽນພາສາລາວດ້ວຍຄວາມສຸກ</div></div>
       <div class="rv">
         <span class="eyebrow">About LaoLao</span>
-        <h2 style="font-size:clamp(1.8rem,3.6vw,2.7rem);line-height:1.08;margin-top:8px;font-weight:800">Built for people learning Lao, with Lao speakers</h2>
-        <p style="color:var(--ink-2);margin-top:12px">LaoLao teaches from real sentence patterns instead of word lists. Content is written and checked by native speakers and published in tiers, so free learners and subscribers always see what their plan includes.</p>
+        <h2 style="font-size:clamp(1.7rem,1.1rem + 2.4vw,2.7rem);line-height:1.08;margin-block-start:8px;font-weight:800">Built for people learning Lao, with Lao speakers</h2>
+        <p style="color:var(--ink-2);margin-block-start:12px">LaoLao teaches from real sentence patterns instead of word lists. Content is written and checked by native speakers and published in tiers, so free learners and subscribers always see what their plan includes.</p>
         <ul>
-          <li><svg class="ic"><use href="#i-check"/></svg>Native audio on patterns, words and dialogues</li>
-          <li><svg class="ic"><use href="#i-check"/></svg>Works offline as an installable app</li>
-          <li><svg class="ic"><use href="#i-check"/></svg>Interface in English, Lao and Chinese</li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Native audio on patterns, words and dialogues</li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Works offline as an installable app</li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Interface in English, Lao and Chinese</li>
         </ul>
       </div>
     </div>
   </section>
 
-  <div class="silk" aria-hidden="true" style="margin-top:0;margin-bottom:18px"></div>
+  <div class="silk" aria-hidden="true" style="margin-block:0 18px"></div>
   <div class="closing rv">
     <h2>Say your first sentence in Lao today.</h2>
-    <button class="btn gold" type="button" id="ctaStart2">Create a free account<svg class="ic"><use href="#i-arrow"/></svg></button>
+    <button class="btn gold" type="button" id="ctaStart2">Create a free account<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button>
   </div>
+  <div class="flagbar" aria-hidden="true"></div>
 
   <footer>
     <span>© 2026 LaoLao · ລາວລາວ</span>
@@ -687,147 +931,224 @@ footer a{color:var(--ink-2)}
   </footer>
 </main>
 
-<script>
-(function(){
-  var $=function(s,r){return (r||document).querySelector(s)}, $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
-  var root=document.documentElement;
-  var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+<script type="module">
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const root = document.documentElement;
+const reduceMQ = matchMedia("(prefers-reduced-motion:reduce)");
+const reduce = () => reduceMQ.matches;
 
-  /* ---- theme: day / night / auto (auto removes data-theme so the system decides) ---- */
-  function setTheme(m,save){
-    if(m==="auto") root.removeAttribute("data-theme"); else root.setAttribute("data-theme",m);
-    $$("[data-theme-set]").forEach(function(b){b.setAttribute("aria-pressed",String(b.getAttribute("data-theme-set")===m))});
-    if(save!==false){try{localStorage.setItem("ll_mock_theme",m)}catch(e){}}
-  }
-  $$("[data-theme-set]").forEach(function(b){b.addEventListener("click",function(){setTheme(b.getAttribute("data-theme-set"))})});
-  try{var st=localStorage.getItem("ll_mock_theme"); if(st==="light"||st==="dark") setTheme(st,false);}catch(e){}
+/* ---------- theme: Day / Night / Auto, with a View Transition circle reveal ---------- */
+function applyTheme(m) {
+  m === "auto" ? root.removeAttribute("data-theme") : root.setAttribute("data-theme", m);
+  $$("[data-theme-set]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.themeSet === m)));
+  try { localStorage.setItem("ll_mock_theme", m); } catch {}
+}
+function setTheme(m, ev) {
+  if (!document.startViewTransition || reduce() || !ev) return applyTheme(m);
+  const x = ev.clientX || innerWidth / 2, y = ev.clientY || 0;
+  const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+  const vt = document.startViewTransition(() => applyTheme(m));
+  vt.ready.then(() => root.animate(
+    { clipPath: [`circle(0 at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] },
+    { duration: 700, easing: "cubic-bezier(.4,0,.2,1)", pseudoElement: "::view-transition-new(root)" }
+  )).catch(() => {});
+}
+$$("[data-theme-set]").forEach(b => b.addEventListener("click", e => setTheme(b.dataset.themeSet, e)));
+try { const st = localStorage.getItem("ll_mock_theme"); if (st === "light" || st === "dark") applyTheme(st); } catch {}
 
-  /* ---- i18n (hero + nav only in this mockup) ---- */
-  var T={
-    en:{nav_home:"Home",nav_culture:"Culture",nav_services:"Services",nav_free:"Free resources",nav_promo:"Promotions",nav_news:"News",nav_about:"About",signin_short:"Sign in",
-        badge:"Lao for real conversations · 27 consonants, 6 tones",h1a:"Learn Lao, one",h1b:"real sentence",h1c:"at a time.",
+/* ---------- i18n (hero + nav in this mockup) ---------- */
+const T = {
+  en: { nav_home:"Home", nav_culture:"Journey", nav_services:"Services", nav_free:"Free resources", nav_promo:"Promotions", nav_news:"News", nav_about:"About", signin_short:"Sign in",
+        badge:"Lao for real conversations · 27 consonants, 6 tones", h1a:"Learn Lao, one", h1b:"real sentence", h1c:"at a time.",
         lead:"Sentence patterns with native audio, a handwriting studio and spaced review. Start free, no card needed. Works offline.",
-        cta_start:"Start free",cta_tour:"Explore Lao culture",hear:"Tap to hear the greeting",chip_default:"Tap a consonant to hear it.",tab_in:"Sign in",tab_up:"Create account"},
-    lo:{nav_home:"ໜ້າຫຼັກ",nav_culture:"ວັດທະນະທຳ",nav_services:"ບໍລິການ",nav_free:"ຟຣີ",nav_promo:"ໂປຣໂມຊັນ",nav_news:"ຂ່າວ",nav_about:"ກ່ຽວກັບ",signin_short:"ເຂົ້າສູ່ລະບົບ",
-        badge:"ຮຽນລາວເພື່ອສົນທະນາຈິງ · 27 ພະຍັນຊະນະ, 6 ວັນນະຍຸດ",h1a:"ຮຽນພາສາລາວ ເທື່ອລະ",h1b:"ປະໂຫຍກຈິງ",h1c:"ທຸກວັນ.",
+        cta_start:"Start free", cta_tour:"Take the journey through Laos", hear:"Tap to hear the greeting", chip_default:"Tap a consonant to hear it.", tab_in:"Sign in", tab_up:"Create account" },
+  lo: { nav_home:"ໜ້າຫຼັກ", nav_culture:"ການເດີນທາງ", nav_services:"ບໍລິການ", nav_free:"ຟຣີ", nav_promo:"ໂປຣໂມຊັນ", nav_news:"ຂ່າວ", nav_about:"ກ່ຽວກັບ", signin_short:"ເຂົ້າສູ່ລະບົບ",
+        badge:"ຮຽນລາວເພື່ອສົນທະນາຈິງ · 27 ພະຍັນຊະນະ, 6 ວັນນະຍຸດ", h1a:"ຮຽນພາສາລາວ ເທື່ອລະ", h1b:"ປະໂຫຍກຈິງ", h1c:"ທຸກວັນ.",
         lead:"ໂຄງສ້າງປະໂຫຍກພ້ອມສຽງເຈົ້າຂອງພາສາ, ຫ້ອງຝຶກຂຽນ ແລະ ການທົບທວນ. ເລີ່ມຟຣີ ບໍ່ຕ້ອງໃຊ້ບັດ. ໃຊ້ອອບລາຍໄດ້.",
-        cta_start:"ເລີ່ມຟຣີ",cta_tour:"ສຳຫຼວດວັດທະນະທຳລາວ",hear:"ແຕະເພື່ອຟັງສຽງທັກທາຍ",chip_default:"ແຕະພະຍັນຊະນະເພື່ອຟັງສຽງ.",tab_in:"ເຂົ້າສູ່ລະບົບ",tab_up:"ສ້າງບັນຊີ"},
-    zh:{nav_home:"首页",nav_culture:"文化",nav_services:"服务",nav_free:"免费资源",nav_promo:"优惠",nav_news:"新闻",nav_about:"关于",signin_short:"登录",
-        badge:"学真正能用的老挝语 · 27个辅音，6个声调",h1a:"一句一句，",h1b:"真实的句子",h1c:"学会老挝语。",
+        cta_start:"ເລີ່ມຟຣີ", cta_tour:"ເດີນທາງທົ່ວລາວ", hear:"ແຕະເພື່ອຟັງສຽງທັກທາຍ", chip_default:"ແຕະພະຍັນຊະນະເພື່ອຟັງສຽງ.", tab_in:"ເຂົ້າສູ່ລະບົບ", tab_up:"ສ້າງບັນຊີ" },
+  zh: { nav_home:"首页", nav_culture:"旅程", nav_services:"服务", nav_free:"免费资源", nav_promo:"优惠", nav_news:"新闻", nav_about:"关于", signin_short:"登录",
+        badge:"学真正能用的老挝语 · 27个辅音，6个声调", h1a:"一句一句，", h1b:"真实的句子", h1c:"学会老挝语。",
         lead:"带真人发音的句型、书写练习与间隔复习。免费开始，无需绑卡，可离线使用。",
-        cta_start:"免费开始",cta_tour:"探索老挝文化",hear:"点击收听问候语",chip_default:"点击辅音收听发音。",tab_in:"登录",tab_up:"创建账号"}
-  };
-  function setLang(l){
-    $$("[data-i]").forEach(function(el){var v=T[l][el.getAttribute("data-i")]; if(v) el.textContent=v;});
-    $$("[data-lang]").forEach(function(b){b.setAttribute("aria-pressed",String(b.getAttribute("data-lang")===l))});
-    root.lang=l;
-    try{localStorage.setItem("ll_mock_lang",l)}catch(e){}
-  }
-  $$("[data-lang]").forEach(function(b){b.addEventListener("click",function(){setLang(b.getAttribute("data-lang"))})});
-  try{var sv=localStorage.getItem("ll_mock_lang"); if(sv&&T[sv]) setLang(sv);}catch(e){}
+        cta_start:"免费开始", cta_tour:"走进老挝", hear:"点击收听问候语", chip_default:"点击辅音收听发音。", tab_in:"登录", tab_up:"创建账号" }
+};
+function setLang(l) {
+  $$("[data-i]").forEach(el => { const v = T[l][el.dataset.i]; if (v) el.textContent = v; });
+  $$("[data-lang]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === l)));
+  root.lang = l;
+  try { localStorage.setItem("ll_mock_lang", l); } catch {}
+}
+$$("[data-lang]").forEach(b => b.addEventListener("click", () => setLang(b.dataset.lang)));
+try { const sv = localStorage.getItem("ll_mock_lang"); if (sv && T[sv]) setLang(sv); } catch {}
 
-  /* ---- speech (graceful when no Lao voice) ---- */
-  function say(txt){try{var u=new SpeechSynthesisUtterance(txt);u.lang="lo-LA";speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
-  var hear=$("#hear");
-  hear.addEventListener("click",function(){hear.classList.add("playing");say("ສະບາຍດີ");setTimeout(function(){hear.classList.remove("playing")},1500)});
-  $$("[data-say]").forEach(function(b){b.addEventListener("click",function(){say(b.getAttribute("data-say"))})});
+/* ---------- speech (graceful when no Lao voice is installed) ---------- */
+const say = txt => { try { const u = new SpeechSynthesisUtterance(txt); u.lang = "lo-LA"; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch {} };
+const hear = $("#hear");
+hear.addEventListener("click", () => { hear.classList.add("playing"); say("ສະບາຍດີ"); setTimeout(() => hear.classList.remove("playing"), 2000); });
 
-  /* ---- ambient hero: stars (night), petals / fireflies ---- */
-  function rnd(a,b){return a+Math.random()*(b-a)}
-  var stars=$("#stars"); for(var i=0;i<46;i++){var s=document.createElement("i");s.style.cssText="left:"+rnd(0,100)+"%;top:"+rnd(0,100)+"%;--s:"+rnd(1,2.6).toFixed(1)+"px;--d:"+rnd(0,3).toFixed(1)+"s";stars.appendChild(s)}
-  var dr=$("#drift"); for(var j=0;j<16;j++){var d=document.createElement("i");d.style.cssText="--x:"+rnd(2,98).toFixed(0)+"%;--s:"+rnd(7,13).toFixed(0)+"px;--t:"+rnd(11,20).toFixed(1)+"s;--d:-"+rnd(0,18).toFixed(1)+"s";dr.appendChild(d)}
-  var hero=$("#hero");
-  if(!reduce){hero.addEventListener("pointermove",function(e){var r=hero.getBoundingClientRect();hero.style.setProperty("--px",(((e.clientX-r.left)/r.width)*2-1).toFixed(3))})}
+/* ---------- ambient hero: stars (night), petals / fireflies ---------- */
+const rnd = (a, b) => a + Math.random() * (b - a);
+$("#stars").append(...Array.from({ length: 46 }, () => { const s = document.createElement("i"); s.style.cssText = `left:${rnd(0,100)}%;top:${rnd(0,100)}%;--s:${rnd(1,2.6).toFixed(1)}px;--d:${rnd(0,3).toFixed(1)}s`; return s; }));
+$("#drift").append(...Array.from({ length: 16 }, () => { const d = document.createElement("i"); d.style.cssText = `--x:${rnd(2,98).toFixed(0)}%;--s:${rnd(7,13).toFixed(0)}px;--t:${rnd(11,20).toFixed(1)}s;--d:-${rnd(0,18).toFixed(1)}s`; return d; }));
+const hero = $("#hero");
+if (!reduce() && matchMedia("(hover:hover)").matches) hero.addEventListener("pointermove", e => { const r = hero.getBoundingClientRect(); hero.style.setProperty("--px", (((e.clientX - r.left) / r.width) * 2 - 1).toFixed(3)); });
 
-  /* ---- greetings marquee (duplicated for a seamless loop) ---- */
-  var G=[["ສະບາຍດີ","sabaidee","hello"],["ຂອບໃຈ","khop jai","thank you"],["ບໍ່ເປັນຫຍັງ","bo pen nyang","no problem"],["ແຊບ","saep","delicious"],["ຍິນດີຕ້ອນຮັບ","yindi ton hap","welcome"],["ລາກ່ອນ","la kon","goodbye"],["ຂໍໂທດ","kho thot","sorry"],["ຮັກ","hak","love"]];
-  var track=$("#track"); for(var k=0;k<2;k++){G.forEach(function(g){var e=document.createElement("div");e.className="greet";if(k)e.setAttribute("aria-hidden","true");e.innerHTML='<b class="lo">'+g[0]+'</b><span>'+g[1]+' · '+g[2]+'</span>';track.appendChild(e)})}
+/* ---------- greetings marquee (duplicated for a seamless loop) ---------- */
+const G = [["ສະບາຍດີ","sabaidee","hello"],["ຂອບໃຈ","khop jai","thank you"],["ບໍ່ເປັນຫຍັງ","bo pen nyang","no problem"],["ແຊບ","saep","delicious"],["ຍິນດີຕ້ອນຮັບ","yindi ton hap","welcome"],["ລາກ່ອນ","la kon","goodbye"],["ຂໍໂທດ","kho thot","sorry"],["ຮັກ","hak","love"]];
+const track = $("#track");
+for (let k = 0; k < 2; k++) G.forEach(g => { const e = document.createElement("div"); e.className = "greet"; if (k) e.setAttribute("aria-hidden", "true"); e.innerHTML = `<b class="lo" lang="lo">${g[0]}</b><span>${g[1]} · ${g[2]}</span>`; track.append(e); });
 
-  /* ---- consonant chips ---- */
-  var C=[["ກ","Kai","Chicken","k"],["ຂ","Khai","Egg","kh"],["ງ","Ngua","Ox","ng"],["ຈ","Chork","Glass","ch"],["ດ","Dek","Child","d"],["ນ","Nok","Bird","n"],["ລ","Ling","Monkey","l"],["ສ","Seua","Tiger","s"]];
-  var chips=$("#chips"), note=$("#chipNote");
-  C.forEach(function(c){
-    var b=document.createElement("button");b.type="button";b.setAttribute("aria-pressed","false");b.title=c[0]+" "+c[1]+" ("+c[2]+")";
-    b.innerHTML='<b class="lo">'+c[0]+'</b><small>'+c[1]+'</small>';
-    b.addEventListener("click",function(){
-      $$("button",chips).forEach(function(x){x.setAttribute("aria-pressed","false")});b.setAttribute("aria-pressed","true");
-      note.innerHTML='<b class="lo">'+c[0]+'</b> · <b>'+c[1]+'</b> ('+c[2]+') · sound /'+c[3]+'/';say(c[0]);
-    });chips.appendChild(b);
+/* ---------- consonant chips ---------- */
+const C = [["ກ","Kai","Chicken","k"],["ຂ","Khai","Egg","kh"],["ງ","Ngua","Ox","ng"],["ຈ","Chork","Glass","ch"],["ດ","Dek","Child","d"],["ນ","Nok","Bird","n"],["ລ","Ling","Monkey","l"],["ສ","Seua","Tiger","s"]];
+const chips = $("#chips"), note = $("#chipNote");
+C.forEach(c => {
+  const b = document.createElement("button"); b.type = "button"; b.setAttribute("aria-pressed", "false"); b.title = `${c[0]} ${c[1]} (${c[2]})`;
+  b.innerHTML = `<b class="lo" lang="lo">${c[0]}</b><small>${c[1]}</small>`;
+  b.addEventListener("click", () => {
+    $$("button", chips).forEach(x => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true");
+    note.innerHTML = `<b class="lo" lang="lo">${c[0]}</b> · <b>${c[1]}</b> (${c[2]}) · sound /${c[3]}/`; say(c[0]);
   });
+  chips.append(b);
+});
 
-  /* ---- pattern demo ---- */
-  var W=[["ເຂົ້າໜຽວ","khao niao","sticky rice","ກິນ","kin","eat"],["ນ້ຳ","nam","water","ດື່ມ","deum","drink"],["ໝາກໄມ້","mak mai","fruit","ກິນ","kin","eat"],["ກາເຟ","kafe","coffee","ດື່ມ","deum","drink"]];
-  var wrap=$("#words");
-  W.forEach(function(w,i){
-    var b=document.createElement("button");b.type="button";b.className=i===0?"sel":"";
-    b.innerHTML='<b class="lo">'+w[0]+'</b><small>'+w[2]+'</small>';
-    b.addEventListener("click",function(){
-      $$("button",wrap).forEach(function(x){x.classList.remove("sel")});b.classList.add("sel");
-      $("#pLao").textContent="ຂ້ອຍຢາກ"+w[3]+w[0];
-      $("#pTr").textContent="khoy yak "+w[4]+" "+w[1]+" · I want to "+w[5]+" "+w[2]+".";
-      say($("#pLao").textContent);
-    });wrap.appendChild(b);
+/* ---------- pattern demo ---------- */
+const W = [["ເຂົ້າໜຽວ","khao niao","sticky rice","ກິນ","kin","eat"],["ນ້ຳ","nam","water","ດື່ມ","deum","drink"],["ໝາກໄມ້","mak mai","fruit","ກິນ","kin","eat"],["ກາເຟ","kafe","coffee","ດື່ມ","deum","drink"]];
+const wrap = $("#words");
+W.forEach((w, i) => {
+  const b = document.createElement("button"); b.type = "button"; b.className = i === 0 ? "sel" : "";
+  b.innerHTML = `<b class="lo" lang="lo">${w[0]}</b><small>${w[2]}</small>`;
+  b.addEventListener("click", () => {
+    $$("button", wrap).forEach(x => x.classList.remove("sel")); b.classList.add("sel");
+    $("#pLao").textContent = `ຂ້ອຍຢາກ${w[3]}${w[0]}`;
+    $("#pTr").textContent = `khoy yak ${w[4]} ${w[1]} · I want to ${w[5]} ${w[2]}.`;
+    say($("#pLao").textContent);
   });
+  wrap.append(b);
+});
 
-  /* ---- auth card: signin / register / reset ---- */
-  var mode="signin", msg=$("#msg");
-  var S={
-    signin:{title:"Welcome back",sub:"Pick up your lesson where you left it.",btn:"Sign in"},
-    register:{title:"Create your free account",sub:"Start learning in under a minute.",btn:"Create account"},
-    reset:{title:"Reset your password",sub:"We will email you a link to choose a new one.",btn:"Send reset link"}
-  };
-  function show(el,v){el.hidden=!v}
-  function setMode(m,note){
-    mode=m;var s=S[m];
-    $("#authTitle").textContent=s.title;$("#authSub").textContent=s.sub;$("#submit").textContent=s.btn;
-    $("#tabIn").setAttribute("aria-selected",String(m!=="register"));$("#tabUp").setAttribute("aria-selected",String(m==="register"));
-    show($("#fName"),m==="register");show($("#fPw"),m!=="reset");show($("#perks"),m==="register");show($("#planChip"),m==="register");
-    show($("#demo"),m==="signin");$("#forgot").textContent=m==="signin"?"Forgot password?":"Back to sign in";
-    $("#pw").autocomplete=m==="register"?"new-password":"current-password";
-    if(note){msg.hidden=false;msg.className="msg";msg.textContent=note}else{msg.hidden=true}
-  }
-  $("#tabIn").addEventListener("click",function(){setMode("signin")});
-  $("#tabUp").addEventListener("click",function(){setMode("register")});
-  $("#forgot").addEventListener("click",function(){setMode(mode==="signin"?"reset":"signin")});
-  $("#eye").addEventListener("click",function(){var p=$("#pw"),h=p.type==="password";p.type=h?"text":"password";this.setAttribute("aria-label",h?"Hide password":"Show password")});
-  $("#auth").addEventListener("submit",function(e){
-    e.preventDefault();
-    var em=$("#em").value.trim();
-    if(!/^\S+@\S+\.\S+$/.test(em)){msg.hidden=false;msg.className="msg";msg.textContent="Enter a valid email address, for example name@example.com.";$("#em").focus();return}
-    if(mode!=="reset"&&$("#pw").value.length<6){msg.hidden=false;msg.className="msg";msg.textContent="Use a password of at least 6 characters.";$("#pw").focus();return}
-    msg.hidden=false;msg.className="msg ok";
-    msg.textContent=mode==="signin"?"Mockup: this calls api.auth.signIn(), then opens the learner app.":mode==="register"?"Mockup: this calls api.auth.signUp() on the Free plan, then opens the learner app.":"Mockup: this calls api.auth.resetPassword(). A reset email is sent.";
-  });
-  $$("[data-demo]").forEach(function(b){b.addEventListener("click",function(){
-    $("#em").value=b.getAttribute("data-demo").indexOf("Premium")===0?"premium@demo.laolao":"free@demo.laolao";$("#pw").value="demo-password";
-    msg.hidden=false;msg.className="msg ok";msg.textContent="Mockup: signed in as "+b.getAttribute("data-demo")+".";
-  })});
+/* ---------- auth card: signin / register / reset ---------- */
+let mode = "signin"; const msg = $("#msg");
+const S = {
+  signin:   { title:"Welcome back", sub:"Pick up your lesson where you left it.", btn:"Sign in" },
+  register: { title:"Create your free account", sub:"Start learning in under a minute.", btn:"Create account" },
+  reset:    { title:"Reset your password", sub:"We will email you a link to choose a new one.", btn:"Send reset link" }
+};
+function setMode(m, text) {
+  mode = m; const s = S[m];
+  $("#authTitle").textContent = s.title; $("#authSub").textContent = s.sub; $("#submit").textContent = s.btn;
+  $("#tabIn").setAttribute("aria-selected", String(m !== "register")); $("#tabUp").setAttribute("aria-selected", String(m === "register"));
+  $("#fName").hidden = m !== "register"; $("#fPw").hidden = m === "reset"; $("#perks").hidden = m !== "register"; $("#planChip").hidden = m !== "register";
+  $("#demo").hidden = m !== "signin"; $("#forgot").textContent = m === "signin" ? "Forgot password?" : "Back to sign in";
+  $("#pw").autocomplete = m === "register" ? "new-password" : "current-password"; $("#pw").required = m !== "reset";
+  if (text) { msg.hidden = false; msg.className = "msg"; msg.textContent = text; } else msg.hidden = true;
+}
+$("#tabIn").addEventListener("click", () => setMode("signin"));
+$("#tabUp").addEventListener("click", () => setMode("register"));
+$("#forgot").addEventListener("click", () => setMode(mode === "signin" ? "reset" : "signin"));
+$("#adminLink").addEventListener("click", e => e.preventDefault());
+$("#eye").addEventListener("click", function () { const p = $("#pw"), h = p.type === "password"; p.type = h ? "text" : "password"; this.setAttribute("aria-label", h ? "Hide password" : "Show password"); });
+$("#auth").addEventListener("submit", e => {
+  e.preventDefault();
+  const em = $("#em").value.trim(), say_ = (t, ok = false) => { msg.hidden = false; msg.className = ok ? "msg ok" : "msg"; msg.textContent = t; };
+  if (!/^\S+@\S+\.\S+$/.test(em)) { say_("Enter a valid email address, for example name@example.com."); $("#em").focus(); return; }
+  if (mode !== "reset" && $("#pw").value.length < 6) { say_("Use a password of at least 6 characters."); $("#pw").focus(); return; }
+  say_(mode === "signin" ? "Mockup: this calls api.auth.signIn(), then opens the learner app." : mode === "register" ? "Mockup: this calls api.auth.signUp() on the Free plan, then opens the learner app." : "Mockup: this calls api.auth.resetPassword(). A reset email is sent.", true);
+});
+$$("[data-demo]").forEach(b => b.addEventListener("click", () => {
+  $("#em").value = b.dataset.demo.startsWith("Premium") ? "premium@demo.laolao" : "free@demo.laolao"; $("#pw").value = "demo-password";
+  msg.hidden = false; msg.className = "msg ok"; msg.textContent = `Mockup: signed in as ${b.dataset.demo}.`;
+}));
 
-  /* ---- everything on the page funnels into the same card ---- */
-  function toAuth(m,note){
-    setMode(m,note);
-    $("#auth").scrollIntoView({behavior:reduce?"auto":"smooth",block:"center"});
-    setTimeout(function(){try{$(m==="register"?"#nm":"#em").focus({preventScroll:true})}catch(e){}},350);
-  }
-  $("#goSignin").addEventListener("click",function(){toAuth("signin")});
-  $("#ctaStart").addEventListener("click",function(){toAuth("register")});
-  $("#ctaStart2").addEventListener("click",function(){toAuth("register")});
-  $$("[data-res]").forEach(function(b){b.addEventListener("click",function(){toAuth("register","Create a free account to download "+b.getAttribute("data-res")+". It will be waiting in your library.")})});
-  $$("[data-plan]").forEach(function(b){b.addEventListener("click",function(){
-    var p=b.getAttribute("data-plan");
-    toAuth("register",p==="Free"?null:"Create your account first, then upgrade to "+p+" from Plans in the app.");
-    $("#planChip").textContent=p+" plan";
-  })});
+/* ---------- every call to action funnels into the same card ---------- */
+function toAuth(m, text) {
+  setMode(m, text);
+  $("#auth").scrollIntoView({ behavior: reduce() ? "auto" : "smooth", block: "center" });
+  setTimeout(() => { try { $(m === "register" ? "#nm" : "#em").focus({ preventScroll: true }); } catch {} }, 400);
+}
+$("#goSignin").addEventListener("click", () => toAuth("signin"));
+$("#ctaStart").addEventListener("click", () => toAuth("register"));
+$("#ctaStart2").addEventListener("click", () => toAuth("register"));
+$$("[data-res]").forEach(b => b.addEventListener("click", () => toAuth("register", `Create a free account to download ${b.dataset.res}. It will be waiting in your library.`)));
+$$("[data-plan]").forEach(b => b.addEventListener("click", () => { const p = b.dataset.plan; toAuth("register", p === "Free" ? null : `Create your account first, then upgrade to ${p} from Plans in the app.`); $("#planChip").textContent = `${p} plan`; }));
 
-  /* ---- mobile menu + active link ---- */
-  var mb=$("#menuBtn"),sh=$("#sheet");
-  mb.addEventListener("click",function(){var o=sh.classList.toggle("open");mb.setAttribute("aria-expanded",String(o))});
-  $$("#sheet a").forEach(function(a){a.addEventListener("click",function(){sh.classList.remove("open");mb.setAttribute("aria-expanded","false")})});
-  if("IntersectionObserver" in window){
-    var links=$$(".links a");
-    var io=new IntersectionObserver(function(es){es.forEach(function(en){if(en.isIntersecting){links.forEach(function(l){l.classList.toggle("on",l.getAttribute("href")==="#"+en.target.id)})}})},{rootMargin:"-40% 0px -55% 0px"});
-    ["home","culture","services","resources","promotions","news","about"].forEach(function(id){var el=document.getElementById(id);if(el) io.observe(el)});
-  }
-  setMode("signin");
-})();
+/* ---------- mobile menu (Popover API) ---------- */
+const sheet = $("#sheet");
+$$("#sheet a").forEach(a => a.addEventListener("click", () => sheet.hidePopover?.()));
+addEventListener("resize", () => { if (innerWidth > 1080) try { sheet.hidePopover(); } catch {} });
+
+/* ---------- journey through Laos ---------- */
+const PLACES = [
+  { id:"luangprabang", en:"Luang Prabang", lo:"ຫຼວງພະບາງ", badge:"UNESCO World Heritage since 1995",
+    text:"Where the Nam Khan meets the Mekong, monks in saffron walk the streets at dawn for Tak Bat, the morning alms round. Phou Si hill rises over town, crowned by the golden stupa of Wat Chom Si.",
+    facts:["Tak Bat every dawn","Phou Si hill","Wat Xieng Thong"], words:[["ໃສ່ບາດ","sai bat","to give alms"],["ພູສີ","phou si","Phou Si hill"]] },
+  { id:"vangvieng", en:"Vang Vieng", lo:"ວັງວຽງ", badge:"Nam Song valley",
+    text:"Limestone karst towers rise straight out of the rice fields along the Nam Song river. At sunrise, hot-air balloons drift between the peaks.",
+    facts:["Karst peaks","Nam Song river","Sunrise balloons"], words:[["ພູ","phou","mountain"],["ນ້ຳ","nam","water, river"]] },
+  { id:"phonsavan", en:"Plain of Jars", lo:"ທົ່ງໄຫຫີນ", badge:"UNESCO World Heritage since 2019",
+    text:"Thousands of Iron Age stone jars lie scattered across the hills of Xieng Khouang province, near Phonsavan. Archaeologists link them to burial rites, and no one knows the whole story.",
+    facts:["Xieng Khouang province","Iron Age jars","Near Phonsavan"], words:[["ໄຫ","hai","jar"],["ຫີນ","hin","stone"]] },
+  { id:"vientiane", en:"Vientiane", lo:"ວຽງຈັນ", badge:"Capital of Laos",
+    text:"Pha That Luang, the great golden stupa, is the national symbol. Each November at the full moon, Boun That Luang fills its grounds with candles, music and a fair that runs for up to a week.",
+    facts:["Pha That Luang","Boun That Luang, November","On the Mekong"], words:[["ທາດຫຼວງ","that luang","great stupa"],["ທຽນ","thian","candle"]] },
+  { id:"champasak", en:"Champasak and Wat Phou", lo:"ຈຳປາສັກ · ວັດພູ", badge:"UNESCO World Heritage since 2001",
+    text:"A Khmer-era temple complex climbs the slope of Phou Kao, a mountain whose peak is shaped like a lingam. Frangipani trees, the dok champa, drop white flowers along the way.",
+    facts:["Khmer-era temple","Phou Kao peak","Dok champa trees"], words:[["ວັດພູ","wat phou","mountain temple"],["ດອກຈຳປາ","dok champa","frangipani flower"]] },
+  { id:"siphandon", en:"Si Phan Don", lo:"ສີ່ພັນດອນ", badge:"Four Thousand Islands",
+    text:"Near the Cambodian border the Mekong widens to as much as 14 km and breaks into thousands of islands. Long-tail boats cross between Don Khone and Don Det, near the Li Phi and Khone Phapheng falls.",
+    facts:["Don Khone and Don Det","Li Phi falls","Khone Phapheng falls"], words:[["ດອນ","don","river island"],["ເຮືອ","heua","boat"]] }
+];
+const PIN_LEFT = new Set(["luangprabang", "vangvieng", "vientiane"]);
+const jtabs = $("#jtabs");
+PLACES.forEach((p, i) => {
+  const b = document.createElement("button"); b.type = "button"; b.role = "tab"; b.id = `jt-${p.id}`; b.dataset.id = p.id;
+  b.setAttribute("aria-selected", String(i === 0)); b.tabIndex = i === 0 ? 0 : -1; b.setAttribute("aria-controls", "jpanel");
+  b.innerHTML = `${p.en.split(" and ")[0]} <span class="lo" lang="lo">${p.lo.split(" · ")[0]}</span>`;
+  jtabs.append(b);
+});
+function selectPlace(id, focus) {
+  const p = PLACES.find(x => x.id === id); if (!p) return;
+  $$("#jtabs [role=tab]").forEach(t => { const on = t.dataset.id === id; t.setAttribute("aria-selected", String(on)); t.tabIndex = on ? 0 : -1; if (on && focus) t.focus(); });
+  $$(".pin").forEach(n => n.dataset.on = String(n.dataset.id === id));
+  $$(".scn-svg").forEach(s => s.classList.toggle("on", s.id === `sc-${id}`));
+  $("#jname").textContent = p.en; $("#jlo").textContent = p.lo; $("#jbadge").textContent = p.badge; $("#jtext").textContent = p.text;
+  $("#jfacts").replaceChildren(...p.facts.map(f => Object.assign(document.createElement("span"), { className: "chip", textContent: f })));
+  $("#jwords").replaceChildren(...p.words.map(w => {
+    const d = document.createElement("div"); d.className = "word";
+    d.innerHTML = `<div><b class="lo" lang="lo">${w[0]}</b><small>${w[1]} · ${w[2]}</small></div>`;
+    const bt = document.createElement("button"); bt.type = "button"; bt.className = "btn sm"; bt.setAttribute("aria-label", `Listen: ${w[1]}`); bt.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#i-speaker"/></svg>';
+    bt.addEventListener("click", () => say(w[0])); d.append(bt); return d;
+  }));
+  $("#jpanel").setAttribute("aria-labelledby", `jt-${id}`);
+}
+jtabs.addEventListener("click", e => { const t = e.target.closest("[role=tab]"); if (t) selectPlace(t.dataset.id); });
+jtabs.addEventListener("keydown", e => {
+  const tabs = $$("[role=tab]", jtabs), i = tabs.findIndex(t => t.getAttribute("aria-selected") === "true");
+  const j = e.key === "ArrowRight" || e.key === "ArrowDown" ? (i + 1) % tabs.length : e.key === "ArrowLeft" || e.key === "ArrowUp" ? (i - 1 + tabs.length) % tabs.length : e.key === "Home" ? 0 : e.key === "End" ? tabs.length - 1 : -1;
+  if (j >= 0) { e.preventDefault(); selectPlace(tabs[j].dataset.id, true); }
+});
+$$(".pin").forEach(n => { n.addEventListener("click", () => selectPlace(n.dataset.id)); if (PIN_LEFT.has(n.dataset.id)) n.classList.add("left"); });
+selectPlace("luangprabang");
+
+/* ---------- festival calendar: highlight the festival of this month, or the next one ---------- */
+{
+  const cards = $$(".fcard"), m = new Date().getMonth();
+  const order = cards.map(c => +c.dataset.m);
+  let k = order.findIndex(x => x >= m); if (k < 0) k = 0;
+  const now = cards[k]; now.dataset.now = "true";
+  const tag = document.createElement("span"); tag.className = "chip gold now"; tag.textContent = order[k] === m ? "This month" : "Next up"; now.prepend(tag);
+  const fest = $("#fest");
+  const syncFest = () => fest.toggleAttribute("tabindex", fest.scrollWidth > fest.clientWidth + 1) && fest.setAttribute("tabindex", "0");
+  new ResizeObserver(syncFest).observe(fest); syncFest();
+}
+
+/* ---------- active nav link + pause off-screen animation ---------- */
+const links = $$(".links a");
+if ("IntersectionObserver" in window) {
+  const io = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) links.forEach(l => l.getAttribute("href") === `#${en.target.id}` ? l.setAttribute("aria-current", "true") : l.removeAttribute("aria-current")); }), { rootMargin: "-40% 0px -55% 0px" });
+  ["home", "culture", "services", "resources", "promotions", "news", "about"].forEach(id => { const el = document.getElementById(id); el && io.observe(el); });
+  const po = new IntersectionObserver(es => es.forEach(en => en.target.toggleAttribute("data-off", !en.isIntersecting)), { rootMargin: "120px" });
+  [hero, $("#culture"), $(".marquee")].forEach(el => el && po.observe(el));
+}
+document.addEventListener("visibilitychange", () => root.toggleAttribute("data-off", document.hidden));
+setMode("signin");
 </script>

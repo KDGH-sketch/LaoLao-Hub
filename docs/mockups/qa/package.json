@@ -1,0 +1,13 @@
+{
+  "name": "welcome-mockup-qa",
+  "private": true,
+  "type": "module",
+  "scripts": { "layout": "node layout.mjs", "func": "node func.mjs" },
+  "devDependencies": {
+    "axe-core": "^4.10.0",
+    "@fontsource-variable/bricolage-grotesque": "^5.0.0",
+    "@fontsource-variable/source-sans-3": "^5.0.0",
+    "@fontsource/noto-sans-lao": "^5.0.0",
+    "@fontsource/noto-serif-lao": "^5.0.0"
+  }
+}
