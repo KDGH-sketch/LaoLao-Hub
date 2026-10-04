@@ -1,0 +1,602 @@
+<title>LaoLao Welcome</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Noto+Sans+Lao:wght@400;600;700&family=Noto+Serif+Lao:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: sticky site nav -> deep-blue hero stage (thesis left, sign-in card right) -> quiet light sections:
+   services bento, free resources, promotions/plans, news, about, footer. Login is one card inside the page. */
+:root{
+  --bg:#F0F7FD; --surface:#FFFFFF; --surface-2:#E4EFF9; --line:#CFE2F4;
+  --ink:#0A1B2E; --ink-2:#28425C; --ink-3:#4F6D8C;
+  --accent:#0284C7; --accent-hover:#0369A1; --accent-ink:#FFFFFF; --accent-soft:#E0F2FE;
+  --gold:#F59E0B; --gold-ink:#92400E; --gold-soft:#FEF3C7;
+  --stage-a:#0369A1; --stage-b:#075985; --stage-c:#0C4A6E; --on-stage:#FFFFFF; --on-stage-2:rgba(255,255,255,.82);
+  --good:#047857; --bad:#B91C1C;
+  --shadow:0 18px 40px -16px rgba(2,60,100,.28);
+  --f-display:"Bricolage Grotesque","Source Sans 3",system-ui,sans-serif;
+  --f-ui:"Source Sans 3","Noto Sans Lao",system-ui,sans-serif;
+  --f-lo:"Noto Sans Lao","Phetsarath OT",sans-serif;
+  --f-lo-display:"Noto Serif Lao","Noto Sans Lao",serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#08121D; --surface:#0E1B2A; --surface-2:#16283D; --line:#1C344E;
+  --ink:#F0F7FD; --ink-2:#A4C2E0; --ink-3:#8AA9C8;
+  --accent:#38BDF8; --accent-hover:#7DD3FC; --accent-ink:#061424; --accent-soft:#0E2A44;
+  --gold:#FBBF24; --gold-ink:#FDE68A; --gold-soft:#3A2A08;
+  --stage-a:#0B3A5C; --stage-b:#0A2E4A; --stage-c:#071E33; --good:#34D399; --bad:#F87171;
+  --shadow:0 18px 40px -16px rgba(0,0,0,.6); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#08121D; --surface:#0E1B2A; --surface-2:#16283D; --line:#1C344E;
+  --ink:#F0F7FD; --ink-2:#A4C2E0; --ink-3:#8AA9C8;
+  --accent:#38BDF8; --accent-hover:#7DD3FC; --accent-ink:#061424; --accent-soft:#0E2A44;
+  --gold:#FBBF24; --gold-ink:#FDE68A; --gold-soft:#3A2A08;
+  --stage-a:#0B3A5C; --stage-b:#0A2E4A; --stage-c:#071E33; --good:#34D399; --bad:#F87171;
+  --shadow:0 18px 40px -16px rgba(0,0,0,.6); color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--f-ui);padding-inline:16px;padding-block:0}
+.wrap{max-width:1160px;margin-inline:auto}
+h1,h2,h3,p{margin:0}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;letter-spacing:-.01em}
+.lo{font-family:var(--f-lo)}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+button{font:inherit;color:inherit;cursor:pointer}
+.ic{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.eyebrow{font-size:.75rem;letter-spacing:.09em;text-transform:uppercase;font-weight:700;color:var(--accent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:9px 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:600;text-decoration:none}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+.btn.sm{min-height:34px;padding:5px 12px;font-size:.88rem}
+.chip{display:inline-flex;align-items:center;border-radius:99px;padding:2px 10px;font-size:.76rem;font-weight:700;background:var(--accent-soft);color:var(--accent)}
+.chip.gold{background:var(--gold-soft);color:var(--gold-ink)}
+
+/* mockup tag */
+.mock-tag{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:50;background:var(--ink);color:var(--bg);font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:6px 10px;border-radius:99px;opacity:.88}
+
+/* site nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line);margin-inline:-16px;padding-inline:16px}
+.nav-in{max-width:1160px;margin-inline:auto;display:flex;align-items:center;gap:18px;min-height:60px}
+.brand{display:flex;align-items:center;gap:10px;font:700 1.15rem var(--f-display);color:var(--ink);text-decoration:none}
+.brand svg{width:34px;height:34px}
+.brand small{display:block;font:500 .7rem var(--f-ui);color:var(--ink-3);line-height:1}
+.links{display:flex;gap:2px;margin-inline:auto}
+.links a{color:var(--ink-2);text-decoration:none;font-weight:600;font-size:.94rem;padding:7px 11px;border-radius:8px}
+.links a:hover,.links a.on{background:var(--accent-soft);color:var(--accent)}
+.tools{display:flex;align-items:center;gap:8px}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:9px;padding:2px}
+.seg button{border:0;background:none;padding:4px 9px;border-radius:7px;font-size:.78rem;font-weight:700;color:var(--ink-3)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.menu-btn{display:none}
+
+/* hero stage */
+.hero{margin-top:18px;border-radius:28px;background:linear-gradient(150deg,var(--stage-a),var(--stage-b) 55%,var(--stage-c));color:var(--on-stage);position:relative;overflow:hidden;padding:clamp(24px,5vw,56px);display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:clamp(24px,4vw,56px);align-items:center}
+.hero::before{content:"";position:absolute;width:520px;height:520px;right:-160px;top:-200px;background:radial-gradient(circle,rgba(56,189,248,.38),transparent 68%);pointer-events:none}
+.hero-bg-glyph{position:absolute;left:-30px;bottom:-110px;font:700 28rem/1 var(--f-lo-display);color:#fff;opacity:.05;pointer-events:none;user-select:none}
+.hero-copy{position:relative;display:flex;flex-direction:column;gap:20px;min-width:0}
+.badge{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.26);padding:5px 13px;border-radius:99px;font-size:.8rem;font-weight:700}
+.badge i{width:8px;height:8px;border-radius:50%;background:#34D399;box-shadow:0 0 8px #34D399}
+.hero h1{font-size:clamp(2.3rem,5.2vw,4rem);line-height:1.04;font-weight:700}
+.hero h1 .lo-word{display:block;font-family:var(--f-lo-display);font-size:.62em;color:#FDE68A;margin-bottom:.15em;letter-spacing:0}
+.hero p.lead{font-size:1.12rem;color:var(--on-stage-2);max-width:48ch}
+.hero-cta{display:flex;flex-wrap:wrap;gap:10px}
+.hero .btn.gold{background:#FBBF24;border-color:#FBBF24;color:#3A2A08}
+.hero .btn.gold:hover{background:#FDE68A}
+.hero .btn.ghost{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3);color:#fff}
+.hear{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.26);border-radius:16px;padding:12px 16px;text-align:left;width:fit-content;max-width:100%;color:#fff}
+.hear:hover{background:rgba(255,255,255,.2)}
+.hear b{font:700 1.25rem var(--f-lo)}
+.hear small{display:block;font-size:.78rem;color:var(--on-stage-2)}
+.bars{display:flex;align-items:flex-end;gap:3px;height:18px}
+.bars span{width:3.5px;height:5px;background:#fff;border-radius:2px}
+.hear.playing .bars span{animation:eq .7s infinite ease-in-out}
+.hear.playing .bars span:nth-child(2){animation-delay:.15s}.hear.playing .bars span:nth-child(3){animation-delay:.3s}.hear.playing .bars span:nth-child(4){animation-delay:.1s}
+@keyframes eq{0%,100%{height:4px}50%{height:18px}}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{display:flex;flex-direction:column;align-items:center;min-width:52px;padding:7px 8px;border-radius:11px;border:1px solid rgba(255,255,255,.26);background:rgba(255,255,255,.1);color:#fff}
+.chips button b{font:700 1.35rem/1 var(--f-lo)}
+.chips button small{font-size:.66rem;margin-top:3px;opacity:.9}
+.chips button[aria-pressed="true"]{background:#fff;color:#0369A1}
+.chip-note{font-size:.88rem;color:var(--on-stage-2);min-height:22px}
+.chip-note b{color:#FDE68A}
+
+/* auth card */
+.auth{position:relative;background:var(--surface);color:var(--ink);border-radius:22px;padding:clamp(20px,3.5vw,30px);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px;min-width:0}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--surface-2);border-radius:11px;padding:3px}
+.tabs button{border:0;background:none;border-radius:9px;padding:8px;font-weight:700;color:var(--ink-3)}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.auth h2{font-size:1.5rem}
+.auth .sub{color:var(--ink-3);font-size:.92rem;margin-top:-6px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:.82rem;font-weight:700;color:var(--ink-2)}
+.input{width:100%;min-height:44px;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+.input:focus{border-color:var(--accent);outline:2px solid var(--accent-soft)}
+.pw{position:relative}
+.pw .input{padding-right:46px}
+.pw button{position:absolute;right:6px;top:6px;width:32px;height:32px;border:0;background:none;border-radius:8px;color:var(--ink-3);display:grid;place-items:center}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.linkbtn{border:0;background:none;padding:0;color:var(--accent);font-weight:600;font-size:.88rem;text-decoration:underline;text-underline-offset:3px}
+.msg{font-size:.88rem;border-radius:10px;padding:9px 12px;background:var(--accent-soft);color:var(--ink-2)}
+.msg.ok{background:color-mix(in srgb,var(--good) 14%,var(--surface));color:var(--ink)}
+.demo{border:1px dashed var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.demo-h{display:flex;justify-content:space-between;font-size:.8rem;font-weight:700;color:var(--ink-3);flex-wrap:wrap;gap:6px}
+.demo-b{display:flex;gap:8px;flex-wrap:wrap}
+.perks{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.84rem;color:var(--ink-2);list-style:none;margin:0;padding:0}
+.perks li{display:flex;align-items:center;gap:6px}
+.perks .ic{width:15px;height:15px;color:var(--good)}
+
+/* trust strip */
+.strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding-block:22px}
+.strip div{display:flex;flex-direction:column;gap:2px;padding-left:14px;border-left:3px solid var(--gold)}
+.strip b{font:700 1.5rem var(--f-display);font-variant-numeric:tabular-nums}
+.strip span{font-size:.86rem;color:var(--ink-3)}
+
+/* sections */
+section{padding-block:clamp(36px,6vw,68px)}
+.sec-h{display:flex;flex-direction:column;gap:8px;margin-bottom:26px;max-width:60ch}
+.sec-h h2{font-size:clamp(1.7rem,3.4vw,2.4rem);line-height:1.1}
+.sec-h p{color:var(--ink-2)}
+.sec-h .lo-sub{font:600 1rem var(--f-lo);color:var(--ink-3)}
+
+/* services bento */
+.bento{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card h3{font-size:1.15rem}
+.card p{color:var(--ink-2);font-size:.94rem}
+.tile{width:40px;height:40px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center}
+.tile .ic{width:20px;height:20px}
+.b-big{grid-column:span 3;grid-row:span 2}
+.b-mid{grid-column:span 3}
+.b-sm{grid-column:span 2}
+.pattern{margin-top:auto;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.words{display:flex;flex-wrap:wrap;gap:8px}
+.words button{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 10px;text-align:center;line-height:1.2}
+.words button b{display:block;font:700 1.15rem var(--f-lo)}
+.words button small{font-size:.72rem;color:var(--ink-3)}
+.words button.sel{border-color:var(--accent);background:var(--accent-soft)}
+.pattern .tr{color:var(--ink-2);font-size:.92rem}
+.lock{display:inline-flex;align-items:center;gap:4px;font-size:.74rem;font-weight:700;color:var(--gold-ink);background:var(--gold-soft);border-radius:99px;padding:2px 8px;width:fit-content}
+.lock .ic{width:12px;height:12px}
+
+/* resources */
+.res{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.res .card{gap:12px}
+.cover{height:128px;border-radius:12px;display:grid;place-items:center;font:700 3.2rem var(--f-lo-display);color:#fff;position:relative;overflow:hidden}
+.cover.c1{background:linear-gradient(140deg,#0284C7,#075985)}
+.cover.c2{background:linear-gradient(140deg,#F59E0B,#B45309)}
+.cover.c3{background:linear-gradient(140deg,#0E7490,#164E63)}
+.cover.c4{background:linear-gradient(140deg,#4F46E5,#312E81)}
+.cover .chip{position:absolute;left:10px;top:10px;background:rgba(255,255,255,.92);color:#0A1B2E}
+.res .btn{margin-top:auto}
+
+/* promotions */
+.promo{background:linear-gradient(120deg,var(--gold-soft),var(--accent-soft));border:1px solid var(--line);border-radius:22px;padding:clamp(20px,4vw,34px);display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:18px}
+.promo h3{font-size:clamp(1.3rem,2.6vw,1.8rem)}
+.promo p{color:var(--ink-2);max-width:56ch;margin-top:6px}
+.count{display:flex;gap:8px}
+.count div{background:var(--surface);border:1px solid var(--line);border-radius:12px;min-width:58px;padding:8px 6px;text-align:center}
+.count b{display:block;font:700 1.4rem var(--f-display);font-variant-numeric:tabular-nums}
+.count small{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3)}
+.plans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.plan{position:relative}
+.plan.feat{border:2px solid var(--accent)}
+.plan .tag{position:absolute;top:-12px;right:16px}
+.price{font:700 2.3rem var(--f-display);font-variant-numeric:tabular-nums;line-height:1}
+.price small{font:600 .9rem var(--f-ui);color:var(--ink-3)}
+.plan ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;font-size:.93rem;color:var(--ink-2)}
+.plan li{display:flex;gap:8px;align-items:flex-start}
+.plan li .ic{width:16px;height:16px;color:var(--good);margin-top:3px}
+.plan .btn{margin-top:auto}
+
+/* news */
+.news{display:grid;grid-template-columns:1.3fr 1fr;gap:14px}
+.news-l{display:flex;flex-direction:column;gap:14px}
+.story{display:flex;gap:16px;align-items:stretch}
+.story .thumb{width:112px;flex:none;border-radius:12px;display:grid;place-items:center;font:700 2.2rem var(--f-lo-display);color:#fff}
+.story .tx{display:flex;flex-direction:column;gap:6px;min-width:0}
+.story .meta{font-size:.78rem;color:var(--ink-3);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.story h3{font-size:1.08rem}
+.story .lo-t{font:600 .9rem var(--f-lo);color:var(--ink-3)}
+.story.lead{flex-direction:column}
+.story.lead .thumb{width:100%;height:170px;font-size:4rem}
+.story.lead h3{font-size:1.3rem}
+
+/* about */
+.about{display:grid;grid-template-columns:1fr 1fr;gap:clamp(20px,4vw,48px);align-items:center}
+.about-art{border-radius:24px;background:var(--surface-2);border:1px solid var(--line);aspect-ratio:1.15/1;max-width:100%;display:grid;place-items:center;position:relative;overflow:hidden}
+.about-art svg{width:56%;height:auto}
+.about-art .tagline{position:absolute;left:16px;right:16px;bottom:14px;text-align:center;font:600 .95rem var(--f-lo-display);color:var(--ink-2)}
+.about ul{margin:14px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+.about li{display:flex;gap:10px;color:var(--ink-2)}
+.about li .ic{color:var(--accent);margin-top:3px}
+
+/* closing CTA + footer */
+.closing{border-radius:24px;background:linear-gradient(150deg,var(--stage-a),var(--stage-c));color:#fff;padding:clamp(24px,5vw,48px);display:flex;gap:20px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.closing h2{font-size:clamp(1.5rem,3vw,2.2rem);max-width:22ch}
+.closing .btn.gold{background:#FBBF24;border-color:#FBBF24;color:#3A2A08}
+footer{padding-block:34px 90px;color:var(--ink-3);font-size:.88rem;display:flex;gap:18px;flex-wrap:wrap;justify-content:space-between}
+footer nav{display:flex;gap:16px;flex-wrap:wrap}
+footer a{color:var(--ink-2)}
+
+@media (max-width:960px){
+  .links{display:none}
+  .menu-btn{display:inline-grid}
+  .nav-in{gap:10px}.tools{margin-left:auto}
+  .hero{grid-template-columns:1fr}
+  .bento{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .b-big,.b-mid{grid-column:span 2;grid-row:auto}.b-sm{grid-column:span 1}
+  .res{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .plans,.news,.about{grid-template-columns:1fr}
+  .strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:560px){
+  .bento{grid-template-columns:1fr}.b-sm{grid-column:span 1}.b-big,.b-mid{grid-column:span 1}
+  .res{grid-template-columns:1fr}
+  .story{flex-direction:column}.story .thumb{width:100%;height:96px}
+  .brand small{display:none}
+}
+.sheet{display:none;flex-direction:column;padding:8px 0 12px}
+.sheet.open{display:flex}
+.sheet a{padding:10px 4px;color:var(--ink);text-decoration:none;font-weight:600;border-top:1px solid var(--line)}
+@media (min-width:961px){.sheet{display:none!important}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M9 7h6"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+    <symbol id="i-repeat" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="m7 22-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></symbol>
+    <symbol id="i-wave" viewBox="0 0 24 24"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 10v4M22 12h-1"/></symbol>
+    <symbol id="i-lamp" viewBox="0 0 24 24"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 21h16"/></symbol>
+    <symbol id="i-speaker" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol>
+    <symbol id="champa" viewBox="0 0 200 200">
+      <g transform="translate(100 100)">
+        <g fill="#fff" stroke="#BAE6FD" stroke-width="1.6">
+          <path id="pt" d="M0-15C-24-34-34-74 0-92 34-74 24-34 0-15Z"/>
+          <use href="#pt" transform="rotate(72)"/><use href="#pt" transform="rotate(144)"/><use href="#pt" transform="rotate(216)"/><use href="#pt" transform="rotate(288)"/>
+        </g>
+        <circle r="32" fill="#FBBF24"/><circle r="14" fill="#D97706" fill-opacity=".3"/>
+        <text y="8" font-family="Noto Sans Lao, sans-serif" font-size="22" font-weight="700" fill="#92400E" text-anchor="middle">ລ</text>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="mock-tag">Design mockup · not wired to data</div>
+
+<header class="nav">
+  <div class="nav-in">
+    <a class="brand" href="#home" aria-label="LaoLao home">
+      <svg viewBox="0 0 200 200"><use href="#champa"/></svg>
+      <span>LaoLao<small class="lo">ຮຽນພາສາລາວ</small></span>
+    </a>
+    <nav class="links" aria-label="Main">
+      <a href="#home" class="on" data-i="nav_home">Home</a>
+      <a href="#services" data-i="nav_services">Services</a>
+      <a href="#resources" data-i="nav_free">Free resources</a>
+      <a href="#promotions" data-i="nav_promo">Promotions</a>
+      <a href="#news" data-i="nav_news">News</a>
+      <a href="#about" data-i="nav_about">About</a>
+    </nav>
+    <div class="tools">
+      <div class="seg" role="group" aria-label="Language">
+        <button type="button" data-lang="en" aria-pressed="true">EN</button>
+        <button type="button" data-lang="lo" aria-pressed="false">ລາວ</button>
+        <button type="button" data-lang="zh" aria-pressed="false">中文</button>
+      </div>
+      <button class="btn sm" type="button" id="goSignin" data-i="signin_short">Sign in</button>
+      <button class="btn sm menu-btn" type="button" id="menuBtn" aria-label="Menu" aria-expanded="false"><svg class="ic"><use href="#i-menu"/></svg></button>
+    </div>
+  </div>
+  <div class="wrap"><nav class="sheet" id="sheet" aria-label="Mobile">
+    <a href="#home">Home</a><a href="#services">Services</a><a href="#resources">Free resources</a><a href="#promotions">Promotions</a><a href="#news">News</a><a href="#about">About</a>
+  </nav></div>
+</header>
+
+<main class="wrap" id="home">
+  <!-- HERO + LOGIN -->
+  <div class="hero">
+    <div class="hero-bg-glyph lo" aria-hidden="true">ລ</div>
+    <div class="hero-copy">
+      <span class="badge"><i></i><span data-i="badge">Lao for real conversations · 27 consonants, 6 tones</span></span>
+      <h1><span class="lo-word">ສະບາຍດີ</span><span data-i="h1">Learn to speak and write Lao, one real sentence at a time.</span></h1>
+      <p class="lead" data-i="lead">Sentence patterns with native audio, a handwriting studio and spaced review. Start free, no card needed. Works offline.</p>
+      <div class="hero-cta">
+        <button class="btn gold" type="button" id="ctaStart"><span data-i="cta_start">Start free</span><svg class="ic"><use href="#i-arrow"/></svg></button>
+        <a class="btn ghost" href="#services" data-i="cta_tour">See what's inside</a>
+      </div>
+      <button class="hear" type="button" id="hear">
+        <svg class="ic" style="width:22px;height:22px"><use href="#i-speaker"/></svg>
+        <span><b>ສະບາຍດີ! · Sabaidee</b><small data-i="hear">Tap to hear the greeting</small></span>
+        <span class="bars" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+      </button>
+      <div>
+        <div class="chips" id="chips" role="group" aria-label="Lao consonant preview"></div>
+        <p class="chip-note" id="chipNote" aria-live="polite" data-i="chip_default">Tap a consonant to hear it.</p>
+      </div>
+    </div>
+
+    <!-- Sign-in card: same modes as current renderAuth(): signin / register / reset -->
+    <form class="auth" id="auth" novalidate aria-labelledby="authTitle">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" id="tabIn" aria-selected="true" data-i="tab_in">Sign in</button>
+        <button type="button" role="tab" id="tabUp" aria-selected="false" data-i="tab_up">Create account</button>
+      </div>
+      <div>
+        <h2 id="authTitle">Welcome back</h2>
+      </div>
+      <p class="sub" id="authSub">Pick up your lesson where you left it.</p>
+      <div class="field" id="fName" hidden><label for="nm">Name</label><input class="input" id="nm" autocomplete="name" placeholder="Your name"></div>
+      <div class="field"><label for="em">Email</label><input class="input" id="em" type="email" autocomplete="username" placeholder="name@example.com"></div>
+      <div class="field" id="fPw"><label for="pw">Password</label>
+        <div class="pw"><input class="input" id="pw" type="password" autocomplete="current-password" placeholder="••••••••"><button type="button" id="eye" aria-label="Show password"><svg class="ic"><use href="#i-eye"/></svg></button></div>
+      </div>
+      <div class="msg" id="msg" role="status" hidden></div>
+      <button class="btn primary" type="submit" id="submit">Sign in</button>
+      <div class="row">
+        <button class="linkbtn" type="button" id="forgot">Forgot password?</button>
+        <span class="chip gold" id="planChip" hidden>Free plan</span>
+      </div>
+      <ul class="perks" id="perks" hidden>
+        <li><svg class="ic"><use href="#i-check"/></svg>Free plan, no card</li>
+        <li><svg class="ic"><use href="#i-check"/></svg>Progress saved to your account</li>
+      </ul>
+      <div class="demo" id="demo">
+        <div class="demo-h"><span>Demo accounts</span><a href="#" class="linkbtn" onclick="return false">Admin portal →</a></div>
+        <div class="demo-b"><button class="btn primary sm" type="button" data-demo="Premium Learner">Premium learner</button><button class="btn sm" type="button" data-demo="Free Learner">Free learner</button></div>
+      </div>
+    </form>
+  </div>
+
+  <div class="strip" aria-label="At a glance">
+    <div><b>27</b><span>consonants by class, with mnemonic names</span></div>
+    <div><b>6</b><span>Vientiane tones with audio</span></div>
+    <div><b>120+</b><span>dictionary words, search by romanization</span></div>
+    <div><b>3</b><span>interface languages: English, ລາວ, 中文</span></div>
+  </div>
+
+  <!-- SERVICES -->
+  <section id="services">
+    <div class="sec-h"><span class="eyebrow">Services</span><h2>Everything you need to read, write and speak</h2><p class="lo-sub">ທຸກຢ່າງທີ່ຕ້ອງການເພື່ອຮຽນພາສາລາວ</p><p>Each tool runs on the same sentence patterns, so what you hear in a lesson turns up in practice, review and the dictionary.</p></div>
+    <div class="bento">
+      <article class="card b-big">
+        <span class="tile"><svg class="ic"><use href="#i-book"/></svg></span>
+        <h3>Sentence patterns and generator</h3>
+        <p>Learn a pattern once, then swap words in and out. Every sentence has Lao script, romanization, audio and a translation.</p>
+        <div class="pattern" aria-label="Interactive sentence pattern">
+          <div class="words" id="words"></div>
+          <div class="lo" id="pLao" style="font-size:1.3rem;font-weight:700">ຂ້ອຍຢາກກິນເຂົ້າໜຽວ</div>
+          <div class="tr" id="pTr">khoy yak kin khao niao · I want to eat sticky rice.</div>
+        </div>
+      </article>
+      <article class="card b-mid">
+        <span class="tile"><svg class="ic"><use href="#i-wave"/></svg></span>
+        <h3>Alphabet, vowels and tones</h3>
+        <p>All 27 consonants by Middle, High and Low class, short and long vowels, and six tones you can hear.</p>
+      </article>
+      <article class="card b-sm">
+        <span class="tile"><svg class="ic"><use href="#i-pen"/></svg></span>
+        <h3>Handwriting studio</h3>
+        <p>Trace each stroke and get scored.</p>
+        <span class="lock"><svg class="ic"><use href="#i-lock"/></svg>Standard</span>
+      </article>
+      <article class="card b-sm">
+        <span class="tile"><svg class="ic"><use href="#i-search"/></svg></span>
+        <h3>Dictionary</h3>
+        <p>Search in Lao, romanization or English.</p>
+      </article>
+      <article class="card b-sm">
+        <span class="tile"><svg class="ic"><use href="#i-repeat"/></svg></span>
+        <h3>Spaced review</h3>
+        <p>Flashcards come back just before you forget.</p>
+      </article>
+      <article class="card b-mid">
+        <span class="tile"><svg class="ic"><use href="#i-lamp"/></svg></span>
+        <h3>Culture and pronunciation labs</h3>
+        <p>Tone drills, minimal pairs, kinship terms, classifiers and etiquette such as the Baci ceremony.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- FREE RESOURCES -->
+  <section id="resources">
+    <div class="sec-h"><span class="eyebrow">Free resources</span><h2>Take something home today</h2><p>Free with a free account. Your download appears in your library after sign-up.</p></div>
+    <div class="res">
+      <article class="card"><div class="cover c1 lo"><span class="chip">PDF</span>ກ</div><h3>30-day Lao starter guide</h3><p>Script, tones and survival conversation in one reference.</p><button class="btn primary sm" type="button" data-res="the 30-day starter guide"><svg class="ic"><use href="#i-down"/></svg>Get it free</button></article>
+      <article class="card"><div class="cover c2 lo"><span class="chip">Chart</span>ຂ ຄ</div><h3>Consonant chart</h3><p>27 letters with class, sound and mnemonic.</p><button class="btn sm" type="button" data-res="the consonant chart"><svg class="ic"><use href="#i-down"/></svg>Get it free</button></article>
+      <article class="card"><div class="cover c3 lo"><span class="chip">Cheat sheet</span>໊ ໋</div><h3>Six tones, one page</h3><p>Marks, pitch shapes and example words.</p><button class="btn sm" type="button" data-res="the tone cheat sheet"><svg class="ic"><use href="#i-down"/></svg>Get it free</button></article>
+      <article class="card"><div class="cover c4 lo"><span class="chip">Audio</span>ສ</div><h3>Greetings audio pack</h3><p>20 everyday phrases by a native speaker.</p><button class="btn sm" type="button" data-res="the greetings audio pack"><svg class="ic"><use href="#i-down"/></svg>Get it free</button></article>
+    </div>
+  </section>
+
+  <!-- PROMOTIONS -->
+  <section id="promotions">
+    <div class="sec-h"><span class="eyebrow">Promotions and plans</span><h2>Start free, upgrade when you want more</h2></div>
+    <div class="promo">
+      <div><span class="chip gold">Limited offer · placeholder copy</span><h3 style="margin-top:10px">Save 30% on Premium for your first 3 months</h3><p>Applies automatically at checkout when you upgrade from the Free plan. Editable from the admin portal.</p></div>
+      <div class="count" aria-label="Offer ends in"><div><b id="cd">12</b><small>Days</small></div><div><b>08</b><small>Hours</small></div><div><b>41</b><small>Min</small></div></div>
+    </div>
+    <div class="plans">
+      <article class="card plan"><h3>Free</h3><div class="price">$0</div><ul><li><svg class="ic"><use href="#i-check"/></svg>Basic Lao patterns</li><li><svg class="ic"><use href="#i-check"/></svg>Alphabet and audio</li><li><svg class="ic"><use href="#i-check"/></svg>Essential dictionary</li></ul><button class="btn" type="button" data-plan="Free">Create free account</button></article>
+      <article class="card plan feat"><span class="chip tag">Most popular</span><h3>Standard</h3><div class="price">$9<small> / month</small></div><ul><li><svg class="ic"><use href="#i-check"/></svg>All Lao patterns</li><li><svg class="ic"><use href="#i-check"/></svg>Sentence generator</li><li><svg class="ic"><use href="#i-check"/></svg>Handwriting studio</li><li><svg class="ic"><use href="#i-check"/></svg>Spaced repetition</li></ul><button class="btn primary" type="button" data-plan="Standard">Choose Standard</button></article>
+      <article class="card plan"><h3>Premium</h3><div class="price">$19<small> / month</small></div><ul><li><svg class="ic"><use href="#i-check"/></svg>Full curriculum</li><li><svg class="ic"><use href="#i-check"/></svg>All dialogues and audio</li><li><svg class="ic"><use href="#i-check"/></svg>Offline pack</li><li><svg class="ic"><use href="#i-check"/></svg>VIP support</li></ul><button class="btn" type="button" data-plan="Premium">Choose Premium</button></article>
+    </div>
+  </section>
+
+  <!-- NEWS -->
+  <section id="news">
+    <div class="sec-h"><span class="eyebrow">News</span><h2>Updates and stories from Laos</h2></div>
+    <div class="news">
+      <article class="card story lead">
+        <div class="thumb lo" style="background:linear-gradient(140deg,#0284C7,#0C4A6E)">ສະບາຍດີ</div>
+        <div class="tx"><div class="meta"><span class="chip">Release</span><svg class="ic" style="width:14px;height:14px"><use href="#i-cal"/></svg>28 Sep 2026</div><h3>Welcome to LaoLao</h3><p class="lo-t">ຍິນດີຕ້ອນຮັບສູ່ ລາວລາວ!</p><p>Lao script, phonetics, sentence patterns, native audio, a stroke handwriting studio, a dictionary and quizzes, all in one place.</p></div>
+      </article>
+      <div class="news-l">
+        <article class="card story"><div class="thumb lo" style="background:linear-gradient(140deg,#F59E0B,#B45309)">ບ</div><div class="tx"><div class="meta"><span class="chip gold">Culture</span></div><h3>Tak Bat: morning almsgiving in Luang Prabang</h3><p class="lo-t">ພິທີໃສ່ບາດເຂົ້າໜຽວຍາມເຊົ້າ</p></div></article>
+        <article class="card story"><div class="thumb lo" style="background:linear-gradient(140deg,#0E7490,#164E63)">ສ</div><div class="tx"><div class="meta"><span class="chip gold">Culture</span></div><h3>The Baci ceremony and the calling of the soul</h3><p class="lo-t">ພິທີບາສີສູ່ຂວັນ</p></div></article>
+        <article class="card story"><div class="thumb lo" style="background:linear-gradient(140deg,#4F46E5,#312E81)">ຕ</div><div class="tx"><div class="meta"><span class="chip gold">Culture</span></div><h3>Sticky rice etiquette at the table</h3><p class="lo-t">ມາລະຍາດການກິນເຂົ້າໜຽວ</p></div></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="about">
+      <div class="about-art"><svg viewBox="0 0 200 200" aria-label="Dok Champa"><use href="#champa"/></svg><div class="tagline">ຮຽນພາສາລາວດ້ວຍຄວາມສຸກ</div></div>
+      <div>
+        <span class="eyebrow">About LaoLao</span>
+        <h2 style="font-size:clamp(1.7rem,3.4vw,2.4rem);line-height:1.1;margin-top:8px">Built for people learning Lao, with Lao speakers</h2>
+        <p style="color:var(--ink-2);margin-top:12px">LaoLao teaches from real sentence patterns instead of word lists. Content is written and checked by native speakers and published in tiers, so free learners and subscribers always see what their plan includes.</p>
+        <ul>
+          <li><svg class="ic"><use href="#i-check"/></svg>Native audio on patterns, words and dialogues</li>
+          <li><svg class="ic"><use href="#i-check"/></svg>Works offline as an installable app</li>
+          <li><svg class="ic"><use href="#i-check"/></svg>Interface in English, Lao and Chinese</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="closing">
+    <h2>Say your first sentence in Lao today.</h2>
+    <button class="btn gold" type="button" id="ctaStart2">Create a free account<svg class="ic"><use href="#i-arrow"/></svg></button>
+  </div>
+
+  <footer>
+    <span>© 2026 LaoLao · ລາວລາວ</span>
+    <nav aria-label="Footer"><a href="#about">About</a><a href="#news">News</a><a href="#promotions">Plans</a><a href="#home">Support: kindathanomsuck@gmail.com</a></nav>
+  </footer>
+</main>
+
+<script>
+(function(){
+  var $=function(s,r){return (r||document).querySelector(s)}, $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+
+  /* ---- i18n (hero + nav only in this mockup) ---- */
+  var T={
+    en:{nav_home:"Home",nav_services:"Services",nav_free:"Free resources",nav_promo:"Promotions",nav_news:"News",nav_about:"About",signin_short:"Sign in",
+        badge:"Lao for real conversations · 27 consonants, 6 tones",h1:"Learn to speak and write Lao, one real sentence at a time.",
+        lead:"Sentence patterns with native audio, a handwriting studio and spaced review. Start free, no card needed. Works offline.",
+        cta_start:"Start free",cta_tour:"See what's inside",hear:"Tap to hear the greeting",chip_default:"Tap a consonant to hear it.",tab_in:"Sign in",tab_up:"Create account"},
+    lo:{nav_home:"ໜ້າຫຼັກ",nav_services:"ບໍລິການ",nav_free:"ຊັບພະຍາກອນຟຣີ",nav_promo:"ໂປຣໂມຊັນ",nav_news:"ຂ່າວ",nav_about:"ກ່ຽວກັບ",signin_short:"ເຂົ້າສູ່ລະບົບ",
+        badge:"ຮຽນລາວເພື່ອສົນທະນາຈິງ · 27 ພະຍັນຊະນະ, 6 ວັນນະຍຸດ",h1:"ຮຽນເວົ້າ ແລະ ຂຽນພາສາລາວ ເທື່ອລະປະໂຫຍກ.",
+        lead:"ໂຄງສ້າງປະໂຫຍກພ້ອມສຽງເຈົ້າຂອງພາສາ, ຫ້ອງຝຶກຂຽນ ແລະ ການທົບທວນ. ເລີ່ມຟຣີ ບໍ່ຕ້ອງໃຊ້ບັດ. ໃຊ້ອອບລາຍໄດ້.",
+        cta_start:"ເລີ່ມຟຣີ",cta_tour:"ເບິ່ງສິ່ງທີ່ມີ",hear:"ແຕະເພື່ອຟັງສຽງທັກທາຍ",chip_default:"ແຕະພະຍັນຊະນະເພື່ອຟັງສຽງ.",tab_in:"ເຂົ້າສູ່ລະບົບ",tab_up:"ສ້າງບັນຊີ"},
+    zh:{nav_home:"首页",nav_services:"服务",nav_free:"免费资源",nav_promo:"优惠",nav_news:"新闻",nav_about:"关于",signin_short:"登录",
+        badge:"学真正能用的老挝语 · 27个辅音，6个声调",h1:"一句一句，学会说和写老挝语。",
+        lead:"带真人发音的句型、书写练习与间隔复习。免费开始，无需绑卡，可离线使用。",
+        cta_start:"免费开始",cta_tour:"看看有什么",hear:"点击收听问候语",chip_default:"点击辅音收听发音。",tab_in:"登录",tab_up:"创建账号"}
+  };
+  function setLang(l){
+    $$("[data-i]").forEach(function(el){var v=T[l][el.getAttribute("data-i")]; if(v) el.textContent=v;});
+    $$("[data-lang]").forEach(function(b){b.setAttribute("aria-pressed",String(b.getAttribute("data-lang")===l))});
+    document.documentElement.lang=l==="zh"?"zh":l;
+    try{localStorage.setItem("ll_mock_lang",l)}catch(e){}
+  }
+  $$("[data-lang]").forEach(function(b){b.addEventListener("click",function(){setLang(b.getAttribute("data-lang"))})});
+  try{var sv=localStorage.getItem("ll_mock_lang"); if(sv&&T[sv]) setLang(sv);}catch(e){}
+
+  /* ---- speech (graceful when no Lao voice) ---- */
+  function say(txt){try{var u=new SpeechSynthesisUtterance(txt);u.lang="lo-LA";speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+  var hear=$("#hear");
+  hear.addEventListener("click",function(){hear.classList.add("playing");say("ສະບາຍດີ");setTimeout(function(){hear.classList.remove("playing")},1500)});
+
+  /* ---- consonant chips ---- */
+  var C=[["ກ","Kai","Chicken","k"],["ຂ","Khai","Egg","kh"],["ງ","Ngua","Ox","ng"],["ຈ","Chork","Glass","ch"],["ດ","Dek","Child","d"],["ນ","Nok","Bird","n"],["ລ","Ling","Monkey","l"],["ສ","Seua","Tiger","s"]];
+  var chips=$("#chips"), note=$("#chipNote");
+  C.forEach(function(c){
+    var b=document.createElement("button");b.type="button";b.setAttribute("aria-pressed","false");b.title=c[0]+" "+c[1]+" ("+c[2]+")";
+    b.innerHTML='<b class="lo">'+c[0]+'</b><small>'+c[1]+'</small>';
+    b.addEventListener("click",function(){
+      $$("button",chips).forEach(function(x){x.setAttribute("aria-pressed","false")});b.setAttribute("aria-pressed","true");
+      note.innerHTML='<b class="lo">'+c[0]+'</b> · <b>'+c[1]+'</b> ('+c[2]+') · sound /'+c[3]+'/';say(c[0]);
+    });chips.appendChild(b);
+  });
+
+  /* ---- pattern demo ---- */
+  var W=[["ເຂົ້າໜຽວ","khao niao","sticky rice"],["ນ້ຳ","nam","water"],["ໝາກໄມ້","mak mai","fruit"],["ກາເຟ","kafe","coffee"]];
+  var wrap=$("#words");
+  W.forEach(function(w,i){
+    var b=document.createElement("button");b.type="button";b.className=i===0?"sel":"";
+    b.innerHTML='<b class="lo">'+w[0]+'</b><small>'+w[2]+'</small>';
+    b.addEventListener("click",function(){
+      $$("button",wrap).forEach(function(x){x.classList.remove("sel")});b.classList.add("sel");
+      $("#pLao").textContent="ຂ້ອຍຢາກກິນ"+(i===1||i===3?"":"")+w[0];
+      $("#pTr").textContent="khoy yak kin "+w[1]+" · I want to "+(i===1||i===3?"drink":"eat")+" "+w[2]+".";
+      if(i===1||i===3) $("#pLao").textContent="ຂ້ອຍຢາກດື່ມ"+w[0];
+      if(i===1||i===3) $("#pTr").textContent="khoy yak deum "+w[1]+" · I want to drink "+w[2]+".";
+      say($("#pLao").textContent);
+    });wrap.appendChild(b);
+  });
+
+  /* ---- auth card: signin / register / reset ---- */
+  var mode="signin", msg=$("#msg");
+  var S={
+    signin:{title:"Welcome back",sub:"Pick up your lesson where you left it.",btn:"Sign in"},
+    register:{title:"Create your free account",sub:"Start learning in under a minute.",btn:"Create account"},
+    reset:{title:"Reset your password",sub:"We will email you a link to choose a new one.",btn:"Send reset link"}
+  };
+  function show(el,v){el.hidden=!v}
+  function setMode(m,note){
+    mode=m;var s=S[m];
+    $("#authTitle").textContent=s.title;$("#authSub").textContent=s.sub;$("#submit").textContent=s.btn;
+    $("#tabIn").setAttribute("aria-selected",String(m!=="register"));$("#tabUp").setAttribute("aria-selected",String(m==="register"));
+    show($("#fName"),m==="register");show($("#fPw"),m!=="reset");show($("#perks"),m==="register");show($("#planChip"),m==="register");
+    show($("#demo"),m==="signin");$("#forgot").textContent=m==="signin"?"Forgot password?":"Back to sign in";
+    $("#pw").autocomplete=m==="register"?"new-password":"current-password";
+    if(note){msg.hidden=false;msg.className="msg";msg.textContent=note}else{msg.hidden=true}
+  }
+  $("#tabIn").addEventListener("click",function(){setMode("signin")});
+  $("#tabUp").addEventListener("click",function(){setMode("register")});
+  $("#forgot").addEventListener("click",function(){setMode(mode==="signin"?"reset":"signin")});
+  $("#eye").addEventListener("click",function(){var p=$("#pw"),h=p.type==="password";p.type=h?"text":"password";this.setAttribute("aria-label",h?"Hide password":"Show password")});
+  $("#auth").addEventListener("submit",function(e){
+    e.preventDefault();
+    var em=$("#em").value.trim();
+    if(!/^\S+@\S+\.\S+$/.test(em)){msg.hidden=false;msg.className="msg";msg.textContent="Enter a valid email address, for example name@example.com.";$("#em").focus();return}
+    if(mode!=="reset"&&$("#pw").value.length<6){msg.hidden=false;msg.className="msg";msg.textContent="Use a password of at least 6 characters.";$("#pw").focus();return}
+    msg.hidden=false;msg.className="msg ok";
+    msg.textContent=mode==="signin"?"Mockup: this calls api.auth.signIn(), then opens the learner app.":mode==="register"?"Mockup: this calls api.auth.signUp() on the Free plan, then opens the learner app.":"Mockup: this calls api.auth.resetPassword(). A reset email is sent.";
+  });
+  $$("[data-demo]").forEach(function(b){b.addEventListener("click",function(){
+    $("#em").value=b.getAttribute("data-demo").indexOf("Premium")===0?"premium@demo.laolao":"free@demo.laolao";$("#pw").value="demo-password";
+    msg.hidden=false;msg.className="msg ok";msg.textContent="Mockup: signed in as "+b.getAttribute("data-demo")+".";
+  })});
+
+  /* ---- everything on the page funnels into the same card ---- */
+  function toAuth(m,note){
+    setMode(m,note);
+    $("#auth").scrollIntoView({behavior:window.matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth",block:"center"});
+    setTimeout(function(){try{$(m==="register"?"#nm":"#em").focus({preventScroll:true})}catch(e){}},350);
+  }
+  $("#goSignin").addEventListener("click",function(){toAuth("signin")});
+  $("#ctaStart").addEventListener("click",function(){toAuth("register")});
+  $("#ctaStart2").addEventListener("click",function(){toAuth("register")});
+  $$("[data-res]").forEach(function(b){b.addEventListener("click",function(){toAuth("register","Create a free account to download "+b.getAttribute("data-res")+". It will be waiting in your library.")})});
+  $$("[data-plan]").forEach(function(b){b.addEventListener("click",function(){
+    var p=b.getAttribute("data-plan");
+    toAuth("register",p==="Free"?null:"Create your account first, then upgrade to "+p+" from Plans in the app.");
+    $("#planChip").textContent=p+" plan";
+  })});
+
+  /* ---- mobile menu + active link ---- */
+  var mb=$("#menuBtn"),sh=$("#sheet");
+  mb.addEventListener("click",function(){var o=sh.classList.toggle("open");mb.setAttribute("aria-expanded",String(o))});
+  $$("#sheet a").forEach(function(a){a.addEventListener("click",function(){sh.classList.remove("open");mb.setAttribute("aria-expanded","false")})});
+  if("IntersectionObserver" in window){
+    var links=$$(".links a");
+    var io=new IntersectionObserver(function(es){es.forEach(function(en){if(en.isIntersecting){links.forEach(function(l){l.classList.toggle("on",l.getAttribute("href")==="#"+en.target.id)})}})},{rootMargin:"-40% 0px -55% 0px"});
+    ["home","services","resources","promotions","news","about"].forEach(function(id){var el=document.getElementById(id);if(el) io.observe(el)});
+  }
+  setMode("signin");
+})();
+</script>
