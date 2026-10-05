@@ -364,14 +364,14 @@ VIEWS.account = (params = {}) => {
   const p = prefs(), a = A.access, root = h("div",{class:"stack-l"});
   const row = (label, ctrl, desc) => h("div",{class:"set-row"}, h("div",null, h("label",null,label), desc ? h("p",null,desc) : null), ctrl);
   const sw = k => h("input",{type:"checkbox",class:"switch",checked:!!p[k],"aria-label":k,onchange:e=>setPref(k, e.target.checked)});
-  const nameIn = h("input",{class:"input",value:A.profile.name||"",style:"max-width:260px"});
+  const nameIn = h("input",{class:"input",value:A.profile.name||"",maxlength:"60","aria-label":t("name"),autocomplete:"name"});
   const vs = voices();
   root.append(pageHead(t("account_title")));
   // profile: photo and nickname (shown in the top bar)
   const fileIn = h("input",{type:"file",accept:"image/*",hidden:true,onchange:async e=>{
     const f = e.target.files && e.target.files[0]; if (!f) return;
     try { await saveProfile({ avatar: await imageToAvatar(f) }); toast(t("pf_photo_saved")); A.render(); } catch(err){ toast(err.message || t("pf_photo_type"), "err"); } }});
-  const nickIn = h("input",{class:"input",value:A.profile.nickname||"",maxlength:"30",placeholder:displayName(),"aria-label":t("pf_nickname"),style:"max-width:260px"});
+  const nickIn = h("input",{class:"input",value:A.profile.nickname||"",maxlength:"30",placeholder:displayName(),"aria-label":t("pf_nickname")});
   root.append(h("section",{class:"card acc-profile"},
     h("div",{class:"acc-av"}, avatarEl("xl"), h("button",{class:"acc-cam",type:"button","aria-label":t("pf_change_photo"),title:t("pf_change_photo"),onclick:()=>fileIn.click()}, icon("image")), fileIn),
     h("div",{class:"acc-id"},
@@ -379,8 +379,8 @@ VIEWS.account = (params = {}) => {
       h("div",{class:"row"}, h("button",{class:"btn sm",onclick:()=>fileIn.click()}, icon("image"), t("pf_change_photo")),
         A.profile.avatar ? h("button",{class:"btn sm ghost",onclick:async()=>{ await saveProfile({ avatar:null }); toast(t("saved")); A.render(); }}, t("pf_remove_photo")) : null))));
   root.append(h("section",{class:"card"},
-    row(t("pf_nickname"), h("div",{class:"row"}, nickIn, h("button",{class:"btn sm",onclick:async()=>{ try { await saveProfile({ nickname: nickIn.value.trim().slice(0, 30) }); toast(t("saved")); A.render(); } catch(e){ toast(errText(e),"err"); } }}, t("save_btn"))), t("pf_nickname_d")),
-    row(t("name"), h("div",{class:"row"}, nameIn, h("button",{class:"btn sm",onclick:async()=>{ A.profile.name = nameIn.value.trim(); await A.api.db.update(`users/${A.user.uid}`,{ name:A.profile.name }).catch(e=>toast(errText(e),"err")); toast(t("saved")); }}, t("save_btn")))),
+    row(t("pf_nickname"), h("div",{class:"set-field"}, nickIn, h("button",{class:"btn sm",onclick:async()=>{ try { await saveProfile({ nickname: nickIn.value.trim().slice(0, 30) }); toast(t("saved")); A.render(); } catch(e){ toast(errText(e),"err"); } }}, t("save_btn"))), t("pf_nickname_d")),
+    row(t("name"), h("div",{class:"set-field"}, nameIn, h("button",{class:"btn sm",onclick:async()=>{ A.profile.name = nameIn.value.trim(); await A.api.db.update(`users/${A.user.uid}`,{ name:A.profile.name }).catch(e=>toast(errText(e),"err")); toast(t("saved")); }}, t("save_btn")))),
     row(t("email"), h("span",{class:"muted"}, A.user.email)),
     row(t("level_label"), h("span",{class:"chip lv"}, "Stage "+(A.profile.level||1))),
     row(t("member_since"), h("span",{class:"muted"}, fmtDate(A.profile.createdAt, lang())))));

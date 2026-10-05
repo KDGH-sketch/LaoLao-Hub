@@ -68,9 +68,15 @@ try {
   await b.waitFor(`!!document.querySelector("#nm")`, 5000);
   const newEmail = `e2e.${Date.now()}@test.local`;
   await b.eval(`(() => { document.querySelector("#nm").value = "E2E ລາວ Learner"; document.querySelector("#em").value = ${J(newEmail)}; document.querySelector("#pw").value = "e2e-pass-123"; document.querySelector("#em").form.requestSubmit(); })()`);
-  await b.waitFor(`!!document.querySelector(".app")`, 30000).catch(() => {});
+  // signing up renders the app, then reloads the page (the reload can be slow while the service worker caches files),
+  // so wait until the app is there and still there a moment later
+  for (const t0 = Date.now(); Date.now() - t0 < 90000; ){
+    if (await b.eval(`!!document.querySelector(".app .side .nav-btn")`).catch(() => false)){ await sleep(1500); if (await b.eval(`!!document.querySelector(".app .side .nav-btn")`).catch(() => false)) break; }
+    await sleep(300);
+  }
   await ok(await b.eval(`!!document.querySelector(".app")`), "a new learner can register and lands in the app");
   await nav(/Account/);
+  await b.waitFor(`[...document.querySelectorAll("main input")].some(i => i.value === "E2E ລາວ Learner")`, 8000).catch(() => {});
   await ok(await b.eval(`[...document.querySelectorAll("main input")].some(i => i.value === "E2E ລາວ Learner")`) && await b.eval(`document.querySelector("main").innerText.includes(${J(newEmail)})`), "the new account shows its name (Lao text kept) and email");
 
   step("profile created at first sign-in (email-confirmation flow)");

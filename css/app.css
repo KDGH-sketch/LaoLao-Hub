@@ -358,8 +358,14 @@ body.hide-hz .sent .zh:hover{filter:none}
 .grades button small{display:block;font-size:.72rem;color:var(--ink-3);font-weight:500}
 
 /* ---------- Settings ---------- */
-.set-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
+/* label and control side by side when they fit; on narrow screens the control drops below the label at full width */
+.set-row{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 14px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
+.set-row>:first-child{flex:1 1 170px;min-width:0}
+.set-row>:not(:first-child){max-width:100%;overflow-wrap:anywhere}
 .set-row:first-child{border-top:0}
+.set-field{display:flex;gap:8px;align-items:center;flex:0 1 400px;min-width:0}
+.set-field .input{flex:1;min-width:0}
+.set-field .btn{flex:none}
 .set-row label{font-weight:600}
 .set-row p{color:var(--ink-3);font-size:.88rem}
 .switch{position:relative;width:44px;height:26px;appearance:none;-webkit-appearance:none;background:var(--line-2);border-radius:99px;cursor:pointer;transition:background .15s;margin:0}
