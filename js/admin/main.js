@@ -6,7 +6,7 @@ import { setLang, lang } from "../shared/i18n.js";
 import { CONTENT_TYPES } from "../shared/content.js";
 import { bootstrapOwner, importSeed, ensureDemo, DEMO } from "../shared/setup.js";
 import { loadDict } from "../shared/dict.js";
-import { createWaitingScreen } from "../shared/lao-decorations.js";
+import { createWaitingScreen, dokChampaSvg } from "../shared/lao-decorations.js";
 import { adminProfileChip, adminSignOut, loadAdminProfile, closeAdminProfile } from "./profile.js";
 import { S, L, t, go, isSuper, isOwner, getActiveRole, canContent, canSupport, canViewMenu, canEditMenu, canManageAdmins, canManageSettings, refreshPlans, fld, lockedScreen } from "./state.js";
 import { viewLearners, viewLearner } from "./learners.js";
@@ -52,48 +52,77 @@ async function boot(){
 export async function refreshBundleState(){ try { S.bundle = await S.api.db.get("settings/bundle") || {}; } catch(e){ S.bundle = {}; } }
 
 // ---------- auth screens ----------
+// The admin sign-in screens (sign in, new password, no access, first setup) share this frame: an animated night-blue
+// background (light blobs, Lao textile pattern, drifting Lao letters, Mekong waves), a hero with what the console is for,
+// and the card. Styles: css/admin.css "admin sign-in".
+const AUTH_FEATURES = [
+  ["content", ["Content & publishing","ເນື້ອຫາ ແລະ ການເຜີຍແຜ່","内容与发布"], ["Lessons, words, videos and the welcome page","ບົດຮຽນ, ຄຳສັບ, ວິດີໂອ ແລະ ໜ້າຕ້ອນຮັບ","课程、词汇、视频和欢迎页"]],
+  ["users", ["Learners & plans","ຜູ້ຮຽນ ແລະ ແພັກເກດ","学员与套餐"], ["Accounts, access and progress","ບັນຊີ, ສິດເຂົ້າເຖິງ ແລະ ຄວາມຄືບໜ້າ","账户、权限和进度"]],
+  ["wallet", ["Payments & reports","ການຊຳລະ ແລະ ລາຍງານ","付款与报表"], ["Orders, refunds and activity","ຄຳສັ່ງຊື້, ການຄືນເງິນ ແລະ ກິດຈະກຳ","订单、退款和活动"]]
+];
+const WAVES = '<svg viewBox="0 0 1440 160" preserveAspectRatio="none"><path class="w1" d="M0 80 C 180 40 360 120 540 80 S 900 40 1080 80 S 1440 120 1620 80 S 1980 40 2160 80 S 2520 120 2880 80 V160 H0Z"/><path class="w2" d="M0 100 C 200 70 400 130 600 100 S 1000 70 1200 100 S 1600 130 1800 100 S 2200 70 2400 100 S 2700 130 2880 100 V160 H0Z"/></svg>';
 function authFrame(...kids){
-  root.innerHTML = "";
-  root.append(demoBar(), h("div",{class:"auth"},
-    h("div",{class:"auth-art",style:"background:var(--ink)"}, h("div",null, h("div",{class:"big lo"},"ລ"), h("h2",{style:"margin-top:12px"},"LaoLao · "+t("adm_title"))), h("p",null,"Manage learners, access and learning content.")),
-    h("div",{class:"auth-form"}, ...kids)));
+  let n = 0; const st = el => { el.style.setProperty("--d", (n++ * 70) + "ms"); return el; };
+  const glyphs = ["ກ","ລ","ສ","ນ","ຮ","ດ","ມ","ວ"].map((g, i) => h("span",{class:"aa-glyph",style:`--x:${6 + i * 12}%;--s:${18 + (i % 3) * 7}s;--o:${-i * 2.7}s`}, g));
+  const waves = h("div",{class:"aa-waves"}); waves.innerHTML = WAVES;      // a fixed string, no user data
+  root.replaceChildren(...[demoBar(), h("div",{class:"aa"},
+    h("div",{class:"aa-bg","aria-hidden":"true"}, h("i",{class:"aa-blob b1"}), h("i",{class:"aa-blob b2"}), h("i",{class:"aa-blob b3"}), h("div",{class:"aa-pattern"}), ...glyphs, waves),
+    h("section",{class:"aa-hero"},
+      st(h("div",{class:"aa-brand"}, h("div",{class:"aa-seal"}, dokChampaSvg(54)),
+        h("div",null, h("b",null, (S.settings && S.settings.appName) || "LaoLao"), h("span",{class:"aa-tag"}, icon("shield"), L(["Admin console","ລະບົບຈັດການ","管理后台"]))))),
+      st(h("p",{class:"aa-hello",lang:"lo"},"ສະບາຍດີ")),
+      st(h("h2",{class:"aa-title"}, L(["Run LaoLao from one place.","ຈັດການ LaoLao ໄດ້ໃນບ່ອນດຽວ.","在一个地方管理 LaoLao。"]))),
+      st(h("p",{class:"aa-sub"}, L(["Manage learners, access and learning content: everything the app shows starts here.","ຈັດການຜູ້ຮຽນ, ສິດເຂົ້າເຖິງ ແລະ ເນື້ອຫາ: ທຸກຢ່າງໃນແອັບເລີ່ມຈາກບ່ອນນີ້.","管理学员、权限和学习内容：应用里的一切都从这里开始。"]))),
+      h("ul",{class:"aa-feats"}, AUTH_FEATURES.map(([ic, tt, d]) => st(h("li",null, h("span",{class:"aa-fi"}, icon(ic)), h("div",null, h("b",null, L(tt)), h("small",null, L(d)))))))),
+    h("section",{class:"aa-panel"},
+      h("div",{class:"aa-card"}, ...kids.filter(Boolean)),
+      h("p",{class:"aa-foot"}, icon("lock"), L(["Secure area · what you can do depends on your role · changes are logged","ພື້ນທີ່ປອດໄພ · ສິດຂຶ້ນກັບບົດບາດ · ທຸກການປ່ຽນແປງຖືກບັນທຶກ","安全区域 · 权限取决于角色 · 所有更改都有记录"]))))].filter(Boolean));
 }
+// Heading of an auth card: icon badge, title and a short line
+const authHead = (ic, title, sub) => h("div",{class:"aa-head"}, h("span",{class:"aa-badge"}, icon(ic)), h("div",null, h("h1",null,title), sub ? h("p",null,sub) : null));
 function demoBar(){ return S.api && S.api.mode==="demo" ? h("div",{class:"demo-bar"}, t("demo_banner")+" ", h("button",{onclick:async()=>{ if(await confirmDialog(t("reset_demo"), "Delete all demo data in this browser and start again?", t("reset_demo"), t("cancel"), true)){ await S.api._reset(); location.reload(); } }}, t("reset_demo"))) : ""; }
 function renderLogin(){
-  const email = h("input",{class:"input",type:"email",autocomplete:"username",id:"em"});
-  const pw = h("input",{class:"input",type:"password",autocomplete:"current-password",id:"pw"});
+  const email = h("input",{class:"input",type:"email",autocomplete:"username",id:"em",placeholder:"name@example.com"});
+  const pw = h("input",{class:"input",type:"password",autocomplete:"current-password",id:"pw",placeholder:"••••••••"});
   let showPw = false;
-  const pwToggle = h("button",{type:"button",class:"pw-toggle-btn","aria-label":"Toggle password visibility",onclick:()=>{
+  const pwToggle = h("button",{type:"button",class:"aa-eye","aria-label":L(["Show password","ສະແດງລະຫັດຜ່ານ","显示密码"]),"aria-pressed":"false",onclick:()=>{
     showPw = !showPw;
-    pw.type = showPw ? "text" : "password";
+    pw.type = showPw ? "text" : "password"; pwToggle.setAttribute("aria-pressed", String(showPw));
     pwToggle.replaceChildren(icon(showPw ? "eyeOff" : "eye"));
   }}, icon("eye"));
-  const pwWrap = h("div",{class:"input-wrap"}, pw, pwToggle);
-  const msg = h("p",{class:"small",style:"color:var(--bad)"});
-  const go_ = async e => { e && e.preventDefault(); msg.textContent=""; try { await S.api.auth.signIn(email.value.trim(), pw.value); } catch(err){ msg.textContent = errText(err); } };
+  const msg = h("p",{class:"aa-msg",role:"alert"});
+  const submit = h("button",{class:"aa-submit",type:"submit"}, h("span",null, t("sign_in")), icon("right"));
+  const fail = text => { msg.textContent = text; msg.classList.remove("shake"); void msg.offsetWidth; msg.classList.add("shake"); };
+  const go_ = async e => {
+    if (e) e.preventDefault();
+    msg.textContent = "";
+    if (!email.value.trim() || !pw.value) return fail(L(["Enter your email and password.","ໃສ່ອີເມວ ແລະ ລະຫັດຜ່ານ.","请输入邮箱和密码。"]));
+    submit.disabled = true; submit.classList.add("busy");
+    try { await S.api.auth.signIn(email.value.trim(), pw.value); }
+    catch(err){ fail(errText(err)); submit.disabled = false; submit.classList.remove("busy"); }
+  };
+  const demoBtn = (acc, ic, label) => h("button",{class:"aa-demo-btn",type:"button",onclick:()=>{ email.value=acc.email; pw.value=acc.pw; go_(); }}, icon(ic), h("span",null,label));
+  const demoCard = S.api.mode==="demo" ? h("div",{class:"aa-demo"},
+    h("b",null, t("demo_accounts") + " · " + L(["one-click sign in","ເຂົ້າດ້ວຍຄລິກດຽວ","一键登录"])),
+    h("div",{class:"aa-demo-grid"}, demoBtn(DEMO.admin, "shield", "Super Admin"), demoBtn(DEMO.editor, "edit", "Content Editor"), demoBtn(DEMO.reviewer, "eye", "Content Reviewer"), demoBtn(DEMO.support, "users", "Support Admin")),
+    h("small",{class:"mono"}, "Password for all demo accounts: demo1234")) : null;
 
-  const demoCard = S.api.mode==="demo" ? h("div",{class:"banner info stack",style:"gap:10px;margin-bottom:16px"},
-    h("b",null,t("demo_accounts") + " · One-Click Role Sign In:"),
-    h("div",{class:"grid2",style:"gap:8px"},
-      h("button",{class:"btn primary sm",type:"button",onclick:()=>{ email.value=DEMO.admin.email; pw.value=DEMO.admin.pw; go_(); }}, icon("shield"), "Super Admin"),
-      h("button",{class:"btn sm",type:"button",onclick:()=>{ email.value=DEMO.editor.email; pw.value=DEMO.editor.pw; go_(); }}, icon("edit"), "Content Editor"),
-      h("button",{class:"btn sm",type:"button",onclick:()=>{ email.value=DEMO.reviewer.email; pw.value=DEMO.reviewer.pw; go_(); }}, icon("eye"), "Content Reviewer"),
-      h("button",{class:"btn sm",type:"button",onclick:()=>{ email.value=DEMO.support.email; pw.value=DEMO.support.pw; go_(); }}, icon("users"), "Support Admin")
-    ),
-    h("div",{class:"small muted mono"}, "Password for all demo accounts: demo1234")
-  ) : null;
-
-  authFrame(h("h1",null,t("sign_in")),
+  authFrame(
+    authHead("shield", t("sign_in"), L(["Administrators only. Use the account you were invited with.","ສຳລັບຜູ້ດູແລເທົ່ານັ້ນ. ໃຊ້ບັນຊີທີ່ທ່ານໄດ້ຮັບເຊີນ.","仅限管理员。请使用受邀的账户。"])),
     demoCard,
-    h("form",{class:"stack",onsubmit:go_}, h("div",{class:"field"}, h("label",{for:"em"},t("email")), email), h("div",{class:"field"}, h("label",{for:"pw"},t("password")), pwWrap), msg,
-      h("button",{class:"btn primary",type:"submit"}, t("sign_in"))),
-    h("button",{class:"linkbtn",onclick:async()=>{ if(!email.value) { msg.textContent=t("email")+"?"; return; } try{ await S.api.auth.resetPassword(email.value.trim()); toast(t("reset_sent")); }catch(err){ msg.textContent=errText(err); } }}, t("forgot")),
-    h("div",{class:"row"}, langSwitch(), h("a",{href:"../",class:"small"}, t("adm_open_learner"))));
+    h("form",{class:"aa-form",onsubmit:go_,novalidate:true},
+      h("div",{class:"aa-field"}, h("label",{for:"em"},t("email")), h("div",{class:"aa-input"}, icon("user"), email)),
+      h("div",{class:"aa-field"}, h("label",{for:"pw"},t("password")), h("div",{class:"aa-input"}, icon("lock"), pw, pwToggle)),
+      msg, submit),
+    h("div",{class:"aa-row"},
+      h("button",{class:"aa-link",type:"button",onclick:async()=>{ if(!email.value.trim()) { fail(L(["Enter your email first, then tap Forgot password.","ໃສ່ອີເມວກ່ອນ, ແລ້ວກົດລືມລະຫັດຜ່ານ.","请先输入邮箱，再点忘记密码。"])); email.focus(); return; } try{ await S.api.auth.resetPassword(email.value.trim()); toast(t("reset_sent")); }catch(err){ fail(errText(err)); } }}, t("forgot")),
+      langSwitch()),
+    h("a",{href:"../",class:"aa-back"}, icon("home"), h("span",null, t("adm_open_learner")), icon("right")));
 }
 function renderNewPassword(){
   const pw = h("input",{class:"input",type:"password",id:"npw",autocomplete:"new-password"}), pw2 = h("input",{class:"input",type:"password",id:"npw2",autocomplete:"new-password"});
   const msg = h("p",{class:"small",style:"color:var(--bad)"});
-  authFrame(h("h1",null,"Choose a new password"),
+  authFrame(authHead("lock", L(["Choose a new password","ຕັ້ງລະຫັດຜ່ານໃໝ່","设置新密码"])),
     h("form",{class:"stack",onsubmit:async e=>{ e.preventDefault(); msg.textContent="";
       if (pw.value.length < 6){ msg.textContent = "Password must be at least 6 characters."; return; }
       if (pw.value !== pw2.value){ msg.textContent = "The passwords do not match."; return; }
@@ -102,7 +131,7 @@ function renderNewPassword(){
       h("button",{class:"btn primary",type:"submit"}, t("save"))));
 }
 function renderNoAccess(user){
-  authFrame(h("h1",null,t("adm_title")),
+  authFrame(authHead("shield", t("adm_title")),
     h("p",null, t("adm_no_access")),
     h("p",{class:"muted small"}, user.email),
     S.api.mode==="demo" ? h("div",{class:"banner info stack",style:"gap:8px;margin:14px 0"},
@@ -119,7 +148,7 @@ function renderSetup(user){
   const name = h("input",{class:"input",id:"nm",value:""});
   const ok = S.api.mode==="demo" || user.email.toLowerCase()===String(OWNER_EMAIL).toLowerCase();
   const msg = h("p",{class:"small",style:"color:var(--bad)"});
-  authFrame(h("h1",null,t("adm_setup_title")), h("p",{class:"muted"}, t("adm_setup_d")), h("p",{class:"small"}, user.email),
+  authFrame(authHead("spark", t("adm_setup_title")), h("p",{class:"muted"}, t("adm_setup_d")), h("p",{class:"small"}, user.email),
     ok ? h("div",{class:"field"}, h("label",{for:"nm"},t("name")), name) : h("div",{class:"banner"}, "This email doesn't match the owner email in env-config.js."),
     msg,
     h("div",{class:"row"}, ok ? h("button",{class:"btn primary",onclick:async e=>{ e.currentTarget.disabled=true; try{ await bootstrapOwner(S.api, user, name.value.trim()); location.reload(); }catch(err){ msg.textContent=errText(err); e.currentTarget.disabled=false; } }}, icon("shield"), t("adm_become_super")) : null,

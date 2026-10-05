@@ -16,7 +16,8 @@ export const S = {
   render: () => {}
 };
 
-export const L = pair => Array.isArray(pair) ? (lang() === "lo" && pair[1] ? pair[1] : pair[0]) : pair;
+// [English, Lao, Chinese?]: the text in the panel language (Chinese falls back to English when not given)
+export const L = pair => Array.isArray(pair) ? (lang() === "lo" && pair[1] ? pair[1] : lang() === "zh" && pair[2] ? pair[2] : pair[0]) : pair;
 
 // Credential & Sensitive System Menus (Strictly Super Admin / Owner only)
 export const CREDENTIAL_MENUS = ["admins", "settings", "plans", "accessMatrix"];
