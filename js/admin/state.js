@@ -1,6 +1,6 @@
 // Shared admin state and Role-Based Access Control (RBAC)
 import { t, lang } from "../shared/i18n.js";
-import { h, icon } from "../shared/ui.js";
+import { h, icon, discardDialog } from "../shared/ui.js";
 import { OWNER_EMAIL } from "../config.js";
 
 export const S = {
@@ -138,7 +138,11 @@ export const canSupport = () => isSuper() || getActiveRole() === "support";
 // Content changed: show "Publish now" in the header without another database read
 export const markUnpublished = () => { S.bundle = Object.assign({}, S.bundle, { dirty: true }); };
 
-export function go(view, params = {}) {
+// A page with unsaved edits sets S.leaveGuard = () => true while there is something to lose; go() asks before leaving it.
+// Without a guard go() runs synchronously, as before.
+export async function go(view, params = {}) {
+  if (S.leaveGuard && S.leaveGuard() && !await discardDialog()) return false;
+  S.leaveGuard = null;
   S.view = view;
   S.params = params;
   S.render();

@@ -1,4 +1,5 @@
 // Small UI toolkit shared by the learner app and the admin panel.
+import { t } from "./i18n.js";
 export const $ = (s, r=document) => r.querySelector(s);
 export const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
 export function h(tag, attrs, ...kids){
@@ -196,24 +197,48 @@ export function toast(msg, kind){
   el.textContent = msg; el.className = "toast" + (kind ? " "+kind : ""); clearTimeout(toastT); toastT = setTimeout(()=>leave(el, 220), 2800);
 }
 // In-page dialog (native confirm/prompt are blocked in some viewers)
-export function dialog({ title, body, actions=[], wide=false }){
+// Open dialogs, newest last: only the top one reacts to Escape
+const OPEN = [];
+// Modal dialog. An action with a value closes with that value; one with onClick closes with its result unless it returns false.
+// Cancelling (an action with value false, ×, Escape or a click outside) asks "Discard changes?" first when something was typed
+// or picked in the dialog; pass guard: () => bool to decide that yourself.
+export function dialog({ title, body, actions=[], wide=false, cls="", guard }){
   return new Promise(resolve => {
     const scrim = h("div",{class:"scrim"});
-    const box = h("div",{class:"dialog"+(wide?" wide":""),role:"dialog","aria-modal":"true","aria-label":title||""});
-    const close = v => { if (box.classList.contains("out")) return; leave(scrim, 160); leave(box, 160); document.removeEventListener("keydown", onKey); resolve(v); };
-    const onKey = e => { if (e.key==="Escape") close(null); };
+    const box = h("div",{class:"dialog"+(wide?" wide":"")+(cls?" "+cls:""),role:"dialog","aria-modal":"true","aria-label":title||""});
+    let touched = false, asking = false;
+    const mark = e => { if (e.isTrusted) touched = true; };
+    box.addEventListener("input", mark); box.addEventListener("change", mark);
+    const close = v => { if (box.classList.contains("out")) return; leave(scrim, 160); leave(box, 160); OPEN.splice(OPEN.indexOf(box), 1); document.removeEventListener("keydown", onKey); resolve(v); };
+    const cancel = async v => {
+      if (asking || box.classList.contains("out")) return;
+      if (guard ? guard() : touched){ asking = true; const sure = await discardDialog(); asking = false; if (!sure) return; }
+      close(v);
+    };
+    const onKey = e => { if (e.key==="Escape" && OPEN[OPEN.length-1]===box){ e.preventDefault(); cancel(null); } };
     document.addEventListener("keydown", onKey);
-    scrim.addEventListener("click", () => close(null));
-    box.append(
-      title ? h("div",{class:"dialog-h"}, h("h2",null,title), h("button",{class:"ib","aria-label":"Close",onclick:()=>close(null)}, icon("x"))) : null,
+    scrim.addEventListener("click", () => cancel(null));
+    box.append(...[
+      title ? h("div",{class:"dialog-h"}, h("h2",null,title), h("button",{class:"ib","aria-label":t("close")||"Close",onclick:()=>cancel(null)}, icon("x"))) : null,
       h("div",{class:"dialog-b"}, typeof body === "function" ? body(close) : body),   // body(close) lets the content close the dialog
-      actions.length ? h("div",{class:"dialog-f"}, actions.map(a => h("button",{class:"btn"+(a.primary?" primary":"")+(a.danger?" danger":""),onclick:async()=>{ const v = a.value!==undefined ? a.value : (a.onClick ? await a.onClick() : true); if (v!==false) close(v); }}, a.label))) : null);
-    document.body.append(scrim, box);
+      actions.length ? h("div",{class:"dialog-f"}, actions.map(a => h("button",{class:"btn"+(a.primary?" primary":"")+(a.danger?" danger":""),onclick:async()=>{
+        if (a.value === false && !a.onClick) return cancel(false);
+        if (a.value !== undefined) return close(a.value);
+        const v = a.onClick ? await a.onClick() : true; if (v!==false) close(v); }}, a.label))) : null].filter(Boolean));   // append() would print "null"
+    document.body.append(scrim, box); OPEN.push(box);
     const f = box.querySelector("input,select,textarea,button.primary"); if (f) f.focus();
   });
 }
 export const confirmDialog = (title, text, okLabel="OK", cancelLabel="Cancel", danger=false) =>
-  dialog({ title, body: h("p",null,text), actions:[{label:cancelLabel, value:false},{label:okLabel, value:true, primary:!danger, danger}] }).then(v=>v===true);
+  dialog({ title, body: h("p",null,text), actions:[{label:cancelLabel, value:null},{label:okLabel, value:true, primary:!danger, danger}] }).then(v=>v===true);
+
+// "Discard changes?" asked before unsaved edits are thrown away. Resolves true to discard, false to keep editing.
+export function discardDialog(){
+  return dialog({ cls:"discard-dlg", body: h("div",{class:"dc"},
+      h("div",{class:"dc-ic","aria-hidden":"true"}, h("span",{class:"dc-ring"}), icon("edit")),
+      h("h2",null, t("dc_title")), h("p",null, t("dc_text"))),
+    actions:[{ label:t("dc_keep"), value:false, primary:true }, { label:t("dc_discard"), value:true, danger:true }] }).then(v => v === true);
+}
 
 export function fmtDate(ms, lang="en", withTime=false){
   if (!ms) return "—";

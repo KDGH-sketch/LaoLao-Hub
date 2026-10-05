@@ -387,6 +387,19 @@ textarea.code{width:100%;min-height:90px;font:.8rem/1.4 ui-monospace,Menlo,monos
 .dialog-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px 6px}
 .dialog-b{padding:8px 18px 12px;display:flex;flex-direction:column;gap:12px}
 .dialog-f{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px 16px;border-top:1px solid var(--line);flex-wrap:wrap}
+/* "Discard changes?" (js/shared/ui.js discardDialog) */
+.discard-dlg{width:min(400px,calc(100% - 32px));border:1px solid color-mix(in srgb,var(--warn) 25%,var(--line));
+  background:radial-gradient(120% 70% at 50% 0%,color-mix(in srgb,var(--warn) 13%,var(--surface)),var(--surface) 62%)}
+.discard-dlg .dialog-b{padding:28px 24px 6px}
+.discard-dlg .dialog-f{border-top:0;padding:14px 24px 22px;justify-content:stretch}
+.discard-dlg .dialog-f .btn{flex:1 1 140px;min-height:46px;font-weight:700}
+.dc{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px}
+.dc h2{margin:10px 0 0;font-size:1.3rem}
+.dc p{margin:0;color:var(--ink-3);line-height:1.5}
+.dc-ic{position:relative;display:grid;place-items:center;width:68px;height:68px;border-radius:50%;color:var(--warn);
+  background:color-mix(in srgb,var(--warn) 16%,var(--surface));box-shadow:0 10px 26px -12px var(--warn)}
+.dc-ic .ic{width:30px;height:30px;position:relative}
+.dc-ring{position:absolute;inset:0;border-radius:50%;border:2px solid color-mix(in srgb,var(--warn) 55%,transparent)}
 .field{display:flex;flex-direction:column;gap:5px}
 .field > label, .field > .lbl{font-weight:600;font-size:.88rem}
 .field .help{font-size:.8rem;color:var(--ink-3)}
@@ -1024,6 +1037,15 @@ main.enter>*{animation:vtIn .38s cubic-bezier(.2,.9,.25,1) both}
 .scrim.out,.sheet-scrim.out{animation:fadeOut .18s ease both}
 .dialog{animation:dlgIn .36s cubic-bezier(.2,1.2,.35,1) both}
 .dialog.out{animation:dlgOut .16s ease-in both}
+.discard-dlg .dc-ic{animation:dcPop .5s .08s cubic-bezier(.2,1.5,.4,1) both}
+.discard-dlg .dc-ic .ic{animation:dcWiggle .7s .4s ease-in-out both}
+.discard-dlg .dc-ring{animation:dcRing 1.8s .3s ease-out infinite}
+.discard-dlg .dc h2,.discard-dlg .dc p,.discard-dlg .dialog-f{animation:dcUp .4s cubic-bezier(.2,.9,.25,1) both}
+.discard-dlg .dc h2{animation-delay:.1s}.discard-dlg .dc p{animation-delay:.16s}.discard-dlg .dialog-f{animation-delay:.22s}
+@keyframes dcPop{from{transform:scale(.4);opacity:0}}
+@keyframes dcWiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-14deg)}55%{transform:rotate(10deg)}80%{transform:rotate(-4deg)}}
+@keyframes dcRing{0%{transform:scale(1);opacity:.9}100%{transform:scale(1.55);opacity:0}}
+@keyframes dcUp{from{opacity:0;transform:translateY(8px)}}
 .sheet{animation:sheetIn .38s cubic-bezier(.2,.9,.25,1) both}
 .sheet.out{animation:sheetOut .2s ease-in both}
 .toast{animation:toastIn .34s cubic-bezier(.2,1.2,.35,1) both}

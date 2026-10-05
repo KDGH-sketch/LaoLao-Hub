@@ -203,3 +203,21 @@ table.tbl tr.clickable:hover td{background:var(--surface-2)}
 
 /* sidebar section headings on the dark admin sidebar: readable contrast (WCAG AA) */
 .side .side-group-label{color:#9DB4CC}
+
+/* top bar: tools beside the profile button on wide screens; on phones they are in the profile menu (js/admin/profile.js) */
+.adm-tools{display:flex;align-items:center;gap:10px;flex-wrap:nowrap;justify-content:flex-end;min-width:0}
+.adm .topbar .pchip{margin-left:0}
+.adm-preview{flex-wrap:wrap}
+.adm-preview .input{max-width:100%;font-size:.85rem}
+@media (max-width:900px){
+  .adm .adm-tools{display:none}
+  .adm .topbar{padding-inline:12px;gap:8px}
+  .adm .topbar .mbrand b{white-space:nowrap}
+}
+@media (max-width:420px){ .adm .topbar > .btn.sm{padding:5px 8px;font-size:.78rem} }
+.adm .topbar{flex-wrap:nowrap}
+.adm-tools,.adm .topbar .btn,.adm .topbar .pchip-t b{white-space:nowrap}
+.adm .topbar .pub-chip{flex:none}
+@media (max-width:900px){ .adm .topbar .pub-chip-t{display:none} .adm .topbar .mbrand{min-width:0;overflow:hidden} }
+/* medium screens: role preview only in the profile menu, the learner-app link as an icon */
+@media (max-width:1280px){ .adm-tools select{display:none} .adm-tools a .hide-sm{display:none} }

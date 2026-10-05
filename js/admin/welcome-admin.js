@@ -59,6 +59,9 @@ export async function viewWelcome(){
     const known = new Set((d.sections || []).map(s => s.id));
     d.sections = (d.sections || []).filter(s => SECTION_IDS.includes(s.id)).concat(SECTION_IDS.filter(id => !known.has(id)).map(id => ({ id, on:true }))); return d; };
   let draft = complete((draftDoc && draftDoc.data) || published);
+  let savedJson = JSON.stringify(draft);                  // what is in settings/welcomeDraft; leaving with other edits asks first
+  S.leaveGuard = () => canEdit && JSON.stringify(draft) !== savedJson;
+  setTimeout(() => { savedJson = JSON.stringify(draft); }, 0);   // fields that fill in defaults while rendering are not edits
   const baseline = JSON.stringify(complete(published));
   const changed = () => JSON.stringify(draft) !== baseline;
 
@@ -108,6 +111,7 @@ export async function viewWelcome(){
   const saveDraft = async quiet => {
     const c = drawChecks(); if (c.errors.length){ toast(c.errors[0], "err"); return false; }
     await S.api.db.set("settings/welcomeDraft", { data: clone(draft), updatedAt: new Date(), updatedBy: S.me.uid });
+    savedJson = JSON.stringify(draft);
     if (!quiet){ toast(L(["Draft saved. Visitors still see the published page.","ບັນທຶກຮ່າງແລ້ວ. ຜູ້ເຂົ້າຊົມຍັງເຫັນສະບັບເຜີຍແຜ່."]), "ok"); audit("update", "settings/welcome", "draft"); }
     drawState(); return true;
   };

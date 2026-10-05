@@ -43,12 +43,60 @@ tailwind.config = {
 </script>
 </head>
 <body>
-<div id="root"><div class="empty" style="margin:40px">Loading…</div></div>
+<!-- the same loading screen as the learner app (index.html), so switching between them looks seamless -->
+<div id="root">
+  <div class="waiting-screen">
+    <div class="floating-elements">
+      <div class="float-glyph">ກ</div>
+      <div class="float-glyph">ດ</div>
+      <div class="float-glyph">ນ</div>
+      <div class="float-glyph">ສ</div>
+      <div class="float-glyph">ລ</div>
+      <div class="float-glyph">ຮ</div>
+    </div>
+    <div class="waiting-card">
+      <div class="champa-wrap">
+        <div class="champa-halo"></div>
+        <svg class="champa-svg" viewBox="0 0 200 200" width="110" height="110">
+          <defs>
+            <radialGradient id="champaYellowCore0" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#F59E0B" />
+              <stop offset="40%" stop-color="#FBBF24" />
+              <stop offset="70%" stop-color="#FEF08A" stop-opacity="0.9" />
+              <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+            </radialGradient>
+            <linearGradient id="champaPetalGrad0" x1="0%" y1="100%" x2="0%" y2="0%">
+              <stop offset="0%" stop-color="#FEF3C7" />
+              <stop offset="35%" stop-color="#FFFFFF" />
+              <stop offset="100%" stop-color="#FFFFFF" />
+            </linearGradient>
+          </defs>
+          <g transform="translate(100, 100)">
+            <path d="M 0,-15 C -24,-34 -34,-74 0,-92 C 34,-74 24,-34 0,-15 Z" fill="url(#champaPetalGrad0)" stroke="#BAE6FD" stroke-width="1.2" transform="rotate(0)" />
+            <path d="M 0,-15 C -24,-34 -34,-74 0,-92 C 34,-74 24,-34 0,-15 Z" fill="url(#champaPetalGrad0)" stroke="#BAE6FD" stroke-width="1.2" transform="rotate(72)" />
+            <path d="M 0,-15 C -24,-34 -34,-74 0,-92 C 34,-74 24,-34 0,-15 Z" fill="url(#champaPetalGrad0)" stroke="#BAE6FD" stroke-width="1.2" transform="rotate(144)" />
+            <path d="M 0,-15 C -24,-34 -34,-74 0,-92 C 34,-74 24,-34 0,-15 Z" fill="url(#champaPetalGrad0)" stroke="#BAE6FD" stroke-width="1.2" transform="rotate(216)" />
+            <path d="M 0,-15 C -24,-34 -34,-74 0,-92 C 34,-74 24,-34 0,-15 Z" fill="url(#champaPetalGrad0)" stroke="#BAE6FD" stroke-width="1.2" transform="rotate(288)" />
+            <circle cx="0" cy="0" r="32" fill="url(#champaYellowCore0)" />
+            <circle cx="0" cy="0" r="14" fill="#D97706" fill-opacity="0.25" />
+            <text x="0" y="8" font-family="'Noto Sans Lao', 'Phetsarath OT', sans-serif" font-size="22" font-weight="700" fill="#B45309" text-anchor="middle">ລ</text>
+          </g>
+        </svg>
+      </div>
+      <h1 class="lao-sabaidee">ສະບາຍດີ</h1>
+      <p class="waiting-sub">LaoLao · ຮຽນພາສາລາວ</p>
+      <p class="waiting-note">ກຳລັງເປີດລະບົບຈັດການ... / Opening LaoLao Admin...</p>
+      <div class="mekong-stream">
+        <div class="mekong-shimmer"></div>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
 window.addEventListener("error", function(e) {
   console.error("Admin startup error:", e);
   var r = document.getElementById("root");
-  if (r && r.querySelector(".empty")) {
+  if (r && r.querySelector(".waiting-screen")) {
     r.innerHTML = '<div style="margin:40px;padding:20px;background:var(--surface,#fff);border-radius:12px;border:1px solid var(--border);text-align:center"><p style="color:var(--bad,#ef4444);font-weight:600">Failed to load admin module</p><button onclick="location.reload()" style="padding:6px 14px;background:var(--accent,#0284c7);color:#fff;border:none;border-radius:8px;cursor:pointer">Reload</button></div>';
   }
 });

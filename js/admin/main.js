@@ -1,11 +1,13 @@
 // LaoLao Admin Backend
 import { getApi } from "../api/index.js";
 import { OWNER_EMAIL } from "../config.js";
-import { h, $, $$, icon, toast, dialog, confirmDialog, fmtDate, errText, themeSwitcher } from "../shared/ui.js";
+import { h, $, $$, icon, toast, dialog, confirmDialog, fmtDate, errText } from "../shared/ui.js";
 import { setLang, lang } from "../shared/i18n.js";
 import { CONTENT_TYPES } from "../shared/content.js";
 import { bootstrapOwner, importSeed, ensureDemo, DEMO } from "../shared/setup.js";
 import { loadDict } from "../shared/dict.js";
+import { createWaitingScreen } from "../shared/lao-decorations.js";
+import { adminProfileChip, adminSignOut, loadAdminProfile, closeAdminProfile } from "./profile.js";
 import { S, L, t, go, isSuper, isOwner, getActiveRole, canContent, canSupport, canViewMenu, canEditMenu, canManageAdmins, canManageSettings, refreshPlans, fld, lockedScreen } from "./state.js";
 import { viewLearners, viewLearner } from "./learners.js";
 import { viewPlans } from "./plans.js";
@@ -20,17 +22,18 @@ import { viewPayments } from "./payments.js";
 
 const root = document.getElementById("root");
 const pref = (() => { try { return localStorage.getItem("xuelu.admin.lang") || "en"; } catch(e){ return "en"; } })();
-setLang(pref==="lo" ? "lo" : "en");
+setLang(["lo","zh"].includes(pref) ? pref : "en");
 
 async function boot(){
   const api = S.api = await getApi();
-  if (api.mode==="demo"){ root.innerHTML=""; root.append(h("div",{class:"empty",style:"margin:40px"}, t("loading")+" (demo setup)")); await ensureDemo(api); }
+  if (api.mode==="demo"){ root.replaceChildren(createWaitingScreen("ສະບາຍດີ", t("loading")+"...")); await ensureDemo(api); }
   // arriving from a password-reset email: ask for the new password first
   let recovering = /type=recovery/.test(location.hash);
   if (api.auth.onRecovery) api.auth.onRecovery(() => { recovering = true; renderNewPassword(); });
   api.auth.onChange(async user => {
     if (!user){ S.me=null; return renderLogin(); }
     if (recovering) return renderNewPassword();
+    if (!root.querySelector(".waiting-screen")) root.replaceChildren(createWaitingScreen("ສະບາຍດີ", "ກຳລັງເປີດລະບົບຈັດການ... / Opening LaoLao Admin..."));
     let adm = null; try { adm = await api.db.get(`admins/${user.uid}`); } catch(e){}
     if (!adm){
       let boot = null; try { boot = await api.db.get("settings/bootstrap"); } catch(e){}
@@ -39,8 +42,11 @@ async function boot(){
     }
     S.me = { uid:user.uid, email:user.email, role:adm.role, name:adm.name||user.email, permissions:adm.permissions, allowedMenus:adm.allowedMenus };
     await Promise.all([refreshPlans().catch(()=>[]), api.db.get("settings/app").then(s=>S.settings=s||{}).catch(()=>{}), refreshBundleState()]);
+    await loadAdminProfile();
     loadDict();
     S.render = renderShell; renderShell();
+    // closing or reloading the tab with unsaved edits: the browser asks too
+    window.addEventListener("beforeunload", e => { if (S.leaveGuard && S.leaveGuard()){ e.preventDefault(); e.returnValue = ""; } });
   });
 }
 export async function refreshBundleState(){ try { S.bundle = await S.api.db.get("settings/bundle") || {}; } catch(e){ S.bundle = {}; } }
@@ -205,7 +211,7 @@ function openAdminMenu(){
       }).filter(Boolean),
       h("div",{class:"sep"}),
       h("a",{class:"nav-btn",href:"../",style:"text-decoration:none",onclick:closeAdminSheet}, icon("home"), t("adm_open_learner")),
-      h("button",{class:"nav-btn",onclick:()=>{ closeAdminSheet(); S.api.auth.signOut(); }}, icon("logout"), t("sign_out"))));
+      h("button",{class:"nav-btn",onclick:()=>{ closeAdminSheet(); adminSignOut(); }}, icon("logout"), t("sign_out"))));
   document.body.append(scrim, sheet);
 }
 
@@ -289,18 +295,20 @@ function renderShell(){
   });
 
   side.append(h("div",{class:"sep"}), h("a",{class:"nav-btn",href:"../",style:"text-decoration:none"}, icon("home"), t("adm_open_learner")),
-    h("button",{class:"nav-btn",onclick:()=>S.api.auth.signOut()}, icon("logout"), t("sign_out")),
+    h("button",{class:"nav-btn",onclick:adminSignOut}, icon("logout"), t("sign_out")),
     h("div",{class:"side-foot"}, S.me.email));
 
   const top = h("header",{class:"topbar"},
     h("button",{class:"ib hide-desk","aria-label":t("nav_more")||"Menu",onclick:openAdminMenu}, icon("menu")),
     h("div",{class:"mbrand"}, h("span",{class:"seal lo"},"ລ"), h("b",null,t("adm_title"))),
     h("div",{style:"flex:1"}),
-    rolePreviewSwitch(),
-    h("a",{class:"btn sm ghost",href:"../",style:"text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:5px 9px",title:t("adm_open_learner")}, icon("home"), h("span",{class:"hide-sm"}, t("adm_open_learner"))),
+    // on phones these move into the profile menu (css/admin.css)
+    h("div",{class:"adm-tools"},
+      rolePreviewSwitch(),
+      h("a",{class:"btn sm ghost",href:"../",style:"text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:5px 9px",title:t("adm_open_learner")}, icon("home"), h("span",{class:"hide-sm"}, t("adm_open_learner"))),
+      langSwitch()),
     publishChip(),
-    themeSwitcher(),
-    langSwitch());
+    adminProfileChip({ rerender: () => renderShell(), rolePreview: () => { const el = rolePreviewSwitch(); if (!el) return null; el.classList.remove("hide-sm"); el.addEventListener("change", closeAdminProfile); return el; } }));
 
   const main = h("main",{id:"main"});
   root.append(demoBar(), h("div",{class:"app adm"}, side, h("div",{class:"mainwrap"}, top, main)));
@@ -328,7 +336,8 @@ function renderShell(){
 function publishChip(){
   if (!canContent() || !canEditMenu("lessons")) return "";
   const dirty = !!S.bundle.dirty || !S.bundle.builtAt;
-  return h("button",{class:"btn sm"+(dirty?" primary":""),title: dirty ? t("unpublished_changes") : t("up_to_date"),onclick:publishFlow}, icon(dirty?"upload":"check"), dirty ? t("publish_now") : t("up_to_date"));
+  // on phones the "up to date" text is hidden (the check mark and its tooltip remain); "Publish now" always shows
+  return h("button",{class:"btn sm pub-chip"+(dirty?" primary":""),title: dirty ? t("unpublished_changes") : t("up_to_date"),"aria-label": dirty ? t("publish_now") : t("up_to_date"),onclick:publishFlow}, icon(dirty?"upload":"check"), h("span",{class: dirty ? "" : "pub-chip-t"}, dirty ? t("publish_now") : t("up_to_date")));
 }
 // Resolves when the panel is closed: true if it published (see js/admin/publish.js)
 export async function publishFlow(){

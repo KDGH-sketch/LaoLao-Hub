@@ -245,7 +245,8 @@ export async function viewHandwritingEditor({ id }){
   }
 
   refresh(); showTab("strokes");
-  const leave = to => async () => { if (!dirty || await confirmDialog(L(["Unsaved changes", "ຍັງບໍ່ໄດ້ບັນທຶກ"]), L(["Leave without saving?", "ອອກໂດຍບໍ່ບັນທຶກບໍ?"]), L(["Leave", "ອອກ"]), t("cancel"), true)) go(to.view, to.params || {}); };
+  S.leaveGuard = () => editable && dirty;                  // go() asks "Discard changes?" before leaving with unsaved strokes
+  const leave = to => () => go(to.view, to.params || {});
   return h("div", { class: "stack-l" },
     h("div", { class: "crumb" }, h("button", { onclick: leave({ view: "handwriting" }) }, L(["Lao Script & Handwriting", "ອັກສອນ ແລະ ການຂຽນ"])), "›", h("span", { lang: "lo" }, row.char)),
     h("div", { class: "spread" },

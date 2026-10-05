@@ -331,6 +331,15 @@ export async function viewEditor({ type, id, isNew }){
     }
   };
   renderForm();
+  // unsaved edits: something the admin typed, picked or clicked in the form changed the item (JSON compare, so undoing an edit counts as clean)
+  let touched = false, saved = false;
+  const snap = () => JSON.stringify(draft) + "|" + (idInput.value || "");
+  let initial = snap();
+  setTimeout(() => { if (!touched) initial = snap(); }, 0);          // fields that fill in defaults while rendering are not edits
+  const editorRoot = h("div",null);
+  ["input","change","click"].forEach(ev => editorRoot.addEventListener(ev, e => { if (e.isTrusted && e.target.closest(".editor")) touched = true; }, true));
+  const isDirty = () => canEdit && !saved && touched && snap() !== initial;
+  S.leaveGuard = isDirty;
 
   const statusSel = h("select",{class:"input",disabled:!canEdit,onchange:e=>draft.status=e.target.value}, STATUS_KEYS.map(k=>h("option",{value:k,selected:draft.status===k},t("status_"+k))));
   // Who may see this item: Public / Free / Basic / Premium / Admin, or any other plan tier ("Custom", e.g. VVIP = tier 4).
@@ -370,6 +379,7 @@ export async function viewEditor({ type, id, isNew }){
       delete cache[type];
       if (type === "lexicon") { LEXICON = null; ENGINE = null; }
       toast(t("saved_ok"), "ok");
+      saved = true;
       if (publishToo) await publishFlow();
       go("editor", { type, id: docId });
     } catch(e) {
@@ -383,7 +393,8 @@ export async function viewEditor({ type, id, isNew }){
       s.noAccess ? null : fld(t("status"), statusSel), s.noAccess ? null : fld(t("access"), accessSel), fld(t("order"), orderIn),
       canEdit ? h("div",{class:"stack",style:"gap:8px"},
         h("button",{class:"btn primary",onclick:()=>save(false)}, t("save")),
-        s.noAccess ? null : h("button",{class:"btn jade",onclick:()=>save(true)}, icon("upload"), t("status_published")+" + "+t("publish_now")))
+        s.noAccess ? null : h("button",{class:"btn jade",onclick:()=>save(true)}, icon("upload"), t("status_published")+" + "+t("publish_now")),
+        h("button",{class:"btn ghost editor-cancel",onclick:()=>go("contentList",{type})}, icon("x"), t("cancel")))
       : h("div",{class:"pill muted",style:"text-align:center;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"}, icon("lock"), " Editing Restricted (Read-Only)"),
       doc ? h("p",{class:"small muted"}, "v"+(doc.version||1)+" · "+t("updated")+" "+fmtDate(doc.updatedAt, lang(), true)) : null),
     s.web ? webChecks : null,
@@ -393,11 +404,12 @@ export async function viewEditor({ type, id, isNew }){
       h("button",{class:"btn sm",onclick:async()=>{ const nid = id+"-copy-" + Date.now().toString(36).slice(-4); await saveContent(S.api, type, nid, Object.assign({}, draft, { status:"draft" }), S.me.uid); markUnpublished(); audit("duplicate", `${type}/${nid}`, "from "+id); go("editor",{type,id:nid}); }}, icon("copy"), t("duplicate")),
       h("button",{class:"btn sm ghost",style:"color:var(--bad)",onclick:async()=>{ if(await confirmDialog(t("delete_item"),t("confirm_delete"),t("delete_item"),t("cancel"),true)){ await S.api.db.del(`${type}/${id}`); await S.api.db.set("settings/bundle",{dirty:true},true); markUnpublished(); audit("delete", `${type}/${id}`); delete cache[type]; go("contentList",{type}); } }}, icon("trash"), t("delete_item"))) : null);
 
-  return h("div",null,
+  editorRoot.append(
     h("div",{class:"crumb"}, h("button",{onclick:()=>go("content")}, t("adm_content")), "›", h("button",{onclick:()=>go("contentList",{type})}, t("type_"+type)||type), "›", h("span",{class:"mono"}, id || t("new_item"))),
     h("div",{class:"pagehead"}, h("h1",null, doc ? titleOf(type, doc) : t("new_item"))),
     !canEdit ? h("div",{class:"banner",style:"background:var(--surface-2);border-left:4px solid #7c3aed;margin-bottom:14px;display:flex;align-items:center;gap:8px"}, icon("eye"), h("b",null,t("read_only_mode")+":"), h("span",null," Form fields are read-only and modifications cannot be saved.")) : null,
     h("div",{class:"editor"}, form, side));
+  return editorRoot;
 }
 
 async function normalize(type, d){

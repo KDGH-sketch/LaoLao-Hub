@@ -294,11 +294,15 @@ try {
 
   step("admin: theme + language");
   await b.goto(srv.base + "/admin/"); await b.waitFor(`!!document.querySelector(".app")`, 30000);
-  await click(".topbar button", /^Night$/); await sleep(500);
+  await b.eval(`document.querySelector(".topbar .pchip").click()`); await sleep(500);          // theme is in the profile menu
+  await b.eval(`document.querySelector('.pmenu .pmenu-seg button[aria-label="Dark"]').click()`); await sleep(700);
+  await b.eval(`document.querySelector(".pmenu-scrim") && document.querySelector(".pmenu-scrim").click()`); await sleep(300);
   await ok(await b.eval(`document.documentElement.dataset.theme`) === "night", "admin Night theme");
   await b.goto(srv.base + "/admin/"); await b.waitFor(`!!document.querySelector(".app")`, 30000); await sleep(400);
   await ok(await b.eval(`document.documentElement.dataset.theme`) === "night", "admin theme kept after reload");
-  await click(".topbar button", /^Day$/); await sleep(300);
+  await b.eval(`document.querySelector(".topbar .pchip").click()`); await sleep(500);
+  await b.eval(`document.querySelector('.pmenu .pmenu-seg button[aria-label="Light"]').click()`); await sleep(700);
+  await b.eval(`document.querySelector(".pmenu-scrim") && document.querySelector(".pmenu-scrim").click()`); await sleep(300);
   await click(".topbar .langsw button", /^ລາວ$/); await sleep(800);
   await ok(await b.eval(`[...document.querySelectorAll(".side .nav-btn")].some(x => /[\\u0E80-\\u0EFF]/.test(x.innerText))`), "admin menu switches to Lao");
   await click(".topbar .langsw button", /^EN$/); await sleep(800);
