@@ -223,7 +223,7 @@ export async function viewContentList({ type, q="", status="", level="" }){
   );
 
   const wrap = h("div");
-  wrap.append(
+  wrap.append(...[                                                   // filter: append() would print "null"
     h("div",{class:"crumb"}, h("button",{onclick:()=>go("content")}, t("adm_content")), "›", h("span",null,t("type_"+type)||type)),
     h("div",{class:"pagehead"},
       h("div",{class:"spread"},
@@ -234,7 +234,7 @@ export async function viewContentList({ type, q="", status="", level="" }){
         )
       )
     ),
-    !canEdit ? h("div",{class:"banner ok",style:"background:var(--surface-2);border-left:4px solid #7c3aed;margin-bottom:12px;display:flex;align-items:center;gap:8px"}, icon("eye"), h("span",null,t("read_only_banner"))) : null,
+    !canEdit ? h("div",{class:"banner ok",style:"background:var(--surface-2);border-left:4px solid var(--violet);margin-bottom:12px;display:flex;align-items:center;gap:8px"}, icon("eye"), h("span",null,t("read_only_banner"))) : null,
     bulkBar,
     h("div",{class:"toolbar"},
       h("input",{class:"input grow",placeholder:t("filter_ph"),value:q,oninput:debounce(e=>{ q=e.target.value; page=1; draw(); },120)}),
@@ -253,7 +253,7 @@ export async function viewContentList({ type, q="", status="", level="" }){
       )
     ),
     paginator
-  );
+  ].filter(Boolean));
 
   draw();
   return wrap;
@@ -407,7 +407,7 @@ export async function viewEditor({ type, id, isNew }){
   editorRoot.append(
     h("div",{class:"crumb"}, h("button",{onclick:()=>go("content")}, t("adm_content")), "›", h("button",{onclick:()=>go("contentList",{type})}, t("type_"+type)||type), "›", h("span",{class:"mono"}, id || t("new_item"))),
     h("div",{class:"pagehead"}, h("h1",null, doc ? titleOf(type, doc) : t("new_item"))),
-    !canEdit ? h("div",{class:"banner",style:"background:var(--surface-2);border-left:4px solid #7c3aed;margin-bottom:14px;display:flex;align-items:center;gap:8px"}, icon("eye"), h("b",null,t("read_only_mode")+":"), h("span",null," Form fields are read-only and modifications cannot be saved.")) : null,
+    !canEdit ? h("div",{class:"banner",style:"background:var(--surface-2);border-left:4px solid var(--violet);margin-bottom:14px;display:flex;align-items:center;gap:8px"}, icon("eye"), h("b",null,t("read_only_mode")+":"), h("span",null," Form fields are read-only and modifications cannot be saved.")) : null,
     h("div",{class:"editor"}, form, side));
   return editorRoot;
 }

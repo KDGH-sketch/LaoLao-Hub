@@ -94,7 +94,7 @@ export const SCHEMAS = {
                { row:[ { key:"rom", type:"text", label:["Romanization","ຄຳອ່ານ"] }, { key:"en", type:"text", label:["English","ອັງກິດ"] } ] } ] } ] },
   tones: { title: d => ({ en: "Tone "+(d.num||"")+": "+((d.name&&d.name.en)||"") }), idHint:"tone-1", defaults:{ num:1, name:{en:"",lo:"",zh:""}, contour:"33", color:"#0284c7", desc:{en:"",lo:"",zh:""}, pathD:"M 10 32 Q 50 30 90 28", examples:[] },
     fields:[
-      { row:[ { key:"num", type:"number", label:["Tone number (1-6)","ໝາຍເລກສຽງ (1-6)"] }, { key:"contour", type:"text", label:["Pitch contour (e.g. 33, 11, 31, 55, 35, 13)","ລະດັບສຽງ"] }, { key:"color", type:"text", label:["Color code (HEX)","ລະຫັດສີ"], placeholder:"#0284c7" } ] },
+      { row:[ { key:"num", type:"number", label:["Tone number (1-6)","ໝາຍເລກສຽງ (1-6)"] }, { key:"contour", type:"text", label:["Pitch contour (e.g. 33, 11, 31, 55, 35, 13)","ລະດັບສຽງ"] }, { key:"color", type:"text", label:["Color code (HEX), only for tones outside 1-6","ລະຫັດສີ (ສະເພາະສຽງນອກ 1-6)"], placeholder:"#0284c7", help:"Tones 1-6 use the app's tone colours so they stay readable in Day and Night." } ] },
       { key:"name", type:"tr", label:["Tone name","ຊື່ສຽງວັນນະຍຸດ"] },
       { key:"desc", type:"tr", multiline:true, label:["Description & acoustic rules","ຄຳອະທິບາຍ ແລະ ຫຼັກການຜັນສຽງ"] },
       { key:"pathD", type:"text", label:["SVG pitch curve path","ເສັ້ນໂຄ້ງ SVG"], placeholder:"M 10 32 Q 50 30 90 28" },

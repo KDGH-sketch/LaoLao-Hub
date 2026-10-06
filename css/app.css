@@ -2,9 +2,14 @@
   --bg:#F0F7FD; --surface:#FFFFFF; --surface-2:#E4EFF9; --surface-3:#D3E4F4;
   --ink:#0A1B2E; --ink-2:#28425C; --ink-3:#4A6685; --line:#CFE2F4; --line-2:#B5D2EC;   /* ink-3 / accent: 4.5:1 or better on white and surface-2 (WCAG AA) */
   --accent:#0270AC; --accent-hover:#025C8F; --accent-2:#E0F2FE; --accent-3:#BAE6FD; --accent-ink:#FFFFFF;
-  --accent-grad:linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
+  --accent-grad:linear-gradient(135deg, #0379B9 0%, #025C8F 100%);   /* white text 4.7:1 or better everywhere on it */
+  --violet:#6D28D9; --violet-2:#EDE9FE;
+  --f-display:"Bricolage Grotesque","Source Sans 3","Noto Sans Lao",system-ui,sans-serif;   /* page titles, brand, big numbers */
+  --shadow-sm:0 1px 2px rgba(10,27,46,.04),0 3px 10px rgba(2,132,199,.06);
   --jade:#047857; --jade-2:#D1FAE5; --warn:#B45309; --warn-2:#FEF3C7; --bad:#BE123C; --bad-2:#FFE4E6;   /* text-safe shades (4.5:1 on white and on their -2 tints) */
-  --t1:#0284C7; --t2:#0D9488; --t3:#D97706; --t4:#E11D48; --t0:#64748B;
+  --t1:#0270AC; --t2:#0F766E; --t3:#B45309; --t4:#BE123C; --t0:#56677D;
+  /* the six Lao tones (Tone Lab charts and labels) */
+  --tone-1:#0270AC; --tone-2:#047857; --tone-3:#B45309; --tone-4:#B91C1C; --tone-5:#6D28D9; --tone-6:#9A3412;
   --shadow:0 1px 3px rgba(10,27,46,.05),0 6px 20px rgba(2,132,199,.08);
   --shadow-lg:0 12px 32px -4px rgba(2,132,199,.18);
   --r:14px; --r-s:9px;
@@ -24,11 +29,12 @@
 :root[data-theme="night"],
 :root[data-theme="dark"]{
   --bg:#08121D; --surface:#0E1B2A; --surface-2:#16283D; --surface-3:#1E3652;
-  --ink:#F0F7FD; --ink-2:#A4C2E0; --ink-3:#6D8FAE; --line:#1C344E; --line-2:#284B6E;
+  --ink:#F0F7FD; --ink-2:#A4C2E0; --ink-3:#86A6C4; --line:#1C344E; --line-2:#284B6E;
   --accent:#38BDF8; --accent-hover:#7DD3FC; --accent-2:#0E2A44; --accent-3:#133E64; --accent-ink:#061424;
   --accent-grad:linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
-  --jade:#34D399; --jade-2:#064E3B; --warn:#FBBF24; --warn-2:#451A03; --bad:#FB7185; --bad-2:#4C0519;
+  --jade:#34D399; --jade-2:#053B2D; --warn:#FBBF24; --warn-2:#451A03; --bad:#FB7185; --bad-2:#4C0519; --violet:#A78BFA; --violet-2:#2E1065; --shadow-sm:0 1px 2px rgba(0,0,0,.3),0 3px 10px rgba(0,0,0,.22);
   --t1:#38BDF8; --t2:#2DD4BF; --t3:#FBBF24; --t4:#FB7185; --t0:#94A3B8;
+  --tone-1:#38BDF8; --tone-2:#34D399; --tone-3:#FBBF24; --tone-4:#F87171; --tone-5:#A78BFA; --tone-6:#FB923C;
   --shadow:0 2px 4px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.3); color-scheme:dark;
 }
 /* SYSTEM mode follows OS preferences when explicitly selected */
@@ -36,11 +42,12 @@
   :root[data-theme="system"],
   :root[data-theme="auto"]{
     --bg:#08121D; --surface:#0E1B2A; --surface-2:#16283D; --surface-3:#1E3652;
-    --ink:#F0F7FD; --ink-2:#A4C2E0; --ink-3:#6D8FAE; --line:#1C344E; --line-2:#284B6E;
+    --ink:#F0F7FD; --ink-2:#A4C2E0; --ink-3:#86A6C4; --line:#1C344E; --line-2:#284B6E;
     --accent:#38BDF8; --accent-hover:#7DD3FC; --accent-2:#0E2A44; --accent-3:#133E64; --accent-ink:#061424;
     --accent-grad:linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
-    --jade:#34D399; --jade-2:#064E3B; --warn:#FBBF24; --warn-2:#451A03; --bad:#FB7185; --bad-2:#4C0519;
+    --jade:#34D399; --jade-2:#053B2D; --warn:#FBBF24; --warn-2:#451A03; --bad:#FB7185; --bad-2:#4C0519; --violet:#A78BFA; --violet-2:#2E1065; --shadow-sm:0 1px 2px rgba(0,0,0,.3),0 3px 10px rgba(0,0,0,.22);
     --t1:#38BDF8; --t2:#2DD4BF; --t3:#FBBF24; --t4:#FB7185; --t0:#94A3B8;
+  --tone-1:#38BDF8; --tone-2:#34D399; --tone-3:#FBBF24; --tone-4:#F87171; --tone-5:#A78BFA; --tone-6:#FB923C;
     --shadow:0 2px 4px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.3); color-scheme:dark;
   }
 }
@@ -568,7 +575,9 @@ textarea.input{min-height:80px;resize:vertical;line-height:1.45}
 .badges{display:flex;flex-wrap:wrap;gap:8px}
 .badge{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:99px;padding:6px 12px;font-size:.85rem;font-weight:600;background:var(--surface)}
 .badge svg{width:var(--ic-md);height:var(--ic-md);stroke:var(--warn);fill:none;stroke-width:var(--ic-stroke)}
-.badge.off{opacity:.4}
+/* not earned yet: dashed and muted, but the text stays readable */
+.badge.off{border-style:dashed;background:var(--surface-2);color:var(--ink-3)}
+.badge.off svg{stroke:var(--ink-3);opacity:.6}
 .rec{display:flex;gap:12px;align-items:center;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 14px;text-align:left;width:100%}
 
 /* Theme Switcher Segmented Control */
@@ -1502,3 +1511,39 @@ details>summary{transition:color .2s}
 @media (forced-colors:active){.wl .wl-btn,.wl .wl-input,.wl .wl-fcard,.wl .wl-card{border:1px solid CanvasText}.wl .wl-pin::before{background:Highlight}}
 @media (pointer:coarse){.wl :is(.wl-chips button,.wl-words button,.wl-seg button,.wl-btn.sm,.wl-tabs button,.wl-linkbtn,.wl-menu-btn,.wl-sheet > button,.wl-brand,.wl-links button){min-block-size:44px;min-inline-size:44px}}
 @media (orientation:landscape) and (max-height:520px){.wl .wl-hero{padding-block-end:clamp(120px,24vw,200px)}.wl .wl-scene{block-size:150px}}
+
+/* ---------- one design system: the learner app and the admin share these tokens, type and components ---------- */
+/* titles and big numbers in the display face (Lao and Chinese fall back to their own fonts) */
+main h1,.pagehead h1,.brand b,.mbrand b,.stat b,.kpi b,.kpi-t b,.aa-head h1{font-family:var(--f-display);letter-spacing:-.02em}
+main h1{font-weight:800;line-height:1.15}
+.pagehead h1,.hero-greet h1{font-size:clamp(1.55rem,2.4vw,2rem)}
+.pagehead .eyebrow,.hero-greet .eyebrow{color:var(--accent)}
+:lang(lo) main h1,main h1:lang(lo),:lang(lo) .pagehead h1{font-family:var(--f-lo);letter-spacing:0}
+/* one surface style for cards, panels, stat tiles and tables */
+.card,.panel,.kpi,.tbl-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-sm)}
+.panel>h3,.card>h2:first-child,.card>h3:first-child{font-size:1.05rem;font-weight:700;color:var(--ink)}
+/* stat cards with an icon tile (admin dashboard; same look as the learner tiles) */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px}
+.kpi-card{display:flex;align-items:center;gap:12px;padding:14px 16px;transition:transform .2s cubic-bezier(.2,.9,.3,1.25),box-shadow .25s}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.kpi-ic{display:grid;place-items:center;width:40px;height:40px;border-radius:10px;flex:none}
+.kpi-ic .ic{width:var(--ic-lg);height:var(--ic-lg)}
+.kpi-t{min-width:0}
+.kpi-t b{display:block;font-size:1.6rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.kpi-t span{display:block;margin-top:4px;font-size:.85rem;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stat b,.kpi b{font-weight:800}
+.tone-accent{background:var(--accent-2);color:var(--accent)}
+.tone-jade{background:var(--jade-2);color:var(--jade)}
+.tone-warn{background:var(--warn-2);color:var(--warn)}
+.tone-bad{background:var(--bad-2);color:var(--bad)}
+.tone-violet{background:var(--violet-2);color:var(--violet)}
+.tone-neutral{background:var(--surface-2);color:var(--ink-3)}
+@media (max-width:600px){.kpi-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* buttons on a coloured background: white text by day, dark text at night (the night colours are light) */
+.btn.danger,.btn.jade{color:var(--accent-ink)}
+/* small text-style buttons and the Tone Lab example rows (they had no styles and showed the browser's grey button) */
+.linkbtn{border:0;background:none;padding:0;color:var(--accent);font-weight:600;cursor:pointer;text-align:left}
+.linkbtn:hover{text-decoration:underline}
+.tone-ex-btn{display:flex;align-items:center;gap:12px;width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:var(--r-s);background:var(--surface);color:var(--ink);text-align:left;cursor:pointer}
+.tone-ex-btn:hover{background:var(--surface-2);border-color:var(--line-2)}
+.tone-ex-btn .ic{width:var(--ic-sm);height:var(--ic-sm);color:var(--accent);flex:none}

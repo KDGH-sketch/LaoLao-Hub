@@ -24,7 +24,7 @@ EXT_VIEWS.audioStudio = async () => {
   ));
 
   if (!canEdit) {
-    root.append(h("div",{class:"banner ok",style:"background:var(--surface-2);border-left:4px solid #7c3aed;margin-bottom:12px;display:flex;align-items:center;gap:8px"}, icon("eye"), h("span",null,t("read_only_banner"))));
+    root.append(h("div",{class:"banner ok",style:"background:var(--surface-2);border-left:4px solid var(--violet);margin-bottom:12px;display:flex;align-items:center;gap:8px"}, icon("eye"), h("span",null,t("read_only_banner"))));
   }
 
   let mediaRecorder = null;
@@ -474,7 +474,7 @@ EXT_VIEWS.videoManager = async () => {
   ));
 
   if (!canEdit) {
-    root.append(h("div",{class:"banner ok",style:"background:var(--surface-2);border-left:4px solid #7c3aed;margin-bottom:12px;display:flex;align-items:center;gap:8px"}, icon("eye"), h("span",null,t("read_only_banner"))));
+    root.append(h("div",{class:"banner ok",style:"background:var(--surface-2);border-left:4px solid var(--violet);margin-bottom:12px;display:flex;align-items:center;gap:8px"}, icon("eye"), h("span",null,t("read_only_banner"))));
   }
 
   let videos = [], loadError = null;

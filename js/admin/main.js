@@ -271,7 +271,7 @@ function rolePreviewSwitch(){
   if (S.simulatedRole) {
     return h("button", {
       class: "btn sm",
-      style: "background:rgba(217,119,6,0.18);color:var(--accent);border:1px solid var(--accent);display:inline-flex;align-items:center;gap:6px;font-weight:600",
+      style: "background:var(--warn-2);color:var(--warn);border:1px solid var(--warn);display:inline-flex;align-items:center;gap:6px;font-weight:600",
       title: "Click to exit simulation and restore Super Admin",
       onclick: () => {
         S.simulatedRole = null;
@@ -317,6 +317,7 @@ function renderShell(){
         "aria-current": active ? "page" : null,
         onclick: () => go(it.view, it.params || {})
       },
+        active ? h("span",{class:"nav-ind","aria-hidden":"true"}) : null,     // the sliding highlight, as in the learner app
         icon(it.icon),
         lang() === "lo" ? it.label[1] : it.label[0]
       ));
@@ -389,16 +390,16 @@ async function viewDashboard(){
   const activeSubs = learnerAccess.filter(a=>a.status==="active" && (a.expiresAt==null || a.expiresAt>now) && a.tier>1).length;
   const expired = learnerAccess.filter(a=>a.expiresAt!=null && a.expiresAt<=now).length;
   const week = activity.filter(a=>a.at>now-7*86400000).length;
-  const root_ = h("div",{class:"flex flex-col gap-6"});
-  root_.append(h("div",{class:"pagehead"}, h("h1",{class:"text-2xl font-bold tracking-tight"},t("adm_dashboard")), h("p",{class:"text-ink-3"}, S.settings.appName || "Xuélù")));
-  root_.append(h("div",{class:"grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"},
+  const root_ = h("div",{class:"stack-l"});
+  root_.append(h("div",{class:"pagehead"}, h("span",{class:"eyebrow"}, fmtDate(now, lang())), h("h1",null,t("adm_dashboard")), h("p",null, S.settings.appName || "LaoLao")));
+  root_.append(h("div",{class:"kpi-row"},
     kpiCard(users.length, t("total_learners"), "users", "accent"),
     kpiCard(active, t("active_learners"), "ok", "jade"),
     kpiCard(users.length-active, t("inactive_learners"), "user", "neutral"),
     kpiCard(activeSubs, t("active_subs"), "crown", "accent"),
     kpiCard(expired, t("expired_subs"), "hourglass", "warn"),
     kpiCard(week, t("adm_activity")+" · 7d", "spark", "jade")));
-  root_.append(h("div",{class:"grid gap-4 lg:grid-cols-2"},
+  root_.append(h("div",{class:"grid2"},
     h("section",{class:"panel"}, h("h3",null,t("content_counts")), h("div",{class:"kpis"}, counts.map(([ty,n]) => h("button",{class:"kpi",style:"text-align:left",onclick:()=>go("contentList",{type:ty})}, h("b",null,n), h("span",null,t("type_"+ty)))))),
     h("section",{class:"panel"}, h("h3",null,t("publish_state")),
       h("div",{class:"banner "+(S.bundle.dirty||!S.bundle.builtAt?"":"ok")}, h("span",null, S.bundle.dirty||!S.bundle.builtAt ? t("unpublished_changes") : t("up_to_date")), canContent()? h("button",{class:"btn sm",onclick:publishFlow}, t("publish_now")) : null),
@@ -407,11 +408,10 @@ async function viewDashboard(){
   root_.append(h("section",{class:"panel"}, h("h3",null,t("recent_activity"), h("button",{class:"btn sm ghost",onclick:()=>go("activity")}, t("view_all"))), activityFeed(activity)));
   return root_;
 }
-const KPI_TONE = { accent:"bg-accent-2 text-accent", jade:"bg-jade-2 text-jade", warn:"bg-warn-2 text-warn", bad:"bg-bad-2 text-bad", neutral:"bg-surface-2 text-ink-3" };
-const kpiCard = (n, label, iconName, tone="accent") => h("div",
-  { class:"flex items-center gap-3 rounded border border-line bg-surface p-4 shadow-card transition hover:shadow-card-lg hover:-translate-y-0.5" },
-  h("div",{ class:"flex h-10 w-10 shrink-0 items-center justify-center rounded-s "+KPI_TONE[tone] }, icon(iconName,"icn icn-sm")),
-  h("div",{class:"min-w-0"}, h("b",{class:"block text-2xl font-bold leading-none tracking-tight tabular-nums"}, n), h("span",{class:"block mt-1 text-sm text-ink-3 truncate"}, label)));
+// a number with an icon tile (tone: accent, jade, warn, bad, neutral); css/app.css "stat cards"
+const kpiCard = (n, label, iconName, tone="accent") => h("div",{class:"card kpi-card"},
+  h("span",{class:"kpi-ic tone-"+tone}, icon(iconName)),
+  h("div",{class:"kpi-t"}, h("b",null, n), h("span",null, label)));
 export function activityFeed(rows){
   if (!rows.length) return h("p",{class:"muted"}, t("no_rows"));
   return h("div",{class:"feed"}, rows.map(a => h("div",{class:"feed-row"},
@@ -454,13 +454,13 @@ async function viewSettings(){
         h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Full edit on curriculum & studio. No credentials.")
       ),
       h("div",{class:"card",style:"padding:10px;background:var(--surface)"},
-        h("b",{style:"color:#7c3aed"}, icon("eye"), "Content Reviewer (Read-Only)"),
+        h("b",{style:"color:var(--violet)"}, icon("eye"), "Content Reviewer (Read-Only)"),
         h("div",{class:"small mono",style:"margin-top:4px"}, "reviewer@demo.laolao"),
         h("div",{class:"small muted"}, "Password: ", h("b",{class:"mono"}, "demo1234")),
         h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Can view and preview curriculum, CANNOT edit or delete")
       ),
       h("div",{class:"card",style:"padding:10px;background:var(--surface)"},
-        h("b",{style:"color:#2563eb"}, icon("headphones"), "Support Admin"),
+        h("b",{style:"color:var(--accent)"}, icon("headphones"), "Support Admin"),
         h("div",{class:"small mono",style:"margin-top:4px"}, "support@demo.laolao"),
         h("div",{class:"small muted"}, "Password: ", h("b",{class:"mono"}, "demo1234")),
         h("div",{class:"small muted",style:"font-size:.75rem;margin-top:2px"}, "Can manage learners and view activity only")

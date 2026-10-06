@@ -408,7 +408,7 @@ VIEWS.account = (params = {}) => {
     h("div",null, h("h2",null, t("pf_signout_title")), h("p",{class:"small muted"}, t("pf_logout_d"))),
     h("button",{class:"btn danger acc-out-btn",onclick:()=>A.signOut()}, icon("logout"), t("sign_out"))));
 
-  if (A.isAdmin) root.append(h("section",{class:"card stack",style:"background:var(--surface-2);border:1px solid var(--border);margin-top:14px"},
+  if (A.isAdmin) root.append(h("section",{class:"card stack",style:"background:var(--surface-2);border:1px solid var(--line);margin-top:14px"},
     h("div",{class:"spread",style:"align-items:center;flex-wrap:wrap;gap:10px"},
       h("div",null,
         h("h3",{style:"margin:0;display:flex;align-items:center;gap:6px"}, icon("shield"), lang()==="lo"?"ລະບົບຈັດການເນື້ອຫາຫຼັງບ້ານ":"Content Management Backend (Admin)"),

@@ -63,17 +63,17 @@ export function getRoleBadge(role, permissions) {
   switch (role) {
     case "super":
     case "owner":
-      return h("span", { class: "pill ok", style: "background:rgba(217,119,6,0.15);color:var(--accent);font-weight:700" }, icon("crown"), t("role_super"));
+      return h("span", { class: "pill ok", style: "background:var(--warn-2);color:var(--warn);font-weight:700" }, icon("crown"), t("role_super"));
     case "editor":
     case "content":
-      return h("span", { class: "pill ok", style: "background:rgba(16,185,129,0.15);color:var(--jade);font-weight:600" }, icon("edit"), t("role_editor"));
+      return h("span", { class: "pill ok", style: "background:var(--jade-2);color:var(--jade);font-weight:600" }, icon("edit"), t("role_editor"));
     case "reviewer":
-      return h("span", { class: "pill", style: "background:rgba(124,58,237,0.15);color:#7c3aed;font-weight:600" }, icon("eye"), t("role_reviewer"));
+      return h("span", { class: "pill", style: "background:var(--violet-2);color:var(--violet);font-weight:600" }, icon("eye"), t("role_reviewer"));
     case "support":
-      return h("span", { class: "pill", style: "background:rgba(37,99,235,0.15);color:#2563eb;font-weight:600" }, icon("headphones"), t("role_support"));
+      return h("span", { class: "pill", style: "background:var(--accent-2);color:var(--accent);font-weight:600" }, icon("headphones"), t("role_support"));
     case "custom": {
       const allowedCount = permissions ? Object.values(permissions).filter(p => p && p.view).length : 0;
-      return h("span", { class: "pill", style: "background:rgba(245,158,11,0.15);color:#d97706;font-weight:600" }, icon("sliders"), `${t("role_custom")} (${allowedCount} menus)`);
+      return h("span", { class: "pill", style: "background:var(--surface-3);color:var(--ink-2);font-weight:600" }, icon("sliders"), `${t("role_custom")} (${allowedCount} menus)`);
     }
     default:
       return h("span", { class: "pill muted" }, role || "Admin");
@@ -84,16 +84,16 @@ export function getRoleBadge(role, permissions) {
 export function getAccessSummary(admin) {
   const role = admin.role;
   if (role === "super" || role === "owner") {
-    return h("span", { class: "small", style: "color:var(--accent);font-weight:600" }, "Full Access: All 22 Menus + Credentials & Settings");
+    return h("span", { class: "small", style: "color:var(--warn);font-weight:600" }, "Full Access: All 22 Menus + Credentials & Settings");
   }
   if (role === "editor" || role === "content") {
     return h("span", { class: "small", style: "color:var(--jade)" }, "Curriculum & Studio: Full Edit & Publish (No Credentials)");
   }
   if (role === "reviewer") {
-    return h("span", { class: "small", style: "color:#7c3aed;font-weight:600" }, "Curriculum & Studio: Read-Only (Cannot Edit or Delete)");
+    return h("span", { class: "small", style: "color:var(--violet);font-weight:600" }, "Curriculum & Studio: Read-Only (Cannot Edit or Delete)");
   }
   if (role === "support") {
-    return h("span", { class: "small", style: "color:#2563eb" }, "Learners & Subscriptions only (No Curriculum)");
+    return h("span", { class: "small", style: "color:var(--accent)" }, "Learners & Subscriptions only (No Curriculum)");
   }
   if (role === "custom" && admin.permissions) {
     const editCount = Object.values(admin.permissions).filter(p => p && p.edit).length;
@@ -151,11 +151,11 @@ export async function viewAdmins() {
           h("p", { class: "small muted", style: "margin-top:4px" }, "Can view and edit/publish all 15 curriculum types and studio tools. Credential menus are hidden.")
         ),
         h("div", { class: "card", style: "padding:12px;background:var(--surface)" },
-          h("b", { style: "color:#7c3aed" }, icon("eye"), "Content Reviewer"),
+          h("b", { style: "color:var(--violet)" }, icon("eye"), "Content Reviewer"),
           h("p", { class: "small muted", style: "margin-top:4px" }, "Can view & review lessons, vocab, and media, but CANNOT edit or delete! Credential menus hidden.")
         ),
         h("div", { class: "card", style: "padding:12px;background:var(--surface)" },
-          h("b", { style: "color:#d97706" }, icon("sliders"), "Custom Admin"),
+          h("b", { style: "color:var(--ink-2)" }, icon("sliders"), "Custom Admin"),
           h("p", { class: "small muted", style: "margin-top:4px" }, "Super Admin configures exact View and Edit checkboxes for each individual menu.")
         )
       )
@@ -202,7 +202,7 @@ export async function viewAdmins() {
         h("td", null,
           h("div", { class: "row", style: "align-items:center;gap:10px" },
             h("div", {
-              style: `width:36px;height:36px;border-radius:50%;background:${isSelf ? "var(--accent)" : "var(--surface-3)"};color:${isSelf ? "#fff" : "var(--ink-1)"};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0`
+              style: `width:36px;height:36px;border-radius:50%;background:${isSelf ? "var(--accent)" : "var(--surface-3)"};color:${isSelf ? "var(--accent-ink)" : "var(--ink)"};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0`
             }, initial),
             h("div", null,
               h("div", { style: "font-weight:600" }, displayName, isSelf ? h("span", { class: "chip", style: "margin-left:6px;font-size:.7rem" }, "You") : null),
@@ -266,7 +266,7 @@ function renderSimulationBar() {
   if (currentSim) {
     return h("div", {
       class: "banner",
-      style: "background:rgba(217,119,6,0.15);border:1px solid var(--accent);display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-radius:10px"
+      style: "background:var(--warn-2);border:1px solid var(--warn);display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-radius:10px"
     },
       h("div", { class: "row", style: "align-items:center;gap:10px" },
         h("div", null,
@@ -333,7 +333,7 @@ function buildPermissionsMatrix(initialPerms = {}, initialRole = "custom") {
 
   const matrixWrap = h("div", {
     class: "tbl-wrap",
-    style: "max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--surface)"
+    style: "max-height:360px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)"
   });
 
   const presetsRow = h("div", { class: "row", style: "gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap" },

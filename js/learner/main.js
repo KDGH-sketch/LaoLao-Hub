@@ -189,7 +189,7 @@ function render(){
   const demoBarEl = A.api.mode==="demo" ? h("div",{class:"demo-bar",style:"display:flex;justify-content:space-between;align-items:center;padding:4px 14px;flex-wrap:wrap;gap:8px"},
     h("span",null, t("demo_banner")),
     h("div",{class:"row",style:"gap:8px"},
-      h("button",{class:"btn sm",style:"padding:2px 10px;font-size:.78rem;background:var(--accent);color:#fff",onclick:async()=>{
+      h("button",{class:"btn sm",style:"padding:2px 10px;font-size:.78rem;background:var(--accent);color:var(--accent-ink)",onclick:async()=>{
         try {
           await A.api.auth.signIn(DEMO.admin.email, DEMO.admin.pw);
           location.href = "admin/";

@@ -20,7 +20,7 @@ const LAO_TONES_DATA = [
     contour: "33 / 35",
     desc: { en:"Neutral mid-level pitch, relaxed and smooth. Very common in unmarked mid-consonant syllables.", lo:"ສຽງກາງພຽງ ບໍ່ຂຶ້ນບໍ່ລົງ ຟັງສະບາຍ ພົບເລື້ອຍໃນອັກສອນກາງບໍ່ມີວັນນະຍຸດ." },
     pathD: "M 10 32 Q 50 30 90 28",
-    color: "#0284c7",
+    color: "var(--tone-1)",
     examples: [
       { lao:"ກາ", rom:"kāa", mean:"crow / kettle", note:"Mid cons + long vowel" },
       { lao:"ດີ", rom:"dīi", mean:"good / well", note:"Mid cons + long vowel" },
@@ -34,7 +34,7 @@ const LAO_TONES_DATA = [
     contour: "11 / 21",
     desc: { en:"Starts low and drops down in pitch. Produced with marked ໄມ້ເອກ (່) or dead syllables with short vowels.", lo:"ສຽງເລີ່ມຕົ້ນຕ່ຳ ແລ້ວຫຼຸດລົງອີກ. ມັກເກີດກັບໄມ້ເອກ ່ ຫຼື ຄຳຕາຍ." },
     pathD: "M 10 40 Q 50 48 90 55",
-    color: "#059669",
+    color: "var(--tone-2)",
     examples: [
       { lao:"ກ່າ", rom:"kàa", mean:"sprout / shoot", note:"Mid cons + ໄມ້ເອກ" },
       { lao:"ໄຂ່", rom:"khǎi", mean:"egg", note:"High cons + ໄມ້ເອກ" },
@@ -48,7 +48,7 @@ const LAO_TONES_DATA = [
     contour: "31 / 32",
     desc: { en:"Starts at mid pitch and falls firmly. Associated with ໄມ້ໂທ (້) on middle or high consonants.", lo:"ເລີ່ມຕົ້ນລະດັບກາງ ແລ້ວຕົກລົງຢ່າງໜັກແໜ້ນ. ມັກເກີດກັບໄມ້ໂທ ້ ໃນອັກສອນກາງ ແລະ ສູງ." },
     pathD: "M 10 25 Q 50 40 90 52",
-    color: "#d97706",
+    color: "var(--tone-3)",
     examples: [
       { lao:"ກ້າ", rom:"kâa", mean:"brave / bold", note:"Mid cons + ໄມ້ໂທ" },
       { lao:"ເຂົ້າ", rom:"khào", mean:"rice / enter", note:"High cons + ໄມ້ໂທ" },
@@ -62,7 +62,7 @@ const LAO_TONES_DATA = [
     contour: "53 / 42",
     desc: { en:"Starts high, falls slightly, often with a crisp glottal finish. Very common with low consonants + ໄມ້ໂທ.", lo:"ເລີ່ມຕົ້ນລະດັບສູງ ແລ້ວຕົກລົງພ້ອມສຽງກັກໃນລຳຄໍ. ເກີດກັບອັກສອນຕ່ຳ + ໄມ້ໂທ ້." },
     pathD: "M 10 12 Q 50 18 90 38",
-    color: "#dc2626",
+    color: "var(--tone-4)",
     examples: [
       { lao:"ມ້າ", rom:"mâa", mean:"horse", note:"Low cons + ໄມ້ໂທ" },
       { lao:"ນ້ຳ", rom:"nâm", mean:"water", note:"Low cons + ໄມ້ໂທ" },
@@ -76,7 +76,7 @@ const LAO_TONES_DATA = [
     contour: "35 / 45",
     desc: { en:"Starts in the mid-high range and swoops upward like asking an inquisitive question. Inherent in unmarked high consonants.", lo:"ເລີ່ມຕົ້ນກາງ-ສູງ ແລ້ວຂຶ້ນສູງ ຄືສຽງຖາມ. ເປັນສຽງພື້ນຖານຂອງອັກສອນສູງຄຳເປັນ." },
     pathD: "M 10 42 Q 50 35 90 12",
-    color: "#7c3aed",
+    color: "var(--tone-5)",
     examples: [
       { lao:"ຂາ", rom:"khǎa", mean:"leg", note:"High cons + long vowel" },
       { lao:"ຫຼາຍ", rom:"lǎai", mean:"many / much", note:"Compound high + live" },
@@ -90,7 +90,7 @@ const LAO_TONES_DATA = [
     contour: "44 / 55",
     desc: { en:"Short, high, brisk stop. Found in dead syllables ending in -k, -t, -p with short vowels in low consonants.", lo:"ສຽງສູງ ຕັດສັ້ນ ມັກເກີດໃນອັກສອນຕ່ຳ ຄຳຕາຍ (ສະກົດດ້ວຍ ກ, ດ, ບ) ສະຫຼະສັ້ນ." },
     pathD: "M 10 16 L 90 16",
-    color: "#ea580c",
+    color: "var(--tone-6)",
     examples: [
       { lao:"ມັກ", rom:"mák", mean:"to like / love", note:"Low cons + short + stop" },
       { lao:"ພັກ", rom:"phák", mean:"rest / party", note:"Low cons + short + stop" },
@@ -153,7 +153,10 @@ LAB_VIEWS.tone_lab = () => {
   // 1. Tone Contours Grid
   const toneGrid = h("div",{class:"grid3"});
   const tonesData = (A.B && A.B.tones && A.B.tones.length) ? A.B.tones : LAO_TONES_DATA;
-  tonesData.forEach(tData => {
+  tonesData.forEach((tData, i) => {
+    // tones 1-6 use the theme's tone colours (readable in Day and Night); a stored colour only for anything else
+    const num = +tData.num || i + 1;
+    tData = Object.assign({}, tData, { color: num >= 1 && num <= 6 ? `var(--tone-${num})` : tData.color });
     const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
     svg.setAttribute("viewBox","0 0 100 60");
     svg.setAttribute("class","pitch-svg");
@@ -162,10 +165,10 @@ LAB_VIEWS.tone_lab = () => {
     svg.style.background = "var(--surface-2)";
     svg.style.borderRadius = "8px";
     svg.innerHTML = `
-      <line x1="5" y1="15" x2="95" y2="15" stroke="#cbd5e1" stroke-dasharray="2,2" stroke-width="1"/>
-      <line x1="5" y1="35" x2="95" y2="35" stroke="#cbd5e1" stroke-dasharray="2,2" stroke-width="1"/>
-      <line x1="5" y1="50" x2="95" y2="50" stroke="#cbd5e1" stroke-dasharray="2,2" stroke-width="1"/>
-      <path d="${tData.pathD}" fill="none" stroke="${tData.color}" stroke-width="4" stroke-linecap="round"/>
+      <line x1="5" y1="15" x2="95" y2="15" style="stroke:var(--line-2)" stroke-dasharray="2,2" stroke-width="1"/>
+      <line x1="5" y1="35" x2="95" y2="35" style="stroke:var(--line-2)" stroke-dasharray="2,2" stroke-width="1"/>
+      <line x1="5" y1="50" x2="95" y2="50" style="stroke:var(--line-2)" stroke-dasharray="2,2" stroke-width="1"/>
+      <path d="${tData.pathD}" fill="none" style="stroke:${tData.color}" stroke-width="4" stroke-linecap="round"/>
     `;
 
     const exList = h("div",{class:"stack",style:"gap:4px;margin-top:10px"},
@@ -264,7 +267,7 @@ LAB_VIEWS.tone_lab = () => {
     calcResult.innerHTML = "";
     calcResult.append(
       h("div",{class:"spread",style:"align-items:center;justify-content:center;gap:12px"},
-        h("span",{class:"chip lv",style:`background:${tObj.color};color:#fff;font-size:1.1rem;padding:6px 16px`}, "Result: Tone " + toneNum),
+        h("span",{class:"chip lv",style:`background:${toneNum >= 1 && toneNum <= 6 ? `var(--tone-${toneNum})` : tObj.color};color:var(--surface);font-size:1.1rem;padding:6px 16px`}, "Result: Tone " + toneNum),
         h("b",{style:"font-size:1.3rem;color:var(--ink)"}, tr(tObj.name, lang()))
       ),
       h("p",{style:"font-size:1.1rem;margin:12px 0 6px 0;font-weight:600;color:var(--accent)"}, ruleName),
