@@ -121,14 +121,16 @@ try {
   await ok(!(await has(/Nothing to review/)) || true, "Review page opens"); // bookmarking also adds a review card
 
   step("audio");
-  await b.eval(`(() => { window.__spoken = []; speechSynthesis.speak = u => window.__spoken.push(u.text); })()`);
+  await b.eval(`(() => { window.__spoken = []; window.__played = 0; speechSynthesis.speak = u => window.__spoken.push(u.text); const p = HTMLMediaElement.prototype.play; HTMLMediaElement.prototype.play = function(){ window.__played++; return p.call(this); }; })()`);
   await nav(/Dictionary/);
   await dictSearch("ຂອບໃຈ");
   await b.eval(`[...document.querySelectorAll("main .dres button")].find(x => x.innerText.includes("ຂອບໃຈ")).click()`);
   await b.waitFor(`!!document.querySelector(".sheet")`, 5000);
   await b.eval(`(() => { const s = [...document.querySelectorAll(".sheet button")].find(x => x.querySelector("svg") && /listen|play|speak|ຟັງ/i.test((x.getAttribute("aria-label")||"") + (x.title||"") + x.innerText)) || document.querySelector(".sheet .say, .sheet [data-say]"); if (s) s.click(); })()`);
   await sleep(400);
-  await ok(await b.eval(`window.__spoken.length > 0 && window.__spoken.some(t => t.includes("ຂອບໃຈ"))`), "word card speaker button speaks the Lao word");
+  // a recording plays, or (no recording, no Lao voice on the device) the learner is told it is coming soon;
+  // Lao is never read by another language's voice
+  await ok(await b.eval(`(window.__played > 0 || /coming soon|ກຳລັງຈະມາ|即将上线/i.test(document.body.innerText)) && !window.__spoken.some(t => /[\u0E80-\u0EFF]/.test(t))`), "word card speaker button plays the recording or says it is coming soon (no Thai voice)");
   await b.eval(`document.querySelector(".sheet [aria-label='Close']").click()`);
 
   step("notes");

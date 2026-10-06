@@ -33,7 +33,7 @@ export function applyPrefs(){
   const th = p.theme || getTheme() || "day";
   setTheme(th);
   document.documentElement.lang = lang()==="zh" ? "zh-CN" : lang();
-  setSpeechSettings({ rate:p.rate, voice:p.voice });
+  setSpeechSettings({ rate:p.rate, voice:p.voice, wordByWord:!!p.wordByWord });
 }
 
 // A theme change reveals the new colours in a circle growing from the button that was pressed (css: "transitions")

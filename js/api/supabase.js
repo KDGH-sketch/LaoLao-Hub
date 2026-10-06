@@ -338,6 +338,26 @@ export async function createSupabaseApi(supabaseUrl, supabaseAnonKey, opts = {})
         refund: args => call("/refund", { method: "POST", body: args })
       };
     })(),
+    // Azure's Lao voices through the "tts" Edge Function (it holds the Azure key and checks that the caller may edit
+    // audio). Returns MP3 audio as base64; the studio saves it like a recording. Setup: docs/AZURE_VOICE.md
+    tts: (() => {
+      const fnUrl = supabaseUrl.replace(/\/$/, "") + "/functions/v1/tts";
+      async function call(path, { method = "GET", body } = {}){
+        const { data: { session } } = await client.auth.getSession();
+        let r;
+        try {
+          r = await fetch(fnUrl + path, { method, body: body ? JSON.stringify(body) : undefined,
+            headers: Object.assign({ apikey: supabaseAnonKey, Authorization: "Bearer " + (session ? session.access_token : supabaseAnonKey) }, body ? { "Content-Type": "application/json" } : {}) });
+        } catch(e){ throw Object.assign(new Error("tts_unavailable"), { code: "tts_unavailable" }); }
+        let data = null; try { data = await r.json(); } catch(e){}
+        if (!r.ok){ const code = (data && data.error) || (r.status === 404 ? "tts_unavailable" : "server_error"); throw Object.assign(new Error(code), { code, status: r.status, data }); }
+        return data;
+      }
+      return {
+        status: () => call("/status").catch(e => ({ configured: false, error: e.code || "tts_unavailable" })),
+        speak: (texts, voice, slow) => call("/speak", { method: "POST", body: { texts, voice, slow: !!slow } })
+      };
+    })(),
     storage: {
       upload: async (file, path) => {
         const bucket = "laolao-assets";

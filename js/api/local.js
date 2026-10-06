@@ -184,6 +184,23 @@ export async function createLocalApi(){
         }
       };
     })(),
+    // Demo stand-in for Azure's Lao voices: a short tone per text (WAV, base64), so Voice Studio can be tried and tested
+    // without an Azure key. The real voices come from the "tts" Edge Function (docs/AZURE_VOICE.md).
+    tts: (() => {
+      let used = 0;
+      const VOICES = [{ id: "lo-LA-KeomanyNeural", label: "Keomany (female)" }, { id: "lo-LA-ChanthavongNeural", label: "Chanthavong (male)" }];
+      const tone = n => { const rate = 16000, len = Math.round(rate * Math.min(2.5, 0.25 + n * 0.06)), buf = new ArrayBuffer(44 + len * 2), v = new DataView(buf);
+        const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+        w(0, "RIFF"); v.setUint32(4, 36 + len * 2, true); w(8, "WAVE"); w(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+        v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, len * 2, true);
+        for (let i = 0; i < len; i++) v.setInt16(44 + i * 2, Math.round(Math.sin(2 * Math.PI * 330 * i / rate) * 6000 * Math.sin(Math.PI * i / len)), true);
+        let s = ""; const a = new Uint8Array(buf); for (let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode.apply(null, a.subarray(i, i + 0x8000)); return btoa(s); };
+      return {
+        demo: true,
+        status: async () => ({ configured: true, demo: true, region: "demo", voices: VOICES, month: new Date().toISOString().slice(0, 7), used, limit: 450000 }),
+        speak: async (texts, voice) => { const items = texts.map(text => ({ text, audio: tone(text.length), chars: text.length, voice, mime: "audio/wav" })); used += texts.join("").length; return { items, used, limit: 450000 }; }
+      };
+    })(),
     storage: {
       upload: async file => {
         if (file.size > 1.5e6) throw new Error("In demo mode files must be under 1.5 MB.");

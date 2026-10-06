@@ -4,7 +4,7 @@ import { h, $, $$, icon, toast, errText, pyHTML, stripTone, debounce, tr, withTr
 import { t, lang, setLang } from "../shared/i18n.js";
 import { ensureDemo, DEMO } from "../shared/setup.js";
 import { dict, searchDict } from "../shared/dict.js";
-import { onMissingVoice, speak } from "../shared/speech.js";
+import { onMissingAudio, speak } from "../shared/speech.js";
 import { openWord, closeSheet } from "../shared/widgets.js";
 import { createWaitingScreen, dokChampaSvg, LAO_SAMPLES } from "../shared/lao-decorations.js";
 import { A, loadAccount, refreshAccess, prefs, setPref, applyPrefs, srsDue, T, createLearnerProfile, rememberPendingProfile, displayName, avatarEl, imageToAvatar, saveProfile, setThemeFrom } from "./core.js";
@@ -36,7 +36,16 @@ async function boot(){
     root.append(createWaitingScreen("ສະບາຍດີ", t("loading")+"..."));
     await ensureDemo(api);
   }
-  onMissingVoice(() => toast(t("voice_none")));
+  // no recording yet (and no Lao voice on the device): say so, and tell the admins once per text per visit;
+  // Admin → Voice Studio lists these requests so the most wanted words are recorded first
+  const askedFor = new Set();
+  onMissingAudio(text => {
+    toast(t("audio_soon"));
+    const key = String(text).trim().slice(0, 200);
+    if (!A.user || askedFor.has(key)) return;
+    askedFor.add(key);
+    A.api.db.add("activity", { uid:A.user.uid, name:A.profile && A.profile.name || "", type:"audio_missing", ref:key, at:new Date() }).catch(() => {});
+  });
   // arriving from a password-reset email: ask for the new password before anything else
   let recovering = /type=recovery/.test(location.hash);
   if (api.auth.onRecovery) api.auth.onRecovery(() => { recovering = true; renderNewPassword(); });

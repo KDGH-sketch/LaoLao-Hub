@@ -12,12 +12,12 @@ const CANDIDATES = [
   "/usr/bin/google-chrome", "/usr/bin/chromium", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 ].filter(Boolean);
 
-export async function launch({ width = 1366, height = 900 } = {}){
+export async function launch({ width = 1366, height = 900, args = [] } = {}){
   const exe = CANDIDATES.find(p => fs.existsSync(p));
   if (!exe) throw new Error("Chrome/Edge not found. Set CHROME_PATH.");
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), "laolao-cdp-"));
   const proc = spawn(exe, ["--headless=new", "--remote-debugging-port=0", `--user-data-dir=${profile}`, "--no-first-run",
-    "--no-default-browser-check", "--autoplay-policy=no-user-gesture-required", "--mute-audio", `--window-size=${width},${height}`, "about:blank"],
+    "--no-default-browser-check", "--autoplay-policy=no-user-gesture-required", "--mute-audio", `--window-size=${width},${height}`, ...args, "about:blank"],
     { stdio: "ignore" });
   const portFile = path.join(profile, "DevToolsActivePort");
   let port;

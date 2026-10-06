@@ -159,6 +159,7 @@ main{padding-block:28px 96px;padding-inline:24px;width:100%;max-width:980px;marg
 .chip.lv{background:var(--jade-2);color:var(--jade)}
 .chip.acc{background:var(--accent-2);color:var(--accent)}
 .chip.warn{background:var(--warn-2);color:var(--warn)}
+.chip.violet{background:var(--violet-2);color:var(--violet)}
 .seg{display:inline-flex;background:var(--surface-2);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
 .seg button{border:0;background:none;border-radius:8px;padding:6px 12px;font-weight:600;font-size:.88rem;color:var(--ink-2)}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
@@ -604,12 +605,6 @@ textarea.input{min-height:80px;resize:vertical;line-height:1.45}
 .video-info{padding:14px 16px;display:flex;flex-direction:column;gap:6px}
 
 /* Audio Studio & Voice QC */
-.audio-qc-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:99px;font-size:.72rem;font-weight:800;text-transform:uppercase}
-.audio-qc-pill.verified{background:#dcfce7;color:#15803d}
-.audio-qc-pill.needs_review{background:#fef3c7;color:#b45309}
-.audio-qc-pill.missing{background:#fee2e2;color:#b91c1c}
-.audio-qc-pill.recorded{background:#e0f2fe;color:#0369a1}
-.rec-indicator{display:inline-flex;align-items:center;gap:6px;color:#dc2626;font-weight:700;animation:pulse 1.2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
 /* Feed & Promotional Banners */

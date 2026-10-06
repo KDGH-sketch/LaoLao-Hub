@@ -19,6 +19,7 @@ import { viewAdmins } from "./admins.js";
 import { publishPanel } from "./publish.js";
 import { viewWelcome, viewPromotions } from "./welcome-admin.js";
 import { viewPayments } from "./payments.js";
+import { viewVoiceStudio } from "./voice-studio.js";
 
 const root = document.getElementById("root");
 const pref = (() => { try { return localStorage.getItem("xuelu.admin.lang") || "en"; } catch(e){ return "en"; } })();
@@ -358,7 +359,7 @@ function renderShell(){
     return;
   }
 
-  const V = Object.assign({ dashboard:viewDashboard, learners:viewLearners, learner:viewLearner, plans:viewPlans, accessMatrix:viewAccessMatrix, accessLogs:viewAccessLogs, payments:viewPayments, handwriting:viewHandwriting, handwritingEditor:viewHandwritingEditor, content:viewContentHome, contentList:viewContentList, editor:viewEditor, activity:viewActivity, admins:viewAdmins, settings:viewSettings }, EXT_VIEWS, { welcome:viewWelcome, promotions:viewPromotions });
+  const V = Object.assign({ dashboard:viewDashboard, learners:viewLearners, learner:viewLearner, plans:viewPlans, accessMatrix:viewAccessMatrix, accessLogs:viewAccessLogs, payments:viewPayments, handwriting:viewHandwriting, handwritingEditor:viewHandwritingEditor, content:viewContentHome, contentList:viewContentList, editor:viewEditor, activity:viewActivity, admins:viewAdmins, settings:viewSettings }, EXT_VIEWS, { welcome:viewWelcome, promotions:viewPromotions, audioStudio:viewVoiceStudio });
   const fn = V[S.view] || viewDashboard;
   Promise.resolve(fn(S.params||{})).then(el => { main.innerHTML=""; main.append(el); }).catch(err => { console.error(err); main.innerHTML=""; main.append(h("div",{class:"banner"}, errText(err))); });
 }
@@ -413,6 +414,7 @@ const kpiCard = (n, label, iconName, tone="accent") => h("div",{class:"card kpi-
   h("span",{class:"kpi-ic tone-"+tone}, icon(iconName)),
   h("div",{class:"kpi-t"}, h("b",null, n), h("span",null, label)));
 export function activityFeed(rows){
+  rows = rows.filter(a => a.type !== "audio_missing");        // learner audio requests are listed in Voice Studio
   if (!rows.length) return h("p",{class:"muted"}, t("no_rows"));
   return h("div",{class:"feed"}, rows.map(a => h("div",{class:"feed-row"},
     h("span",null, h("b",null,a.name||"—"), " · ", a.type, a.ref ? " · "+a.ref : "", a.total ? ` · ${a.score}/${a.total}` : ""),
