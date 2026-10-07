@@ -361,7 +361,9 @@ export async function createSupabaseApi(supabaseUrl, supabaseAnonKey, opts = {})
     storage: {
       upload: async (file, path) => {
         const bucket = "laolao-assets";
-        const { error } = await client.storage.from(bucket).upload(path, file, { upsert: true, contentType: file.type || undefined });
+        // Every caller makes a new, unique path, so plain insert is enough. upsert:true would need SELECT and UPDATE
+        // policies on storage.objects as well, and fails with "new row violates row-level security policy".
+        const { error } = await client.storage.from(bucket).upload(path, file, { upsert: false, contentType: file.type || undefined });
         if (error) throw error;
         return client.storage.from(bucket).getPublicUrl(path).data.publicUrl;
       }

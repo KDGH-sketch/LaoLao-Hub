@@ -17,7 +17,8 @@
     "check:live": "node scripts/check_supabase_live.mjs",
     "test:crawl": "node scripts/e2e_crawl.mjs",
     "test:sql": "node scripts/test_sql_access.mjs && node scripts/test_sql_payments.mjs && node scripts/test_payments_server.mjs",
-    "check:access": "node scripts/check_access_live.mjs"
+    "check:access": "node scripts/check_access_live.mjs",
+    "check:upload": "node scripts/check_upload_live.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
