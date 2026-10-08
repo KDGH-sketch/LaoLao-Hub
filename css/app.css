@@ -1,6 +1,6 @@
 :root{
   --bg:#F0F7FD; --surface:#FFFFFF; --surface-2:#E4EFF9; --surface-3:#D3E4F4;
-  --lm-stroke:#2D82DC; --ink:#0A1B2E; --ink-2:#28425C; --ink-3:#4A6685; --line:#CFE2F4; --line-2:#B5D2EC;   /* ink-3 / accent: 4.5:1 or better on white and surface-2 (WCAG AA) */
+  --ink:#0A1B2E; --ink-2:#28425C; --ink-3:#4A6685; --line:#CFE2F4; --line-2:#B5D2EC;   /* ink-3 / accent: 4.5:1 or better on white and surface-2 (WCAG AA) */
   --accent:#0270AC; --accent-hover:#025C8F; --accent-2:#E0F2FE; --accent-3:#BAE6FD; --accent-ink:#FFFFFF;
   --accent-grad:linear-gradient(135deg, #0379B9 0%, #025C8F 100%);   /* white text 4.7:1 or better everywhere on it */
   --violet:#6D28D9; --violet-2:#EDE9FE;
@@ -29,7 +29,7 @@
 :root[data-theme="night"],
 :root[data-theme="dark"]{
   --bg:#08121D; --surface:#0E1B2A; --surface-2:#16283D; --surface-3:#1E3652;
-  --lm-stroke:#57C7FB; --ink:#F0F7FD; --ink-2:#A4C2E0; --ink-3:#86A6C4; --line:#1C344E; --line-2:#284B6E;
+  --ink:#F0F7FD; --ink-2:#A4C2E0; --ink-3:#86A6C4; --line:#1C344E; --line-2:#284B6E;
   --accent:#38BDF8; --accent-hover:#7DD3FC; --accent-2:#0E2A44; --accent-3:#133E64; --accent-ink:#061424;
   --accent-grad:linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
   --jade:#34D399; --jade-2:#053B2D; --warn:#FBBF24; --warn-2:#451A03; --bad:#FB7185; --bad-2:#4C0519; --violet:#A78BFA; --violet-2:#2E1065; --shadow-sm:0 1px 2px rgba(0,0,0,.3),0 3px 10px rgba(0,0,0,.22);
@@ -42,7 +42,7 @@
   :root[data-theme="system"],
   :root[data-theme="auto"]{
     --bg:#08121D; --surface:#0E1B2A; --surface-2:#16283D; --surface-3:#1E3652;
-    --lm-stroke:#57C7FB; --ink:#F0F7FD; --ink-2:#A4C2E0; --ink-3:#86A6C4; --line:#1C344E; --line-2:#284B6E;
+    --ink:#F0F7FD; --ink-2:#A4C2E0; --ink-3:#86A6C4; --line:#1C344E; --line-2:#284B6E;
     --accent:#38BDF8; --accent-hover:#7DD3FC; --accent-2:#0E2A44; --accent-3:#133E64; --accent-ink:#061424;
     --accent-grad:linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
     --jade:#34D399; --jade-2:#053B2D; --warn:#FBBF24; --warn-2:#451A03; --bad:#FB7185; --bad-2:#4C0519; --violet:#A78BFA; --violet-2:#2E1065; --shadow-sm:0 1px 2px rgba(0,0,0,.3),0 3px 10px rgba(0,0,0,.22);
@@ -79,17 +79,18 @@ p{margin:0}
 .seal{width:38px;height:38px;border-radius:12px;background:var(--accent-grad);color:#fff;display:grid;place-items:center;font:700 22px/1 var(--f-lo);flex:none;box-shadow:0 4px 12px rgba(2,132,199,.28);position:relative;overflow:hidden}
 .seal::before{content:"";position:absolute;inset:0;border-radius:12px;border:1.5px solid rgba(255,255,255,.45);pointer-events:none}
 .seal.logo{background:none;border-radius:50%;box-shadow:0 4px 12px rgba(2,61,189,.28);user-select:none;overflow:visible}
-/* Logo animation, looping every 6 s (brandMark in ui.js): the outlines (pathLength=1) draw themselves 300 ms apart,
-   the colours fill in and the outlines fade, it holds, then the colours fade back to outlines, which erase themselves. */
-.seal.lm-anim{animation:lmShadow 6s ease infinite}
-.lm-anim .lm-part{stroke:var(--lm-stroke);stroke-width:1.5px;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round;
-  stroke-dasharray:1 1;stroke-dashoffset:1;fill-opacity:0;animation:lmDraw 6s cubic-bezier(.65,0,.35,1) infinite,lmFill 6s ease infinite}
-.lm-anim .lm-big{animation-delay:.3s,0s}
-.lm-anim .lm-small{animation-delay:.6s,0s}
-@keyframes lmDraw{0%{stroke-dashoffset:1}18.3%,88%{stroke-dashoffset:0}98%,100%{stroke-dashoffset:-1}}
-@keyframes lmFill{0%,28.3%{fill-opacity:0;stroke-opacity:1}38.3%,80%{fill-opacity:1;stroke-opacity:0}88%,100%{fill-opacity:0;stroke-opacity:1}}
-@keyframes lmShadow{0%,28.3%,88%,100%{box-shadow:0 0 0 transparent}38.3%,80%{box-shadow:0 4px 12px rgba(2,61,189,.28)}}
-@media (prefers-reduced-motion:reduce){.seal.lm-anim,.lm-anim .lm-part{animation:none;stroke:none;fill-opacity:1}}
+/* Logo hover (brandMark in ui.js adds .lm-hover on pointer enter, 700 ms): a little pop, a soft white band sweeping across
+   the circle (clipped to it), and a wiggle of the small letter. */
+.seal.logo{transform-origin:50% 50%}
+.seal.lm-hover{animation:lmPop .7s cubic-bezier(.3,0,.3,1)}
+.lm-sweep{transform:translateX(-300px)}
+.lm-hover .lm-sweep{animation:lmSweep .7s ease-in-out}
+.lm-small{transform-box:fill-box;transform-origin:50% 60%}
+.lm-hover .lm-small{animation:lmWiggle .7s ease-in-out}
+@keyframes lmPop{0%,100%{transform:scale(1)}45%{transform:scale(1.06)}}
+@keyframes lmSweep{from{transform:translateX(-300px)}to{transform:translateX(780px)}}
+@keyframes lmWiggle{0%,100%{transform:rotate(0)}15%{transform:rotate(-9deg)}30%{transform:rotate(8deg)}45%{transform:rotate(-6deg)}60%{transform:rotate(4deg)}75%{transform:rotate(-2deg)}}
+@media (prefers-reduced-motion:reduce){.seal.lm-hover,.lm-hover .lm-sweep,.lm-hover .lm-small{animation:none}}
 .seal::after{content:"";position:absolute;width:40px;height:24px;bottom:-6px;right:-8px;background:radial-gradient(ellipse at center,rgba(255,255,255,.35) 0%,transparent 70%);border-radius:50%;pointer-events:none}
 .brand b{display:block;font-size:1.15rem;letter-spacing:.01em;font-weight:700}
 .brand small{display:block;color:var(--ink-3);font-size:.75rem;line-height:1.2}

@@ -124,23 +124,32 @@ const IC = {
 };
 // Every icon carries class "ic": its size and stroke come from the icon tokens in css/app.css (:root --ic-*).
 // Contexts pick a token (e.g. .nav-btn .ic = --ic-lg); never give an icon a one-off pixel size.
-// The LaoLao logo, inline so it can draw itself (shapes from logo-data.js, built with logo-mark.svg by scripts/build_icons.mjs).
+// The LaoLao logo, inline so it can animate (shapes from logo-data.js, built with logo-mark.svg by scripts/build_icons.mjs).
 // Decorative: the app name is always written next to it. The first copy on a page gets the ids #logo-circle,
 // #logo-letter-big and #logo-letter-small; later copies get a "-2", "-3"… suffix so ids and gradients never clash.
-// Every logo loops its line-drawing animation (.lm-anim, 6 s, CSS in app.css), except with reduced motion.
+// Hover (pointer enter): .lm-hover plays once, 700 ms (CSS in app.css): the logo scales to 1.06 and back, a soft white
+// band sweeps across the circle (clipped to it) and the small letter wiggles. Never with reduced motion.
 let logoSeq = 0;
 export function brandMark(cls){
   const n = ++logoSeq, sfx = n === 1 ? "" : "-" + n;
   const C = LOGO.colors, [x1, y1, x2, y2] = LOGO.grad, s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   s.setAttribute("viewBox", "0 0 512 512"); s.setAttribute("width", "38"); s.setAttribute("height", "38");
   s.setAttribute("aria-hidden", "true"); s.setAttribute("focusable", "false");
-  s.setAttribute("class", "seal logo" + (cls ? " " + cls : "") + (!reducedMotion() ? " lm-anim" : ""));
+  s.setAttribute("class", "seal logo" + (cls ? " " + cls : ""));
   s.innerHTML = `<defs><linearGradient id="logo-g${sfx}" gradientUnits="userSpaceOnUse" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">` +
     `<stop offset="0" stop-color="${C.dark}"/><stop offset=".5" stop-color="${C.mid}"/><stop offset="1" stop-color="${C.light}"/></linearGradient>` +
+    `<linearGradient id="logo-s${sfx}"><stop offset="0" stop-color="white" stop-opacity="0"/><stop offset=".5" stop-color="white" stop-opacity=".55"/>` +
+    `<stop offset="1" stop-color="white" stop-opacity="0"/></linearGradient>` +
     `<clipPath id="logo-c${sfx}"><circle cx="256" cy="256" r="256"/></clipPath></defs>` +
-    `<circle id="logo-circle${sfx}" class="lm-part lm-circle" cx="256" cy="256" r="256" transform="rotate(-90 256 256)" pathLength="1" fill="url(#logo-g${sfx})"/>` +
-    `<g clip-path="url(#logo-c${sfx})"><path id="logo-letter-big${sfx}" class="lm-part lm-big" pathLength="1" fill="${C.big}" fill-rule="evenodd" d="${LOGO.big}"/>` +
-    `<path id="logo-letter-small${sfx}" class="lm-part lm-small" pathLength="1" fill="${C.small}" fill-rule="evenodd" d="${LOGO.small}"/></g>`;
+    `<circle id="logo-circle${sfx}" cx="256" cy="256" r="256" fill="url(#logo-g${sfx})"/>` +
+    `<g clip-path="url(#logo-c${sfx})"><path id="logo-letter-big${sfx}" fill="${C.big}" fill-rule="evenodd" d="${LOGO.big}"/>` +
+    `<path id="logo-letter-small${sfx}" class="lm-small" fill="${C.small}" fill-rule="evenodd" d="${LOGO.small}"/>` +
+    `<g class="lm-sweep"><rect x="-90" y="-160" width="180" height="832" transform="rotate(20 0 256)" fill="url(#logo-s${sfx})"/></g></g>`;
+  s.addEventListener("pointerenter", () => {
+    if (reducedMotion() || s.classList.contains("lm-hover")) return;
+    s.classList.add("lm-hover");
+    setTimeout(() => s.classList.remove("lm-hover"), 720);
+  });
   return s;
 }
 export function icon(n, cls){ const s=document.createElementNS("http://www.w3.org/2000/svg","svg"); s.setAttribute("viewBox","0 0 24 24"); s.setAttribute("aria-hidden","true"); s.setAttribute("class", cls ? "ic "+cls : "ic"); s.innerHTML = IC[n] || IC.more; return s; }

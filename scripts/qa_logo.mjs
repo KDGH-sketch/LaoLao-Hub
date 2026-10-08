@@ -1,5 +1,5 @@
 // The logo in the running app: learner and admin sidebars, the phone top bar and the welcome page, in day and night.
-// It must load (not a broken image), keep its round shape, and sit at the size of the old seal. Screenshots go to e2e-screenshots/.
+// Inline SVG with its part ids, round, at the size of the old seal, and the hover effect. Screenshots go to e2e-screenshots/.
 // Run: node scripts/qa_logo.mjs
 import path from "path";
 import fs from "fs";
@@ -21,7 +21,7 @@ async function login(p, email){
 }
 // every visible logo: inline SVG with its three parts, unique ids, square box, round
 const logos = sel => b.eval(`[...document.querySelectorAll(${JSON.stringify(sel)})].filter(i => i.getClientRects().length).map(s => {
-  const r = s.getBoundingClientRect(), parts = [...s.querySelectorAll(".lm-part")].map(p => p.id);
+  const r = s.getBoundingClientRect(), parts = [...s.querySelectorAll("[id^=logo-circle], [id^=logo-letter-big], [id^=logo-letter-small]")].map(p => p.id);
   const ids = [...document.querySelectorAll("[id]")].map(e => e.id), dup = ids.filter((x, i) => ids.indexOf(x) !== i);
   return { tag: s.tagName.toLowerCase(), w: Math.round(r.width), h: Math.round(r.height), round: getComputedStyle(s).borderRadius, parts, dup };
 })`);
@@ -32,36 +32,36 @@ const check = (name, list, px) => {
   ok(list.every(l => !l.dup.length), name + ": no duplicate ids on the page", list[0] && list[0].dup);
   ok(list.every(l => l.w === px && l.h === px && l.round === "50%"), name + `: ${px}×${px}, round`, list);
 };
-// fill and outline of each part right now
-const look = sel => b.eval(`[...document.querySelector(${JSON.stringify(sel)}).querySelectorAll(".lm-part")].map(p => { const c = getComputedStyle(p);
-  return { fill: +c.fillOpacity, stroke: c.stroke === "none" ? 0 : +c.strokeOpacity, dash: parseFloat(c.strokeDashoffset) || 0 }; })`);
-
-console.log("animation");
-await b.goto(srv.base + "/"); await b.waitFor(`!!document.querySelector(".wl-brand svg")`, 60000);
-const start = await b.eval(`(() => { const s = document.querySelector(".wl-brand svg"); return { anim: s.classList.contains("lm-anim"), names: getComputedStyle(s.querySelector(".lm-big")).animationName, delays: [...s.querySelectorAll(".lm-part")].map(p => getComputedStyle(p).animationDelay) }; })()`);
-ok(start.anim && /lmDraw/.test(start.names) && /lmFill/.test(start.names), "the logo draws itself", start);
-const loops = await b.eval(`getComputedStyle(document.querySelector(".wl-brand svg .lm-big")).animationIterationCount`);
-ok(/^infinite/.test(loops), "and keeps looping", loops);
-ok(start.delays.map(d => d.split(",")[0].trim()).join(" ") === "0s 0.3s 0.6s", "outlines start 300 ms apart", start.delays);
-// look at fixed moments of the animation (paused), so a slow machine can't skew the result
-const at = ms => b.eval(`document.querySelector(".wl-brand svg").getAnimations({ subtree: true }).forEach(a => { a.pause(); a.currentTime = ${ms}; })`);
-await at(250);
-const early = await look(".wl-brand svg");
-ok(early.every(p => p.fill < 0.05) && early[0].stroke > 0.5 && early[0].dash > 0, "at the start: outlines drawing, no fill yet", early);
-await at(2300);
-const end = await look(".wl-brand svg");
-ok(end.every(p => p.fill > 0.99 && p.stroke < 0.01), "after about 2.3 s: filled, outlines gone", end);
-await at(4000);
-const hold = await look(".wl-brand svg");
-ok(hold.every(p => p.fill > 0.99 && p.stroke < 0.01), "at 4 s: holds the finished logo", hold);
-await at(5600);
-const back = await look(".wl-brand svg");
-ok(back.every(p => p.fill < 0.01 && p.stroke > 0.99), "at 5.6 s: back to outlines, erasing before the next round", back);
-await b.screenshot(path.join(SHOTS, "logo-anim-end.png"));
+console.log("hover effect");
+await b.goto(srv.base + "/"); await b.waitFor(`!!document.querySelector(".wl-brand svg.wl-logo")`, 60000); await sleep(600);
+const SEL = ".wl-brand svg.wl-logo";
+const state = () => b.eval(`(() => { const s = document.querySelector(${JSON.stringify(SEL)}), m = new DOMMatrix(getComputedStyle(s).transform);
+  const sw = new DOMMatrix(getComputedStyle(s.querySelector(".lm-sweep")).transform), sm = new DOMMatrix(getComputedStyle(s.querySelector(".lm-small")).transform);
+  return { hover: s.classList.contains("lm-hover"), scale: +m.a.toFixed(3), sweepX: Math.round(sw.e), smallRot: +(Math.atan2(sm.b, sm.a) * 180 / Math.PI).toFixed(1),
+    clipped: !!s.querySelector(".lm-sweep").closest("[clip-path]"), anims: s.getAnimations({ subtree: true }).length }; })()`);
+const rest = await state();
+ok(!rest.hover && rest.anims === 0 && rest.scale === 1, "at rest: still (no animation running)", rest);
+ok(rest.sweepX <= -300 && rest.clipped, "the highlight band waits outside the circle and is clipped to it", rest);
+const hoverIn = async () => { const r = await b.eval(`(() => { const r = document.querySelector(${JSON.stringify(SEL)}).getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; })()`);
+  await b.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: 5, y: 600 }); await b.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: r[0], y: r[1] }); };
+await hoverIn(); await sleep(30);
+// freeze the animations at fixed moments so a busy machine can't skew the result
+const at = ms => b.eval(`document.querySelector(${JSON.stringify(SEL)}).getAnimations({ subtree: true }).forEach(a => { a.pause(); a.currentTime = ${ms}; })`);
+const names = await b.eval(`document.querySelector(${JSON.stringify(SEL)}).getAnimations({ subtree: true }).map(a => a.animationName + " " + a.effect.getTiming().duration).sort()`);
+ok(names.join("|") === "lmPop 700|lmSweep 700|lmWiggle 700", "pointer enter starts the pop, the sweep and the wiggle, 700 ms each", names);
+await at(315); const mid = await state();
+ok(mid.scale > 1.05 && mid.scale <= 1.06, "mid-way: the logo is scaled up to about 1.06", mid);
+ok(mid.sweepX > 0 && mid.sweepX < 512, "mid-way: the band is crossing the circle", mid);
+await at(105); const w1 = await state();
+ok(Math.abs(w1.smallRot) > 5, "the small letter wiggles", w1);
+await b.eval(`document.querySelector(${JSON.stringify(SEL)}).getAnimations({ subtree: true }).forEach(a => a.finish())`); await sleep(800);
+const after = await state();
+ok(!after.hover && after.scale === 1 && after.smallRot === 0, "after 700 ms: back to normal, ready for the next hover", after);
 await b.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
-await b.goto(srv.base + "/"); await b.waitFor(`!!document.querySelector(".wl-brand svg")`, 60000); await sleep(100);
-const rm = await b.eval(`(() => { const s = document.querySelector(".wl-brand svg"), p = s.querySelector(".lm-big"), c = getComputedStyle(p); return { anim: s.classList.contains("lm-anim"), name: c.animationName, fill: +c.fillOpacity, stroke: c.stroke }; })()`);
-ok(!rm.anim && rm.name === "none" && rm.fill === 1 && rm.stroke === "none", "reduced motion: no animation, finished logo straight away", rm);
+await b.goto(srv.base + "/"); await b.waitFor(`!!document.querySelector(${JSON.stringify(SEL)})`, 60000); await sleep(600);
+await hoverIn(); await sleep(100);
+const rm = await state();
+ok(!rm.hover && rm.anims === 0, "reduced motion: hovering does nothing", rm);
 await b.send("Emulation.setEmulatedMedia", { features: [] });
 
 console.log("learner app");
