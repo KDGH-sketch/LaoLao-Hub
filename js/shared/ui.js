@@ -123,6 +123,9 @@ const IC = {
 };
 // Every icon carries class "ic": its size and stroke come from the icon tokens in css/app.css (:root --ic-*).
 // Contexts pick a token (e.g. .nav-btn .ic = --ic-lg); never give an icon a one-off pixel size.
+// The LaoLao logo (built by scripts/build_icons.mjs). Decorative: the app name is always written next to it.
+export const LOGO_URL = new URL("../../logo-mark.svg", import.meta.url).href;
+export function brandMark(cls){ return h("img",{class:"seal logo"+(cls?" "+cls:""),src:LOGO_URL,alt:"",width:38,height:38,decoding:"async",draggable:"false"}); }
 export function icon(n, cls){ const s=document.createElementNS("http://www.w3.org/2000/svg","svg"); s.setAttribute("viewBox","0 0 24 24"); s.setAttribute("aria-hidden","true"); s.setAttribute("class", cls ? "ic "+cls : "ic"); s.innerHTML = IC[n] || IC.more; return s; }
 
 // ----- theme management (Day, Night, System) -----

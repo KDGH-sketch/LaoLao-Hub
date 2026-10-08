@@ -16,7 +16,7 @@ import { HANDWRITING_VIEWS } from "./views-handwriting.js";
 import { VIEWS as BILLING_VIEWS } from "./views-billing.js";
 import { renderWelcome, pendingResource } from "./welcome.js";
 import { lockedPanel, featureForView, navLock, planLabel } from "./upgrade.js";
-import { themeSwitcher } from "../shared/ui.js";
+import { themeSwitcher, brandMark } from "../shared/ui.js";
 
 const root = document.getElementById("root");
 try { const l = localStorage.getItem("xuelu.lang"); if (l) setLang(l); } catch(e){}
@@ -170,7 +170,7 @@ function render(){
   const cur = PARENT[A.view.name] || A.view.name;
   root.innerHTML = "";
   const side = h("nav",{class:"side","aria-label":"Main"},
-    h("div",{class:"brand"}, h("div",{class:"seal lo"},"ລ"), h("div",null, h("b",null,A.settings.appName||"LaoLao"), h("small",null,t("tagline")))));
+    h("div",{class:"brand"}, brandMark(), h("div",null, h("b",null,A.settings.appName||"LaoLao"), h("small",null,t("tagline")))));
   NAV_GROUPS.forEach(g => {
     side.append(h("div",{class:"side-group-label"}, t(g.title)));
     g.items.forEach(([id,k,ic]) => { const due = id==="review" ? srsDue().length : 0;
@@ -184,7 +184,7 @@ function render(){
   searchPop = h("div",{class:"search-pop",hidden:true});
   const p = prefs();
   const top = h("header",{class:"topbar"},
-    h("button",{class:"mbrand",style:"border:0;background:none;padding:0",onclick:()=>go("home")}, h("span",{class:"seal lo"},"ລ"), h("span",null,A.settings.appName||"LaoLao")),
+    h("button",{class:"mbrand",style:"border:0;background:none;padding:0",onclick:()=>go("home")}, brandMark(), h("span",null,A.settings.appName||"LaoLao")),
     h("div",{class:"search",role:"search"}, icon("dict"), search, searchPop),
     h("div",{class:"toggles"},
       !A.isAdmin ? null : h("a",{class:"btn sm ghost",href:"admin/",style:"text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;font-weight:600;color:var(--accent);border:1px solid var(--accent)",title:"Content Management Portal"}, icon("shield"), h("span",{class:"hide-sm"}, lang()==="lo"?"ຈັດການເນື້ອຫາ":"Admin CMS")),

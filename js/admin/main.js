@@ -1,7 +1,7 @@
 // LaoLao Admin Backend
 import { getApi } from "../api/index.js";
 import { OWNER_EMAIL } from "../config.js";
-import { h, $, $$, icon, toast, dialog, confirmDialog, fmtDate, errText } from "../shared/ui.js";
+import { h, $, $$, icon, toast, dialog, confirmDialog, fmtDate, errText, brandMark } from "../shared/ui.js";
 import { setLang, lang } from "../shared/i18n.js";
 import { CONTENT_TYPES } from "../shared/content.js";
 import { bootstrapOwner, importSeed, ensureDemo, DEMO } from "../shared/setup.js";
@@ -305,7 +305,7 @@ function renderShell(){
   root.innerHTML = "";
   const effectiveRole = getActiveRole() || S.me.role;
   const side = h("nav",{class:"side","aria-label":"Admin",style:"overflow-y:auto;max-height:100vh"},
-    h("div",{class:"brand"}, h("div",{class:"seal lo"},"ລ"), h("div",null, h("b",null,"LaoLao"), h("small",null,t("adm_title")+" · "+t("role_"+effectiveRole)))));
+    h("div",{class:"brand"}, brandMark(), h("div",null, h("b",null,"LaoLao"), h("small",null,t("adm_title")+" · "+t("role_"+effectiveRole)))));
 
   NAV_SECTIONS.forEach(sec => {
     const secItems = sec.items.filter(it => canViewMenu(it.id));
@@ -331,7 +331,7 @@ function renderShell(){
 
   const top = h("header",{class:"topbar"},
     h("button",{class:"ib hide-desk","aria-label":t("nav_more")||"Menu",onclick:openAdminMenu}, icon("menu")),
-    h("div",{class:"mbrand"}, h("span",{class:"seal lo"},"ລ"), h("b",null,t("adm_title"))),
+    h("div",{class:"mbrand"}, brandMark(), h("b",null,t("adm_title"))),
     h("div",{style:"flex:1"}),
     // on phones these move into the profile menu (css/admin.css)
     h("div",{class:"adm-tools"},

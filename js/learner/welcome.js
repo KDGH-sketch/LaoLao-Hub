@@ -2,7 +2,7 @@
 // First paint uses the defaults in welcome-data.js; the published copy (settings/welcome), plans and the public (tier-0)
 // bundle fill it in afterwards, each read with a time limit and never before sign-in calls an ll_* function.
 // Everything editors type is inserted as text (h() makes text nodes); only the static scene art in welcome-scenes.js is HTML.
-import { h, icon, toast, errText, setTheme, getTheme, normTheme, withTransition, reducedMotion } from "../shared/ui.js";
+import { h, icon, brandMark, toast, errText, setTheme, getTheme, normTheme, withTransition, reducedMotion } from "../shared/ui.js";
 import { t, lang, setLang } from "../shared/i18n.js";
 import { speak } from "../shared/speech.js";
 import { loadPublicBundle } from "../shared/content.js";
@@ -104,7 +104,7 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
   const signinBtn = h("button", { class: "wl-btn sm", type: "button", id: "wl-go-signin", onclick: () => toAuth("signin") }, t("sign_in"));
   const nav = h("header", { class: "wl-nav" }, h("div", { class: "wl-nav-in" },
     h("button", { type: "button", class: "wl-brand", "aria-label": (M.app.appName || "LaoLao") + " · " + t("wl_top"), onclick: () => window.scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" }) },
-      svgHTML(ART.CHAMPA), h("span", null, h("span", { class: "wl-brand-name" }, M.app.appName || "LaoLao"), h("small", { lang: "lo" }, "ຮຽນພາສາລາວ"))),
+      brandMark("wl-logo"), h("span", null, h("span", { class: "wl-brand-name" }, M.app.appName || "LaoLao"), h("small", { lang: "lo" }, "ຮຽນພາສາລາວ"))),
     links, h("div", { class: "wl-tools" }, themeSeg, langSeg("wl-nav-lang"), signinBtn, menuBtn)), sheet);
   const skip = h("a", { class: "wl-skip", href: "#w-main", onclick: e => { e.preventDefault(); const m = page.querySelector("#w-main"); m.focus(); m.scrollIntoView(); } }, t("wl_skip"));
 

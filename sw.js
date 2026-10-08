@@ -1,7 +1,7 @@
 // LaoLao service worker: network-first for scripts & styles so bug fixes load immediately; offline fallback from cache.
-const SHELL = "laolao-shell-v22", RUNTIME = "laolao-runtime-v22";
+const SHELL = "laolao-shell-v23", RUNTIME = "laolao-runtime-v23";
 const CORE = [
-  "./","index.html","admin/index.html","css/app.css","css/admin.css","manifest.webmanifest","icon.svg",
+  "./","index.html","admin/index.html","css/app.css","css/admin.css","manifest.webmanifest","icon.svg","logo-mark.svg","favicon-32.png","apple-touch-icon.png","icon-192.png",
   "js/config.js","js/api/index.js","js/api/supabase.js","js/api/local.js",
   "js/shared/ui.js","js/shared/i18n.js","js/shared/content.js","js/shared/video.js","js/shared/dict.js","js/shared/engine.js","js/shared/speech.js","js/shared/audio-proc.js","js/shared/widgets.js","js/shared/quiz.js","js/shared/setup.js","js/shared/lao-decorations.js","js/shared/scoring.js","js/shared/features.js","js/shared/access.js","js/shared/billing.js","js/shared/plan-format.js",
   "js/shared/handwriting/geometry.js","js/shared/handwriting/model.js","js/shared/handwriting/recognizer.js","js/shared/handwriting/scorer.js","js/shared/handwriting/pad.js","js/shared/handwriting/animator.js",
