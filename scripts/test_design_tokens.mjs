@@ -22,7 +22,7 @@ const html = ["index.html", "admin/index.html"];
 ok(![...html, ...js].some(f => /tailwind/i.test(read(f))), "no Tailwind in the pages or the code");
 
 // raw colours in code
-const ART = [/welcome-scenes\.js$/, /lao-decorations\.js$/, /\/handwriting\//, /views-billing\.js$/ /* printable receipt */, /admin\/schemas\.js$/ /* placeholder text */];
+const ART = [/welcome-scenes\.js$/, /lao-decorations\.js$/, /\/handwriting\//, /views-billing\.js$/ /* printable receipt */, /admin\/schemas\.js$/ /* placeholder text */, /logo-data\.js$/ /* brand logo */];
 const raw = [];
 for (const f of js.filter(f => !ART.some(r => r.test(f)))){
   read(f).split("\n").forEach((line, i) => { const m = line.match(/#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b(?![\w-])|rgba?\(\s*\d/);

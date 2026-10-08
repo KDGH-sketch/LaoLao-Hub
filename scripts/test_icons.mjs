@@ -17,7 +17,7 @@ for (const f of ["logo-mark.svg", "icon.svg"]){
   ok(/viewBox="0 0 512 512"/.test(s) && !/\swidth="/.test(s.slice(0, 200)), f + ": 0 0 512 512 frame, no fixed size (scales with CSS)");
   ok(/role="img"/.test(s) && /<title>LaoLao<\/title>/.test(s), f + ": has a name for screen readers");
   const ids = [...s.matchAll(/id="([^"]+)"/g)].map(m => m[1]);
-  ok(ids.every(i => /^ll-/.test(i)), f + ": ids are prefixed, so two logos on one page don't clash", ids);
+  ok(ids.every(i => /^(ll|logo)-/.test(i)), f + ": ids are prefixed, so two logos on one page don't clash", ids);
   ok(!/#000000|#000"/i.test(s), f + ": no leftover black from the trace");
   ok(s.length < 6000, f + ": small (" + s.length + " bytes)");
 }
@@ -45,7 +45,8 @@ for (const page of ["index.html", "admin/index.html"]){
 }
 const sw = read("sw.js").toString();
 for (const f of ["icon.svg", "logo-mark.svg", "favicon-32.png", "apple-touch-icon.png"]) ok(sw.includes(`"${f}"`), "works offline: sw.js caches " + f);
-ok(read("js/shared/ui.js").toString().includes('"../../logo-mark.svg"'), "the in-app logo loads logo-mark.svg");
+ok(sw.includes('"js/shared/logo-data.js"'), "works offline: sw.js caches the inline logo data");
+ok(/id="logo-circle"/.test(read("logo-mark.svg")) && /id="logo-letter-big"/.test(read("logo-mark.svg")) && /id="logo-letter-small"/.test(read("logo-mark.svg")), "logo-mark.svg parts have their ids");
 
 console.log(failed ? `\n${failed} icon checks FAILED` : "\nAll icon checks passed");
 process.exit(failed ? 1 : 0);

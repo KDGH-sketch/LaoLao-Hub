@@ -1,6 +1,6 @@
 :root{
   --bg:#F0F7FD; --surface:#FFFFFF; --surface-2:#E4EFF9; --surface-3:#D3E4F4;
-  --ink:#0A1B2E; --ink-2:#28425C; --ink-3:#4A6685; --line:#CFE2F4; --line-2:#B5D2EC;   /* ink-3 / accent: 4.5:1 or better on white and surface-2 (WCAG AA) */
+  --lm-stroke:#2D82DC; --ink:#0A1B2E; --ink-2:#28425C; --ink-3:#4A6685; --line:#CFE2F4; --line-2:#B5D2EC;   /* ink-3 / accent: 4.5:1 or better on white and surface-2 (WCAG AA) */
   --accent:#0270AC; --accent-hover:#025C8F; --accent-2:#E0F2FE; --accent-3:#BAE6FD; --accent-ink:#FFFFFF;
   --accent-grad:linear-gradient(135deg, #0379B9 0%, #025C8F 100%);   /* white text 4.7:1 or better everywhere on it */
   --violet:#6D28D9; --violet-2:#EDE9FE;
@@ -29,7 +29,7 @@
 :root[data-theme="night"],
 :root[data-theme="dark"]{
   --bg:#08121D; --surface:#0E1B2A; --surface-2:#16283D; --surface-3:#1E3652;
-  --ink:#F0F7FD; --ink-2:#A4C2E0; --ink-3:#86A6C4; --line:#1C344E; --line-2:#284B6E;
+  --lm-stroke:#57C7FB; --ink:#F0F7FD; --ink-2:#A4C2E0; --ink-3:#86A6C4; --line:#1C344E; --line-2:#284B6E;
   --accent:#38BDF8; --accent-hover:#7DD3FC; --accent-2:#0E2A44; --accent-3:#133E64; --accent-ink:#061424;
   --accent-grad:linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
   --jade:#34D399; --jade-2:#053B2D; --warn:#FBBF24; --warn-2:#451A03; --bad:#FB7185; --bad-2:#4C0519; --violet:#A78BFA; --violet-2:#2E1065; --shadow-sm:0 1px 2px rgba(0,0,0,.3),0 3px 10px rgba(0,0,0,.22);
@@ -42,7 +42,7 @@
   :root[data-theme="system"],
   :root[data-theme="auto"]{
     --bg:#08121D; --surface:#0E1B2A; --surface-2:#16283D; --surface-3:#1E3652;
-    --ink:#F0F7FD; --ink-2:#A4C2E0; --ink-3:#86A6C4; --line:#1C344E; --line-2:#284B6E;
+    --lm-stroke:#57C7FB; --ink:#F0F7FD; --ink-2:#A4C2E0; --ink-3:#86A6C4; --line:#1C344E; --line-2:#284B6E;
     --accent:#38BDF8; --accent-hover:#7DD3FC; --accent-2:#0E2A44; --accent-3:#133E64; --accent-ink:#061424;
     --accent-grad:linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
     --jade:#34D399; --jade-2:#053B2D; --warn:#FBBF24; --warn-2:#451A03; --bad:#FB7185; --bad-2:#4C0519; --violet:#A78BFA; --violet-2:#2E1065; --shadow-sm:0 1px 2px rgba(0,0,0,.3),0 3px 10px rgba(0,0,0,.22);
@@ -78,7 +78,17 @@ p{margin:0}
 .brand{display:flex;align-items:center;gap:12px;padding:6px 10px 18px}
 .seal{width:38px;height:38px;border-radius:12px;background:var(--accent-grad);color:#fff;display:grid;place-items:center;font:700 22px/1 var(--f-lo);flex:none;box-shadow:0 4px 12px rgba(2,132,199,.28);position:relative;overflow:hidden}
 .seal::before{content:"";position:absolute;inset:0;border-radius:12px;border:1.5px solid rgba(255,255,255,.45);pointer-events:none}
-.seal.logo{background:none;border-radius:50%;object-fit:contain;box-shadow:0 4px 12px rgba(2,61,189,.28);user-select:none}
+.seal.logo{background:none;border-radius:50%;box-shadow:0 4px 12px rgba(2,61,189,.28);user-select:none;overflow:visible}
+/* Logo draws itself on load (brandMark in ui.js): each outline draws (300 ms apart), then fills fade in and outlines fade out. 2.3 s. */
+.seal.lm-anim{animation:lmShadow .6s ease 1.7s both}
+.lm-anim .lm-part{stroke:var(--lm-stroke);stroke-width:1.5px;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round;
+  stroke-dasharray:1 1;stroke-dashoffset:1;fill-opacity:0;animation:lmDraw 1.1s cubic-bezier(.65,0,.35,1) forwards,lmFill .6s ease 1.7s forwards}
+.lm-anim .lm-big{animation-delay:.3s,1.7s}
+.lm-anim .lm-small{animation-delay:.6s,1.7s}
+@keyframes lmDraw{to{stroke-dashoffset:0}}
+@keyframes lmFill{to{fill-opacity:1;stroke-opacity:0}}
+@keyframes lmShadow{from{box-shadow:0 0 0 transparent}}
+@media (prefers-reduced-motion:reduce){.seal.lm-anim,.lm-anim .lm-part{animation:none;stroke:none;fill-opacity:1}}
 .seal::after{content:"";position:absolute;width:40px;height:24px;bottom:-6px;right:-8px;background:radial-gradient(ellipse at center,rgba(255,255,255,.35) 0%,transparent 70%);border-radius:50%;pointer-events:none}
 .brand b{display:block;font-size:1.15rem;letter-spacing:.01em;font-weight:700}
 .brand small{display:block;color:var(--ink-3);font-size:.75rem;line-height:1.2}
