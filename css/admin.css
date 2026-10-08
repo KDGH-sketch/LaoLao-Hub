@@ -429,3 +429,28 @@ table.tbl tr.clickable:hover td{background:var(--surface-2)}
 .fc-adm-k{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
 .fc-adm-t{display:grid;gap:2px;padding:10px;border-radius:12px;background:var(--surface-2);min-width:0}
 .fc-adm-t b{font:800 1.25rem/1.1 var(--f-display)}
+
+/* Excel / CSV importer (js/admin/import-sheet.js) */
+.imp-step h2{display:flex;align-items:center;gap:10px;margin:0;font-size:1.1rem}
+.imp-n{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font:800 .9rem var(--f-display);flex:none}
+.imp-types{flex-wrap:wrap}
+.imp-drop{display:grid;justify-items:center;gap:6px;padding:28px 16px;border:2px dashed var(--line-2);border-radius:var(--r);background:var(--surface-2);text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.imp-drop:hover,.imp-drop:focus-visible,.imp-drop.over{border-color:var(--accent);background:var(--accent-2);outline:none}
+.imp-drop .ic{width:var(--ic-lg);height:var(--ic-lg);color:var(--accent)}
+.imp-file{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.imp-file .ic{color:var(--jade)}
+.imp-map{display:flex;flex-wrap:wrap;gap:6px}
+.imp-sum{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.imp-sum > div{display:grid;gap:2px;padding:10px 12px;border-radius:12px;background:var(--surface-2)}
+.imp-sum b{font:800 1.4rem/1.1 var(--f-display)}
+.imp-sum span{font-size:.8rem;color:var(--ink-3)}
+.imp-sum .ok b{color:var(--jade)} .imp-sum .acc b{color:var(--accent)} .imp-sum .bad b{color:var(--bad)} .imp-sum .warn b{color:var(--warn)}
+.imp-table{max-height:460px;overflow:auto;border:1px solid var(--line);border-radius:12px}
+.imp-table .tbl tbody tr{cursor:default}
+.imp-table tr.bad td{background:color-mix(in srgb,var(--bad-2) 60%,transparent)}
+.imp-table td.lo{font-family:var(--f-lo);font-size:1.02rem}
+.imp-probs{font-size:.82rem;min-width:200px}
+.imp-probs .bad{color:var(--bad)} .imp-probs .warn{color:var(--warn)}
+.imp-opts{gap:18px}
+.imp-bar{height:10px;border-radius:99px;background:var(--surface-3);overflow:hidden}
+.imp-bar i{display:block;height:100%;width:0;background:var(--accent-grad);transition:width .2s}

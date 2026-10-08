@@ -17,7 +17,7 @@ const cache = {};   // collection → rows (for pickers)
 async function rows(col, force){ if (force || !cache[col]) cache[col] = await S.api.db.list(col); return cache[col]; }
 const titleOf = (type, d) => { const s = SCHEMAS[type]; const ti = s && s.title ? s.title(d) : d.title; return (ti && (tr(ti, lang()) || ti.en)) || d.hz || d.id; };
 let ENGINE = null, LEXICON = null;
-async function engine(){ await loadDict(); if (!LEXICON){ LEXICON = {}; (await rows("lexicon")).forEach(x => LEXICON[x.cat||x.id] = x.data); } if (!ENGINE) ENGINE = makeEngine(dict(), chars(), LEXICON); return ENGINE; }
+export async function engine(){ await loadDict(); if (!LEXICON){ LEXICON = {}; (await rows("lexicon")).forEach(x => LEXICON[x.cat||x.id] = x.data); } if (!ENGINE) ENGINE = makeEngine(dict(), chars(), LEXICON); return ENGINE; }
 export function autoPinyin(eng, zh){ const toks = eng.tokenize(segment(zh).join(" ")); return { tokens: toks.map(x=>({ z:x.z, p:x.p })), py: eng.pinyinLine(toks) }; }
 
 // ---------- content home ----------
