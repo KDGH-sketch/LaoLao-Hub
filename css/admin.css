@@ -424,3 +424,8 @@ table.tbl tr.clickable:hover td{background:var(--surface-2)}
 .vs-meter{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
 .vs-meter i{display:block;height:100%;border-radius:inherit;background:var(--accent-grad)}
 @media (max-width:1000px){.vs-left{position:static}}
+
+/* learner page: vocabulary practice (Flashcard Studio) */
+.fc-adm-k{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.fc-adm-t{display:grid;gap:2px;padding:10px;border-radius:12px;background:var(--surface-2);min-width:0}
+.fc-adm-t b{font:800 1.25rem/1.1 var(--f-display)}

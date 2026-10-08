@@ -5,6 +5,7 @@ import { loadBundle, SKILLS, TIERS } from "../shared/content.js";
 import { createAccessControl } from "../shared/access.js";
 import { loadDict, dict, chars, mergeVocabulary } from "../shared/dict.js";
 import { makeEngine } from "../shared/engine.js";
+import { updateStats, isTricky, srsGradeFor } from "../shared/flashcards.js";
 import { setSpeechSettings, setAudioLibrary, setAudioGate } from "../shared/speech.js";
 import { ctx } from "../shared/widgets.js";
 import { mergeRules, lessonPoints, reviewPoints, dailyAward, levelFromXP, wilsonLower, skillMastery, earnedAchievements, handwritingRound } from "../shared/scoring.js";
@@ -286,6 +287,29 @@ export function srsGrade(id, q){
   award(reviewPoints(q, A.rules), "review");
 }
 export const wordsMastered = () => Object.values(A.srs).filter(x=>x.type==="w" && x.reps>=3).length;
+
+// ---------- flashcards ----------
+// Each word's flashcard statistics live in its review item ("st": seen, ok, almost, miss, skip, hints, streak), so the
+// learner's own row holds them. A summary (counts, tricky words) goes in progress.vocab, which admins can read.
+export const wordItems = () => Object.fromEntries(Object.values(A.srs).filter(x => x.type==="w" && x.w).map(x => [x.w, x]));
+export function recordCard(w, outcome, { hints = 0 } = {}){
+  const id = safeId("w:"+w);
+  srsAdd(id, { type:"w", w });
+  const c = A.srs[id];
+  c.st = updateStats(c.st, outcome, { hints });
+  if (outcome === "skipped"){ const { id:_, ...rest } = c; A.api.db.set(`reviews/${A.user.uid}/items/${id}`, rest).catch(()=>{}); touchDay(); }
+  else srsGrade(id, srsGradeFor(outcome, hints));          // schedules the next review, saves the item, gives XP
+  const v = A.prog.vocab = Object.assign({ seen:0, known:0, almost:0, missed:0, skipped:0, hints:0, rounds:0 }, A.prog.vocab || {});
+  v.seen++; v[outcome]++; v.hints += hints;
+  progUpdate({ "vocab.seen":A.api.db.inc(1), ["vocab."+outcome]:A.api.db.inc(1), "vocab.hints":A.api.db.inc(hints) });
+}
+export const trickyWords = () => Object.values(A.srs).filter(x => x.type==="w" && isTricky(x.st))
+  .sort((a,b) => (b.st.miss+b.st.skip) - (a.st.miss+a.st.skip)).map(x => ({ w:x.w, miss:x.st.miss, skip:x.st.skip }));
+export function recordCardRound(sum, { mode, source }){
+  const v = A.prog.vocab = Object.assign({ rounds:0 }, A.prog.vocab || {}); v.rounds = (v.rounds||0) + 1;
+  progUpdate({ "vocab.rounds":A.api.db.inc(1), "vocab.tricky":trickyWords().slice(0,20), "vocab.lastAt":new Date() });
+  logEvent("flashcards", { mode, source, n:sum.cards, known:sum.known, almost:sum.almost, missed:sum.missed, skipped:sum.skipped, hints:sum.hints, pct:sum.pct, ms:sum.ms });
+}
 
 // ---------- bookmarks ----------
 export const isSaved = id => !!A.saved[safeId(id)];

@@ -338,7 +338,7 @@ VIEWS.vocab = ({ words, title, lv }) => {
   const listFor = () => words || Object.keys(D).filter(k => D[k].h===level && k.length<=4).sort((a,b)=>D[a].fq-D[b].fq);
   const draw = () => { box.innerHTML = ""; const ws = listFor();
     box.append(h("div",{class:"row",style:"margin-bottom:12px"}, h("span",{class:"muted"}, ws.length+" "+t("word_count")+" · "+wordsMastered()+" "+t("learned_words")),
-      h("button",{class:"btn sm primary",onclick:()=>{ const qb = h("div",{class:"quiz"}); box.prepend(qb); runQuiz(qb, ws.slice().sort(()=>Math.random()-.5).slice(0,12).map(w => ({ type:"flashcard", skill:"vocabulary", prompt:{ zh:w, py:D[w]?D[w].p:"" }, back:{ en:D[w]?D[w].en:"", lo:D[w]?D[w].lo:"" }, w })), { key:"vocab-cards", onAnswer:(q,ok,m)=>{ recordAnswer("vocabulary",ok,m); if(!ok) import("./core.js").then(m=>m.srsAdd("w:"+q.w,{type:"w",w:q.w})); }, onExit:()=>draw() }); }}, icon("review"), t("flashcards"))),
+      h("button",{class:"btn sm primary",onclick:()=>go("cards", words ? { words, title } : { stage:level })}, icon("cards"), t("fc_title"))),
       h("div",{class:"vgrid"}, ws.slice(0,300).map(w => h("button",{class:"vcard",onclick:()=>openWord(w)}, h("span",{class:"hz lo",lang:"lo"},w), h("span",{html:pyHTML(D[w]?D[w].p:"")}), h("span",{class:"m"+(EL==="lo"&&D[w]&&D[w].lo?" lo":"")}, (meaning(w,EL)||"").split(";")[0].slice(0,40)))))); };
   const seg = words ? null : h("div",{class:"seg",style:"margin-bottom:14px"}, [1,2,3,4,5,6].map(n => h("button",{"aria-pressed":String(level===n),onclick:e=>{ level=n; $$("button",seg).forEach(b=>b.setAttribute("aria-pressed","false")); e.currentTarget.setAttribute("aria-pressed","true"); draw(); }}, "Stage "+n)));
   draw();

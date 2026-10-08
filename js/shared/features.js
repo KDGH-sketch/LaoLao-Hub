@@ -27,7 +27,7 @@ export const FEATURES = [
     label:{ en:"Sentence generator", lo:"ເຄື່ອງສ້າງປະໂຫຍກ", zh:"造句器" }, desc:{ en:"Generate new practice sentences", lo:"ສ້າງປະໂຫຍກໃໝ່ເພື່ອຝຶກ", zh:"生成新的练习句子" } },
   { key:"grammar",             group:"learn",    routes:["grammar","grammarItem"],
     label:{ en:"Grammar guides", lo:"ໄວຍາກອນ", zh:"语法" }, desc:{ en:"Grammar explanations", lo:"ຄຳອະທິບາຍໄວຍາກອນ", zh:"语法讲解" } },
-  { key:"vocab",               group:"learn",    routes:["vocab"],
+  { key:"vocab",               group:"learn",    routes:["vocab","cards"],
     label:{ en:"Vocabulary & flashcards", lo:"ຄຳສັບ ແລະ ບັດຄຳ", zh:"词汇与卡片" }, desc:{ en:"Word lists and flashcards", lo:"ລາຍການຄຳສັບ ແລະ ບັດຄຳ", zh:"词表与闪卡" } },
   { key:"dialogues",           group:"learn",    routes:["dialogue"],
     label:{ en:"Dialogues", lo:"ບົດສົນທະນາ", zh:"对话" }, desc:{ en:"Conversation dialogues", lo:"ບົດສົນທະນາ", zh:"情景对话" } },

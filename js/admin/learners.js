@@ -138,6 +138,19 @@ export async function viewLearner({ uid }){
     h("div",{class:"stack",style:"gap:8px"}, SKILLS.map(k => { const s = sk[k]||{r:0,t:0}; const pct = s.t ? Math.round(100*s.r/s.t) : 0;
       return h("div",{class:"skill"}, h("span",null,t("sk_"+k)), h("div",{class:"bar"},h("i",{style:`width:${pct}%`})), h("span",{class:"tabnum small"}, s.t?pct+"%":"—")); })),
     h("p",{class:"small muted"}, t("lessons_done")+": "+Object.values((prog&&prog.lessons)||{}).filter(x=>x.done).length+" · "+t("patterns_learned")+": "+Object.keys((prog&&prog.patterns)||{}).length));
+  // vocabulary practice (Flashcard Studio): totals and tricky words from progress.vocab, recent rounds from the events
+  const V = (prog && prog.vocab) || null, rounds = events.filter(e=>e.type==="flashcards");
+  const vStat = (label, val) => h("div",{class:"fc-adm-t"}, h("b",{class:"tabnum"}, String(val)), h("span",{class:"small muted"}, label));
+  const vocabBox = h("section",{class:"panel"}, h("h3",null,t("fc_adm_title")),
+    V && V.seen ? h("div",{class:"stack",style:"gap:10px"},
+      h("div",{class:"fc-adm-k"}, vStat(t("fc_adm_cards"), V.seen||0), vStat(t("fc_adm_rounds"), V.rounds||0),
+        vStat(t("fc_adm_acc"), Math.round(100*((V.known||0)+(V.almost||0))/Math.max(1,(V.seen||0)-(V.skipped||0)))+"%"),
+        vStat(t("fc_r_missed"), V.missed||0), vStat(t("fc_r_skipped"), V.skipped||0), vStat(t("fc_r_hints"), V.hints||0)),
+      (V.tricky||[]).length ? h("div",null, h("div",{class:"small",style:"font-weight:700;margin-bottom:6px"}, t("fc_s_tricky")+" ("+V.tricky.length+")"),
+        h("div",{class:"row",style:"gap:6px"}, V.tricky.slice(0,20).map(x => h("span",{class:"chip warn"}, h("span",{class:"lo",lang:"lo"},x.w), " ×"+((x.miss||0)+(x.skip||0)))))) : null,
+      rounds.length ? h("details",null, h("summary",{class:"small"}, t("fc_adm_recent")+" ("+rounds.length+")"),
+        h("div",{class:"feed"}, rounds.slice(0,15).map(e => h("div",{class:"feed-row"}, h("span",{class:"small"}, (e.n||0)+" · "+(e.pct||0)+"% · "+(e.mode||"")+" · "+(e.source||"")+(e.skipped?" · ⏭ "+e.skipped:"")+(e.hints?" · 💡 "+e.hints:"")), h("span",{class:"small muted"}, fmtDate(e.at, lang(), true)))))) : null)
+    : h("p",{class:"muted"}, t("fc_adm_none")));
   const quizzes = events.filter(e=>e.type==="quiz");
   const resBox = h("section",{class:"panel"}, h("h3",null,t("quiz_results")),
     quizzes.length ? h("div",{class:"feed"}, quizzes.slice(0,15).map(e => h("div",{class:"feed-row"}, h("span",null, e.ref+" · ", h("b",null, e.score+"/"+e.total)), h("span",{class:"small muted"}, fmtDate(e.at, lang(), true))))) : h("p",{class:"muted"},t("no_rows")),
@@ -152,7 +165,7 @@ export async function viewLearner({ uid }){
 
   const accessBox = await learnerAccessPanel(uid, a, setAccess);   // personal grants (overrides) and current usage counters
   const payBox = await learnerPaymentsPanel(uid);
-  wrap.append(h("div",{class:"grid2"}, h("div",{class:"stack"}, profile, accBox, payBox, accessBox), h("div",{class:"stack"}, progBox, resBox, notesBox)));
+  wrap.append(h("div",{class:"grid2"}, h("div",{class:"stack"}, profile, accBox, payBox, accessBox), h("div",{class:"stack"}, progBox, vocabBox, resBox, notesBox)));
   return wrap;
 }
 

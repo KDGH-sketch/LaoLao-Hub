@@ -245,9 +245,12 @@ export function questionEl(q, L, onResult, onNext){
       break;
     }
     case "flashcard": {
-      const back = h("div",{class:"stack",style:"align-items:center;gap:6px",hidden:true}, q.prompt.py ? h("div",{style:"font-size:1.3rem",html:pyHTML(q.prompt.py)}) : null, h("div",{style:"font-size:1.2rem",class:L==="lo"?"lo":""}, tr(q.back||{}, L)));
+      // the back stays hidden until Flip (a plain [hidden] loses to .stack's display:flex), and is never empty:
+      // a missing or blank translation falls back to another language
+      const bk = q.back || {}, backTxt = [bk[L], bk.en, bk.lo, bk.zh].find(x => x && String(x).trim()) || "";
+      const back = h("div",{class:"stack fc-qback",style:"align-items:center;gap:6px;display:none"}, q.prompt.py ? h("div",{style:"font-size:1.3rem",html:pyHTML(q.prompt.py)}) : null, h("div",{style:"font-size:1.2rem",class:backTxt===bk.lo&&L==="lo"?"lo":""}, backTxt));
       const btns = h("div",{class:"row",style:"justify-content:center",hidden:true}, h("button",{class:"btn",onclick:()=>finish(false, null, { self:true })}, t("q_didnt")), h("button",{class:"btn jade",onclick:()=>finish(true, null, { self:true })}, t("q_knew")));
-      box.append(h("div",{class:"flash"}, h("div",{class:"front lo",lang:"lo"}, q.prompt.zh), back, h("button",{class:"btn primary",onclick:e=>{ back.hidden=false; btns.hidden=false; e.currentTarget.remove(); speak(q.prompt.zh); }}, t("q_flip"))), btns);
+      box.append(h("div",{class:"flash"}, h("div",{class:"front lo",lang:"lo"}, q.prompt.zh), back, h("button",{class:"btn primary",onclick:e=>{ back.style.display="flex"; btns.hidden=false; e.currentTarget.remove(); speak(q.prompt.zh); }}, t("q_flip"))), btns);
       break;
     }
     default: box.append(h("p",null,"Unknown question type: "+q.type), h("button",{class:"btn",onclick:()=>finish(false, null, { skipped:true })},t("q_skip")));
