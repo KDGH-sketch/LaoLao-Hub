@@ -79,7 +79,7 @@ p{margin:0}
 .seal{width:38px;height:38px;border-radius:12px;background:var(--accent-grad);color:#fff;display:grid;place-items:center;font:700 22px/1 var(--f-lo);flex:none;box-shadow:0 4px 12px rgba(2,132,199,.28);position:relative;overflow:hidden}
 .seal::before{content:"";position:absolute;inset:0;border-radius:12px;border:1.5px solid rgba(255,255,255,.45);pointer-events:none}
 .seal.logo{background:none;border-radius:50%;box-shadow:0 4px 12px rgba(2,61,189,.28);user-select:none;overflow:visible}
-/* Logo hover (brandMark in ui.js adds .lm-hover on pointer enter, 700 ms): a little pop, a soft white band sweeping across
+/* Logo effect (brandMark in ui.js adds .lm-hover on pointer enter and every 5 s, 700 ms): a little pop, a soft white band sweeping across
    the circle (clipped to it), and a wiggle of the small letter. */
 .seal.logo{transform-origin:50% 50%}
 .seal.lm-hover{animation:lmPop .7s cubic-bezier(.3,0,.3,1)}

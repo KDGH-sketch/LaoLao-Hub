@@ -57,11 +57,18 @@ ok(Math.abs(w1.smallRot) > 5, "the small letter wiggles", w1);
 await b.eval(`document.querySelector(${JSON.stringify(SEL)}).getAnimations({ subtree: true }).forEach(a => a.finish())`); await sleep(800);
 const after = await state();
 ok(!after.hover && after.scale === 1 && after.smallRot === 0, "after 700 ms: back to normal, ready for the next hover", after);
+// without touching it: the effect plays by itself every 5 s
+await b.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: 5, y: 600 });
+const countPlays = ms => b.eval(`new Promise(res => { let n = 0; const s = document.querySelector(${JSON.stringify(SEL)});
+  s.addEventListener("animationstart", e => { if (e.animationName === "lmPop") n++; }); setTimeout(() => res(n), ${ms}); })`);
+const plays = await countPlays(10600);
+ok(plays >= 2 && plays <= 3, "plays by itself every 5 s (" + plays + " times in 10.6 s)", plays);
 await b.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
 await b.goto(srv.base + "/"); await b.waitFor(`!!document.querySelector(${JSON.stringify(SEL)})`, 60000); await sleep(600);
 await hoverIn(); await sleep(100);
 const rm = await state();
 ok(!rm.hover && rm.anims === 0, "reduced motion: hovering does nothing", rm);
+ok((await countPlays(5600)) === 0, "reduced motion: no automatic replay either");
 await b.send("Emulation.setEmulatedMedia", { features: [] });
 
 console.log("learner app");

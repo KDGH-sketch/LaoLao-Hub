@@ -127,7 +127,7 @@ const IC = {
 // The LaoLao logo, inline so it can animate (shapes from logo-data.js, built with logo-mark.svg by scripts/build_icons.mjs).
 // Decorative: the app name is always written next to it. The first copy on a page gets the ids #logo-circle,
 // #logo-letter-big and #logo-letter-small; later copies get a "-2", "-3"… suffix so ids and gradients never clash.
-// Hover (pointer enter): .lm-hover plays once, 700 ms (CSS in app.css): the logo scales to 1.06 and back, a soft white
+// On hover (pointer enter) and every 5 s: .lm-hover plays once, 700 ms (CSS in app.css): the logo scales to 1.06 and back, a soft white
 // band sweeps across the circle (clipped to it) and the small letter wiggles. Never with reduced motion.
 let logoSeq = 0;
 export function brandMark(cls){
@@ -145,12 +145,17 @@ export function brandMark(cls){
     `<g clip-path="url(#logo-c${sfx})"><path id="logo-letter-big${sfx}" fill="${C.big}" fill-rule="evenodd" d="${LOGO.big}"/>` +
     `<path id="logo-letter-small${sfx}" class="lm-small" fill="${C.small}" fill-rule="evenodd" d="${LOGO.small}"/>` +
     `<g class="lm-sweep"><rect x="-90" y="-160" width="180" height="832" transform="rotate(20 0 256)" fill="url(#logo-s${sfx})"/></g></g>`;
-  s.addEventListener("pointerenter", () => {
-    if (reducedMotion() || s.classList.contains("lm-hover")) return;
-    s.classList.add("lm-hover");
-    setTimeout(() => s.classList.remove("lm-hover"), 720);
-  });
+  s.addEventListener("pointerenter", () => playLogo(s));
+  if (!logoTimer) logoTimer = setInterval(() => { if (!document.hidden) document.querySelectorAll("svg.seal.logo").forEach(playLogo); }, LOGO_LOOP_MS);
   return s;
+}
+// The same effect also plays by itself every 5 s on every logo on the page (not while the tab is hidden).
+const LOGO_LOOP_MS = 5000;
+let logoTimer = 0;
+function playLogo(s){
+  if (reducedMotion() || s.classList.contains("lm-hover") || !s.isConnected) return;
+  s.classList.add("lm-hover");
+  setTimeout(() => s.classList.remove("lm-hover"), 720);
 }
 export function icon(n, cls){ const s=document.createElementNS("http://www.w3.org/2000/svg","svg"); s.setAttribute("viewBox","0 0 24 24"); s.setAttribute("aria-hidden","true"); s.setAttribute("class", cls ? "ic "+cls : "ic"); s.innerHTML = IC[n] || IC.more; return s; }
 

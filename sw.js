@@ -1,5 +1,5 @@
 // LaoLao service worker: network-first for scripts & styles so bug fixes load immediately; offline fallback from cache.
-const SHELL = "laolao-shell-v26", RUNTIME = "laolao-runtime-v26";
+const SHELL = "laolao-shell-v27", RUNTIME = "laolao-runtime-v27";
 const CORE = [
   "./","index.html","admin/index.html","css/app.css","css/admin.css","manifest.webmanifest","icon.svg","logo-mark.svg","favicon-32.png","apple-touch-icon.png","icon-192.png",
   "js/config.js","js/api/index.js","js/api/supabase.js","js/api/local.js",
