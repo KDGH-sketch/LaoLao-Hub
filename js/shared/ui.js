@@ -127,16 +127,14 @@ const IC = {
 // The LaoLao logo, inline so it can draw itself (shapes from logo-data.js, built with logo-mark.svg by scripts/build_icons.mjs).
 // Decorative: the app name is always written next to it. The first copy on a page gets the ids #logo-circle,
 // #logo-letter-big and #logo-letter-small; later copies get a "-2", "-3"… suffix so ids and gradients never clash.
-// Logos created together when the page first shows its shell draw themselves (.lm-anim, about 2.3 s, CSS in app.css);
-// any made later (re-renders, language switch) appear finished.
-let logoSeq = 0, logoT0 = 0;
+// Every logo loops its line-drawing animation (.lm-anim, 6 s, CSS in app.css), except with reduced motion.
+let logoSeq = 0;
 export function brandMark(cls){
-  const n = ++logoSeq, sfx = n === 1 ? "" : "-" + n, now = performance.now();
-  if (!logoT0) logoT0 = now;
+  const n = ++logoSeq, sfx = n === 1 ? "" : "-" + n;
   const C = LOGO.colors, [x1, y1, x2, y2] = LOGO.grad, s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   s.setAttribute("viewBox", "0 0 512 512"); s.setAttribute("width", "38"); s.setAttribute("height", "38");
   s.setAttribute("aria-hidden", "true"); s.setAttribute("focusable", "false");
-  s.setAttribute("class", "seal logo" + (cls ? " " + cls : "") + (now - logoT0 < 800 && !reducedMotion() ? " lm-anim" : ""));
+  s.setAttribute("class", "seal logo" + (cls ? " " + cls : "") + (!reducedMotion() ? " lm-anim" : ""));
   s.innerHTML = `<defs><linearGradient id="logo-g${sfx}" gradientUnits="userSpaceOnUse" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">` +
     `<stop offset="0" stop-color="${C.dark}"/><stop offset=".5" stop-color="${C.mid}"/><stop offset="1" stop-color="${C.light}"/></linearGradient>` +
     `<clipPath id="logo-c${sfx}"><circle cx="256" cy="256" r="256"/></clipPath></defs>` +

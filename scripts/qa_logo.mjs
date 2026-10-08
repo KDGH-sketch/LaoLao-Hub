@@ -39,7 +39,9 @@ const look = sel => b.eval(`[...document.querySelector(${JSON.stringify(sel)}).q
 console.log("animation");
 await b.goto(srv.base + "/"); await b.waitFor(`!!document.querySelector(".wl-brand svg")`, 60000);
 const start = await b.eval(`(() => { const s = document.querySelector(".wl-brand svg"); return { anim: s.classList.contains("lm-anim"), names: getComputedStyle(s.querySelector(".lm-big")).animationName, delays: [...s.querySelectorAll(".lm-part")].map(p => getComputedStyle(p).animationDelay) }; })()`);
-ok(start.anim && /lmDraw/.test(start.names) && /lmFill/.test(start.names), "the logo draws itself on load", start);
+ok(start.anim && /lmDraw/.test(start.names) && /lmFill/.test(start.names), "the logo draws itself", start);
+const loops = await b.eval(`getComputedStyle(document.querySelector(".wl-brand svg .lm-big")).animationIterationCount`);
+ok(/^infinite/.test(loops), "and keeps looping", loops);
 ok(start.delays.map(d => d.split(",")[0].trim()).join(" ") === "0s 0.3s 0.6s", "outlines start 300 ms apart", start.delays);
 // look at fixed moments of the animation (paused), so a slow machine can't skew the result
 const at = ms => b.eval(`document.querySelector(".wl-brand svg").getAnimations({ subtree: true }).forEach(a => { a.pause(); a.currentTime = ${ms}; })`);
@@ -49,6 +51,12 @@ ok(early.every(p => p.fill < 0.05) && early[0].stroke > 0.5 && early[0].dash > 0
 await at(2300);
 const end = await look(".wl-brand svg");
 ok(end.every(p => p.fill > 0.99 && p.stroke < 0.01), "after about 2.3 s: filled, outlines gone", end);
+await at(4000);
+const hold = await look(".wl-brand svg");
+ok(hold.every(p => p.fill > 0.99 && p.stroke < 0.01), "at 4 s: holds the finished logo", hold);
+await at(5600);
+const back = await look(".wl-brand svg");
+ok(back.every(p => p.fill < 0.01 && p.stroke > 0.99), "at 5.6 s: back to outlines, erasing before the next round", back);
 await b.screenshot(path.join(SHOTS, "logo-anim-end.png"));
 await b.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
 await b.goto(srv.base + "/"); await b.waitFor(`!!document.querySelector(".wl-brand svg")`, 60000); await sleep(100);

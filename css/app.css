@@ -79,15 +79,16 @@ p{margin:0}
 .seal{width:38px;height:38px;border-radius:12px;background:var(--accent-grad);color:#fff;display:grid;place-items:center;font:700 22px/1 var(--f-lo);flex:none;box-shadow:0 4px 12px rgba(2,132,199,.28);position:relative;overflow:hidden}
 .seal::before{content:"";position:absolute;inset:0;border-radius:12px;border:1.5px solid rgba(255,255,255,.45);pointer-events:none}
 .seal.logo{background:none;border-radius:50%;box-shadow:0 4px 12px rgba(2,61,189,.28);user-select:none;overflow:visible}
-/* Logo draws itself on load (brandMark in ui.js): each outline draws (300 ms apart), then fills fade in and outlines fade out. 2.3 s. */
-.seal.lm-anim{animation:lmShadow .6s ease 1.7s both}
+/* Logo animation, looping every 6 s (brandMark in ui.js): the outlines (pathLength=1) draw themselves 300 ms apart,
+   the colours fill in and the outlines fade, it holds, then the colours fade back to outlines, which erase themselves. */
+.seal.lm-anim{animation:lmShadow 6s ease infinite}
 .lm-anim .lm-part{stroke:var(--lm-stroke);stroke-width:1.5px;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round;
-  stroke-dasharray:1 1;stroke-dashoffset:1;fill-opacity:0;animation:lmDraw 1.1s cubic-bezier(.65,0,.35,1) forwards,lmFill .6s ease 1.7s forwards}
-.lm-anim .lm-big{animation-delay:.3s,1.7s}
-.lm-anim .lm-small{animation-delay:.6s,1.7s}
-@keyframes lmDraw{to{stroke-dashoffset:0}}
-@keyframes lmFill{to{fill-opacity:1;stroke-opacity:0}}
-@keyframes lmShadow{from{box-shadow:0 0 0 transparent}}
+  stroke-dasharray:1 1;stroke-dashoffset:1;fill-opacity:0;animation:lmDraw 6s cubic-bezier(.65,0,.35,1) infinite,lmFill 6s ease infinite}
+.lm-anim .lm-big{animation-delay:.3s,0s}
+.lm-anim .lm-small{animation-delay:.6s,0s}
+@keyframes lmDraw{0%{stroke-dashoffset:1}18.3%,88%{stroke-dashoffset:0}98%,100%{stroke-dashoffset:-1}}
+@keyframes lmFill{0%,28.3%{fill-opacity:0;stroke-opacity:1}38.3%,80%{fill-opacity:1;stroke-opacity:0}88%,100%{fill-opacity:0;stroke-opacity:1}}
+@keyframes lmShadow{0%,28.3%,88%,100%{box-shadow:0 0 0 transparent}38.3%,80%{box-shadow:0 4px 12px rgba(2,61,189,.28)}}
 @media (prefers-reduced-motion:reduce){.seal.lm-anim,.lm-anim .lm-part{animation:none;stroke:none;fill-opacity:1}}
 .seal::after{content:"";position:absolute;width:40px;height:24px;bottom:-6px;right:-8px;background:radial-gradient(ellipse at center,rgba(255,255,255,.35) 0%,transparent 70%);border-radius:50%;pointer-events:none}
 .brand b{display:block;font-size:1.15rem;letter-spacing:.01em;font-weight:700}
