@@ -14,6 +14,7 @@ import { LAB_VIEWS } from "./views-labs.js";
 import { MEDIA_VIEWS } from "./views-media.js";
 import { HANDWRITING_VIEWS } from "./views-handwriting.js";
 import { CARD_VIEWS } from "./views-cards.js";
+import { GRAMMAR_VIEWS } from "./views-grammar.js";
 import { VIEWS as BILLING_VIEWS } from "./views-billing.js";
 import { renderWelcome, pendingResource } from "./welcome.js";
 import { lockedPanel, featureForView, navLock, planLabel } from "./upgrade.js";
@@ -112,7 +113,7 @@ function renderDisabled(){
 }
 
 // ---------- shell ----------
-const VIEWS = Object.assign({}, LV.VIEWS, TV.VIEWS, LAB_VIEWS, MEDIA_VIEWS, HANDWRITING_VIEWS, BILLING_VIEWS, CARD_VIEWS, {
+const VIEWS = Object.assign({}, LV.VIEWS, TV.VIEWS, LAB_VIEWS, MEDIA_VIEWS, HANDWRITING_VIEWS, BILLING_VIEWS, CARD_VIEWS, GRAMMAR_VIEWS, {
   chars: HANDWRITING_VIEWS.handwriting, script_lab: HANDWRITING_VIEWS.handwriting
 });
 // Grouped so the sidebar reads as sections instead of one long flat list.

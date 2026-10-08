@@ -304,31 +304,7 @@ VIEWS.pattern = ({ n }) => {
   return root;
 };
 
-// ---------- grammar ----------
-VIEWS.grammar = () => {
-  const gs = Object.values(A.byType.grammar||{}).sort((a,b)=>(a.level-b.level)||((a.order||0)-(b.order||0)));
-  const lk = A.catalog.filter(c=>c.type==="grammar" && c.tier>A.tier);
-  return h("div",null, pageHead(t("nav_grammar")),
-    h("div",{class:"list-card"}, gs.map(g => h("button",{class:"item-row",onclick:()=>go("grammarItem",{id:g.id})}, h("span",{class:"chip lv"},"Stage "+g.level), h("span",null, h("div",{class:"ttl"},T(g.title)), h("div",{class:"sub hz lo"},g.structure)), icon("right"))),
-      lk.map(c => h("div",Object.assign(lockedRow(c.tier),{class:"item-row locked-row"}), icon("lock"), h("span",null,h("div",{class:"ttl"},T(c.title)), lockBadge(c.tier)), h("span")))),
-    h("p",{class:"muted small",style:"margin-top:14px"}, t("nav_patterns")+": ", h("button",{class:"linkbtn",onclick:()=>go("patterns")}, Object.keys(A.P).length+" "+t("patterns"))));
-};
-VIEWS.grammarItem = ({ id }) => {
-  const g = A.byType.grammar[id]; if (!g) return h("div",{class:"empty"},t("no_rows"));
-  logEvent("grammar", { ref:id }); touchDay();
-  const EL = expLang(), x = (g.tr[EL] && g.tr[EL].explain) ? g.tr[EL] : g.tr.en;
-  const root = h("div",{class:"stack-l"});
-  root.append(h("div",null, h("div",{class:"crumb"}, h("button",{onclick:()=>go("grammar")},t("nav_grammar")), "›", h("span",null,"Stage "+g.level)),
-    h("div",{class:"spread"}, h("h1",null,T(g.title)), toggleBtn("g:"+id, { type:"grammar", id, title:g.title }, "btn sm"))));
-  if (g.structure) root.append(h("section",{class:"sect"}, h("h2",null,t("structure")), formulaEl(g.structure.replace(/\s·\s/g," / "))));
-  root.append(h("section",{class:"sect"}, h("p",{class:"why"+(x===g.tr.lo?" lo":"")}, x.explain)));
-  if ((x.usage||[]).length) root.append(h("section",{class:"sect"}, h("h2",null,t("usage")), h("ul",{class:"obj"+(x===g.tr.lo?" lo":"")}, x.usage.map(u=>h("li",null,u)))));
-  if ((g.examples||[]).length) root.append(h("section",{class:"sect"}, h("h2",null,t("examples_label")), h("div",{class:"card",style:"padding-block:4px"}, g.examples.map(e=>sentenceEl(ensureTokens(e, A.engine), { open:false })))));
-  (g.mistakes||[]).forEach(m => root.append(h("div",{class:"mistake"}, h("span",{class:"mk-x"},"✗"), h("span",{class:"hz bad lo",lang:"lo"},m.wrong), h("span",{class:"mk-v"},"✓"), h("span",{class:"hz lo",lang:"lo"},m.right), h("p",{class:"reason"+(EL==="lo"&&m.tr.lo?" lo":"")}, T(m.tr)))));
-  const ps = (g.patterns||[]).map(n=>A.P[n]).filter(Boolean);
-  if (ps.length) root.append(h("section",{class:"sect"}, h("h2",null,t("related_patterns")), h("div",{class:"wordchips"}, ps.map(p => h("button",{onclick:()=>go("pattern",{n:p.n})}, "#"+p.n+" ", h("span",{class:"hz lo"},p.hz))))));
-  return root;
-};
+// ---------- grammar: js/learner/views-grammar.js (Grammar Studio) ----------
 
 // ---------- vocabulary ----------
 VIEWS.vocab = ({ words, title, lv }) => {

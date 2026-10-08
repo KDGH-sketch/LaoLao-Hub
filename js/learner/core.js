@@ -6,6 +6,7 @@ import { createAccessControl } from "../shared/access.js";
 import { loadDict, dict, chars, mergeVocabulary } from "../shared/dict.js";
 import { makeEngine } from "../shared/engine.js";
 import { updateStats, isTricky, srsGradeFor } from "../shared/flashcards.js";
+import { normalizeGrammar } from "../shared/grammar.js";
 import { setSpeechSettings, setAudioLibrary, setAudioGate } from "../shared/speech.js";
 import { ctx } from "../shared/widgets.js";
 import { mergeRules, lessonPoints, reviewPoints, dailyAward, levelFromXP, wilsonLower, skillMastery, earnedAchievements, handwritingRound } from "../shared/scoring.js";
@@ -144,6 +145,8 @@ export async function loadContent(){
   A.B = await loadBundle(A.api, A.tier) || { patterns:[], lessons:[], grammar:[], vocabulary:[], dialogues:[], quizzes:[], audio:[], paths:[], releases:[], lexicon:[], videos:[], tones:[], culture:[], characters:[], dictionary:[], catalog:[] };
   const B = A.B; A.byType = {};
   for (const ty of ["lessons","grammar","vocabulary","dialogues","quizzes","audio","paths","releases","videos","tones","culture","characters","dictionary"]) A.byType[ty] = Object.fromEntries((B[ty]||[]).map(d=>[d.id,d]));
+  // grammar rows come in two shapes (older ones keep the explanation in "body"); the pages read one
+  for (const id in A.byType.grammar) A.byType.grammar[id] = normalizeGrammar(A.byType.grammar[id]);
   A.P = {};
   (B.patterns||[]).forEach(p => { p.markers = (p.hz.match(/[\u0E80-\u0EFF\u4E00-\u9FA5\w]+/g)||[]); p.l = p.level; A.P[p.n] = p; });
   A.catalog = B.catalog || [];
@@ -287,6 +290,18 @@ export function srsGrade(id, q){
   award(reviewPoints(q, A.rules), "review");
 }
 export const wordsMastered = () => Object.values(A.srs).filter(x=>x.type==="w" && x.reps>=3).length;
+
+// ---------- grammar studio ----------
+// progress.grammar[id] = { learn, see, build (right answers), fix, best (challenge %), tries, masteredAt, reviews }
+const gKey = id => String(id).replace(/[.\s]/g, "_");
+export const grammarProgress = id => ((A.prog.grammar || {})[gKey(id)]) || {};
+export function saveGrammar(id, patch){
+  const k = gKey(id), cur = Object.assign({}, grammarProgress(id), patch, { at: Date.now() });
+  A.prog.grammar = Object.assign({}, A.prog.grammar, { [k]: cur });
+  const upd = {}; for (const f in patch) upd["grammar."+k+"."+f] = patch[f]; upd["grammar."+k+".at"] = cur.at;
+  progUpdate(upd); touchDay();
+  return cur;
+}
 
 // ---------- flashcards ----------
 // Each word's flashcard statistics live in its review item ("st": seen, ok, almost, miss, skip, hints, streak), so the

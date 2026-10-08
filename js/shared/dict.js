@@ -62,26 +62,37 @@ export function searchDict(q, limit=40){
   out.sort((a,b)=>b[0]-a[0]);
   return out.slice(0,limit).map(x=>x[1]);
 }
-export function segment(text){
-  const out=[]; let i=0;
-  while (i<text.length){
-    const c = text[i];
-    if (/\s/.test(c)){ i++; continue; }
-    if (/[.,!?;:()\[\]"']/.test(c)){ out.push(c); i++; continue; }
-    let matched = "";
-    const maxLen = Math.min(12, text.length - i);
-    for (let L = maxLen; L >= 1; L--){
-      const sub = text.substr(i, L);
-      if (DICT && DICT[sub]){ matched = sub; break; }
-    }
-    if (matched){
-      out.push(matched);
-      i += matched.length;
-    } else {
-      // Advance by 1 char or whitespace cluster
-      out.push(c);
-      i++;
+// Lao marks that belong to the letter before them (vowel signs above/below, tone marks), and vowels written before
+// their consonant (ເ ແ ໂ ໃ ໄ). A word boundary never falls between a mark and its letter.
+const MARK = /[ັິ-ຼ່-ໍ]/, LEAD = /[ເ-ໄ]/, STOP = /[\s.,!?;:()\[\]"'«»“”‘’…]/;
+const boundaryOk = (text, at) => at <= 0 || at >= text.length || (!MARK.test(text[at]) && !LEAD.test(text[at - 1]));
+const CONS = /[ກ-ຮໜ-ໟ]/;
+// The cheapest way to cut a run of Lao into pieces: a dictionary word costs 1; text the dictionary doesn't know costs
+// more the longer it is, and a lone consonant left over (the end of a word, e.g. the ວ of ແມວ) costs a lot.
+// So unknown words stay whole (ຂໍ, ແມວ) and are never cut into a letter and a loose vowel mark.
+function segmentRun(run, D){
+  const n = run.length, best = new Array(n + 1).fill(Infinity), cut = new Array(n + 1).fill(0);
+  best[n] = 0;
+  for (let i = n - 1; i >= 0; i--){
+    if (!boundaryOk(run, i)) continue;
+    for (let L = 1; L <= Math.min(12, n - i); L++){
+      const j = i + L; if (!boundaryOk(run, j) || best[j] === Infinity) continue;
+      const sub = run.slice(i, j), known = D && D[sub] && (L > 1 || !MARK.test(sub));
+      const cost = known ? 1 : 1 + 0.5 * L + (L === 1 && CONS.test(sub) ? 4 : 0);
+      if (cost + best[j] < best[i] || (cost + best[j] === best[i] && known)){ best[i] = cost + best[j]; cut[i] = j; }
     }
   }
+  const out = []; for (let i = 0; i < n && cut[i]; i = cut[i]) out.push(run.slice(i, cut[i]));
+  return out.length && out.join("") === run ? out : [run];
+}
+export function segment(text, D = DICT){
+  const out = []; let run = "";
+  const flush = () => { if (run){ out.push(...segmentRun(run, D)); run = ""; } };
+  for (const c of String(text || "")){
+    if (/\s/.test(c)){ flush(); continue; }
+    if (STOP.test(c)){ flush(); out.push(c); continue; }
+    run += c;
+  }
+  flush();
   return out;
 }

@@ -214,6 +214,7 @@ export function withTransition(update, { kind = "page", x = null, y = null } = {
   de.dataset.vt = kind;
   if (x != null){ de.style.setProperty("--vt-x", x + "px"); de.style.setProperty("--vt-y", y + "px"); }
   const tr = document.startViewTransition(() => Promise.race([Promise.resolve().then(update), new Promise(r => setTimeout(r, 450))]));
+  tr.ready.catch(() => {});                 // the browser cancels a transition when e.g. the screen rotates: not an error
   tr.finished.catch(() => {}).finally(() => { if (de.dataset.vt === kind) delete de.dataset.vt; });
   return tr.updateCallbackDone.catch(() => {});
 }

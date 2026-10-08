@@ -1287,6 +1287,25 @@
           "tr": {
             "en": "He likes Lao food."
           }
+        },
+        {
+          "zh": "ແມ່ກິນເຂົ້າໜຽວ.",
+          "py": "",
+          "tr": {
+            "en": "Mother eats sticky rice.",
+            "lo": "ແມ່ກິນເຂົ້າໜຽວ."
+          }
+        }
+      ],
+      "structure": "S + V + O",
+      "mistakes": [
+        {
+          "wrong": "ຂ້ອຍພາສາລາວຮຽນ",
+          "right": "ຂ້ອຍຮຽນພາສາລາວ",
+          "tr": {
+            "en": "The verb comes before the object: Subject → Verb → Object.",
+            "lo": "ກິລິຍາຢູ່ໜ້າກຳ: ປະທານ → ກິລິຍາ → ກຳ."
+          }
         }
       ]
     },
@@ -1316,6 +1335,25 @@
           "tr": {
             "en": "She has three friends."
           }
+        },
+        {
+          "zh": "ຂ້ອຍມີແມວສອງໂຕ.",
+          "py": "",
+          "tr": {
+            "en": "I have two cats.",
+            "lo": "ຂ້ອຍມີແມວສອງໂຕ."
+          }
+        }
+      ],
+      "structure": "N + Num + Clf",
+      "mistakes": [
+        {
+          "wrong": "ລາວມີສາມຄົນໝູ່",
+          "right": "ລາວມີໝູ່ສາມຄົນ",
+          "tr": {
+            "en": "Count in the order noun + number + classifier.",
+            "lo": "ນັບຕາມລຳດັບ ຄຳນາມ + ຕົວເລກ + ລັກສະນະນາມ."
+          }
         }
       ]
     },
@@ -1344,6 +1382,25 @@
           "py": "Phóp kan mǎi də̂ə.",
           "tr": {
             "en": "See you again soon!"
+          }
+        },
+        {
+          "zh": "ເຈົ້າ, ຂ້ອຍເຂົ້າໃຈແລ້ວ.",
+          "py": "",
+          "tr": {
+            "en": "Yes, I understand now.",
+            "lo": "ເຈົ້າ, ຂ້ອຍເຂົ້າໃຈແລ້ວ."
+          }
+        }
+      ],
+      "structure": "(ໂດຍ / ເຈົ້າ) + Statement + (ເດີ)",
+      "mistakes": [
+        {
+          "wrong": "ເດີ ພົບກັນໃໝ່",
+          "right": "ພົບກັນໃໝ່ເດີ",
+          "tr": {
+            "en": "The softening particle ເດີ goes at the end.",
+            "lo": "ຄຳລົງທ້າຍ ເດີ ຢູ່ທ້າຍປະໂຫຍກ."
           }
         }
       ]

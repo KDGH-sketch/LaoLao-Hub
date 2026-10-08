@@ -12,6 +12,7 @@ import { checkWebItem, uploadChecked, migrateLegacyPromo } from "./web-checks.js
 import { SCHEMAS, STEP_TYPE_TO_COL, APP_PAGES } from "./schemas.js";
 import { parseTime, formatTime, normalizeSegments } from "../shared/video.js";
 import { publishFlow } from "./main.js";
+import { normalizeGrammar, parseFormula, formulaMarkers, tagTokens, meaningful, wrongOrders, ROLES } from "../shared/grammar.js";
 
 const cache = {};   // collection → rows (for pickers)
 async function rows(col, force){ if (force || !cache[col]) cache[col] = await S.api.db.list(col); return cache[col]; }
@@ -308,6 +309,8 @@ export async function viewEditor({ type, id, isNew }){
   }
 
   let doc = !isNew && id ? await S.api.db.get(`${type}/${id}`).catch(()=>null) : null;
+  // older grammar rows keep the explanation in "body": open them in the editor's shape (saving writes the new one)
+  if (doc && type === "grammar") doc = Object.assign(normalizeGrammar(doc), { id: doc.id, version: doc.version, updatedAt: doc.updatedAt });
   let draft = JSON.parse(JSON.stringify(doc || Object.assign({ status:"draft", access:"free", order:0 }, s.defaults || {})));
   if (type==="patterns" && isNew && id) draft.n = parseInt(id.replace(/\D/g,""))||0;
 
@@ -404,11 +407,11 @@ export async function viewEditor({ type, id, isNew }){
       h("button",{class:"btn sm",onclick:async()=>{ const nid = id+"-copy-" + Date.now().toString(36).slice(-4); await saveContent(S.api, type, nid, Object.assign({}, draft, { status:"draft" }), S.me.uid); markUnpublished(); audit("duplicate", `${type}/${nid}`, "from "+id); go("editor",{type,id:nid}); }}, icon("copy"), t("duplicate")),
       h("button",{class:"btn sm ghost",style:"color:var(--bad)",onclick:async()=>{ if(await confirmDialog(t("delete_item"),t("confirm_delete"),t("delete_item"),t("cancel"),true)){ await S.api.db.del(`${type}/${id}`); await S.api.db.set("settings/bundle",{dirty:true},true); markUnpublished(); audit("delete", `${type}/${id}`); delete cache[type]; go("contentList",{type}); } }}, icon("trash"), t("delete_item"))) : null);
 
-  editorRoot.append(
+  editorRoot.append(...[
     h("div",{class:"crumb"}, h("button",{onclick:()=>go("content")}, t("adm_content")), "›", h("button",{onclick:()=>go("contentList",{type})}, t("type_"+type)||type), "›", h("span",{class:"mono"}, id || t("new_item"))),
     h("div",{class:"pagehead"}, h("h1",null, doc ? titleOf(type, doc) : t("new_item"))),
     !canEdit ? h("div",{class:"banner",style:"background:var(--surface-2);border-left:4px solid var(--violet);margin-bottom:14px;display:flex;align-items:center;gap:8px"}, icon("eye"), h("b",null,t("read_only_mode")+":"), h("span",null," Form fields are read-only and modifications cannot be saved.")) : null,
-    h("div",{class:"editor"}, form, side));
+    h("div",{class:"editor"}, form, side)].filter(Boolean));     // a missing (null) part would print as the text "null"
   return editorRoot;
 }
 
@@ -593,6 +596,37 @@ export function renderField(f, obj, type){
 }
 
 // ---------- previews & versions ----------
+// Grammar: how the point looks in the learners' Grammar Studio, and what it still needs
+function grammarStudioCheck(draft){
+  const out = h("div",{class:"stack",style:"gap:10px"});
+  const run = async () => {
+    const g = normalizeGrammar(await normalize("grammar", draft)), e = await engine().catch(()=>null), D = dict();
+    const parts = parseFormula(g.structure), marks = formulaMarkers(parts), warn = [], ok = [];
+    const RLN = c => (ROLES[c] || ROLES.W)[lang()] || (ROLES[c] || ROLES.W).en;
+    if (!g.structure) warn.push(L(["No Structure formula: learners see no building blocks. Example: S + ບໍ່ + V","ບໍ່ມີສູດໂຄງສ້າງ: ຜູ້ຮຽນຈະບໍ່ເຫັນບລັອກ. ຕົວຢ່າງ: S + ບໍ່ + V"]));
+    if (!g.tr.en.explain) warn.push(L(["No English explanation","ບໍ່ມີຄຳອະທິບາຍພາສາອັງກິດ"])); if (!g.tr.lo.explain) warn.push(L(["No Lao explanation","ບໍ່ມີຄຳອະທິບາຍພາສາລາວ"]));
+    if (g.examples.length < 3) warn.push(L(["Only "+g.examples.length+" example(s): Build and Fix work best with 3 or more","ມີຕົວຢ່າງ "+g.examples.length+" ປະໂຫຍກ: ຄວນມີ 3 ຂຶ້ນໄປ"]));
+    const rows = g.examples.map((x, i) => {
+      const toks = e ? (x.tokens && x.tokens.length ? x.tokens : e.tokenize(segment(x.zh).join(" ")).map(t => ({ z:t.z, p:t.p }))) : (x.tokens || []);
+      const tg = meaningful(tagTokens(toks, g.structure, D));
+      if (!(x.tr && (x.tr.en || x.tr.lo))) warn.push(L(["Example "+(i+1)+" has no translation","ຕົວຢ່າງທີ "+(i+1)+" ບໍ່ມີຄຳແປ"]));
+      if (marks.length && !marks.some(m => x.zh.includes(m))) warn.push(L(["Example "+(i+1)+" doesn't use the key word ("+marks.join(", ")+")","ຕົວຢ່າງທີ "+(i+1)+" ບໍ່ມີຄຳສຳຄັນ ("+marks.join(", ")+")"]));
+      if (tg.length > 10) warn.push(L(["Example "+(i+1)+" is long ("+tg.length+" words): Build uses sentences of 2–10 words","ຕົວຢ່າງທີ "+(i+1)+" ຍາວ ("+tg.length+" ຄຳ)"]));
+      const wo = wrongOrders(tg);
+      return h("div",{class:"stack",style:"gap:4px"}, h("div",{class:"gs-sent"}, tg.map(w => h("span",{class:"gb sm","data-role":w.role,title:RLN(w.role)}, h("b",{class:"lo"}, w.z)))),
+        h("small",{class:"muted"}, tg.map(w => RLN(w.role)).join(" · ")), wo.length ? h("small",{class:"muted"}, L(["Spot-the-mistake options: ","ຕົວເລືອກຂໍ້ຜິດ: "]) + wo.length) : null);
+    });
+    if (!warn.length) ok.push(L(["Ready: formula, explanations and examples are all there.","ພ້ອມແລ້ວ: ມີສູດ, ຄຳອະທິບາຍ ແລະ ຕົວຢ່າງຄົບ."]));
+    out.replaceChildren(...[
+      parts.length ? h("div",{class:"gs-formula"}, parts.flatMap((p, i) => [i ? h("span",{class:"gs-plus"},"+") : null, h("span",{class:"gb sm"+(p.optional?" opt":""),"data-role":p.lit?"M":p.code}, h("b",{class:p.lit?"lo":""}, p.lit || RLN(p.code)))]).filter(Boolean)) : null,
+      ...rows,
+      ...warn.map(m => h("p",{class:"small",style:"color:var(--warn);margin:0"}, icon("info"), " ", m)),
+      ...ok.map(m => h("p",{class:"small",style:"color:var(--jade);margin:0"}, icon("check"), " ", m))].filter(Boolean));
+  };
+  return h("div",{class:"panel stack"}, h("h3",null, L(["Grammar Studio check","ກວດສອບສຳລັບຫ້ອງຝຶກໄວຍາກອນ"])),
+    h("p",{class:"small muted",style:"margin:0"}, L(["How learners will see the blocks, and what this point still needs.","ຜູ້ຮຽນຈະເຫັນບລັອກແນວໃດ ແລະ ຍັງຂາດຫຍັງ."])),
+    h("button",{class:"btn sm",onclick:run}, icon("eye"), L(["Check now","ກວດດຽວນີ້"])), out);
+}
 function previewPanel(type, draft){
   if (type==="patterns"){
     const out = h("div");
@@ -604,6 +638,7 @@ function previewPanel(type, draft){
     }}, icon("spark"), t("generate")), out);
   }
   if (type==="quizzes") return h("div",{class:"panel"}, h("h3",null,t("preview")), h("button",{class:"btn sm",onclick:async()=>{ const c = await normalize(type, draft); const box = h("div",{class:"quiz"}); dialog({ title:t("preview"), wide:true, body:box }); runQuiz(box, c.questions||[], {}); }}, icon("eye"), t("preview")));
+  if (type==="grammar") return grammarStudioCheck(draft);
   if (["dialogues","grammar","vocabulary"].includes(type)) return h("div",{class:"panel"}, h("h3",null,t("preview")), h("button",{class:"btn sm",onclick:async()=>{ const c = await normalize(type, draft); const box = h("div"); (c.lines||c.examples||[]).forEach(sn => box.append(sentenceEl(sn,{ speaker:sn.speaker, noSave:true }))); dialog({ title:t("preview"), wide:true, body: box.childElementCount ? box : h("p",{class:"muted"},t("no_rows")) }); }}, icon("eye"), t("preview")));
   if (type==="videos"){
     const box = h("div",{class:"stack",style:"gap:8px"});
