@@ -28,7 +28,8 @@ function items(){
     const d = D[k], base = byK.get(k) || Object.assign({ k, w:0, r:0 }, c.it[k] || {});
     const bw = bankWord(k);
     if (!base.en){ base.en = d ? meaning(k, "en") : (card.tr && (card.tr.en || "")) || (bw && bw.en) || ""; base.zh = d ? (d.zh || "") : (card.tr && card.tr.zh) || (bw && bw.zh) || ""; base.py = base.py || (d && d.p) || card.py || (bw && bw.py) || ""; }
-    base.card = card; byK.set(k, base);
+    // a word can have two cards (a word card and a practice card): the most overdue one decides when it comes up
+    if (!base.card || card.due < base.card.due) base.card = card; byK.set(k, base);
   }
   return [...byK.values()];
 }
