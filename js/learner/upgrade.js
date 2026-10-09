@@ -4,6 +4,7 @@ import { h, icon, dialog, fmtDate, tr, toast } from "../shared/ui.js";
 import { t, lang } from "../shared/i18n.js";
 import { featureByKey, ROUTE_FEATURE, PRACTICE_FEATURE } from "../shared/features.js";
 import { planIncluding } from "../shared/access.js";
+import { setFeature } from "../shared/practice-library.js";
 import { encodeReturn, planPrice, money, enabledMethods, methodCurrency } from "../shared/billing.js";
 import { planLabel as sharedPlanLabel } from "../shared/plan-format.js";
 import { A } from "./core.js";
@@ -19,6 +20,8 @@ const perText = per => t("ac_per_"+(per||"day"));     // "today", "this month", 
 // The feature a view (and practice type) needs, or null when it is open to everyone
 export function featureForView(name, params = {}){
   if (name === "practice" && params && params.type) return PRACTICE_FEATURE[params.type] || "practice.basic";
+  if (name === "practice" && params && params.set) return setFeature(params.set);       // Practice Studio sets: basic or advanced
+  if (name === "practice" && params && params.mode) return "practice.basic";             // Smart session, Daily, Speed, Mistakes
   return ROUTE_FEATURE[name] || null;
 }
 export const viewAllowed = (name, params) => { const f = featureForView(name, params); return !f || !A.ac || A.ac.can(f); };

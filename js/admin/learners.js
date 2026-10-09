@@ -5,6 +5,8 @@ import { accessState, SKILLS } from "../shared/content.js";
 import { S, t, go, canSupport, planName, fld } from "./state.js";
 import { learnerAccessPanel } from "./access.js";
 import { learnerPaymentsPanel } from "./payments.js";
+import { skillProfile, insights, mistakes, totalStars, rankOf, daysActive, windowAcc } from "../shared/practice-coach.js";
+import { radarSVG, insightText } from "../shared/practice-ui.js";
 
 const DAY = 86400000;
 const pill = (cls, label) => h("span",{class:"pill "+cls}, label);
@@ -151,6 +153,22 @@ export async function viewLearner({ uid }){
       rounds.length ? h("details",null, h("summary",{class:"small"}, t("fc_adm_recent")+" ("+rounds.length+")"),
         h("div",{class:"feed"}, rounds.slice(0,15).map(e => h("div",{class:"feed-row"}, h("span",{class:"small"}, (e.n||0)+" · "+(e.pct||0)+"% · "+(e.mode||"")+" · "+(e.source||"")+(e.skipped?" · ⏭ "+e.skipped:"")+(e.hints?" · 💡 "+e.hints:"")), h("span",{class:"small muted"}, fmtDate(e.at, lang(), true)))))) : null)
     : h("p",{class:"muted"}, t("fc_adm_none")));
+  // Practice Studio coach (progress.coach): skill radar, levels and trends, the coach's advice, words that keep going wrong
+  const C = prog && prog.coach && prog.coach.v ? prog.coach : null;
+  const coachBox = h("section",{class:"panel pz-adm"}, h("h3",null,t("pz_adm_title")), (() => {
+    if (!C || !Object.keys(C.sk || {}).length) return h("p",{class:"muted"}, t("pz_adm_none"));
+    const prof = skillProfile(C), all = windowAcc(C, null, 3650, 0), a7 = windowAcc(C, null, 7, 0), stars = totalStars(C), miss = mistakes(C, 20);
+    const lv = p => p.level === "none" ? t("pz_lv_none") : p.level === "calibrating" ? t("pz_lv_calibrating", { n: Math.max(0, 5 - p.n) }) : t("pz_lv_" + p.level);
+    return h("div",{class:"stack",style:"gap:12px"},
+      h("div",{class:"fc-adm-k"}, vStat(t("pz_rank_" + rankOf(stars).key), "★ " + stars), vStat(t("pz_answers"), all.t), vStat(t("pz_acc7"), a7.t ? Math.round(100 * a7.r / a7.t) + "%" : "—"),
+        vStat(t("pz_days30"), daysActive(C, 30) + "/30"), vStat(t("pz_adm_sets"), Object.keys(C.sets || {}).length)),
+      h("div",{class:"pz-adm-grid"}, h("div",{class:"pz-radar-wrap"}, radarSVG(prof, 260)),
+        h("div",{class:"stack",style:"gap:6px"}, prof.filter(p => p.n).sort((x, y) => y.score - x.score).map(p => h("div",{class:"skill"}, h("span",null, t("sk_" + p.skill)),
+          h("div",{class:"bar"}, h("i",{style:`width:${p.score}%`})), h("span",{class:"tabnum small"}, p.score + (p.trend ? (p.trend > 0 ? " ▲" : " ▼") + Math.abs(p.trend) : ""), " · ", lv(p)))))),
+      h("div",{class:"stack",style:"gap:6px"}, insights(C).filter(x => x.kind !== "start").slice(0, 4).map(x => h("p",{class:"small"}, "• " + insightText(x)))),
+      miss.length ? h("div",null, h("div",{class:"small",style:"font-weight:700;margin-bottom:6px"}, t("pz_mistake_bank") + " (" + mistakes(C, 999).length + ")"),
+        h("div",{class:"row",style:"gap:6px"}, miss.map(x => h("span",{class:"chip warn"}, h("span",{class:"lo",lang:"lo"}, x.k), " ×" + x.w)))) : null);
+  })());
   const quizzes = events.filter(e=>e.type==="quiz");
   const resBox = h("section",{class:"panel"}, h("h3",null,t("quiz_results")),
     quizzes.length ? h("div",{class:"feed"}, quizzes.slice(0,15).map(e => h("div",{class:"feed-row"}, h("span",null, e.ref+" · ", h("b",null, e.score+"/"+e.total)), h("span",{class:"small muted"}, fmtDate(e.at, lang(), true))))) : h("p",{class:"muted"},t("no_rows")),
@@ -165,7 +183,7 @@ export async function viewLearner({ uid }){
 
   const accessBox = await learnerAccessPanel(uid, a, setAccess);   // personal grants (overrides) and current usage counters
   const payBox = await learnerPaymentsPanel(uid);
-  wrap.append(h("div",{class:"grid2"}, h("div",{class:"stack"}, profile, accBox, payBox, accessBox), h("div",{class:"stack"}, progBox, vocabBox, resBox, notesBox)));
+  wrap.append(h("div",{class:"grid2"}, h("div",{class:"stack"}, profile, accBox, payBox, accessBox), h("div",{class:"stack"}, progBox, coachBox, vocabBox, resBox, notesBox)));
   return wrap;
 }
 

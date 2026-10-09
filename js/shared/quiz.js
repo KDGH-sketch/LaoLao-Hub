@@ -13,24 +13,54 @@ import { DEFAULT_RULES, answerPoints, roundResult } from "./scoring.js";
 const rules = () => (ctx.rules && ctx.rules()) || DEFAULT_RULES;
 const starsEl = n => h("div",{class:"stars","aria-label":n+" / 3"}, [1,2,3].map(i => h("span",{class:i<=n?"on":""}, "★")));
 
-export const QTYPES = ["mc","fill","order","match","type","listen_select","listen_type","tone","speak","write_char","flashcard"];
-export const QTYPE_SKILL = { mc:"reading", fill:"grammar", order:"sentence", match:"vocabulary", type:"writing", listen_select:"listening", listen_type:"listening", tone:"pinyin", speak:"speaking", write_char:"characters", flashcard:"vocabulary" };
+export const QTYPES = ["mc","fill","order","match","type","listen_select","listen_type","tone","speak","write_char","flashcard","tf","reply"];
+export const QTYPE_SKILL = { mc:"reading", fill:"grammar", order:"sentence", match:"vocabulary", type:"writing", listen_select:"listening", listen_type:"listening", tone:"pinyin", speak:"speaking", write_char:"characters", flashcard:"vocabulary", tf:"vocabulary", reply:"speaking" };
 const optText = (o, L) => typeof o === "string" ? o : (o.zh ? o.zh : tr(o, L));
 const optIsHz = o => typeof o === "string" ? /[\u0E80-\u0EFF]/.test(o) : !!o.zh;
 const norm = (s, mode) => (mode==="hanzi" || mode==="script" || mode==="text") ? String(s).replace(/[\s，。？！,.?!]/g,"") : stripTone(String(s).replace(/[，。？！,.?!]/g,""));
 
 /**
- * runQuiz(container, questions, { onAnswer(q, correct), onFinish({right,total}), title })
+ * runQuiz(container, questions, { onAnswer(q, correct, { self, skipped, ms, combo }), onFinish(result), title, timeLimit (seconds) })
+ * Keys: 1–6 pick an option (or True / False), Enter goes to the next question.
  */
 export function runQuiz(root, questions, opts={}){
   const L = ctx.exp();
-  const state = { i:0, res:[], ans:[], combo:0 };
+  const state = { i:0, res:[], ans:[], combo:0, t0:0, ended:false };
   const key = opts.key || opts.title || "practice";
+  const timed = opts.timeLimit > 0, deadline = timed ? Date.now() + opts.timeLimit * 1000 : 0;
+  // keyboard: number keys answer, Enter continues (only while this quiz is on the page)
+  const onKey = e => {
+    if (!root.isConnected){ document.removeEventListener("keydown", onKey); return; }
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    const box = root.querySelector(".qbox:not(.result)"); if (!box) return;
+    // Enter: "Next" after answering (the last footer: order and typing questions also have a "Check" footer), else "Check"
+    if (e.key === "Enter" && e.target && e.target.closest && e.target.closest("button, a")) return;   // a focused button gets Enter natively
+    if (e.key === "Enter"){ const btn = [...box.querySelectorAll(".qfoot .btn.primary")].pop(); if (btn){ e.preventDefault(); btn.click(); } return; }
+    const n = +e.key; if (!(n >= 1 && n <= 6)) return;
+    const b = [...box.querySelectorAll(".opts:not(.match .opts) .opt, .tf-btns .btn, .grid3 .opt")][n - 1];
+    if (b && !box.querySelector(".feedback") && !box.querySelector(".match")){ e.preventDefault(); b.click(); }
+  };
+  document.addEventListener("keydown", onKey);
+  let ticker = null;
+  const timeUp = () => { if (state.ended || state.i >= questions.length) return; questions = questions.slice(0, state.res.length); state.i = questions.length; render(); };
+  if (timed) ticker = setInterval(() => {
+    if (!root.isConnected){ clearInterval(ticker); return; }
+    const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000)), el = root.querySelector(".q-timer");
+    if (el){ el.textContent = left + "s"; el.classList.toggle("low", left <= 10); }
+    if (left <= 0){ clearInterval(ticker); timeUp(); }
+  }, 250);
   const render = () => {
     root.innerHTML = "";
-    const prog = h("div",{class:"qprog"}, questions.map((_,i)=>h("i",{class: i<state.res.length ? (state.res[i]?"ok":"no") : i===state.i ? "cur" : ""})));
-    root.append(h("div",{class:"spread",style:"margin-bottom:10px"}, opts.title ? h("b",null,opts.title) : h("span"), h("span",{class:"muted tabnum"}, Math.min(state.i+1,questions.length)+" / "+questions.length)), prog);
+    if (timed){
+      const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      root.append(h("div",{class:"spread",style:"margin-bottom:10px"}, opts.title ? h("b",null,opts.title) : h("span"),
+        h("span",{class:"row",style:"gap:10px"}, h("span",{class:"muted tabnum"}, t("pz_answered", { n: state.res.length })), state.i < questions.length ? h("b",{class:"q-timer tabnum"+(left<=10?" low":""),role:"timer"}, left+"s") : null)));
+    } else {
+      const prog = h("div",{class:"qprog"}, questions.map((_,i)=>h("i",{class: i<state.res.length ? (state.res[i]?"ok":"no") : i===state.i ? "cur" : ""})));
+      root.append(h("div",{class:"spread",style:"margin-bottom:10px"}, opts.title ? h("b",null,opts.title) : h("span"), h("span",{class:"muted tabnum"}, Math.min(state.i+1,questions.length)+" / "+questions.length)), prog);
+    }
     if (state.i >= questions.length){
+      state.ended = true; if (ticker) clearInterval(ticker); document.removeEventListener("keydown", onKey);
       const R = rules();
       const repeat = ctx.roundRepeat ? ctx.roundRepeat(key) : 0;
       const res = roundResult(state.ans, { repeat }, R);
@@ -61,16 +91,19 @@ export function runQuiz(root, questions, opts={}){
       return;
     }
     const q = normalizeQuestion(questions[state.i]);
+    state.t0 = Date.now();
     root.append(questionEl(q, L, (correct, meta={}) => {
-      const self = !!meta.self, skipped = !!meta.skipped;
+      const self = !!meta.self, skipped = !!meta.skipped, ms = Date.now() - state.t0;
       const p = skipped ? { points:0, combo:state.combo, comboBonus:0 } : answerPoints(q.type, correct, { self, combo: state.combo }, rules());
       state.combo = p.combo;
       state.res.push(correct);
       state.ans.push({ type:q.type, correct, self, skipped });
-      $$(".qprog i", root)[state.i].className = skipped ? "skip" : correct ? "ok" : "no";
-      opts.onAnswer && opts.onAnswer(q, correct, { self, skipped });
+      const dot = $$(".qprog i", root)[state.i]; if (dot) dot.className = skipped ? "skip" : correct ? "ok" : "no";
+      opts.onAnswer && opts.onAnswer(q, correct, { self, skipped, ms, combo: state.combo });
+      // a timed round moves on by itself
+      if (timed) setTimeout(() => { if (root.isConnected && !state.ended && state.res.length === state.i + 1){ state.i++; if (state.i >= questions.length) questions = questions.slice(0, state.i); render(); } }, correct ? 450 : 1100);
       return p;
-    }, () => { state.i++; render(); }));
+    }, () => { if (timed && state.res.length < state.i + 1) return; state.i++; render(); }));
   };
   render();
 }
@@ -260,6 +293,43 @@ export function questionEl(q, L, onResult, onNext){
       const back = h("div",{class:"stack fc-qback",style:"align-items:center;gap:6px;display:none"}, q.prompt.py ? h("div",{style:"font-size:1.3rem",html:pyHTML(q.prompt.py)}) : null, h("div",{style:"font-size:1.2rem",class:backTxt===bk.lo&&L==="lo"?"lo":""}, backTxt));
       const btns = h("div",{class:"row",style:"justify-content:center",hidden:true}, h("button",{class:"btn",onclick:()=>finish(false, null, { self:true })}, t("q_didnt")), h("button",{class:"btn jade",onclick:()=>finish(true, null, { self:true })}, t("q_knew")));
       box.append(h("div",{class:"flash"}, h("div",{class:"front lo",lang:"lo"}, q.prompt.zh), back, h("button",{class:"btn primary",onclick:e=>{ back.style.display="flex"; btns.hidden=false; e.currentTarget.remove(); speak(q.prompt.zh); }}, t("q_flip"))), btns);
+      break;
+    }
+    case "tf": {
+      // True or false: is this the meaning? (audio: hear the word, the Lao text shows after answering)
+      if (q.audio){
+        box.append(h("div",{class:"qprompt"+(L==="lo"?" lo":""),style:"text-align:center"}, ask || t("pz_tf")),
+          h("button",{class:"listen-big","aria-label":t("play"),onclick:()=>speak(q.prompt.zh)}, icon("play")));
+        setTimeout(()=>speak(q.prompt.zh), 300);
+      } else box.append(...promptBlock());
+      box.append(h("div",{class:"tf-claim"}, h("span",{class:"tf-eq","aria-hidden":"true"}, "="), h("b",{class:L==="lo"?"lo":""}, q.claim)));
+      const pickTf = (v, e) => { if (answered) return; const ok = v === !!q.answer; e.currentTarget.classList.add(ok ? "right" : "wrong");
+        if (!ok) $$(".tf-btns .btn", box).forEach(b => { if ((b.dataset.v === "1") === !!q.answer) b.classList.add("right"); });
+        finish(ok, q.audio ? h("div",{class:"hz lo",style:"font-size:1.4rem"}, q.prompt.zh) : null); };
+      box.append(h("div",{class:"tf-btns"},
+        h("button",{class:"btn tf-yes","data-v":"1",onclick:e=>pickTf(true, e)}, icon("check"), t("pz_true")),
+        h("button",{class:"btn tf-no","data-v":"0",onclick:e=>pickTf(false, e)}, icon("x"), t("pz_false"))));
+      break;
+    }
+    case "reply": {
+      // A conversation turn: someone speaks (chat bubble, with sound), the learner picks what to say back
+      box.append(h("div",{class:"qprompt"+(L==="lo"?" lo":"")}, ask || t("pz_reply")));
+      const chat = h("div",{class:"chat"});
+      (q.context || []).forEach(c => {
+        const words = h("div",{class:"bubble-text lo",lang:"lo"}, c.text);
+        const extra = h("div",{class:"bubble-sub"}, c.py ? h("div",{class:"qpy small",html:pyHTML(c.py)}) : null, c.tr ? h("div",{class:"small muted"+(L==="lo"?" lo":"")}, c.tr) : null);
+        if (q.audio){ words.hidden = true; extra.hidden = true; }
+        chat.append(h("div",{class:"bubble them"}, h("span",{class:"who","aria-hidden":"true"}, (c.sp || "A").slice(0, 1)),
+          h("div",{class:"bubble-body"}, h("button",{class:"ib","aria-label":t("play"),onclick:()=>speak(c.text)}, icon("speaker")), words, extra)));
+      });
+      box.append(chat);
+      const first = (q.context || [])[0]; if (first) setTimeout(() => speak(first.text), 300);
+      const s = shuffled(q.options, q.answer);
+      box.append(h("div",{class:"opts replies"}, s.opts.map((o,i) => h("button",{class:"opt hz lo reply-opt",lang:"lo","data-i":i,onclick:e=>{
+        if (answered) return; const ok = i===s.ans; e.currentTarget.classList.add(ok?"right":"wrong");
+        if (!ok) $$(".opt",box).forEach(b=>{ if (+b.dataset.i===s.ans) b.classList.add("right"); });
+        $$(".bubble-text, .bubble-sub", chat).forEach(x => x.hidden = false);
+        finish(ok, q.after ? h("div",{class:L==="lo"?"lo":""}, q.options[q.answer], " — ", q.after) : null); }}, optText(o, L)))));
       break;
     }
     default: box.append(h("p",null,"Unknown question type: "+q.type), h("button",{class:"btn",onclick:()=>finish(false, null, { skipped:true })},t("q_skip")));

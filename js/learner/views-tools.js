@@ -29,7 +29,7 @@ const linkTo = s => s.pn ? h("button",{class:"btn sm ghost",onclick:()=>go("patt
 const reveal = s => () => h("div",null, h("div",{class:"hz",style:"font-size:1.3rem"},s.zh), h("div",{html:pyHTML(s.py)}), h("div",{class:"muted"}, tr(trOf(s), expLang())));
 const MAKERS = {
   order: pool => { const s = sentFrom(pool); if (!s) return null; const toks = (s.tokens||[]).filter(x=>isHan(x.z[0])); if (toks.length<3 || toks.length>11) return null;
-    return { type:"order", skill:"sentence", tokens:toks, answer:toks.map(x=>x.z).join(""), prompt:{ tr:trOf(s), py:s.py }, ask:{en:t("pr_order_d")}, say:s.zh, link:linkTo(s) }; },
+    return { type:"order", skill:"sentence", tokens:toks, answer:toks.map(x=>x.z).join(""), prompt:{ tr:trOf(s) }, ask:{en:t("pr_order_d")}, reveal:reveal(s), say:s.zh, link:linkTo(s) }; },   // the whole romanized line would give the order away: shown after answering
   blank: pool => { const p = rnd(usable(pool).filter(x=>(x.markers||[]).length)); if (!p) return null; const s = Math.random()<.6 ? genSentence(p) : exampleOf(p, rnd(p.examples)); if (!s) return null;
     const mk = p.markers.find(m => (s.tokens||[]).some(tk=>tk.z===m)); if (!mk) return null;
     const others = shuffle([...new Set(Object.values(A.P).filter(x=>x.n!==p.n).flatMap(x=>x.markers).filter(m=>m!==mk && Math.abs(m.length-mk.length)<=1 && !p.markers.includes(m)))]).slice(0,3);
@@ -88,19 +88,9 @@ VIEWS.gen = () => {
   return h("div",null, pageHead(t("gen_title"), t("gen_sub")), h("div",{class:"gen-layout"}, picker, h("div",{class:"stack"}, bar, results)));
 };
 
-// ---------- practice ----------
-const PTYPES = [["order","ຈັດ","pr_order"],["blank","ຕື່ມ","pr_blank"],["listen","ຟັງ","pr_listen"],["meaning","ແປ","pr_meaning"],["reverse","ເວົ້າ","pr_reverse"],["pattern","ຮູບ","pr_pattern"],["words","ສັບ","pr_words"],["tones","ສຽງ","pr_tones"],["write","ຂຽນ","stroke_quiz"],["speak","ອ່ານ","nav_speak"]];
-VIEWS.practice = ({ type }) => {
-  const root = h("div");
-  if (type) return startPractice(root, type);
-  const quizzes = Object.values(A.byType.quizzes||{}).sort((a,b)=>(a.level-b.level)||((a.order||0)-(b.order||0)));
-  root.append(pageHead(t("practice_title"), t("practice_sub")),
-    h("div",{class:"grid2"}, PTYPES.map(([k,ic,l]) => h("button",{class:"pcard",onclick:()=>go("practice",{type:k})}, h("span",{class:"qi lo",style:"font-weight:700"},ic), h("div",null, h("b",null,t(l), navLock("practice",{type:k})), h("span",null, t(l+"_d")!==l+"_d" ? t(l+"_d") : ""))))),
-    h("div",{style:"margin-top:14px"}, h("button",{class:"btn primary",onclick:()=>go("practice",{type:"mix"})}, icon("spark"), t("start")+" · mix", navLock("practice",{type:"mix"}))),
-    quizzes.length ? h("section",{class:"sect",style:"margin-top:28px"}, h("h2",null,t("quiz")), h("div",{class:"list-card"}, quizzes.map(q => { const r = A.prog.lessons["quiz:"+q.id];
-      return h("button",{class:"item-row",onclick:()=>go("quiz",{id:q.id})}, h("span",{class:"stepnum"+(r?" done":"")}, r?icon("check"):icon("star")), h("span",null, h("div",{class:"ttl"},T(q.title)), h("div",{class:"sub"}, "Stage "+q.level+" · "+(q.questions||[]).length+" "+t("questions").toLowerCase()+(r?" · "+r.score+"/"+r.total:""))), icon("right")); }))) : null);
-  return root;
-};
+// ---------- practice (the Practice Studio is in views-practice.js; these are the older drill types, still linked from
+// the tone page, handwriting and old bookmarks: practice?type=tones|write|order|…) ----------
+export const startLegacyPractice = (root, type) => startPractice(root, type);
 function startPractice(root, type){
   const lv = A.profile.level || 1, learned = Object.keys(A.prog.patterns).map(Number).filter(n=>A.P[n]);
   let pool = learned.length>=4 ? learned.map(n=>A.P[n]) : Object.values(A.P).filter(p=>p.level<=Math.max(2,lv));

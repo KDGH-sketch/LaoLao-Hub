@@ -16,6 +16,7 @@ import { HANDWRITING_VIEWS } from "./views-handwriting.js";
 import { CARD_VIEWS } from "./views-cards.js";
 import { GRAMMAR_VIEWS } from "./views-grammar.js";
 import { VIEWS as BILLING_VIEWS } from "./views-billing.js";
+import { PRACTICE_VIEWS } from "./views-practice.js";
 import { renderWelcome, pendingResource } from "./welcome.js";
 import { lockedPanel, featureForView, navLock, planLabel } from "./upgrade.js";
 import { themeSwitcher, brandMark } from "../shared/ui.js";
@@ -114,7 +115,7 @@ function renderDisabled(){
 }
 
 // ---------- shell ----------
-const VIEWS = Object.assign({}, LV.VIEWS, TV.VIEWS, LAB_VIEWS, MEDIA_VIEWS, HANDWRITING_VIEWS, BILLING_VIEWS, CARD_VIEWS, GRAMMAR_VIEWS, {
+const VIEWS = Object.assign({}, LV.VIEWS, TV.VIEWS, LAB_VIEWS, MEDIA_VIEWS, HANDWRITING_VIEWS, BILLING_VIEWS, CARD_VIEWS, GRAMMAR_VIEWS, PRACTICE_VIEWS, {
   chars: HANDWRITING_VIEWS.handwriting, script_lab: HANDWRITING_VIEWS.handwriting
 });
 // Grouped so the sidebar reads as sections instead of one long flat list.
@@ -155,7 +156,7 @@ const NAV_GROUPS = [
   ]}
 ];
 const TABS = [["home","nav_home","home"],["paths","nav_learn","path"],["dict","nav_dict","dict"],["videos","nav_videos","video"],["practice","nav_practice","practice"],["more","nav_more","more"]];
-const PARENT = { video:"videos", lesson:"paths", path:"paths", pattern:"patterns", grammarItem:"grammar", quiz:"practice", gen:"patterns", handwriting:"handwriting", videos:"videos", vocab:"vocab", cards:"vocab", grammar:"grammar", tone_lab:"tone_lab", pronounce_lab:"pronounce_lab", culture_lab:"culture_lab", particle_lab:"culture_lab", kinship_lab:"culture_lab", classifiers_lab:"culture_lab" };
+const PARENT = { practice_report:"practice", video:"videos", lesson:"paths", path:"paths", pattern:"patterns", grammarItem:"grammar", quiz:"practice", gen:"patterns", handwriting:"handwriting", videos:"videos", vocab:"vocab", cards:"vocab", grammar:"grammar", tone_lab:"tone_lab", pronounce_lab:"pronounce_lab", culture_lab:"culture_lab", particle_lab:"culture_lab", kinship_lab:"culture_lab", classifiers_lab:"culture_lab" };
 // Mobile bottom bar only pins 5 tabs; "More" opens the full grouped menu in a sheet.
 function openMoreMenu(){
   const cur = PARENT[A.view.name] || A.view.name;

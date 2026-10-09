@@ -10,6 +10,7 @@ import { normalizeGrammar } from "../shared/grammar.js";
 import { shapeItem } from "../shared/shape.js";
 import { setSpeechSettings, setAudioLibrary, setAudioGate } from "../shared/speech.js";
 import { ctx } from "../shared/widgets.js";
+import { coachInit, coachTrim } from "../shared/practice-coach.js";
 import { mergeRules, lessonPoints, reviewPoints, dailyAward, levelFromXP, wilsonLower, skillMastery, earnedAchievements, handwritingRound } from "../shared/scoring.js";
 
 export const A = {
@@ -178,6 +179,10 @@ async function loadProgress(){
 // ---------- tracking ----------
 const safeId = id => String(id).replace(/\//g,"∕").slice(0,300);
 function progUpdate(data){ if (A.profile.status!=="active") return; A.api.db.update(`progress/${A.user.uid}`, Object.assign(data, { updatedAt:new Date() })).catch(()=>{}); }
+// the Practice Studio coach record (progress/{uid}.coach): created from the old skill counters the first time
+export function coach(){ if (!A.prog.coach || !A.prog.coach.v) A.prog.coach = coachInit(A.prog.coach, A.prog.skills); return A.prog.coach; }
+let coachTimer = null;
+export function saveCoach(){ clearTimeout(coachTimer); coachTimer = setTimeout(() => { if (!A.prog || !A.prog.coach) return; coachTrim(A.prog.coach); progUpdate({ coach: A.prog.coach }); }, 200); }
 export function touchDay(){ const k = todayKey(); if (!A.prog.days[k]){ A.prog.days[k]=1; progUpdate({ ["days."+k]:1 }); } }
 // Checked answers count toward skill accuracy. Self-graded answers (flashcards, handwriting, "I said it well")
 // and skipped questions only count as study activity.
