@@ -11,6 +11,7 @@ import { A, T, expLang, recordAnswer, logEvent, srsAdd, coach, saveCoach } from 
 import { patternQuestions, startLegacyPractice } from "./views-tools.js";
 import { navLock, lockedPanel, viewAllowed } from "./upgrade.js";
 import { radarSVG, insightText } from "../shared/practice-ui.js";
+import { sfx } from "../shared/sfx.js";
 
 export const PRACTICE_VIEWS = {};
 const go = (...a) => A.go(...a);
@@ -199,6 +200,8 @@ async function play(sh, build, { key, setId = null, kind = "set", timeLimit = 0,
       let record = false; if (kind === "speed" && res.right > (c.best.speed || 0)){ c.best.speed = res.right; record = true; }
       saveCoach(); logEvent("practice", { ref:key, score:res.right, total:res.total }, true);
       const box = sh.box.querySelector(".qbox.result"); if (box) box.after(roundCoach({ tally, before, wrong, res, record, kind }));
+      // after the round's own sound: a fanfare for a new rank or a new speed record
+      if (rankOf(totalStars(c)).idx > rankOf(before.stars).idx) setTimeout(() => sfx("levelup"), 900); else if (record) setTimeout(() => sfx("record"), 900);
       if (res.stars === 3 && box) celebrate(box);
     },
     onAgain: () => play(sh, build, { key, setId, kind, timeLimit, title }),

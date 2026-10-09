@@ -55,6 +55,9 @@ async function playToEnd(max = 40){
 }
 
 try {
+  // count the notes the page plays (sound effects)
+  await b.send("Page.addScriptToEvaluateOnNewDocument", { source: `window.__notes = 0; (() => { const AC = window.AudioContext; if (!AC) return; const o = AC.prototype.createOscillator;
+    AC.prototype.createOscillator = function(){ const n = o.call(this); const s = n.start.bind(n); n.start = (...a) => { window.__notes++; return s(...a); }; return n; }; })();` });
   await login("learner@demo.laolao");
 
   console.log("the Practice Studio");
@@ -96,6 +99,18 @@ try {
     await new Promise(r => setTimeout(r, 150)); const answered = has(); document.dispatchEvent(new KeyboardEvent("keydown", { key:"Enter", bubbles:true })); await new Promise(r => setTimeout(r, 200));
     return { answered, moved: /2 \\/ 10/.test(document.querySelector(".quiz").innerText) }; })()`);
   ok(kb.answered && kb.moved, "key 1 answers, Enter goes to the next question", kb);
+
+  console.log("\nsound effects");
+  await go("practice", { set:"th:colors:listen" }); await sleep(300);
+  const snd = await b.eval(`(async () => { window.__notes = 0; document.querySelector(".qbox .opt, .qbox .tf-yes").click(); await new Promise(r => setTimeout(r, 300)); return window.__notes; })()`);
+  ok(snd >= 1, "an answer plays a sound (" + snd + " notes)");
+  await b.eval(`import("/js/learner/core.js").then(m => m.setPref("sfx", false))`); await go("practice", { set:"th:colors:listen" }); await sleep(300);
+  const quiet = await b.eval(`(async () => { window.__notes = 0; document.querySelector(".qbox .opt, .qbox .tf-yes").click(); await new Promise(r => setTimeout(r, 300)); return window.__notes; })()`);
+  ok(quiet === 0, "with Sound effects off, answering is silent", quiet);
+  await b.eval(`import("/js/learner/core.js").then(m => m.setPref("sfx", true))`);
+  await go("account"); ok(/Sound effects/.test(await mainText()) && /Sound effects volume/.test(await mainText()), "Account settings: Sound effects on/off and volume");
+  await go("practice"); await b.eval(`window.__notes = 0`); await b.eval(`[...document.querySelectorAll(".pz-tchip")][1].click()`); await sleep(300);
+  ok(await b.eval(`window.__notes`) === 0, "menus and filters stay silent");
 
   console.log("\nSmart session, Daily challenge, Mistakes, Speed round");
   await go("practice", { mode:"smart" }); let seen = await playToEnd();

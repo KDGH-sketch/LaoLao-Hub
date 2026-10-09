@@ -6,6 +6,7 @@ import { t } from "../shared/i18n.js";
 import { dict } from "../shared/dict.js";
 import { speak, audioSource } from "../shared/speech.js";
 import { openWord } from "../shared/widgets.js";
+import { sfx } from "../shared/sfx.js";
 import { pictureFor } from "../shared/word-pictures.js";
 import { SIZES, MODES, SOURCES, WORD_TYPES, wordPool, backMeaning, firstGloss, buildDeck, choicesFor, modeFor, hintsFor, createRound, coachFor, overview } from "../shared/flashcards.js";
 import { A, prefs, setPref, expLang, recordCard, recordCardRound, wordItems, trickyWords } from "./core.js";
@@ -203,6 +204,7 @@ CARD_VIEWS.cards = ({ words, title, stage } = {}) => {
 
     // a grade from the flip card: save it and move on
     function grade(outcome){
+      sfx(outcome === "known" ? "correct" : outcome === "almost" ? "tile" : outcome === "missed" ? "wrong" : "tap");
       if (answered) return; answered = true;
       commit(outcome);
       if (!coachEl) setTimeout(next, reducedMotion() ? 0 : 160);

@@ -11,6 +11,7 @@ import { A, T, expLang, prefs, setPref, srsDue, srsGrade, streak, skillPct, genS
   tierName, isSaved, toggleSave, wordsMastered, srsAdd, displayName, avatarEl, imageToAvatar, saveProfile, setThemeFrom } from "./core.js";
 import { achievementsEl, xpCard, masteryRow } from "./views-learn.js";
 import { navLock, allowUse, lockedPanel, usageMeters, goPlans } from "./upgrade.js";
+import { sfx } from "../shared/sfx.js";
 
 export const VIEWS = {};
 const go = (...a) => A.go(...a);
@@ -393,6 +394,9 @@ VIEWS.account = (params = {}) => {
     row(t("theme"), h("div",{class:"seg"}, [["system","theme_auto"],["day","theme_light"],["night","theme_dark"]].map(([k,l]) => h("button",{"aria-pressed":String(normTheme(p.theme)===k),onclick:e=>{
       e.currentTarget.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === e.currentTarget))); setThemeFrom(k, e); }}, t(l))))),
     row(t("show_pinyin"), sw("showPy")), row(t("show_trans"), sw("showTr")), row(t("tone_colors"), sw("toneColor")),
+    // sound effects for right / wrong answers and achievements (Practice, quizzes, flashcards, handwriting)
+    row(t("sfx_on"), h("input",{type:"checkbox",class:"switch",checked:p.sfx !== false,"aria-label":t("sfx_on"),onchange:e=>{ setPref("sfx", e.target.checked); if (e.target.checked) sfx("correct"); }}), t("sfx_on_d")),
+    row(t("sfx_vol"), h("input",{type:"range",min:"0.1",max:"1",step:"0.1",value:p.sfxVol ?? 0.6,"aria-label":t("sfx_vol"),onchange:e=>{ setPref("sfxVol", +e.target.value); sfx("complete"); }})),
     row(t("speech_rate"), h("input",{type:"range",min:"0.5",max:"1.2",step:"0.05",value:p.rate,"aria-label":t("speech_rate"),onchange:e=>{ setPref("rate",+e.target.value); speak("ຂ້ອຍຮຽນພາສາລາວທຸກມື້."); }})),
     row(t("sentence_audio"), h("div",{class:"seg"}, [[false,"sa_natural"],[true,"sa_words"]].map(([v,k]) => h("button",{"aria-pressed":String(!!p.wordByWord===v),onclick:e=>{
       e.currentTarget.parentElement.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === e.currentTarget))); setPref("wordByWord", v); speak("ຂ້ອຍຮຽນພາສາລາວທຸກມື້."); }}, t(k)))), t("sentence_audio_d")),

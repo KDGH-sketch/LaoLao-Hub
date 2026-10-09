@@ -12,6 +12,7 @@ import { t, lang } from "../shared/i18n.js";
 import { speak, audioSource } from "../shared/speech.js";
 import { dict } from "../shared/dict.js";
 import { createPad } from "../shared/handwriting/pad.js";
+import { sfx } from "../shared/sfx.js";
 import { createCellPad } from "../shared/handwriting/cellpad.js";
 import { glyphMask, inkMask, compareShape, PASS } from "../shared/handwriting/shape.js";
 import { playDemo } from "../shared/handwriting/animator.js";
@@ -211,7 +212,7 @@ function strokeActivity(c, { onNext }){
     const sc = scoreAttempt(session.finish(), rules, { retries });
     redraw();
     const award = recordHandwriting(c.id, sc, { retries, durationMs: Date.now() - t0, guide: rules.guide });
-    say(sc.passed ? "ok" : "error", sc.passed ? "hw_passed" : "hw_failed", { p: rules.passScore });
+    say(sc.passed ? "ok" : "error", sc.passed ? "hw_passed" : "hw_failed", { p: rules.passScore }); sfx(sc.passed ? "complete" : "fail");
     put(result, h("section", { class: "card stack" },
       h("div", { class: "hw-score" }, h("b", null, String(sc.total)), h("span", { class: "muted" }, "/ 100"), sc.passed ? h("span", { class: "chip lv" }, icon("check"), t("hw_pass")) : null,
         award && award.xp ? h("span", { class: "chip" }, "+" + award.xp + " XP") : null),

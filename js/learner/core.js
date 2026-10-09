@@ -11,6 +11,7 @@ import { shapeItem } from "../shared/shape.js";
 import { setSpeechSettings, setAudioLibrary, setAudioGate } from "../shared/speech.js";
 import { ctx } from "../shared/widgets.js";
 import { coachInit, coachTrim } from "../shared/practice-coach.js";
+import { setSfx, sfx } from "../shared/sfx.js";
 import { mergeRules, lessonPoints, reviewPoints, dailyAward, levelFromXP, wilsonLower, skillMastery, earnedAchievements, handwritingRound } from "../shared/scoring.js";
 
 export const A = {
@@ -19,7 +20,7 @@ export const A = {
   prog:{ skills:{}, lessons:{}, patterns:{}, days:{}, answers:{r:0,t:0}, last:null },
   srs:{}, saved:{}, view:{ name:"home", params:{} }, hist:[], render:()=>{}
 };
-export const prefs = () => Object.assign({ uiLang:"en", explainLang:"", showPy:true, showTr:true, toneColor:true, rate:0.85, voice:"", theme:getTheme()||"day" }, (A.profile && A.profile.prefs) || {});
+export const prefs = () => Object.assign({ uiLang:"en", explainLang:"", showPy:true, showTr:true, toneColor:true, rate:0.85, voice:"", sfx:true, sfxVol:0.6, theme:getTheme()||"day" }, (A.profile && A.profile.prefs) || {});
 export const expLang = () => prefs().explainLang || lang();
 let prefT;
 export function setPref(k, v){
@@ -38,6 +39,7 @@ export function applyPrefs(){
   setTheme(th);
   document.documentElement.lang = lang()==="zh" ? "zh-CN" : lang();
   setSpeechSettings({ rate:p.rate, voice:p.voice, wordByWord:!!p.wordByWord });
+  setSfx({ on: p.sfx !== false, vol: p.sfxVol ?? 0.6 });
 }
 
 // A theme change reveals the new colours in a circle growing from the button that was pressed (css: "transitions")
@@ -214,7 +216,7 @@ export function completeLesson(id, score, total, stars){
 // Adds XP with the daily rules: streak bonus on the first XP of the day, goal bonus when crossing the daily goal, daily cap.
 export function award(points, reason){
   if (!A.profile || A.profile.status !== "active" || !(points > 0)) return { xp:0, streak:0, goal:0, capped:false };
-  const day = todayKey(), todayXP = A.prog.xpDays[day] || 0;
+  const day = todayKey(), todayXP = A.prog.xpDays[day] || 0, lvBefore = level().level;
   const a = dailyAward(points, { todayXP, firstToday: todayXP === 0, streakDays: streak() }, A.rules);
   if (a.xp > 0){
     A.prog.xp = (A.prog.xp || 0) + a.xp; A.prog.xpDays[day] = todayXP + a.xp;
@@ -224,6 +226,8 @@ export function award(points, reason){
     logEvent("xp", { ref: reason||"", xp: a.xp });
   }
   if (a.goal) toast(t("sc_goal_reached"));
+  // after the round's own sound: the daily goal, or a new level
+  if (level().level > lvBefore) setTimeout(() => sfx("levelup"), 1000); else if (a.goal) setTimeout(() => sfx("goal"), 1000);
   return a;
 }
 const roundKey = k => String(k||"practice").replace(/[.\s/]+/g, "_").slice(0, 80);

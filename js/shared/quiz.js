@@ -10,6 +10,7 @@ import { createSession } from "./handwriting/recognizer.js";
 import { scoreAttempt, strokeFeedback, attemptTip } from "./handwriting/scorer.js";
 import { ctx } from "./widgets.js";
 import { DEFAULT_RULES, answerPoints, roundResult } from "./scoring.js";
+import { sfx } from "./sfx.js";
 const rules = () => (ctx.rules && ctx.rules()) || DEFAULT_RULES;
 const starsEl = n => h("div",{class:"stars","aria-label":n+" / 3"}, [1,2,3].map(i => h("span",{class:i<=n?"on":""}, "★")));
 
@@ -42,11 +43,13 @@ export function runQuiz(root, questions, opts={}){
   };
   document.addEventListener("keydown", onKey);
   let ticker = null;
-  const timeUp = () => { if (state.ended || state.i >= questions.length) return; questions = questions.slice(0, state.res.length); state.i = questions.length; render(); };
+  let lastLeft = null;
+  const timeUp = () => { sfx("timeup"); if (state.ended || state.i >= questions.length) return; questions = questions.slice(0, state.res.length); state.i = questions.length; render(); };
   if (timed) ticker = setInterval(() => {
     if (!root.isConnected){ clearInterval(ticker); return; }
     const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000)), el = root.querySelector(".q-timer");
     if (el){ el.textContent = left + "s"; el.classList.toggle("low", left <= 10); }
+    if (left !== lastLeft && left > 0 && left <= 5 && !state.ended) sfx("tick"); lastLeft = left;
     if (left <= 0){ clearInterval(ticker); timeUp(); }
   }, 250);
   const render = () => {
@@ -64,6 +67,7 @@ export function runQuiz(root, questions, opts={}){
       const R = rules();
       const repeat = ctx.roundRepeat ? ctx.roundRepeat(key) : 0;
       const res = roundResult(state.ans, { repeat }, R);
+      sfx(res.stars === 3 ? "perfect" : res.passed ? "complete" : "fail");
       const line = (label, val) => val ? h("div",{class:"spread small"}, h("span",{class:"muted"},label), h("b",{class:"tabnum"}, val)) : null;
       const awarded = h("p",{class:"small",style:"margin:8px 0 0"});
       const box = h("div",{class:"qbox result"}, h("div",{class:"eyebrow"},t("round_done")),
@@ -123,6 +127,7 @@ export function questionEl(q, L, onResult, onNext){
   const finish = (ok, extra, meta) => {
     if (answered) return; answered = true;
     const p = onResult(ok, meta || {}) || {};
+    if (!(meta && meta.skipped)) sfx(ok ? (p.comboBonus ? "combo" : "correct") : "wrong");
     const fb = h("div",{class:"feedback "+(ok?"ok":"no")}, h("b",null, ok ? t("correct") : t("incorrect")),
       p.points ? h("span",{class:"xp-pill"}, "+"+p.points+" XP") : null,
       p.comboBonus ? h("span",{class:"combo-pill"}, t("sc_combo_n", { n: p.combo })) : null,
@@ -170,7 +175,7 @@ export function questionEl(q, L, onResult, onNext){
       const toks = q.tokens.map((z,i)=>({ z: typeof z==="string"?z:z.z, p: typeof z==="string"? "" : z.p, i }));
       box.append(...promptBlock());
       const ansRow = h("div",{class:"tiles answer"}), pool = h("div",{class:"tiles",style:"margin-top:12px"}), chosen=[];
-      shuffle(toks).forEach(tk => { const b = h("button",{class:"tile lo",lang:"lo",onclick:()=>{ if (answered) return; chosen.push(tk); b.classList.add("used");
+      shuffle(toks).forEach(tk => { const b = h("button",{class:"tile lo",lang:"lo",onclick:()=>{ if (answered) return; sfx("tile"); chosen.push(tk); b.classList.add("used");
         ansRow.append(h("button",{class:"tile lo",lang:"lo",onclick:ev=>{ if (answered) return; chosen.splice(chosen.indexOf(tk),1); b.classList.remove("used"); ev.currentTarget.remove(); }}, tk.z)); }}, tk.z, tk.p ? h("small",{html:pyHTML(tk.p)}) : null); pool.append(b); });
       box.append(ansRow, pool, h("div",{class:"qfoot"},
         h("button",{class:"btn sm ghost",onclick:()=>{ if (answered) return; chosen.splice(0); ansRow.innerHTML=""; $$(".tile.used",pool).forEach(b=>b.classList.remove("used")); }}, t("reset")),
@@ -188,7 +193,7 @@ export function questionEl(q, L, onResult, onNext){
         if (answered) return; const b = e.currentTarget;
         if (b.classList.contains("right")) return;
         if (!sel || sel.side===side){ $$(".opt.sel",box).forEach(x=>x.classList.remove("sel")); sel = { item, side, b }; b.classList.add("sel"); if (side==="a") speak(item.txt); return; }
-        if (sel.item.i === item.i){ sel.b.classList.remove("sel"); sel.b.classList.add("right"); b.classList.add("right"); done++; sel=null; if (done===q.pairs.length) finish(mistakes<=1); }
+        if (sel.item.i === item.i){ if (done + 1 < q.pairs.length) sfx("match"); sel.b.classList.remove("sel"); sel.b.classList.add("right"); b.classList.add("right"); done++; sel=null; if (done===q.pairs.length) finish(mistakes<=1); }
         else { mistakes++; b.classList.add("wrong"); setTimeout(()=>b.classList.remove("wrong"),500); }
       }}, item.txt);
       left.forEach(x=>colA.append(mk(x,"a"))); right.forEach(x=>colB.append(mk(x,"b")));
