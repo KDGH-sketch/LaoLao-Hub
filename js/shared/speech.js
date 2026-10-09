@@ -57,6 +57,12 @@ function choose(text){
   return tts ? { plan: tts, map: TTS_MAP } : null;
 }
 
+// A recording of exactly this text (the teacher's first, else the computer voice) for the pronunciation coach to
+// measure against; null when only stitched pieces or no audio exist.
+export function modelAudio(text){
+  const k = normText(String(text || "")); if (!k) return null;
+  const a = AUDIO_MAP.get(k) || TTS_MAP.get(k); return a && a.url ? { url: a.url, teacher: !isComputerVoice(a) } : null;
+}
 export function speak(text, opt={}){
   text = String(text||"").trim(); if (!text) return;
   stop();

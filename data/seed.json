@@ -9088,5 +9088,69 @@
         }
       ]
     }
-  }
+  },
+  "pronunciation": [
+    {
+      "id": "pr-teacher-greetings",
+      "area": "connected",
+      "cefr": "B1",
+      "order": 0,
+      "focus": "words",
+      "glyph": "ສະບາຍດີ",
+      "title": {
+        "en": "Greet people like a local",
+        "lo": "ທັກທາຍຄືຄົນລາວ",
+        "zh": "像当地人一样打招呼"
+      },
+      "explain": {
+        "en": "An example unit made in Admin → Pronunciation units. Greetings are the first thing people hear from you: say each syllable's tone clearly and finish with a warm, friendly melody.",
+        "lo": "ຕົວຢ່າງບົດຮຽນຈາກ Admin. ທັກທາຍໃຫ້ຊັດທຸກພະຍາງ.",
+        "zh": "这是在后台“发音单元”里制作的示例单元。问候语是别人最先听到的：把每个音节的声调说清楚，语气要亲切。"
+      },
+      "tips": {
+        "en": "Smile while you say ສະບາຍດີ: it keeps the last syllable bright and level.",
+        "zh": "说 ສະບາຍດີ 时面带微笑，最后一个音节保持平稳明亮。"
+      },
+      "items": [
+        {
+          "lao": "ສະບາຍດີ",
+          "py": "sá-bāai-dīi",
+          "en": "hello",
+          "cn": "你好"
+        },
+        {
+          "lao": "ຂອບໃຈ",
+          "py": "khɔ̀ɔp-jāi",
+          "en": "thank you",
+          "cn": "谢谢"
+        },
+        {
+          "lao": "ຂໍໂທດ",
+          "py": "khɔ̌ɔ-thôot",
+          "en": "sorry, excuse me",
+          "cn": "对不起"
+        },
+        {
+          "lao": "ລາກ່ອນ",
+          "py": "láa-kɔ̀ɔn",
+          "en": "goodbye",
+          "cn": "再见"
+        },
+        {
+          "lao": "ໂຊກດີ",
+          "py": "sôok-dīi",
+          "en": "good luck",
+          "cn": "祝你好运"
+        }
+      ],
+      "pairs": [
+        {
+          "words": "ໃກ້ | ໄກ"
+        }
+      ],
+      "status": "published",
+      "access": "free",
+      "version": 1
+    }
+  ]
 }

@@ -101,6 +101,26 @@ export const SCHEMAS = {
       { key:"examples", type:"list", label:["Tone minimal pair examples","ຕົວຢ່າງຄຳສັບ"], itemLabel:["Example","ຕົວຢ່າງ"], summary: e => (e.lao||"")+" ("+(e.rom||"")+")",
         item:[ { row:[ { key:"lao", type:"text", label:["Lao word","ຄຳລາວ"], cls:"hz" }, { key:"rom", type:"text", label:["Romanization","ຄຳອ່ານ"] } ] },
                { row:[ { key:"mean", type:"text", label:["Meaning","ຄວາມໝາຍ"] }, { key:"note", type:"text", label:["Tone rule note","ໝາຍເຫດ"] } ] } ] } ] },
+  // Pronunciation Studio units (js/shared/pron-course.js has the built-in ones: an item with the same id replaces it)
+  pronunciation: { title: d => d.title || d.t, idHint:"pr-my-unit", defaults:{ area:"sounds", cefr:"A1", order:10, focus:"words", glyph:"", hide:false, title:{en:"",lo:"",zh:""}, explain:{en:"",lo:"",zh:""}, tips:{ en:"", zh:"" }, items:[], pairs:[] },
+    fields:[
+      { key:"hide", type:"bool", label:["Hide the built-in unit with this id","ເຊື່ອງບົດຮຽນທີ່ມີໃນລະບົບທີ່ມີ id ນີ້"], help:["Built-in ids: pr-length, pr-vowels, pr-aspiration, pr-initials, pr-stops, pr-finals, pr-six, pr-class, pr-marks, pr-checked, pr-words, pr-particles, pr-shadow, pr-dialogue. Use the same id to replace one.","ໃຊ້ id ດຽວກັນເພື່ອແທນບົດຮຽນທີ່ມີໃນລະບົບ."] },
+      { key:"title", type:"tr", label:["Unit title","ຊື່ບົດຮຽນ"] },
+      { row:[ { key:"area", type:"select", label:["Area","ໝວດ"], options:[["sounds","Sounds of Lao (CEFR sound articulation)"],["tones","Tones (CEFR prosodic features)"],["connected","Speaking smoothly (CEFR overall phonological control)"]] },
+              { key:"cefr", type:"select", label:["CEFR level","ລະດັບ CEFR"], options:[["A1","A1"],["A2","A2"],["B1","B1"],["B2","B2"]] },
+              { key:"order", type:"number", label:["Order in the area","ລຳດັບ"] } ] },
+      { row:[ { key:"focus", type:"select", label:["What it trains (for the learner's profile)","ຝຶກຫຍັງ"], options:[["length","Vowel length"],["vowels","Vowel sounds"],["aspiration","Aspiration"],["initials","First consonants"],["stops","Final stops"],["finals","Final sounds"],["tones","Tones"],["words","Tones in words"],["particles","Sentence endings"],["shadow","Shadowing"]] },
+              { key:"glyph", type:"text", label:["Card art (a few Lao letters)","ຕົວອັກສອນໜ້າບັດ"], cls:"hz", placeholder:"ກ່ ກ້" } ] },
+      { key:"explain", type:"tr", multiline:true, label:["How to make the sound (explanation)","ວິທີອອກສຽງ (ຄຳອະທິບາຍ)"] },
+      { key:"tips", type:"object", label:["Accent tips by first language","ຄຳແນະນຳຕາມພາສາແມ່"], fields:[
+        { key:"en", type:"textarea", label:["For English speakers (in English)","ສຳລັບຄົນເວົ້າອັງກິດ"] },
+        { key:"zh", type:"textarea", label:["For Chinese speakers (in Chinese)","ສຳລັບຄົນເວົ້າຈີນ"] } ] },
+      { key:"items", type:"list", label:["Words and sentences to say","ຄຳ ແລະ ປະໂຫຍກໃຫ້ເວົ້າ"], itemLabel:["Item","ລາຍການ"], summary: x => (x.lao||"")+(x.en?" — "+x.en:""),
+        help:["The coach works out each syllable's tone from the Lao spelling and uses the Tone Lab contours as the target; a Voice Studio recording of the exact text is used as the model when there is one.","ລະບົບຄິດໄລ່ວັນນະຍຸດຈາກການສະກົດ ແລະ ໃຊ້ສຽງບັນທຶກເປັນແບບ ຖ້າມີ."],
+        item:[ { row:[ { key:"lao", type:"text", label:["Lao","ພາສາລາວ"], cls:"hz" }, { key:"py", type:"text", label:["Romanization","ຄຳອ່ານ"] } ] },
+               { row:[ { key:"en", type:"text", label:["English","ອັງກິດ"] }, { key:"cn", type:"text", label:["Chinese","ຈີນ"] } ] } ] },
+      { key:"pairs", type:"list", label:["Listening pairs (words that differ in one sound or tone)","ຄູ່ຄຳຟັງ"], itemLabel:["Pair","ຄູ່"], summary: x => x.words || "",
+        item:[ { key:"words", type:"text", label:["2–3 Lao words separated by |","ຄຳລາວ 2–3 ຄຳ ຂັ້ນດ້ວຍ |"], cls:"hz", placeholder:"ປາ | ພາ" } ] } ] },
   culture: { title: d => d.title, idHint:"cul-alms", defaults:{ category:"traditions", title:{en:"",lo:"",zh:""}, desc:{en:"",lo:"",zh:""}, content:{en:"",lo:"",zh:""}, keyTips:[], vocab:[] },
     fields:[
       { key:"title", type:"tr", label:["Story / Culture Title","ຫົວຂໍ້ວັດທະນະທຳ"] },

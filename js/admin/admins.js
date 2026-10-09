@@ -17,6 +17,7 @@ export const ALL_ADMIN_MENUS = [
       { id: "quizzes", label: ["Quizzes & Tests", "ແບບທົດສອບ"], icon: "practice", type: "content" },
       { id: "videos", label: ["Video Manager", "ຈັດການວິດີໂອ"], icon: "video", type: "content" },
       { id: "tones", label: ["Tone Lab", "ສຽງວັນນະຍຸດ"], icon: "sound", type: "content" },
+      { id: "pronunciation", label: ["Pronunciation units", "ບົດຝຶກອອກສຽງ"], icon: "mic", type: "content" },
       { id: "culture", label: ["Culture & Context", "ວັດທະນະທຳ"], icon: "culture", type: "content" },
       { id: "characters", label: ["Lao Script & Handwriting", "ອັກສອນ ແລະ ລາຍມື"], icon: "chars", type: "content" },
       { id: "dictionary", label: ["Dictionary Database", "ວັດຈະນານຸກົມ"], icon: "dict", type: "content" }

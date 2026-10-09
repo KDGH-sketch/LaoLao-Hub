@@ -185,6 +185,7 @@ const NAV_SECTIONS = [
     items: [
       { id:"videos", label:["Video Manager", "ຈັດການວິດີໂອ"], icon:"video", view:"videoManager" },
       { id:"tones", label:["Tone Lab", "ສຽງວັນນະຍຸດ"], icon:"sound", view:"contentList", params:{ type:"tones" } },
+      { id:"pronunciation", label:["Pronunciation units", "ບົດຝຶກອອກສຽງ"], icon:"mic", view:"contentList", params:{ type:"pronunciation" } },
       { id:"culture", label:["Culture & Context", "ວັດທະນະທຳ"], icon:"culture", view:"contentList", params:{ type:"culture" } },
       { id:"characters", label:["Lao Script & Handwriting", "ອັກສອນ ແລະ ລາຍມື"], icon:"chars", view:"handwriting" },
       { id:"dictionary", label:["Dictionary Database", "ວັດຈະນານຸກົມ"], icon:"dict", view:"contentList", params:{ type:"dictionary" } }

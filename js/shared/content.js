@@ -6,8 +6,10 @@ export const STATUS_KEYS = ["draft","published","archived"];
 export const CONTENT_TYPES = [
   "lessons","patterns","grammar","vocabulary","dialogues","quizzes","audio","paths","releases","lexicon",
   "videos","tones","culture","characters","dictionary",
-  "places","festivals","offers","resources"          // the public welcome page (docs/WELCOME.md)
+  "places","festivals","offers","resources",         // the public welcome page (docs/WELCOME.md)
+  "pronunciation"                                     // Pronunciation Studio units (needs the table: supabase-schema.sql)
 ];
+export const OPTIONAL_TYPES = new Set(["pronunciation"]);
 export const LEVELS = [1,2,3,4,5,6];
 export const SKILLS = ["vocabulary","grammar","reading","listening","writing","speaking","pinyin","characters","sentence"];
 
@@ -60,7 +62,8 @@ function publicView(type, doc){
 export async function buildBundles(api, who, onStep=()=>{}){
   const all = {};
   // onStep(step, done, total): content type names while reading, then "write" while uploading (used by the publish panel's progress ring)
-  for (const [i, t] of CONTENT_TYPES.entries()){ onStep(t, i, CONTENT_TYPES.length); all[t] = await api.db.list(t); }
+  // a collection added later (pronunciation) may not exist yet in an older database: publish without it rather than fail
+  for (const [i, t] of CONTENT_TYPES.entries()){ onStep(t, i, CONTENT_TYPES.length); try { all[t] = await api.db.list(t); } catch(e){ if (OPTIONAL_TYPES.has(t)) all[t] = []; else throw e; } }
   const plans = await api.db.list("plans");
   const tiers = [...new Set([0, 1, ...plans.map(p=>p.tier||1)])].sort((a,b)=>a-b);
   const version = Date.now();

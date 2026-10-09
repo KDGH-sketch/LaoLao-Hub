@@ -11,6 +11,7 @@ import { shapeItem } from "../shared/shape.js";
 import { setSpeechSettings, setAudioLibrary, setAudioGate } from "../shared/speech.js";
 import { ctx } from "../shared/widgets.js";
 import { coachInit, coachTrim } from "../shared/practice-coach.js";
+import { pronInit } from "../shared/pron-course.js";
 import { setSfx, sfx } from "../shared/sfx.js";
 import { mergeRules, lessonPoints, reviewPoints, dailyAward, levelFromXP, wilsonLower, skillMastery, earnedAchievements, handwritingRound } from "../shared/scoring.js";
 
@@ -151,6 +152,8 @@ export async function loadContent(){
   // every row completed from its type's defaults: a missing field never shows as "undefined" or breaks a page
   for (const ty of ["patterns","lessons","grammar","vocabulary","dialogues","quizzes","audio","paths","releases","videos","tones","culture","characters","dictionary"]) B[ty] = (B[ty]||[]).filter(d => d && d.id != null).map(d => shapeItem(ty, d));
   for (const ty of ["lessons","grammar","vocabulary","dialogues","quizzes","audio","paths","releases","videos","tones","culture","characters","dictionary"]) A.byType[ty] = Object.fromEntries((B[ty]||[]).map(d=>[d.id,d]));
+  // the teacher's Pronunciation Studio units (merged with the built-in course in views-pronounce.js)
+  A.byType.pronunciation = Object.fromEntries((B.pronunciation||[]).filter(d => d && d.id != null).map(d=>[d.id,d]));
   // grammar rows come in two shapes (older ones keep the explanation in "body"); the pages read one
   for (const id in A.byType.grammar) A.byType.grammar[id] = normalizeGrammar(A.byType.grammar[id]);
   A.P = {};
@@ -185,6 +188,10 @@ function progUpdate(data){ if (A.profile.status!=="active") return; A.api.db.upd
 export function coach(){ if (!A.prog.coach || !A.prog.coach.v) A.prog.coach = coachInit(A.prog.coach, A.prog.skills); return A.prog.coach; }
 let coachTimer = null;
 export function saveCoach(){ clearTimeout(coachTimer); coachTimer = setTimeout(() => { if (!A.prog || !A.prog.coach) return; coachTrim(A.prog.coach); progUpdate({ coach: A.prog.coach }); }, 200); }
+// the Pronunciation Studio profile (progress/{uid}.pron)
+export function pron(){ if (!A.prog.pron || !A.prog.pron.u) A.prog.pron = pronInit(A.prog.pron); return A.prog.pron; }
+let pronTimer = null;
+export function savePron(){ clearTimeout(pronTimer); pronTimer = setTimeout(() => { if (A.prog && A.prog.pron) progUpdate({ pron: A.prog.pron }); }, 300); }
 export function touchDay(){ const k = todayKey(); if (!A.prog.days[k]){ A.prog.days[k]=1; progUpdate({ ["days."+k]:1 }); } }
 // Checked answers count toward skill accuracy. Self-graded answers (flashcards, handwriting, "I said it well")
 // and skipped questions only count as study activity.
@@ -293,7 +300,7 @@ export function srsAdd(id, data){
 export const srsDue = () => Object.values(A.srs).filter(x => x.due <= Date.now());
 export function srsGrade(id, q){
   const c = A.srs[id]; if (!c) return;
-  if (q===0){ c.reps=0; c.ivl=0; c.ease=Math.max(1.3,c.ease-0.2); c.due=Date.now()+5*60000; }
+  if (q===0){ if (c.reps > 0) c.lapses = (c.lapses || 0) + 1; c.reps=0; c.ivl=0; c.ease=Math.max(1.3,c.ease-0.2); c.due=Date.now()+5*60000; }
   else { c.reps++; c.ivl = c.reps===1 ? (q===3?3:1) : c.reps===2 ? (q===1?3:6) : Math.round(c.ivl*(q===1?1.2:q===3?c.ease*1.3:c.ease)); c.ease=Math.max(1.3,c.ease+(q===1?-0.15:q===3?0.15:0)); c.due=Date.now()+c.ivl*86400000; }
   const { id:_, ...rest } = c;
   A.api.db.set(`reviews/${A.user.uid}/items/${id}`, rest).catch(()=>{});

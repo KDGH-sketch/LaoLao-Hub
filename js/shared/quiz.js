@@ -103,7 +103,7 @@ export function runQuiz(root, questions, opts={}){
       state.res.push(correct);
       state.ans.push({ type:q.type, correct, self, skipped });
       const dot = $$(".qprog i", root)[state.i]; if (dot) dot.className = skipped ? "skip" : correct ? "ok" : "no";
-      opts.onAnswer && opts.onAnswer(q, correct, { self, skipped, ms, combo: state.combo });
+      opts.onAnswer && opts.onAnswer(q, correct, { self, skipped, ms, combo: state.combo, given: meta.given });
       // a timed round moves on by itself
       if (timed) setTimeout(() => { if (root.isConnected && !state.ended && state.res.length === state.i + 1){ state.i++; if (state.i >= questions.length) questions = questions.slice(0, state.i); render(); } }, correct ? 450 : 1100);
       return p;
@@ -153,7 +153,7 @@ export function questionEl(q, L, onResult, onNext){
   };
   const optionButtons = (opts, correctIdx, hz) => h("div",{class:"opts"}, opts.map((o,i) => h("button",{class:"opt"+(hz?" hz":"")+(L==="lo"&&!hz?" lo":""),lang:hz?"zh-CN":null,"data-i":i,onclick:e=>{
     if (answered) return; const ok = i===correctIdx; e.currentTarget.classList.add(ok?"right":"wrong");
-    if (!ok) $$(".opt",box).forEach(b=>{ if (+b.dataset.i===correctIdx) b.classList.add("right"); }); finish(ok); }}, optText(o, L))));
+    if (!ok) $$(".opt",box).forEach(b=>{ if (+b.dataset.i===correctIdx) b.classList.add("right"); }); finish(ok, null, { given: optText(o, L) }); }}, optText(o, L))));
   const shuffled = (opts, ans) => { const idx = shuffle(opts.map((_,i)=>i)); return { opts: idx.map(i=>opts[i]), ans: idx.indexOf(ans) }; };
 
   switch (q.type){
@@ -180,7 +180,7 @@ export function questionEl(q, L, onResult, onNext){
       box.append(ansRow, pool, h("div",{class:"qfoot"},
         h("button",{class:"btn sm ghost",onclick:()=>{ if (answered) return; chosen.splice(0); ansRow.innerHTML=""; $$(".tile.used",pool).forEach(b=>b.classList.remove("used")); }}, t("reset")),
         h("button",{class:"btn primary",onclick:()=>{ if (answered || !chosen.length) return; const got = chosen.map(c=>c.z).join(""); const want = q.answer || toks.map(x=>x.z).join("");
-          finish(norm(got,"script")===norm(want,"script"), got!==want ? h("div",null, t("answer_was")+": ", h("span",{class:"hz lo"}, want)) : null); }}, t("check"))));
+          finish(norm(got,"script")===norm(want,"script"), got!==want ? h("div",null, t("answer_was")+": ", h("span",{class:"hz lo"}, want)) : null, { given: got }); }}, t("check"))));
       q.say = q.say || q.answer;
       break;
     }
@@ -206,7 +206,7 @@ export function questionEl(q, L, onResult, onNext){
       const inp = h("input",{class:"input",style:"font-size:1.2rem;margin-top:14px",placeholder:t("q_type_ph"),autocomplete:"off",autocapitalize:"off",spellcheck:"false"});
       const check = () => { if (answered || !inp.value.trim()) return; const v = inp.value.trim();
         const ok = (q.accept||[]).some(a => norm(a, q.mode) === norm(v, q.mode) || norm(a,"script")===norm(v,"script") || norm(a,"hanzi")===norm(v,"hanzi"));
-        finish(ok, ok ? null : h("div",null, t("answer_was")+": ", h("b",{class:"hz lo"}, (q.accept||[])[0]||""))); };
+        finish(ok, ok ? null : h("div",null, t("answer_was")+": ", h("b",{class:"hz lo"}, (q.accept||[])[0]||"")), { given: v }); };
       inp.addEventListener("keydown", e => { if (e.key==="Enter") check(); });
       box.append(inp, h("div",{class:"qfoot"}, h("span"), h("button",{class:"btn primary",onclick:check}, t("check"))));
       if (q.type==="listen_type") setTimeout(()=>speak(q.prompt.zh), 300);
@@ -310,7 +310,7 @@ export function questionEl(q, L, onResult, onNext){
       box.append(h("div",{class:"tf-claim"}, h("span",{class:"tf-eq","aria-hidden":"true"}, "="), h("b",{class:L==="lo"?"lo":""}, q.claim)));
       const pickTf = (v, e) => { if (answered) return; const ok = v === !!q.answer; e.currentTarget.classList.add(ok ? "right" : "wrong");
         if (!ok) $$(".tf-btns .btn", box).forEach(b => { if ((b.dataset.v === "1") === !!q.answer) b.classList.add("right"); });
-        finish(ok, q.audio ? h("div",{class:"hz lo",style:"font-size:1.4rem"}, q.prompt.zh) : null); };
+        finish(ok, q.audio ? h("div",{class:"hz lo",style:"font-size:1.4rem"}, q.prompt.zh) : null, { given: v }); };
       box.append(h("div",{class:"tf-btns"},
         h("button",{class:"btn tf-yes","data-v":"1",onclick:e=>pickTf(true, e)}, icon("check"), t("pz_true")),
         h("button",{class:"btn tf-no","data-v":"0",onclick:e=>pickTf(false, e)}, icon("x"), t("pz_false"))));
@@ -334,7 +334,7 @@ export function questionEl(q, L, onResult, onNext){
         if (answered) return; const ok = i===s.ans; e.currentTarget.classList.add(ok?"right":"wrong");
         if (!ok) $$(".opt",box).forEach(b=>{ if (+b.dataset.i===s.ans) b.classList.add("right"); });
         $$(".bubble-text, .bubble-sub", chat).forEach(x => x.hidden = false);
-        finish(ok, q.after ? h("div",{class:L==="lo"?"lo":""}, q.options[q.answer], " — ", q.after) : null); }}, optText(o, L)))));
+        finish(ok, q.after ? h("div",{class:L==="lo"?"lo":""}, q.options[q.answer], " — ", q.after) : null, { given: optText(o, L) }); }}, optText(o, L)))));
       break;
     }
     default: box.append(h("p",null,"Unknown question type: "+q.type), h("button",{class:"btn",onclick:()=>finish(false, null, { skipped:true })},t("q_skip")));

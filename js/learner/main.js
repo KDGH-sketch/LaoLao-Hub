@@ -17,6 +17,8 @@ import { CARD_VIEWS } from "./views-cards.js";
 import { GRAMMAR_VIEWS } from "./views-grammar.js";
 import { VIEWS as BILLING_VIEWS } from "./views-billing.js";
 import { PRACTICE_VIEWS } from "./views-practice.js";
+import { PRON_VIEWS } from "./views-pronounce.js";
+import { REVIEW_VIEWS } from "./views-review.js";
 import { renderWelcome, pendingResource } from "./welcome.js";
 import { lockedPanel, featureForView, navLock, planLabel } from "./upgrade.js";
 import { themeSwitcher, brandMark } from "../shared/ui.js";
@@ -115,7 +117,7 @@ function renderDisabled(){
 }
 
 // ---------- shell ----------
-const VIEWS = Object.assign({}, LV.VIEWS, TV.VIEWS, LAB_VIEWS, MEDIA_VIEWS, HANDWRITING_VIEWS, BILLING_VIEWS, CARD_VIEWS, GRAMMAR_VIEWS, PRACTICE_VIEWS, {
+const VIEWS = Object.assign({}, LV.VIEWS, TV.VIEWS, LAB_VIEWS, MEDIA_VIEWS, HANDWRITING_VIEWS, BILLING_VIEWS, CARD_VIEWS, GRAMMAR_VIEWS, PRACTICE_VIEWS, PRON_VIEWS, REVIEW_VIEWS, {
   chars: HANDWRITING_VIEWS.handwriting, script_lab: HANDWRITING_VIEWS.handwriting
 });
 // Grouped so the sidebar reads as sections instead of one long flat list.

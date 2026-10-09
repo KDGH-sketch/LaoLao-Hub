@@ -188,7 +188,7 @@ async function play(sh, build, { key, setId = null, kind = "set", timeLimit = 0,
     onAnswer: (q, ok, m) => {
       recordAnswer(q.skill, ok, m); sh.setCombo(ok ? m.combo : 0);
       if (m.self || m.skipped) return;
-      coachAnswer(c, { skill:q.skill, correct:ok, ms:m.ms, item:q.item });
+      coachAnswer(c, { skill:q.skill, correct:ok, ms:m.ms, item:q.item, given:m.given });
       const tl = tally[q.skill] = tally[q.skill] || [0, 0]; tl[1]++; if (ok) tl[0]++;
       // wrong answers go to the mistakes list; words (not whole sentences, not speed-round slips) also go to Review
       if (!ok && q.item && q.item.k){ wrong.push(q.item); if (kind !== "speed" && /^[຀-໿]{1,12}$/.test(q.item.k)) srsAdd("s:" + q.item.k, { type:"s", zh:q.item.k }); }
@@ -197,7 +197,8 @@ async function play(sh, build, { key, setId = null, kind = "set", timeLimit = 0,
     onFinish: res => {
       if (setId) coachRound(c, { setId, right:res.right, total:res.total, stars:res.stars });
       if (kind === "daily") c.daily[dayKey()] = { r:res.right, t:res.total };
-      let record = false; if (kind === "speed" && res.right > (c.best.speed || 0)){ c.best.speed = res.right; record = true; }
+      // the Speed round's best is always kept (also a first 0); "New record!" only for a real improvement
+      let record = false; if (kind === "speed"){ record = res.right > 0 && res.right > (c.best.speed || 0); c.best.speed = Math.max(c.best.speed || 0, res.right); }
       saveCoach(); logEvent("practice", { ref:key, score:res.right, total:res.total }, true);
       const box = sh.box.querySelector(".qbox.result"); if (box) box.after(roundCoach({ tally, before, wrong, res, record, kind }));
       // after the round's own sound: a fanfare for a new rank or a new speed record

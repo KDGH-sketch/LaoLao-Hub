@@ -21,6 +21,7 @@ begin
     'lessons','patterns','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon',
     'videos','tones','culture','characters','dictionary',
     'places','festivals','offers','resources',          -- the public welcome page (docs/WELCOME.md)
+    'pronunciation',                                    -- Pronunciation Studio units
     'bundles','progress','reviews','bookmarks','notes','activity',
     'usage','accessLogs','orders','payments',
     'vocab','saved'  -- legacy, unused by the app
@@ -711,7 +712,7 @@ begin
            where schemaname = 'public' and tablename = any (array[
              'users','admins','adminNotes','access','plans','subscriptions','settings',
              'lessons','patterns','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon',
-             'videos','tones','culture','characters','dictionary','places','festivals','offers','resources',
+             'videos','tones','culture','characters','dictionary','places','festivals','offers','resources','pronunciation',
              'bundles','progress','reviews','bookmarks','notes','activity','usage','accessLogs','orders','payments','vocab','saved'])
   loop
     execute format('drop policy %I on public.%I', r.policyname, r.tablename);
@@ -727,7 +728,7 @@ do $$
 declare t text; m text;
 begin
   foreach t in array array['lessons','patterns','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon',
-                           'videos','tones','culture','characters','dictionary','places','festivals','offers','resources'] loop
+                           'videos','tones','culture','characters','dictionary','places','festivals','offers','resources','pronunciation'] loop
     m := case t when 'offers' then 'promotions' else t end;      -- admin menu id that grants editing
     execute format('create policy "ll admin read" on public.%I for select using (public.ll_is_admin())', t);
     execute format('create policy "ll edit insert" on public.%I for insert with check (public.ll_can_edit(%L))', t, m);
@@ -852,7 +853,7 @@ declare doc jsonb; op jsonb; p text[]; i int; cur jsonb;
 begin
   if p_table not in ('users','admins','adminNotes','access','plans','subscriptions','settings',
                      'lessons','patterns','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon',
-                     'videos','tones','culture','characters','dictionary','places','festivals','offers','resources',
+                     'videos','tones','culture','characters','dictionary','places','festivals','offers','resources','pronunciation',
                      'bundles','progress','reviews','bookmarks','notes','activity') then
     raise exception 'll_apply: table % is not allowed', p_table;
   end if;

@@ -255,34 +255,8 @@ VIEWS.pinyin = () => {
 // The handwriting activity lives in js/learner/views-handwriting.js ("chars" and "script_lab" open it).
 
 // ---------- pronunciation ----------
-VIEWS.speak = () => {
-  const lv = A.profile.level || 1;
-  const pool = Object.values(A.P).filter(p=>p.level<=Math.max(2,lv));
-  const box = h("div",{class:"quiz"});
-  const start = () => { const qs = []; for (let i=0;i<30 && qs.length<8;i++){ const q = MAKERS.speak(pool); if (q) qs.push(q); }
-    runQuiz(box, qs, { key:"speak", title:t("speak_title"), onAnswer:(q,ok,m)=>recordAnswer("speaking", ok, m), onFinish:r=>logEvent("speaking", { score:r.right, total:r.total }, true), onAgain:start }); };
-  start();
-  return h("div",null, pageHead(t("speak_title"), t("speak_sub")), canListen() ? null : h("div",{class:"banner",style:"margin-bottom:14px"}, t("no_mic")), box);
-};
-
-// ---------- review ----------
-VIEWS.review = () => {
-  const root = h("div"), due = srsDue(), total = Object.keys(A.srs).length;
-  root.append(pageHead(t("review_title"), t("review_sub")),
-    h("div",{class:"grid3",style:"margin-bottom:22px"}, h("div",{class:"card stat"}, h("b",null,due.length), h("span",null,t("due_now"))), h("div",{class:"card stat"}, h("b",null,total), h("span",null,t("in_deck"))), h("div",{class:"card stat"}, h("b",null,wordsMastered()), h("span",null,t("learned_words")))));
-  if (!due.length){ root.append(h("div",{class:"empty"},t("review_empty"))); return root; }
-  const c = due.sort((a,b)=>a.due-b.due)[0], D = dict(), EL = expLang();
-  const box = h("div",{class:"qbox flash"}); let front; const back = h("div",{class:"stack",style:"gap:6px;align-items:center",hidden:true});
-  if (c.type==="p"){ const p = A.P[c.n]; if (!p){ srsGrade(c.id,3); return VIEWS.review(); } front = h("div",{class:"front hzd"},p.hz); back.append(h("div",{html:pyHTML(p.py)}), h("div",{class:EL==="lo"?"lo":""},pMeaning(p)), h("button",{class:"btn sm ghost",onclick:()=>go("pattern",{n:p.n})},t("open_pattern"))); const s = genSentence(p); if (s) back.append(h("div",{style:"text-align:left;width:100%"}, sentenceEl(s,{markers:p.markers}))); }
-  else if (c.type==="w"){ const d = D[c.w]; front = h("div",{class:"front",lang:"zh-CN"},c.w); back.append(h("div",{style:"font-size:1.3rem",html:pyHTML(d?d.p:"")}), h("div",{class:EL==="lo"&&d&&d.lo?"lo":""}, d ? meaning(c.w,EL) : ""), h("button",{class:"btn sm",onclick:()=>speak(c.w)},icon("play"),t("play"))); }
-  else { front = h("div",{class:"front",style:"font-size:1.7rem",lang:"zh-CN"},c.zh); back.append(h("div",{html:pyHTML(c.py||"")}), h("div",{class:"muted"}, c.tr ? tr(c.tr, EL) : ""), h("button",{class:"btn sm",onclick:()=>speak(c.zh)},icon("play"),t("play"))); }
-  const grades = h("div",{class:"grades",hidden:true}, [["r_again",0,"5m"],["r_hard",1,""],["r_good",2,""],["r_easy",3,""]].map(([k,q,hint]) => h("button",{class:"btn"+(q===2?" primary":""),onclick:()=>{ srsGrade(c.id,q); recordAnswer(c.type==="w"?"vocabulary":c.type==="p"?"grammar":"reading", q>0); go("review",{},false); }}, h("span",null,t(k), hint?h("small",null,hint):null))));
-  const show = h("button",{class:"btn primary",onclick:()=>{ back.hidden=false; grades.hidden=false; show.remove(); if (c.type!=="p") speak(c.w||c.zh); }}, t("show_answer"));
-  box.append(front, back, show); root.append(box, grades);
-  return root;
-};
-
-// ---------- saved ----------
+// (the Pronunciation Studio, route "speak", is in views-pronounce.js)
+// (Smart Review, route "review", is in views-review.js)
 VIEWS.saved = () => {
   const items = Object.values(A.saved).sort((a,b)=>(b.at||0)-(a.at||0));
   const root = h("div"); root.append(pageHead(t("saved_title")));

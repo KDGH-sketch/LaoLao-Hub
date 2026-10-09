@@ -16,8 +16,8 @@ export function coachInit(state, legacy = {}){
     s.sk[k] = { a:1 + v.r * f, b:1 + (v.t - v.r) * f, n:v.t, ms:0, last:0 }; } s.seeded = 1; }
   return s;
 }
-// one checked answer: { skill, correct, ms, item:{ k, py, en, zh }, now }
-export function coachAnswer(s, { skill, correct, ms = 0, item = null, now = Date.now() }){
+// one checked answer: { skill, correct, ms, item:{ k, py, en, zh }, given (what was chosen or typed), now }
+export function coachAnswer(s, { skill, correct, ms = 0, item = null, given = null, now = Date.now() }){
   if (!COACH_SKILLS.includes(skill)) skill = "reading";
   const k = s.sk[skill] = s.sk[skill] || { a:1, b:1, n:0, ms:0, last:0 };
   k.a = 1 + (k.a - 1) * DECAY + (correct ? 1 : 0); k.b = 1 + (k.b - 1) * DECAY + (correct ? 0 : 1); k.n++; k.last = now;
@@ -25,7 +25,11 @@ export function coachAnswer(s, { skill, correct, ms = 0, item = null, now = Date
   const day = dayKey(now), d = s.d[day] = s.d[day] || {}; const c = d[skill] = d[skill] || [0, 0]; c[1]++; if (correct) c[0]++;
   if (item && item.k){ const key = String(item.k).slice(0, 80); const it = s.it[key] = s.it[key] || { w:0, r:0, s:0, t:0 };
     Object.assign(it, { py:item.py || it.py || "", en:String(item.en || it.en || "").slice(0, 120), zh:String(item.zh || it.zh || "").slice(0, 60) });
-    if (correct){ it.r++; it.s++; } else { it.w++; it.s = 0; } it.t = now; }
+    if (correct){ it.r++; it.s++; } else { it.w++; it.s = 0; } it.t = now;
+    // for Smart Review: the last answers (1 right, 0 wrong), what was picked instead, and the answer time
+    it.hb = String((it.hb || "") + (correct ? "1" : "0")).slice(-12);
+    if (!correct && given != null && typeof given !== "boolean" && String(given).trim() && String(given) !== key){ it.x = [{ g: String(given).slice(0, 80), t: now }, ...(it.x || []).filter(c => c.g !== String(given))].slice(0, 4); }
+    if (ms > 300 && ms < 120000) it.ms = it.ms ? Math.round(it.ms * 0.7 + ms * 0.3) : Math.round(ms); }
   return s;
 }
 // a finished round of a practice set
