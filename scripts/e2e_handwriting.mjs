@@ -64,11 +64,11 @@ try {
   step("learner: activity with mouse input");
   await login("/", "learner@demo.laolao");
   await openHw();
-  await ok(await b.eval(`!!document.querySelector(".hwp") && document.querySelectorAll(".hw-pick button").length >= 9`), "handwriting page lists the characters (templates first)");
+  await ok(await b.eval(`document.querySelectorAll(".hwh-tile").length >= 33 && document.querySelectorAll(".hwh-tile .hwh-tpl").length >= 3`), "handwriting sections list the letters; letters with a stroke template are marked");
+  await b.eval(`[...document.querySelectorAll(".hwh-tile")].find(x => x.querySelector(".hwh-glyph").textContent === "ກ").click()`); await sleep(900);
   await ok(await b.eval(`document.querySelector(".hwp").classList.contains("locked")`) && /Watch the stroke order first/.test(await fbText()), "canvas is locked until the demonstration is watched");
   const ko = await tplOf("ກ");
   await ok(Array.isArray(ko) && ko.length === 1, "the first character has a stroke template (demo sample)");
-  await b.eval(`[...document.querySelectorAll(".hw-pick button")].find(x => x.textContent.startsWith("ກ") && x.textContent.length <= 2).click()`); await sleep(700);
   const t0 = Date.now(); await watchDemo();
   await ok(Date.now() - t0 > 600, "the demonstration plays before drawing (" + (Date.now() - t0) + " ms)");
   await ok(!(await b.eval(`document.querySelector(".hwp").classList.contains("locked")`)), "after the demonstration the canvas is unlocked");
@@ -120,13 +120,13 @@ try {
 
   step("learner: layouts");
   for (const [w, h, name] of [[390, 844, "phone"], [844, 390, "phone landscape"], [768, 1024, "tablet"]]){
-    await b.viewport(w, h, w < 900); await openHw(); await sleep(400);
+    await b.viewport(w, h, w < 900); await b.eval(`import("/js/learner/main.js").then(m => m.go("handwriting", { sec: "consonants", ch: "ກ" }))`); await sleep(900);
     const m = await b.eval(`(() => { const r = document.querySelector(".hwp").getBoundingClientRect(); return { w: r.width, h: r.height, fits: document.documentElement.scrollWidth <= innerWidth + 1 }; })()`);
     await ok(Math.abs(m.w - m.h) < 2 && m.w > 200 && m.fits, `${name}: square canvas ${Math.round(m.w)}×${Math.round(m.h)}, no horizontal scrolling`);
     if (name === "phone") await b.screenshot(path.join(SHOTS, "hw-learner-phone.png"));
   }
   await b.viewport(1366, 900, false);
-  await b.eval(`document.documentElement.setAttribute("data-theme","night")`); await openHw(); await sleep(300);
+  await b.eval(`document.documentElement.setAttribute("data-theme","night")`); await b.eval(`import("/js/learner/main.js").then(m => m.go("handwriting", { sec: "consonants", ch: "ກ" }))`); await sleep(900);
   await b.screenshot(path.join(SHOTS, "hw-learner-night.png"));
   await b.eval(`document.documentElement.setAttribute("data-theme","day")`);
 
@@ -187,7 +187,8 @@ try {
   await login("/", "learner@demo.laolao");
   await openHw("char-ຄ");
   await ok(!(await b.eval(`/Practice only/.test(document.querySelector(".hw-side").innerText)`)) && /Strokes: 2/.test(await text()), "ຄ is now a checked activity with 2 strokes");
-  await ok(!(await b.eval(`[...document.querySelectorAll(".hw-pick button")].some(x => x.textContent.startsWith("ຈ"))`)), "a draft character is not sent to learners");
+  await b.eval(`import("/js/learner/main.js").then(m => m.go("handwriting", { sec: "consonants" }))`); await sleep(800);
+  await ok(!(await b.eval(`!![...document.querySelectorAll(".hwh-tile")].find(x => x.querySelector(".hwh-glyph").textContent === "ຈ")?.querySelector(".hwh-tpl")`)), "a draft character's stroke template is not sent to learners (ຈ is practised by shape only)");
 
   step("admin roles");
   await login("/admin/", "reviewer@demo.laolao");

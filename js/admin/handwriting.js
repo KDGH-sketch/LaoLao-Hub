@@ -10,6 +10,7 @@ import { makeStroke, readTemplate, validateTemplate, mergeHwRules, DEFAULT_HW_RU
 import { createSession } from "../shared/handwriting/recognizer.js";
 import { scoreAttempt, strokeFeedback, COMPONENTS } from "../shared/handwriting/scorer.js";
 import { S, L, t, go, canEditMenu, isSuper, fld, markUnpublished } from "./state.js";
+import { SECTIONS, section, CLASS_OF } from "../shared/lao-script.js";
 
 const canEdit = () => canEditMenu("characters");
 const status = c => { const tp = readTemplate(c.handwriting); return !tp ? "none" : tp.sample ? "sample" : "ready"; };
@@ -32,23 +33,36 @@ export async function viewHandwriting(){
       h("td", null, h("span", { class: "pill " + (c.status === "published" ? "ok" : "") }, t("status_" + (c.status || "draft")))),
       h("td", { class: "small muted" }, fmtDate(c.updatedAt, lang())))); });
   if (!rows.length) body.append(h("tr", null, h("td", { colspan: "6", class: "muted" }, t("no_rows"))));
+  // coverage: learners practise every letter of the script by shape; letters with a published template also get
+  // stroke-order checking. The chips are letters without a template yet (click one to start it).
+  const ready = new Set(rows.filter(c => c.status === "published" && status(c) !== "none").map(c => c.char));
+  const SEC = { consonants: ["Consonants", "ພະຍັນຊະນະ"], vowels: ["Vowels", "ສະຫຼະ"], tones: ["Tone marks", "ວັນນະຍຸດ"], numbers: ["Numbers", "ຕົວເລກ"] };
+  const coverage = h("section", { class: "panel stack hwa-cov" },
+    h("h3", null, L(["Stroke-order templates", "ແມ່ແບບລຳດັບເສັ້ນ"])),
+    h("p", { class: "small muted", style: "margin:0" }, L(["Learners can practise every letter: each one is checked by its shape. Letters with a published template are also checked stroke by stroke.",
+      "ຜູ້ຮຽນຝຶກໄດ້ທຸກຕົວອັກສອນ ໂດຍກວດຕາມຮູບຮ່າງ. ຕົວທີ່ມີແມ່ແບບເຜີຍແຜ່ແລ້ວ ຈະຖືກກວດທີລະເສັ້ນນຳ."])),
+    h("div", { class: "hwa-cov-grid" }, SECTIONS.filter(k => k !== "words").map(k => { const list = section(k), have = list.filter(x => ready.has(x.char));
+      return h("div", { class: "hwa-cov-row" }, h("div", { class: "spread" }, h("b", null, L(SEC[k])), h("span", { class: "tabnum small" }, have.length + " / " + list.length)),
+        h("div", { class: "bar" }, h("i", { style: "width:" + Math.round(100 * have.length / list.length) + "%" })),
+        canEdit() ? h("div", { class: "hwa-cov-chips" }, list.filter(x => !ready.has(x.char)).slice(0, 40).map(x => h("button", { class: "chip", lang: "lo", title: L(["Start a template", "ເລີ່ມແມ່ແບບ"]),
+          onclick: () => { const ex = rows.find(c => c.char === x.char); ex ? go("handwritingEditor", { id: ex.id }) : newCharacter(x.char); } }, x.char))) : null); })));
   return h("div", { class: "stack-l" },
     h("div", { class: "pagehead" }, h("div", { class: "spread" }, h("h1", null, L(["Lao Script & Handwriting", "ອັກສອນ ແລະ ການຂຽນ"])),
       canEdit() ? h("button", { class: "btn primary", onclick: newCharacter }, icon("plus"), t("new_item")) : null),
       h("p", null, L(["Draw the official stroke order of each character, set how strictly it is checked, test it, then publish. Learners only see published characters.",
         "ແຕ້ມລຳດັບການຂຽນທາງການຂອງແຕ່ລະຕົວອັກສອນ, ຕັ້ງຄ່າການກວດ, ທົດສອບ ແລ້ວເຜີຍແຜ່. ຜູ້ຮຽນເຫັນສະເພາະຕົວທີ່ເຜີຍແຜ່ແລ້ວ."]))),
-    h("div", { class: "tbl-wrap" }, h("table", { class: "tbl" },
+    coverage, h("div", { class: "tbl-wrap" }, h("table", { class: "tbl" },
       h("thead", null, h("tr", null, [L(["Letter", "ຕົວອັກສອນ"]), t("name"), L(["Stroke template", "ແມ່ແບບເສັ້ນ"]), L(["Strokes", "ເສັ້ນ"]), t("status"), L(["Updated", "ອັບເດດ"])].map(x => h("th", null, x)))), body)));
 }
 
-async function newCharacter(){
-  const ch = h("input", { class: "input hz", lang: "lo", placeholder: "ກ" }), nm = h("input", { class: "input", placeholder: "ko kai" });
+async function newCharacter(prefill = ""){
+  const ch = h("input", { class: "input hz", lang: "lo", placeholder: "ກ", value: typeof prefill === "string" ? prefill : "" }), nm = h("input", { class: "input", placeholder: "ko kai" });
   const r = await dialog({ title: t("new_item"), body: h("div", { class: "stack" }, fld(L(["Lao letter or combination", "ຕົວອັກສອນ ຫຼື ການປະສົມ"]), ch), fld(t("name"), nm)),
     actions: [{ label: t("cancel"), value: false }, { label: t("create"), primary: true, onClick: async () => {
       const c = ch.value.trim(); if (!c) return false;
       const id = "char-" + c;
       if (await S.api.db.get(`characters/${id}`)){ toast(L(["That character already exists.", "ມີຕົວອັກສອນນີ້ແລ້ວ."]), "err"); return false; }
-      await saveContent(S.api, "characters", id, { char: c, name: nm.value.trim(), meaning: "", ipa: "", class: "middle", strokeCount: 0, status: "draft", access: "free" }, S.me.uid);
+      await saveContent(S.api, "characters", id, { char: c, name: nm.value.trim(), meaning: "", ipa: "", class: CLASS_OF[c] || (/[່-໋]/.test(c) ? "tone_mark" : /[ະ-ຽເ-ໄໍ]/.test(c) ? "vowel" : ""), strokeCount: 0, status: "draft", access: "free" }, S.me.uid);
       markUnpublished(); return id; } }] });
   if (r) go("handwritingEditor", { id: r });
 }

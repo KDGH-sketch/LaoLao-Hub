@@ -454,3 +454,9 @@ table.tbl tr.clickable:hover td{background:var(--surface-2)}
 .imp-opts{gap:18px}
 .imp-bar{height:10px;border-radius:99px;background:var(--surface-3);overflow:hidden}
 .imp-bar i{display:block;height:100%;width:0;background:var(--accent-grad);transition:width .2s}
+
+/* handwriting: template coverage */
+.hwa-cov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.hwa-cov-row{display:grid;gap:6px;min-width:0}
+.hwa-cov-chips{display:flex;flex-wrap:wrap;gap:4px}
+.hwa-cov-chips .chip{cursor:pointer;font-family:var(--f-lo);font-size:1rem;min-height:32px;border:1px solid var(--line);background:var(--surface)}
