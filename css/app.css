@@ -1898,6 +1898,7 @@ main h1{font-weight:800;line-height:1.15}
 /* ---------- Practice Studio (js/learner/views-practice.js) ---------- */
 .trk-vocab{--trk:var(--accent)} .trk-listen{--trk:var(--t2)} .trk-speak{--trk:var(--tone-4)} .trk-read{--trk:var(--jade)} .trk-write{--trk:var(--tone-6)}
 .trk-grammar{--trk:var(--tone-3)} .trk-tones{--trk:var(--tone-5)} .trk-script{--trk:var(--ink-2)} .trk-talk{--trk:color-mix(in srgb,var(--t2) 50%,var(--violet))}
+[class*="trk-"]{--trk-ink:color-mix(in srgb,var(--trk) 72%,var(--ink))}
 .pz{display:flex;flex-direction:column;gap:26px}
 .pz-hero{position:relative;overflow:hidden;border-radius:22px;padding:24px;background:var(--accent-grad);color:var(--accent-ink);display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px 24px;box-shadow:var(--shadow-lg)}
 .pz-hero::after{content:"ກ ຂ ຄ ງ";position:absolute;right:-10px;bottom:-34px;font:800 7.5rem/1 var(--f-lo);letter-spacing:.05em;opacity:.08;pointer-events:none;white-space:nowrap}
@@ -1986,16 +1987,16 @@ main h1{font-weight:800;line-height:1.15}
 .pz-trk-ic .ic{width:var(--ic-xs);height:var(--ic-xs)}
 .pz-ribbon{position:absolute;right:10px;top:10px;font-size:.7rem;font-weight:800;letter-spacing:.02em;padding:3px 8px;border-radius:99px;background:var(--trk);color:var(--surface)}
 .pz-body{display:flex;flex-direction:column;gap:3px;padding:12px 14px 14px;flex:1}
-.pz-mode{font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--trk)}
+.pz-mode{font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--trk-ink)}
 .pz-ttl{font-size:1rem;line-height:1.25}
 .pz-meta{font-size:.8rem;color:var(--ink-3)}
 .pz-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:8px}
-.pz-newchip{background:color-mix(in srgb,var(--trk) 14%,var(--surface));color:var(--trk)}
+.pz-newchip{background:color-mix(in srgb,var(--trk) 9%,var(--surface));color:var(--trk-ink)}
 /* a session */
 .pz-session{display:flex;flex-direction:column;gap:12px;max-width:760px;margin:0 auto;width:100%}
 .pz-shead{display:flex;align-items:center;gap:12px}
 .pz-shead-t{display:flex;flex-direction:column;flex:1;min-width:0}
-.pz-shead-t small{color:var(--trk);font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em}
+.pz-shead-t small{color:var(--trk-ink);font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em}
 .pz-shead-t b{font:800 1.2rem/1.2 var(--f-display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pz-combo{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:99px;background:var(--warn-2);color:var(--warn);font-weight:800}
 .pz-combo .ic{width:var(--ic-sm);height:var(--ic-sm)}
