@@ -37,6 +37,17 @@ const HELPER = `window.__ans = () => { const q = document.querySelector(".qbox:n
   const mic = [...q.querySelectorAll(".btn.primary")].find(x => x.querySelector("svg") && !x.disabled); if (mic && !q.querySelector(".opt")){ mic.click(); return "speak"; }
   const o = q.querySelector(".opt:not(.right):not(.wrong)"); if (o){ const all = [...q.querySelectorAll(".opt")]; all[Math.floor(Math.random() * all.length)].click(); return "opt"; }
   return "stuck:" + q.innerText.slice(0, 60); };`;
+// layout check: radar labels inside the chart, chart and everything else inside its card, no sideways page scroll
+const FIT = `(() => { const out = [];
+  for (const svg of document.querySelectorAll(".pz-radar")){ const card = svg.closest(".card, .panel"), r = svg.getBoundingClientRect(), c = card.getBoundingClientRect();
+    if (r.left < c.left - 0.5 || r.right > c.right + 0.5) out.push("chart outside card");
+    for (const tx of svg.querySelectorAll("text")){ const q = tx.getBoundingClientRect();
+      if (q.left < r.left - 0.5 || q.right > r.right + 0.5 || q.top < r.top - 0.5 || q.bottom > r.bottom + 0.5) out.push("label outside chart: " + tx.textContent);
+      if (q.left < c.left || q.right > c.right) out.push("label outside card: " + tx.textContent); }
+    for (const el of card.querySelectorAll("*")){ const q = el.getBoundingClientRect(); if (q.width && (q.right > c.right + 1 || q.left < c.left - 1)){ out.push("sticks out: " + String(el.className.baseVal ?? el.className) + " " + (el.textContent || "").slice(0, 20)); break; } } }
+  if (document.scrollingElement.scrollWidth > innerWidth + 1) out.push("page scrolls sideways " + document.scrollingElement.scrollWidth + ">" + innerWidth);
+  return { n: document.querySelectorAll(".pz-radar").length, out }; })()`;
+const SIZES = [[320,568],[360,740],[375,667],[390,844],[414,896],[430,932],[844,390],[768,1024],[820,1180],[1024,768],[1180,820],[1280,800],[1366,768],[1440,900],[1920,1080],[2560,1440]];
 async function playToEnd(max = 40){
   await b.eval(HELPER); const seen = [];
   for (let i = 0; i < max; i++){ const s = await b.eval(`window.__ans()`); seen.push(s); if (s === "done" || s === "none" || s.startsWith("stuck")) break; await sleep(s === "speak" ? 700 : 260); }
@@ -144,6 +155,23 @@ try {
   await b.eval(`document.documentElement.setAttribute("data-theme","night")`); await sleep(300); await b.screenshot(path.join(SHOTS, "practice-phone-night.png"));
   await b.eval(`document.documentElement.setAttribute("data-theme","day")`); await b.viewport(1366, 900, false);
 
+  console.log("\nthe coach chart fits its card on every screen");
+  // every label and number of the radar inside the chart, the chart inside its card, nothing in the card sticking out,
+  // no sideways page scroll: phones, tablets, laptops, wide screens, portrait and landscape, in English, Lao and Chinese
+  const bad = [];
+  for (const L of ["en", "lo", "zh"]){
+    await b.eval(`import("/js/learner/core.js").then(m => m.setPref("uiLang", ${J(L)}))`);
+    for (const [w, hh] of SIZES){
+      await b.viewport(w, hh, w < 900);
+      for (const v of ["practice", "practice_report"]){ await go(v); await sleep(250); const r = await b.eval(FIT); if (r.n !== 1 || r.out.length) bad.push(`${L} ${w}x${hh} ${v}: ${r.n ? r.out.slice(0, 3).join("; ") : "no chart"}`); }
+    }
+  }
+  ok(!bad.length, `radar and coach card fit at ${SIZES.length} screen sizes × 3 languages (hub and report)`, bad.slice(0, 8));
+  await b.viewport(1920, 1080, false); await b.eval(`import("/js/learner/core.js").then(m => m.setPref("uiLang", "en"))`); await go("practice"); await sleep(300);
+  await b.eval(`document.querySelector(".pz-coach").scrollIntoView()`); await b.screenshot(path.join(SHOTS, "practice-coach-1920.png"));
+  await b.viewport(360, 740, true); await go("practice"); await sleep(300); await b.eval(`document.querySelector(".pz-coach").scrollIntoView()`); await b.screenshot(path.join(SHOTS, "practice-coach-360.png"));
+  await b.viewport(1366, 900, false);
+
   console.log("\nFree plan");
   await b.eval(`localStorage.removeItem("laolao.demo.session")`);
   await b.goto(srv.base + "/admin/"); await b.waitFor(`!!document.querySelector("#em") || !!document.querySelector(".app")`, 60000);
@@ -155,6 +183,10 @@ try {
   await b.eval(`import("/js/admin/state.js").then(m => m.go("learner", { uid: ${J(uid)} }))`);
   await b.waitFor(`!!document.querySelector(".pz-adm")`, 15000).catch(() => {}); await sleep(500);
   const adm = await b.eval(`(() => { const p = document.querySelector(".pz-adm"); return p ? { radar: p.querySelectorAll(".rd-label").length, skills: p.querySelectorAll(".skill").length, text: p.innerText.slice(0, 300), chips: p.querySelectorAll(".chip").length } : null; })()`);
+  const admFit = [];
+  for (const [w, hh] of [[390,844],[768,1024],[1366,900],[1920,1080]]){ await b.viewport(w, hh, w < 900); await sleep(400); const r = await b.eval(FIT); if (r.out.length) admFit.push(w + ": " + r.out.slice(0, 2).join("; ")); }
+  await b.viewport(1366, 900, false);
+  ok(!admFit.length, "admin: the learner's chart fits its panel on phone, tablet and desktop", admFit);
   ok(adm && adm.radar === 9 && adm.skills >= 6 && /Practice Studio coach/.test(adm.text) && adm.chips >= 1, "admin: the learner page shows the Practice coach (radar, skills, advice, mistakes)", adm);
   await b.screenshot(path.join(SHOTS, "practice-admin.png"));
   await login("free@demo.laolao");

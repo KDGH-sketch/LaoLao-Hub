@@ -1930,14 +1930,15 @@ main h1{font-weight:800;line-height:1.15}
 .pz-badge.r0{--rk:var(--t0)} .pz-badge.r1{--rk:var(--t2)} .pz-badge.r2{--rk:var(--jade)} .pz-badge.r3{--rk:var(--accent)}
 .pz-badge.r4{--rk:var(--violet)} .pz-badge.r5{--rk:var(--warn)} .pz-badge.r6{--rk:var(--tone-6)} .pz-badge.r7{--rk:var(--bad)}
 .pz-coach h2{display:flex;align-items:center;gap:6px}
-.pz-coach-grid{display:grid;grid-template-columns:minmax(240px,320px) minmax(0,1fr);gap:20px;align-items:start;margin-top:12px}
-.pz-radar-wrap{display:grid;place-items:center}
-.pz-radar{width:100%;max-width:320px;height:auto;overflow:visible}
+.pz-coach{container-type:inline-size;container-name:pzcoach}
+.pz-coach-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:20px;align-items:start;margin-top:12px}
+.pz-radar-wrap{display:grid;place-items:center;min-width:0;width:100%;overflow:hidden}
+.pz-radar{display:block;width:100%;max-width:440px;height:auto;overflow:hidden}
 .pz-radar .rd-ring{fill:none;stroke:var(--line)} .pz-radar .rd-axis{stroke:var(--line)}
 .pz-radar .rd-area{fill:color-mix(in srgb,var(--accent) 22%,transparent);stroke:var(--accent);stroke-width:2;stroke-linejoin:round;transform-box:view-box;transform-origin:50% 50%;animation:pzRadar .8s cubic-bezier(.2,.8,.2,1)}
 .pz-radar .rd-dot{fill:var(--accent)}
-.pz-radar .rd-label{fill:var(--ink-2);font:600 11px var(--f-ui)} .pz-radar .rd-label.none{fill:var(--ink-3);font-weight:500}
-.pz-radar .rd-val{fill:var(--accent);font:800 11px var(--f-display)}
+.pz-radar .rd-label{fill:var(--ink-2);font:600 13px var(--f-ui)} .pz-radar .rd-label.none{fill:var(--ink-3);font-weight:500}
+.pz-radar .rd-val{fill:var(--accent);font:800 13px var(--f-display)}
 @keyframes pzRadar{from{transform:scale(.2);opacity:0}}
 .pz-insight{--x:var(--accent);display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--surface-2);border-left:3px solid var(--x)}
 .pz-insight.good{--x:var(--jade)} .pz-insight.warn{--x:var(--warn)} .pz-insight.bad{--x:var(--bad)}
@@ -2043,9 +2044,12 @@ main h1{font-weight:800;line-height:1.15}
 .pz-burst i{position:absolute;left:50%;top:22%;width:8px;height:9px;border-radius:2px;background:var(--warn);opacity:0;animation:pzBurst 1.15s ease-out forwards;animation-delay:var(--d)}
 .pz-burst i:nth-child(3n+1){background:var(--accent)} .pz-burst i:nth-child(3n+2){background:var(--jade)} .pz-burst i:nth-child(4n){background:var(--violet)}
 @keyframes pzBurst{0%{opacity:1;transform:rotate(var(--a)) translateY(0) scale(1)}100%{opacity:0;transform:rotate(var(--a)) translateY(-150px) scale(.6)}}
+/* coach card narrower than 680px: radar on top, advice below */
+@container pzcoach (max-width:680px){.pz-coach-grid{grid-template-columns:minmax(0,1fr)}.pz-radar-wrap{max-width:460px;margin:0 auto}}
+@container pzcoach (max-width:520px){.pz-insight{flex-wrap:wrap}.pz-insight p{flex:1 1 calc(100% - 42px)}.pz-insight .btn{margin-left:42px}}
 /* the admin's learner page */
 .pz-adm-grid{display:grid;grid-template-columns:1fr;gap:14px}
-.pz-adm .pz-radar{max-width:260px}
+.pz-adm .pz-radar{max-width:380px}
 .pz-adm .skill{grid-template-columns:8.5em minmax(0,1fr) auto}
 /* the report */
 .pz-skill{display:flex;flex-direction:column;gap:5px}
