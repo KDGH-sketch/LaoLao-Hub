@@ -52,8 +52,15 @@ export async function createLocalApi(){
   let accounts = load(AUTHKEY) || {};
   let session = load(SESSKEY);
   const listeners = new Set();
-  let saveT;
-  const persist = () => { clearTimeout(saveT); saveT = setTimeout(() => idbSet(DBKEY, db), 120); };
+  // Changes are saved to the browser 120 ms after the last one (many writes in a row → one save). Leaving or hiding the
+  // page saves at once: publishing and then opening the learner app straight away used to lose the publish.
+  let saveT = null;
+  const flush = () => { clearTimeout(saveT); saveT = null; return idbSet(DBKEY, db); };
+  const persist = () => { clearTimeout(saveT); saveT = setTimeout(flush, 120); };
+  if (typeof addEventListener === "function"){
+    addEventListener("pagehide", () => { if (saveT) flush(); });
+    if (typeof document !== "undefined") document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && saveT) flush(); });
+  }
   const toStore = v => {
     if (v instanceof Date) return v.getTime();
     if (Array.isArray(v)) return v.map(toStore);
@@ -209,6 +216,7 @@ export async function createLocalApi(){
     },
     _isEmpty: () => Object.keys(db).length === 0,
     _flush: () => idbSet(DBKEY, db),
+    _flush: () => flush(),                              // tests: wait until every change is saved
     _reset: async () => { db = {}; accounts = {}; session = null; await idbSet(DBKEY, {}); localStorage.removeItem(AUTHKEY); localStorage.removeItem(SESSKEY); }
   };
   return api;

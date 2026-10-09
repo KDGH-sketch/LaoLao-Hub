@@ -13,6 +13,7 @@ import { SCHEMAS, STEP_TYPE_TO_COL, APP_PAGES } from "./schemas.js";
 import { parseTime, formatTime, normalizeSegments } from "../shared/video.js";
 import { publishFlow } from "./main.js";
 import { shapeItem, shapeAll } from "../shared/shape.js";
+import { TYPES as IMPORTABLE } from "./import-map.js";
 import { normalizeGrammar, parseFormula, formulaMarkers, tagTokens, meaningful, wrongOrders, ROLES } from "../shared/grammar.js";
 
 const cache = {};   // collection → rows (for pickers)
@@ -231,7 +232,8 @@ export async function viewContentList({ type, q="", status="", level="" }){
       h("div",{class:"spread"},
         h("h1",null,(t("type_"+type)||type)+" ("+all.length+")"),
         h("div",{class:"row",style:"gap:8px"},
-          h("button",{class:"btn ghost sm",onclick:bulkExport}, icon("download"), "Export All"),
+          h("button",{class:"btn ghost sm",onclick:bulkExport}, icon("download"), L(["Export JSON","ສົ່ງອອກ JSON"])),
+          IMPORTABLE[type] ? h("button",{class:"btn sm",onclick:()=>go("excelImport",{type})}, icon("upload"), L(["Excel import / export","ນຳເຂົ້າ / ສົ່ງອອກ Excel"])) : null,
           canEdit ? h("button",{class:"btn primary",onclick:()=>newItem(type)}, icon("plus"), t("new_item")) : h("span",{class:"pill muted",style:"display:inline-flex;align-items:center;gap:4px"}, icon("eye"), t("read_only_mode"))
         )
       )

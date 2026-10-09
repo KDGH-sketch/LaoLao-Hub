@@ -1,6 +1,9 @@
-// Spreadsheet import rules for Vocabulary, Grammar and Sentence Patterns: template columns, matching the file's headers,
-// checking every row, and turning a row into the content the app stores. No page code here (tests: scripts/test_import.mjs).
+// Spreadsheet import rules: template columns, matching the file's headers, checking every row, turning rows into the
+// content the app stores (buildItems) and content back into rows (exportSheets). Vocabulary, Grammar and Sentence
+// Patterns are defined here; Dictionary, Lessons, Dialogues, Quizzes, Videos, Culture and Lao letters in
+// import-types.js. No page code here (tests: scripts/test_import.mjs).
 // Rule of thumb: a blank cell never wipes what an existing item already has.
+import { MORE_TYPES, MORE_MESSAGES, splitList as splitL } from "./import-types.js";
 
 const LAO = /[຀-໿]/;
 export const STAGES = ["1", "2", "3", "4", "5", "6"];
@@ -52,16 +55,20 @@ export const TYPES = {
     { key: "ex3En", header: "Example3_EN", alias: ["example3 english"], help: "Its English translation", ex: ["", ""] }
   ] }
 };
+Object.assign(TYPES, MORE_TYPES);
+// the order in the importer
+export const TYPE_ORDER = ["vocabulary", "dictionary", "grammar", "patterns", "lessons", "dialogues", "quizzes", "videos", "culture", "characters"];
 
 // ---------- templates ----------
-// Two sheets: "Data" (headers + 2 sample rows to overwrite) and "Guide" (what each column means)
+// Two sheets: "Data" (headers + sample rows to overwrite) and "Guide" (what each column means)
 export function templateSheets(type){
-  const T = TYPES[type], cols = T.columns;
+  const T = TYPES[type], cols = T.columns, n = Math.max(...cols.map(c => c.ex.length));
   const lists = {}; cols.forEach((c, i) => { if (c.list) lists[i] = c.list; });
   return [
-    { name: "Data", header: true, rows: [cols.map(c => c.header), cols.map(c => c.ex[0]), cols.map(c => c.ex[1])], widths: cols.map(c => Math.max(12, Math.min(40, c.header.length + 6, ...c.ex.map(x => String(x).length + 4)))), lists },
+    { name: "Data", header: true, rows: [cols.map(c => c.header), ...Array.from({ length: n }, (_, k) => cols.map(c => c.ex[k] ?? ""))], widths: cols.map(c => Math.max(12, Math.min(40, c.header.length + 6, ...c.ex.map(x => String(x).split("\n")[0].length + 4)))), lists },
     { name: "Guide", header: true, rows: [["Column", "Required", "What to write"], ...cols.map(c => [c.header, c.required ? "yes" : "", c.help]),
-      [], ["", "", "Fill the Data sheet (one row per item) and upload this file. Delete the two sample rows first."],
+      [], ["", "", T.grouped ? "One row per " + (type === "quizzes" ? "question" : "line") + ". Rows with the same ID (or an empty ID, continuing the item above) make one item; on an update the item's " + (type === "quizzes" ? "questions" : "lines") + " are replaced." : "Fill the Data sheet (one row per item) and upload this file."],
+      ["", "", "Delete the sample rows first (they show how to fill the sheet)."],
       ["", "", "Columns can be in any order; extra columns are ignored. A blank cell keeps the current value of an existing item."],
       ["", "", "Save as Excel (.xlsx). If you save as CSV, choose 'CSV UTF-8' so the Lao letters are kept."]], widths: [18, 10, 90] }
   ];
@@ -95,7 +102,8 @@ const slug = s => String(s || "").toLowerCase().normalize("NFKD").replace(/[^a-z
 
 // Checks every row. existing: the items already in the database (array). Returns rows with
 // { line (spreadsheet row number), action: "new" | "update" | "error", errors[], warnings[], fields }
-export function validateRows(rows, type, { existing = [] } = {}){
+export function validateRows(rows, type, { existing = [], refs = null } = {}){
+  if (TYPES[type].check) return validateGeneric(rows, type, { existing, refs });
   const head = rows[0] || [], H = matchHeaders(head, type), out = [];
   const seen = new Map();
   const byLao = new Map(existing.map(d => [String(d.hz || "").trim(), d]));
@@ -138,6 +146,91 @@ export function validateRows(rows, type, { existing = [] } = {}){
   const sum = { rows: out.length, new: out.filter(x => x.action === "new").length, update: out.filter(x => x.action === "update").length,
     error: out.filter(x => x.action === "error").length, warnings: out.reduce((n, x) => n + x.warnings.length, 0) };
   return { headers: H, rows: out, summary: sum };
+}
+
+// Types defined with check() / build(): one row per item, or several (grouped: dialogues, quizzes)
+function validateGeneric(rows, type, { existing, refs }){
+  const T = TYPES[type], head = rows[0] || [], H = matchHeaders(head, type), out = [], seen = new Map();
+  const by1 = new Map(existing.map(d => [String((T.existingKey || (x => x.id))(d) || ""), d]));
+  const by2 = T.existingKey2 ? new Map(existing.map(d => [String(T.existingKey2(d) || ""), d])) : null;
+  let lastGroup = null, lastHead = null;
+  for (let i = 1; i < rows.length; i++){
+    const r = rows[i], line = i + 1, errors = [], warnings = [], f = {};
+    for (const c of T.columns) f[c.key] = cell(r, H.map, c.key);
+    if (!Object.values(f).some(Boolean)) continue;
+    const lost = T.columns.filter(c => f[c.key] && lostLao(f[c.key])).map(c => c.header);
+    if (lost.length) errors.push({ col: lost.join(", "), code: "lao_lost" });
+    if (f.stage){ const n = String(parseInt(f.stage, 10)); if (!STAGES.includes(n) || String(+f.stage) !== n) errors.push({ col: "Stage", code: "stage", value: f.stage }); else f.stage = n; }
+    // grouped: a row without its own ID / title continues the item above (and shares its title, stage…)
+    let group = null;
+    if (T.grouped){
+      group = T.group(f) || lastGroup;
+      if (!group) errors.push({ col: T.columns[0].header, code: "required" });
+      else if (group === lastGroup && lastHead && !T.group(f)) for (const k of T.groupHead) if (!f[k]) f[k] = lastHead[k];
+      if (T.group(f)){ lastHead = f; } lastGroup = group;
+    }
+    T.check(f, { errors, warnings, refs });
+    if (lost.length){ for (const list of [errors, warnings]) for (let k = list.length - 1; k >= 0; k--) if (list[k].code === "not_lao") list.splice(k, 1); }
+    const key = T.grouped ? group : T.key(f);
+    const match = key ? (by1.get(String(key)) || (by2 && T.key2 && by2.get(String(T.key2(f) || "")) ) || null) : null;
+    if (!T.grouped && key && !lost.length){ if (seen.has(key)) errors.push({ col: T.columns[0].header, code: "duplicate", value: seen.get(key) }); else seen.set(key, line); }
+    out.push({ line, fields: f, errors, warnings, group, existing: match, action: errors.length ? "error" : match ? "update" : "new" });
+  }
+  // grouped: one bad row stops its whole item (half a dialogue or quiz is worse than none)
+  if (T.grouped){
+    const badAt = new Map(); out.forEach(x => { if (x.errors.length && !badAt.has(x.group)) badAt.set(x.group, x.line); });
+    out.forEach(x => { if (badAt.has(x.group) && !x.errors.length){ x.errors.push({ col: "", code: "group_error", value: badAt.get(x.group) }); x.action = "error"; } });
+    // an item that was matched on its first row is an update on all its rows
+    const m = new Map(); out.forEach(x => { if (!m.has(x.group)) m.set(x.group, x.existing); });
+    out.forEach(x => { x.existing = m.get(x.group) || null; if (x.action !== "error") x.action = x.existing ? "update" : "new"; });
+  }
+  const items = T.grouped ? [...new Map(out.map(x => [x.group, x])).values()] : out;
+  const sum = { rows: out.length, new: items.filter(x => x.action === "new").length, update: items.filter(x => x.action === "update").length,
+    error: out.filter(x => x.action === "error").length, warnings: out.reduce((n, x) => n + x.warnings.length, 0), items: items.length, grouped: !!T.grouped };
+  return { headers: H, rows: out, summary: sum };
+}
+
+// Checked rows → the items to save: [{ id, data, existing, lines }]. Rows with errors are left out (grouped: whole items).
+export function buildItems(check, type, { romanize, nextN = 1, status = "published", who = "", now = new Date(), withUpdates = true, classOf } = {}){
+  const T = TYPES[type], ok = check.rows.filter(r => r.action === "new" || (withUpdates && r.action === "update"));
+  if (!T.build){
+    let n = nextN;
+    return ok.map(r => { const c = toContent(r, type, { romanize, nextN: n, status, who, now }); if (type === "patterns" && !r.existing) n++; return Object.assign(c, { existing: r.existing, lines: [r.line] }); });
+  }
+  const ctx = { classOf,
+    pyOf: (text, sentenceCase) => { if (!romanize) return ""; try { const p = String(romanize(text).py || ""); return sentenceCase ? p : p.toLowerCase(); } catch(e){ return ""; } },
+    sentence: (lo, en) => { const s = { zh: lo, py: "", tr: en ? { en } : {} }; if (romanize){ try { const r = romanize(lo); s.py = r.py || ""; if (r.tokens) s.tokens = r.tokens; } catch(e){} } return s; } };
+  const groups = new Map();
+  for (const r of ok){ const k = T.grouped ? r.group : r.line; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); }
+  return [...groups.values()].map(rs => {
+    const prev = rs[0].existing ? JSON.parse(JSON.stringify(rs[0].existing)) : null;
+    if (prev){ delete prev.key; }
+    const c = T.build(rs.map(r => r.fields), prev, ctx), d = c.data;
+    delete d.id;
+    if (!prev){ d.status = status; d.version = 1; d.createdAt = now; d.createdBy = who; d.access = d.access || "free"; }
+    else d.version = (prev.version || 1) + 1;
+    d.updatedAt = now; d.updatedBy = who;
+    return { id: c.id, data: d, existing: rs[0].existing, lines: rs.map(r => r.line) };
+  });
+}
+
+// Items → a workbook to edit in Excel and import again (the same columns as the template)
+const OLD_ROWS = {
+  vocabulary: d => [{ lao: d.hz, py: d.py, en: tro(d, "en", "meaning"), lo: tro(d, "lo", "meaning"), zh: tro(d, "zh", "meaning"), pos: d.pos, stage: d.level, tags: (d.tags || []).join(", "),
+    exLo: (d.examples || [])[0] && d.examples[0].zh, exEn: (d.examples || [])[0] && ((d.examples[0].tr || {}).en || d.examples[0].en), access: d.access }],
+  grammar: d => [{ titleEn: (d.title || {}).en, titleLo: (d.title || {}).lo, titleZh: (d.title || {}).zh, structure: d.structure, exEn: tro(d, "en", "explain") || (d.body && d.body.en), exLo: tro(d, "lo", "explain") || (d.body && d.body.lo),
+    exZh: tro(d, "zh", "explain"), stage: d.level, examples: (d.examples || []).map(e => e.zh).join("; "), examplesEn: (d.examples || []).map(e => (e.tr || {}).en || e.en || "").join("; ") }],
+  patterns: d => [Object.assign({ lao: d.hz, py: d.py, formula: d.formula, en: tro(d, "en", "meaning") || d.gloss, lo: tro(d, "lo", "meaning"), zh: tro(d, "zh", "meaning"), stage: d.level },
+    ...[0, 1, 2].map(k => { const e = (d.examples || [])[k]; return e ? { ["ex" + (k + 1)]: e.zh, ["ex" + (k + 1) + "En"]: (e.tr || {}).en || e.en || "" } : {}; }))]
+};
+const tro = (d, l, k) => (d.tr && d.tr[l] && d.tr[l][k]) || "";
+export function exportSheets(type, docs){
+  const T = TYPES[type], toRows = T.toRows || OLD_ROWS[type];
+  const sorted = docs.slice().sort((a, b) => ((a.level || 0) - (b.level || 0)) || ((a.n || 0) - (b.n || 0)) || ((a.order || 0) - (b.order || 0)) || String(a.id).localeCompare(String(b.id)));
+  const body = sorted.flatMap(d => toRows(d)).map(o => T.columns.map(c => o[c.key] == null ? "" : String(o[c.key])));
+  const sheets = templateSheets(type);
+  sheets[0].rows = [sheets[0].rows[0], ...body];
+  return sheets;
 }
 
 // ---------- row → stored content ----------
@@ -196,4 +289,5 @@ export const MESSAGES = {
   duplicate: "The same item is already on row %v of this file", lao_lost: "The Lao letters were lost (shown as ???). Save the file as Excel (.xlsx) or CSV UTF-8",
   no_explain: "No explanation yet", count: "Examples and translations don't line up (%v)"
 };
+Object.assign(MESSAGES, MORE_MESSAGES);
 export const message = x => (MESSAGES[x.code] || x.code).replace("%v", x.value ?? "");

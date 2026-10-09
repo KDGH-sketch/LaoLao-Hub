@@ -60,7 +60,7 @@ export function runQuiz(root, questions, opts={}){
       opts.onFinish && opts.onFinish(res);
       return;
     }
-    const q = questions[state.i];
+    const q = normalizeQuestion(questions[state.i]);
     root.append(questionEl(q, L, (correct, meta={}) => {
       const self = !!meta.self, skipped = !!meta.skipped;
       const p = skipped ? { points:0, combo:state.combo, comboBonus:0 } : answerPoints(q.type, correct, { self, combo: state.combo }, rules());
@@ -75,7 +75,16 @@ export function runQuiz(root, questions, opts={}){
   render();
 }
 
+// Older rows (and the starter quiz "q-market") use { type:"choice", q, a, choices }: shown as multiple choice.
+// Without this the learner saw "Unknown question type: choice".
+export function normalizeQuestion(q){
+  if (!q || q.type !== "choice") return q;
+  const choices = Array.isArray(q.choices) ? q.choices : [];
+  return Object.assign({}, q, { type: "mc", skill: q.skill || "reading", ask: q.ask || (q.q ? { en: q.q } : {}), prompt: q.prompt || {},
+    options: choices.map(c => /[຀-໿]/.test(c) ? { zh: c } : { en: c }), answer: Math.max(0, choices.indexOf(q.a)) });
+}
 export function questionEl(q, L, onResult, onNext){
+  q = normalizeQuestion(q);
   const box = h("div",{class:"qbox"}); let answered = false;
   const ask = q.ask ? tr(q.ask, L) : "";
   const finish = (ok, extra, meta) => {

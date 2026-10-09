@@ -4,7 +4,8 @@
 // File reading: js/shared/sheet-io.js. Rules: js/admin/import-map.js. Tests: scripts/test_import.mjs, scripts/e2e_import.mjs.
 import { h, icon, toast, errText } from "../shared/ui.js";
 import { writeXlsx, readSheetFile, toCsv } from "../shared/sheet-io.js";
-import { TYPES, templateSheets, guessType, validateRows, toContent, message } from "./import-map.js";
+import { TYPES, TYPE_ORDER, templateSheets, guessType, validateRows, buildItems, exportSheets, message } from "./import-map.js";
+import { CLASS_OF } from "../shared/lao-script.js";
 import { S, L, go, canEditMenu, markUnpublished, audit } from "./state.js";
 import { engine, autoPinyin } from "./cms.js";
 
@@ -26,15 +27,22 @@ const WARN = {
   one_column: ["Everything is in one column. The file may use a separator we couldn't detect: upload the .xlsx file instead.", "ຂໍ້ມູນຢູ່ຖັນດຽວ. ກະລຸນາອັບໂຫຼດໄຟລ໌ .xlsx ແທນ."]
 };
 
-export function viewImport(){
-  let type = "vocabulary", file = null, read = null, check = null, existing = [], existingType = null, busy = false;
+export function viewImport({ type: startType } = {}){
+  let type = TYPES[startType] ? startType : "vocabulary", file = null, read = null, check = null, existing = [], existingType = null, busy = false;
   const root = h("div", { class: "stack-l imp" });
   const step2 = h("div"), step3 = h("div"), result = h("div");
   const fileIn = h("input", { type: "file", accept: ".xlsx,.csv,.tsv,.txt,.xls", hidden: true, onchange: e => { const f = e.target.files[0]; e.target.value = ""; if (f) load(f); } });
 
   const typeSeg = () => h("div", { class: "seg imp-types", role: "radiogroup", "aria-label": L(["Content type", "ປະເພດເນື້ອຫາ", "内容类型"]) },
-    Object.entries(TYPES).map(([k, T]) => h("button", { type: "button", role: "radio", "aria-pressed": String(type === k), "aria-checked": String(type === k),
-      onclick: () => { type = k; draw(); if (read) review(); } }, L([T.label, T.lo]))));
+    TYPE_ORDER.map(k => { const T = TYPES[k]; return h("button", { type: "button", role: "radio", "aria-pressed": String(type === k), "aria-checked": String(type === k),
+      onclick: () => { type = k; draw(); if (read) review(); } }, L([T.label, T.lo]), T.grouped ? h("small", null, " · " + L(["rows → items", "ແຖວ → ລາຍການ", "多行 → 一项"])) : null); }));
+  // everything of this type as a workbook: edit it in Excel, then import it again (rows update the same items)
+  async function exportAll(){
+    const docs = await S.api.db.list(type).catch(() => []);
+    if (!docs.length){ toast(L(["Nothing to export yet.", "ຍັງບໍ່ມີຂໍ້ມູນ.", "暂无可导出的内容。"]), "warn"); return; }
+    save(writeXlsx(exportSheets(type, docs)), `LaoLao_${type}_${new Date().toISOString().slice(0, 10)}.xlsx`, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    toast(L(["Exported ", "ສົ່ງອອກ ", "已导出 "]) + docs.length, "ok");
+  }
   function template(kind){
     if (kind === "csv"){ const rows = templateSheets(type)[0].rows; save(new TextEncoder().encode(toCsv(rows)), `LaoLao_${type}_template.csv`, "text/csv;charset=utf-8"); }
     else save(writeXlsx(templateSheets(type)), `LaoLao_${type}_template.xlsx`, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -51,14 +59,18 @@ export function viewImport(){
   function draw(){
     put(root, 
       h("div", { class: "pagehead" }, h("h1", null, L(["Excel & CSV import", "ນຳເຂົ້າເນື້ອຫາຜ່ານ Excel / CSV", "Excel / CSV 导入"])),
-        h("p", null, L(["Add or update many Vocabulary words, Grammar points or Sentence patterns at once from a spreadsheet. Every row is checked before anything is saved.",
-          "ເພີ່ມ ຫຼື ແກ້ໄຂຄຳສັບ, ໄວຍາກອນ ຫຼື ໂຄງສ້າງປະໂຫຍກຫຼາຍລາຍການພ້ອມກັນຈາກ Excel. ທຸກແຖວຈະຖືກກວດກ່ອນບັນທຶກ.", "用表格一次添加或更新大量词汇、语法或句型。保存前会逐行检查。"]))),
+        h("p", null, L(["Add or update many items at once from a spreadsheet: vocabulary, dictionary, grammar, sentence patterns, lessons, dialogues, quizzes, videos, culture and Lao letters. Every row is checked before anything is saved; export what you have, edit it in Excel and import it back.",
+          "ເພີ່ມ ຫຼື ແກ້ໄຂຫຼາຍລາຍການພ້ອມກັນຈາກ Excel: ຄຳສັບ, ວັດຈະນານຸກົມ, ໄວຍາກອນ, ໂຄງສ້າງປະໂຫຍກ, ບົດຮຽນ, ບົດສົນທະນາ, ແບບທົດສອບ, ວິດີໂອ, ວັດທະນະທຳ ແລະ ຕົວອັກສອນ. ທຸກແຖວຈະຖືກກວດກ່ອນບັນທຶກ; ສົ່ງອອກ, ແກ້ໃນ Excel ແລ້ວນຳເຂົ້າຄືນໄດ້.",
+          "用表格一次添加或更新大量内容：词汇、词典、语法、句型、课程、对话、测验、视频、文化和老挝字母。保存前逐行检查；可导出现有内容，在 Excel 中编辑后再导入。"]))),
       h("section", { class: "card stack imp-step" },
         h("h2", null, h("span", { class: "imp-n" }, "1"), L(["Choose what to import and get the template", "ເລືອກປະເພດ ແລະ ດາວໂຫຼດແມ່ແບບ", "选择类型并下载模板"])),
         typeSeg(),
         h("div", { class: "row" },
           h("button", { class: "btn primary", onclick: () => template("xlsx") }, icon("download"), L(["Excel template (.xlsx)", "ແມ່ແບບ Excel (.xlsx)", "Excel 模板 (.xlsx)"])),
-          h("button", { class: "btn ghost sm", onclick: () => template("csv") }, icon("download"), L(["CSV (UTF-8)", "CSV (UTF-8)", "CSV (UTF-8)"]))),
+          h("button", { class: "btn ghost sm", onclick: () => template("csv") }, icon("download"), L(["CSV (UTF-8)", "CSV (UTF-8)", "CSV (UTF-8)"])),
+          h("button", { class: "btn sm", onclick: exportAll }, icon("download"), L(["Export current " + TYPES[type].label.toLowerCase() + " (.xlsx)", "ສົ່ງອອກ" + TYPES[type].lo + "ທີ່ມີ (.xlsx)", "导出现有" + TYPES[type].label + " (.xlsx)"]))),
+        TYPES[type].grouped ? h("p", { class: "small" }, icon("info"), " ", L(["One row per " + (type === "quizzes" ? "question" : "line") + ": rows with the same ID make one " + (type === "quizzes" ? "quiz" : "dialogue") + "; a row with an empty ID continues the one above.",
+          "ແຖວລະ" + (type === "quizzes" ? "ຄຳຖາມ" : "ປະໂຫຍກ") + ": ແຖວທີ່ມີ ID ດຽວກັນເປັນລາຍການດຽວ; ແຖວທີ່ ID ວ່າງ ຕໍ່ຈາກລາຍການຂ້າງເທິງ.", "每行一个" + (type === "quizzes" ? "题目" : "句子") + "：相同 ID 的行组成一项；ID 为空的行接续上一项。"])) : null,
         h("p", { class: "small muted" }, L(["Fill the “Data” sheet, one row per item; the “Guide” sheet explains every column. Columns can be in any order. A blank cell keeps the current value of an existing item.",
           "ຕື່ມຂໍ້ມູນໃນແຜ່ນ “Data” ແຖວລະລາຍການ; ແຜ່ນ “Guide” ອະທິບາຍທຸກຖັນ. ຖັນລຽງແບບໃດກໍໄດ້. ຊ່ອງທີ່ວ່າງຈະບໍ່ລົບຄ່າເດີມ.", "在 “Data” 表中每行填写一项；“Guide” 表说明每一列。列的顺序不限。空单元格不会覆盖已有内容。"]))),
       h("section", { class: "card stack imp-step" },
@@ -85,7 +97,13 @@ export function viewImport(){
   async function review(){
     if (!read) return;
     if (existingType !== type){ existing = await S.api.db.list(type).catch(() => []); existingType = type; }
-    check = validateRows(read.rows, type, { existing });
+    // lessons link to patterns, grammar, dialogues and quizzes: links to items that don't exist are flagged
+    let refs = null;
+    if (type === "lessons"){
+      const [pt, gr, dl, qz] = await Promise.all(["patterns", "grammar", "dialogues", "quizzes"].map(t => S.api.db.list(t).catch(() => [])));
+      refs = { patterns: new Set(pt.map(x => String(x.n))), grammar: new Set(gr.map(x => String(x.id))), dialogues: new Set(dl.map(x => String(x.id))), quizzes: new Set(qz.map(x => String(x.id))) };
+    }
+    check = validateRows(read.rows, type, { existing, refs });
     const H = check.headers, sum = check.summary;
     const info = read.format === "xlsx" ? L(["Excel workbook · sheet ", "Excel · ແຜ່ນ ", "Excel 工作簿 · 工作表 "]) + "“" + read.sheet + "”"
       : "CSV · " + L(["separated by ", "ແຍກດ້ວຍ ", "分隔符 "]) + ({ ",": "comma (,)", ";": "semicolon (;)", "\t": "tab" }[read.delimiter] || read.delimiter) + " · " + (read.encoding || "");
@@ -129,7 +147,7 @@ export function viewImport(){
     put(step3, h("section", { class: "card stack imp-step" },
       h("h2", null, h("span", { class: "imp-n" }, "3"), L(["Check the rows", "ກວດແຖວ", "检查数据"])),
       h("div", { class: "imp-sum" },
-        h("div", null, h("b", { class: "tabnum" }, String(sum.rows)), h("span", null, L(["rows", "ແຖວ", "行"]))),
+        h("div", null, h("b", { class: "tabnum" }, String(sum.rows)), h("span", null, L(["rows", "ແຖວ", "行"]) + (sum.grouped ? " → " + sum.items + " " + L([type === "quizzes" ? "quizzes" : "dialogues", type === "quizzes" ? "ແບບທົດສອບ" : "ບົດສົນທະນາ", "项"]) : ""))),
         h("div", { class: "ok" }, h("b", { class: "tabnum" }, String(sum.new)), h("span", null, L(["new", "ໃໝ່", "新增"]))),
         h("div", { class: "acc" }, h("b", { class: "tabnum" }, String(sum.update)), h("span", null, L(["update existing", "ແກ້ໄຂທີ່ມີແລ້ວ", "更新已有"]))),
         h("div", { class: "bad" }, h("b", { class: "tabnum" }, String(sum.error)), h("span", null, L(["with errors (skipped)", "ມີຂໍ້ຜິດພາດ (ຂ້າມ)", "有错误（跳过）"]))),
@@ -153,27 +171,26 @@ export function viewImport(){
 
   async function commit(status, withUpdates){
     if (busy) return; busy = true;
-    const todo = check.rows.filter(r => r.action === "new" || (withUpdates && r.action === "update"));
     const bar = h("i"), label = h("span", { class: "small muted tabnum" });
     put(result, h("section", { class: "card stack imp-step" }, h("h2", null, h("span", { class: "imp-n" }, "4"), L(["Importing…", "ກຳລັງນຳເຂົ້າ…", "正在导入…"])), h("div", { class: "imp-bar" }, bar), label));
     step3.querySelectorAll("button, input, select").forEach(b => b.disabled = true);
     let eng = null; try { eng = await engine(); } catch(e){}
     const romanize = eng ? t => autoPinyin(eng, t) : null;
-    let nextN = Math.max(0, ...existing.map(p => +p.n || 0)) + 1;
+    const nextN = Math.max(0, ...existing.map(p => +p.n || 0)) + 1;
     const now = new Date(), who = S.me ? S.me.uid : "", ops = [];
-    for (const r of todo){
-      const c = toContent(r, type, { romanize, nextN, status, who, now });
-      if (type === "patterns" && !r.existing) nextN++;
-      if (r.existing){ const snap = Object.assign({}, r.existing); delete snap.id; delete snap.key;
-        ops.push({ op: "set", path: `${type}/${c.id}/versions/v${String(r.existing.version || 1).padStart(4, "0")}`, data: { data: JSON.stringify(snap), version: r.existing.version || 1, savedAt: now, savedBy: who } }); }
-      ops.push({ op: "set", path: `${type}/${c.id}`, data: c.data, item: r });
+    // rows → items (a dialogue or quiz is several rows); each changed item keeps its previous version
+    const todo = buildItems(check, type, { romanize, nextN, status, who, now, withUpdates, classOf: c => CLASS_OF[c] || "" });
+    for (const it of todo){
+      if (it.existing){ const snap = Object.assign({}, it.existing); delete snap.id; delete snap.key;
+        ops.push({ op: "set", path: `${type}/${it.id}/versions/v${String(it.existing.version || 1).padStart(4, "0")}`, data: { data: JSON.stringify(snap), version: it.existing.version || 1, savedAt: now, savedBy: who } }); }
+      ops.push({ op: "set", path: `${type}/${it.id}`, data: it.data, item: it });
     }
     let done = 0, failed = [];
     const STEP = 50;
     for (let i = 0; i < ops.length; i += STEP){
       const chunk = ops.slice(i, i + STEP);
       try { await S.api.db.batch(chunk.map(({ item, ...o }) => o)); done += chunk.filter(o => o.item).length; }
-      catch(e){ failed.push({ rows: chunk.filter(o => o.item).map(o => o.item.line), error: errText(e) }); }
+      catch(e){ failed.push({ rows: chunk.filter(o => o.item).flatMap(o => o.item.lines), error: errText(e) }); }
       bar.style.width = Math.round(100 * Math.min(ops.length, i + STEP) / ops.length) + "%";
       label.textContent = done + " / " + todo.length;
     }
