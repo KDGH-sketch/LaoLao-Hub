@@ -60,6 +60,11 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--f-ui);-
 :lang(lo), .lo{font-family:var(--f-lo)}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
+/* Safari before 17 (iPad / iPhone) has "align-items: flex-start" in its own stylesheet for <button>: a button laid out
+   as a flex box then shrinks its children to their content (practice cards, stat cards, tone cards broke on iPad).
+   Chrome, Firefox and new Safari stretch them. This puts every browser on the same rule; a button's own class still
+   chooses its alignment. (scripts/qa_safari.mjs checks it in old and new WebKit.) */
+button{align-items:stretch}
 a{color:var(--accent)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
 .hz{font-family:var(--f-hz)}
@@ -1562,6 +1567,7 @@ main h1{font-weight:800;line-height:1.15}
 .tone-ex-btn{display:flex;align-items:center;gap:12px;width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:var(--r-s);background:var(--surface);color:var(--ink);text-align:left;cursor:pointer}
 .tone-ex-btn:hover{background:var(--surface-2);border-color:var(--line-2)}
 .tone-ex-btn .ic{width:var(--ic-sm);height:var(--ic-sm);color:var(--accent);flex:none}
+.tone-ex-btn > span{min-width:0;overflow-wrap:anywhere}   /* a long meaning wraps instead of pushing the play icon off a phone screen */
 
 /* ---------- Flashcard Studio (js/learner/views-cards.js) ---------- */
 .fc{--fc-w:min(560px,100%)}
@@ -2252,3 +2258,12 @@ main h1{font-weight:800;line-height:1.15}
   .rv-compare{grid-template-columns:1fr}
 }
 @media (max-width:420px){.rv-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Safari before 16.2 has no color-mix(): plain token colours for the tinted panels (the layout stays the same) */
+@supports not (color: color-mix(in srgb, red 50%, blue)){
+  .pz-art,.pz-mini-art,.pz-row-ic,.pn-unit-art,.rv-cic,.pz-in-ic,.pn-syl{background:var(--surface-2)}
+  .pz-trk-ic{background:var(--surface)} .pz-newchip{background:var(--surface-2);color:var(--ink-2)}
+  .pz-mode,.pz-shead-t small,.rv-tag,.rv-cause-h{color:var(--ink-2)}
+  .pz-qbtn,.pz-stat,.pz-meter{background:rgba(255,255,255,.14)} .pz-qbtn{border-color:rgba(255,255,255,.3)}
+  .pn-levels div,.rv-stats div{background:rgba(255,255,255,.14)}
+}

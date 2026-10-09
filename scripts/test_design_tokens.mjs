@@ -20,6 +20,9 @@ const css = ["css/app.css", "css/admin.css"];
 const html = ["index.html", "admin/index.html"];
 
 ok(![...html, ...js].some(f => /tailwind/i.test(read(f))), "no Tailwind in the pages or the code");
+// Safari before 17 gives every <button> "align-items: flex-start": button-cards then shrink their content (the practice
+// cards broke on iPad). The reset must stay (Safari itself is checked by scripts/qa_safari.mjs).
+ok(/^button\{align-items:stretch\}$/m.test(read("css/app.css")), "buttons stretch their content in every browser (Safari's flex-start reset is in css/app.css)");
 
 // raw colours in code
 const ART = [/welcome-scenes\.js$/, /lao-decorations\.js$/, /\/handwriting\//, /views-billing\.js$/ /* printable receipt */, /admin\/schemas\.js$/ /* placeholder text */, /logo-data\.js$/ /* brand logo */];
