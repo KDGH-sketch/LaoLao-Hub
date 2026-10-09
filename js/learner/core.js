@@ -7,6 +7,7 @@ import { loadDict, dict, chars, mergeVocabulary } from "../shared/dict.js";
 import { makeEngine } from "../shared/engine.js";
 import { updateStats, isTricky, srsGradeFor } from "../shared/flashcards.js";
 import { normalizeGrammar } from "../shared/grammar.js";
+import { shapeItem } from "../shared/shape.js";
 import { setSpeechSettings, setAudioLibrary, setAudioGate } from "../shared/speech.js";
 import { ctx } from "../shared/widgets.js";
 import { mergeRules, lessonPoints, reviewPoints, dailyAward, levelFromXP, wilsonLower, skillMastery, earnedAchievements, handwritingRound } from "../shared/scoring.js";
@@ -144,6 +145,8 @@ export async function refreshAccess(){
 export async function loadContent(){
   A.B = await loadBundle(A.api, A.tier) || { patterns:[], lessons:[], grammar:[], vocabulary:[], dialogues:[], quizzes:[], audio:[], paths:[], releases:[], lexicon:[], videos:[], tones:[], culture:[], characters:[], dictionary:[], catalog:[] };
   const B = A.B; A.byType = {};
+  // every row completed from its type's defaults: a missing field never shows as "undefined" or breaks a page
+  for (const ty of ["patterns","lessons","grammar","vocabulary","dialogues","quizzes","audio","paths","releases","videos","tones","culture","characters","dictionary"]) B[ty] = (B[ty]||[]).filter(d => d && d.id != null).map(d => shapeItem(ty, d));
   for (const ty of ["lessons","grammar","vocabulary","dialogues","quizzes","audio","paths","releases","videos","tones","culture","characters","dictionary"]) A.byType[ty] = Object.fromEntries((B[ty]||[]).map(d=>[d.id,d]));
   // grammar rows come in two shapes (older ones keep the explanation in "body"); the pages read one
   for (const id in A.byType.grammar) A.byType.grammar[id] = normalizeGrammar(A.byType.grammar[id]);

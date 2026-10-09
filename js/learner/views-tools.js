@@ -18,28 +18,32 @@ const pageHead = (title, sub, extra) => h("div",{class:"pagehead"}, h("div",{cla
 const pMeaning = p => T({ en:p.tr.en.meaning, lo:p.tr.lo&&p.tr.lo.meaning });
 
 // ---------- question generators (pattern drills) ----------
-function sentFrom(pool){ const p = rnd(pool); const s = Math.random()<0.7 ? genSentence(p) : null; return s || exampleOf(p, rnd(p.examples)); }
+// Drills only use patterns that have a sentence to show (example sentences or a generator); a pattern row without any
+// would give an empty sentence and break the page.
+const usable = pool => pool.filter(p => p && p.hz && ((p.examples||[]).some(e => e && e.zh) || (p.gen||[]).length));
+function sentFrom(pool){ const p = rnd(usable(pool)); if (!p) return null; const s = Math.random()<0.7 ? genSentence(p) : null;
+  const ex = (p.examples||[]).filter(e => e && e.zh); const out = s || (ex.length ? exampleOf(p, rnd(ex)) : genSentence(p)); return out && out.zh ? out : null; }
 const trOf = s => s.tr && typeof s.tr==="object" ? s.tr : { en: s.en };
-function distinct(pool, s, n, key){ const out = new Map(); for (let i=0;i<40 && out.size<n;i++){ const x = sentFrom(pool); const k = key(x); if (k && k!==key(s)) out.set(k, x); } return [...out.values()]; }
+function distinct(pool, s, n, key){ const out = new Map(); for (let i=0;i<40 && out.size<n;i++){ const x = sentFrom(pool); if (!x) continue; const k = key(x); if (k && k!==key(s)) out.set(k, x); } return [...out.values()]; }
 const linkTo = s => s.pn ? h("button",{class:"btn sm ghost",onclick:()=>go("pattern",{n:s.pn})}, "#"+s.pn+" "+t("open_pattern")) : null;
 const reveal = s => () => h("div",null, h("div",{class:"hz",style:"font-size:1.3rem"},s.zh), h("div",{html:pyHTML(s.py)}), h("div",{class:"muted"}, tr(trOf(s), expLang())));
 const MAKERS = {
-  order: pool => { const s = sentFrom(pool); const toks = (s.tokens||[]).filter(x=>isHan(x.z[0])); if (toks.length<3 || toks.length>11) return null;
+  order: pool => { const s = sentFrom(pool); if (!s) return null; const toks = (s.tokens||[]).filter(x=>isHan(x.z[0])); if (toks.length<3 || toks.length>11) return null;
     return { type:"order", skill:"sentence", tokens:toks, answer:toks.map(x=>x.z).join(""), prompt:{ tr:trOf(s), py:s.py }, ask:{en:t("pr_order_d")}, say:s.zh, link:linkTo(s) }; },
-  blank: pool => { const p = rnd(pool.filter(x=>x.markers.length)); if (!p) return null; const s = Math.random()<.6 ? genSentence(p) : exampleOf(p, rnd(p.examples)); if (!s) return null;
+  blank: pool => { const p = rnd(usable(pool).filter(x=>(x.markers||[]).length)); if (!p) return null; const s = Math.random()<.6 ? genSentence(p) : exampleOf(p, rnd(p.examples)); if (!s) return null;
     const mk = p.markers.find(m => (s.tokens||[]).some(tk=>tk.z===m)); if (!mk) return null;
     const others = shuffle([...new Set(Object.values(A.P).filter(x=>x.n!==p.n).flatMap(x=>x.markers).filter(m=>m!==mk && Math.abs(m.length-mk.length)<=1 && !p.markers.includes(m)))]).slice(0,3);
     let done=false; const zh = s.tokens.map(tk => { if (!done && tk.z===mk){ done=true; return "___"; } return tk.z; }).join("");
     return { type:"fill", skill:"grammar", prompt:{ zh, tr:trOf(s) }, options:[mk,...others], answer:0, ask:{en:t("pr_blank_d")+" · "+p.hz}, reveal:reveal(s), say:s.zh, link:linkTo(s) }; },
-  meaning: pool => { const s = sentFrom(pool); const d = distinct(pool, s, 3, x=>tr(trOf(x),expLang())); if (d.length<3) return null;
+  meaning: pool => { const s = sentFrom(pool); if (!s) return null; const d = distinct(pool, s, 3, x=>tr(trOf(x),expLang())); if (d.length<3) return null;
     return { type:"mc", skill:"reading", prompt:{ zh:s.zh, py:s.py }, options:[trOf(s), ...d.map(trOf)], answer:0, ask:{en:t("pr_meaning_d")}, say:s.zh, link:linkTo(s) }; },
-  reverse: pool => { const s = sentFrom(pool); const d = distinct(pool, s, 3, x=>x.zh); if (d.length<3) return null;
+  reverse: pool => { const s = sentFrom(pool); if (!s) return null; const d = distinct(pool, s, 3, x=>x.zh); if (d.length<3) return null;
     return { type:"mc", skill:"writing", prompt:{ tr:trOf(s) }, options:[{zh:s.zh}, ...d.map(x=>({zh:x.zh}))], answer:0, ask:{en:t("pr_reverse_d")}, reveal:reveal(s), say:s.zh, link:linkTo(s) }; },
-  listen: pool => { const s = sentFrom(pool); const d = distinct(pool, s, 3, x=>x.zh); if (d.length<3) return null;
+  listen: pool => { const s = sentFrom(pool); if (!s) return null; const d = distinct(pool, s, 3, x=>x.zh); if (d.length<3) return null;
     return { type:"listen_select", skill:"listening", prompt:{ zh:s.zh }, options:[s.zh, ...d.map(x=>x.zh)], answer:0, reveal:reveal(s), link:linkTo(s) }; },
-  pattern: pool => { const p = rnd(pool); const s = genSentence(p) || exampleOf(p, rnd(p.examples)); const others = shuffle(Object.values(A.P).filter(x=>x.n!==p.n && x.sec===p.sec)).slice(0,3); if (others.length<3) return null;
+  pattern: pool => { const p = rnd(usable(pool)); if (!p) return null; const s = genSentence(p) || exampleOf(p, rnd((p.examples||[]).filter(e => e && e.zh))); if (!s || !s.zh) return null; const others = shuffle(Object.values(A.P).filter(x=>x.n!==p.n && x.sec===p.sec)).slice(0,3); if (others.length<3) return null;
     return { type:"mc", skill:"grammar", prompt:{ zh:s.zh, py:s.py }, options:[p,...others].map(x=>({ en:x.hz+" — "+x.tr.en.meaning, lo:x.hz+" — "+((x.tr.lo&&x.tr.lo.meaning)||x.tr.en.meaning) })), answer:0, ask:{en:t("pr_pattern_d")}, link:linkTo(s) }; },
-  speak: pool => { const s = sentFrom(pool); if (s.zh.length>16) return null; return { type:"speak", skill:"speaking", prompt:{ zh:s.zh, py:s.py, tr:trOf(s) }, link:linkTo(s) }; }
+  speak: pool => { const s = sentFrom(pool); if (!s) return null; if (s.zh.length>16) return null; return { type:"speak", skill:"speaking", prompt:{ zh:s.zh, py:s.py, tr:trOf(s) }, link:linkTo(s) }; }
 };
 export function patternQuestions(pats, n, types=["order","blank","meaning","listen","reverse"]){
   const qs = []; for (let i=0;i<n;i++){ let q=null; for (let k=0;k<8 && !q;k++){ try { q = MAKERS[rnd(types)](pats); } catch(e){} } if (q) qs.push(q); } return qs;
@@ -346,7 +350,7 @@ VIEWS.downloads = () => {
     (async () => { const ok = urls.length && (await Promise.all(urls.map(state))).every(Boolean); if (ok){ btn.replaceWith(h("span",{class:"chip lv"}, icon("check"), t("dl_done"))); } })();
     btn.addEventListener("click", async () => { if (!("caches" in window)){ toast("Not supported in this browser","err"); return; } if (!(await allowUse("offline.downloads"))) return; btn.disabled = true; st.textContent = t("loading"); const n = await fetchTo(urls); st.textContent = n+"/"+urls.length; btn.replaceWith(h("span",{class:"chip lv"}, icon("check"), t("dl_done"))); });
     return h("div",{class:"dl-row"}, h("div",null, h("b",null,label), desc ? h("div",{class:"small muted"},desc) : null, st), btn); };
-  const core = ["","index.html","css/app.css","js/learner/main.js","js/learner/core.js","js/learner/views-learn.js","js/learner/views-tools.js","js/learner/views-labs.js","js/learner/views-media.js","js/learner/views-cards.js","js/learner/views-grammar.js","js/shared/ui.js","js/shared/logo-data.js","js/shared/flashcards.js","js/shared/word-pictures.js","js/shared/grammar.js","js/shared/i18n.js","js/shared/content.js","js/shared/dict.js","js/shared/engine.js","js/shared/speech.js","js/shared/widgets.js","js/shared/quiz.js","js/shared/setup.js","js/api/index.js","js/api/supabase.js","js/api/local.js","js/config.js","manifest.webmanifest","icon.svg","logo-mark.svg"].map(p=>base+p);
+  const core = ["","index.html","css/app.css","js/learner/main.js","js/learner/core.js","js/learner/views-learn.js","js/learner/views-tools.js","js/learner/views-labs.js","js/learner/views-media.js","js/learner/views-cards.js","js/learner/views-grammar.js","js/shared/ui.js","js/shared/logo-data.js","js/shared/flashcards.js","js/shared/word-pictures.js","js/shared/grammar.js","js/shared/dom-guard.js","js/shared/shape.js","js/admin/schemas.js","js/shared/i18n.js","js/shared/content.js","js/shared/dict.js","js/shared/engine.js","js/shared/speech.js","js/shared/widgets.js","js/shared/quiz.js","js/shared/setup.js","js/api/index.js","js/api/supabase.js","js/api/local.js","js/config.js","manifest.webmanifest","icon.svg","logo-mark.svg"].map(p=>base+p);
   rows.append(row(t("dl_core"), t("sync_note"), core), row(t("dl_dict"), "≈ 50 KB", [base+"data/dictionary.json", base+"data/chars.json"]));
   const audio = (A.B.audio||[]).filter(a=>a.url);
   for (let L=1; L<=6; L++){ const words = new Set(Object.values(A.byType.lessons||{}).filter(l=>l.level===L).flatMap(l=>l.vocab||[]));

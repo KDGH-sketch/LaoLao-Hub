@@ -107,7 +107,7 @@ VIEWS.home = () => {
     h("section",{class:"sect"}, h("h2",null,t("recent")), recentBox, achievementsEl(true))));
   // new content
   const rel = (A.B.releases||[]).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
-  if (rel) root.append(h("section",{class:"card spread"}, h("div",null, h("span",{class:"eyebrow"},t("new_content")+" · "+rel.date), h("h3",null,T(rel.title)), h("p",{class:"muted small"+(expLang()==="lo"?" lo":"")}, T(rel.notes))), h("button",{class:"btn",onclick:()=>go("news")}, t("view_all"), icon("right"))));
+  if (rel) root.append(h("section",{class:"card spread"}, h("div",null, h("span",{class:"eyebrow"},t("new_content")+(rel.date ? " · "+rel.date : "")), h("h3",null,T(rel.title)), h("p",{class:"muted small"+(expLang()==="lo"?" lo":"")}, T(rel.notes))), h("button",{class:"btn",onclick:()=>go("news")}, t("view_all"), icon("right"))));
   // plan
   const acc2 = A.access;
   root.append(h("section",{class:"card spread"}, h("div",null, h("span",{class:"eyebrow"},t("your_plan")), h("h3",null, tierName(A.tier>=99?3:A.tier)), acc2 && acc2.expiresAt ? h("p",{class:"small muted"}, t("expires")+": "+fmtDate(acc2.expiresAt, lang())) : null), h("button",{class:"btn sm ghost",onclick:()=>go("account")}, t("nav_account"))));

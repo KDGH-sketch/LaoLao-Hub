@@ -12,10 +12,11 @@ import { checkWebItem, uploadChecked, migrateLegacyPromo } from "./web-checks.js
 import { SCHEMAS, STEP_TYPE_TO_COL, APP_PAGES } from "./schemas.js";
 import { parseTime, formatTime, normalizeSegments } from "../shared/video.js";
 import { publishFlow } from "./main.js";
+import { shapeItem, shapeAll } from "../shared/shape.js";
 import { normalizeGrammar, parseFormula, formulaMarkers, tagTokens, meaningful, wrongOrders, ROLES } from "../shared/grammar.js";
 
 const cache = {};   // collection → rows (for pickers)
-async function rows(col, force){ if (force || !cache[col]) cache[col] = await S.api.db.list(col); return cache[col]; }
+async function rows(col, force){ if (force || !cache[col]) cache[col] = shapeAll(col, await S.api.db.list(col)); return cache[col]; }
 const titleOf = (type, d) => { const s = SCHEMAS[type]; const ti = s && s.title ? s.title(d) : d.title; return (ti && (tr(ti, lang()) || ti.en)) || d.hz || d.id; };
 let ENGINE = null, LEXICON = null;
 export async function engine(){ await loadDict(); if (!LEXICON){ LEXICON = {}; (await rows("lexicon")).forEach(x => LEXICON[x.cat||x.id] = x.data); } if (!ENGINE) ENGINE = makeEngine(dict(), chars(), LEXICON); return ENGINE; }
@@ -309,6 +310,7 @@ export async function viewEditor({ type, id, isNew }){
   }
 
   let doc = !isNew && id ? await S.api.db.get(`${type}/${id}`).catch(()=>null) : null;
+  if (doc) doc = Object.assign(shapeItem(type, doc), { id: doc.id ?? id });      // missing fields come from the defaults
   // older grammar rows keep the explanation in "body": open them in the editor's shape (saving writes the new one)
   if (doc && type === "grammar") doc = Object.assign(normalizeGrammar(doc), { id: doc.id, version: doc.version, updatedAt: doc.updatedAt });
   let draft = JSON.parse(JSON.stringify(doc || Object.assign({ status:"draft", access:"free", order:0 }, s.defaults || {})));

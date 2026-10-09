@@ -1,4 +1,5 @@
 // Small UI toolkit shared by the learner app and the admin panel.
+import "./dom-guard.js";       // first: empty values (null…) never print as text, app-wide
 import { t } from "./i18n.js";
 import { LOGO } from "./logo-data.js";
 export const $ = (s, r=document) => r.querySelector(s);
