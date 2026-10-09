@@ -10,19 +10,10 @@ import { createWaitingScreen, dokChampaSvg, LAO_SAMPLES } from "../shared/lao-de
 import { A, loadAccount, refreshAccess, prefs, setPref, applyPrefs, srsDue, T, createLearnerProfile, rememberPendingProfile, displayName, avatarEl, imageToAvatar, saveProfile, setThemeFrom } from "./core.js";
 import * as LV from "./views-learn.js";
 import * as TV from "./views-tools.js";
-import { LAB_VIEWS } from "./views-labs.js";
-import { MEDIA_VIEWS } from "./views-media.js";
-import { HANDWRITING_VIEWS } from "./views-handwriting.js";
-import { CARD_VIEWS } from "./views-cards.js";
-import { GRAMMAR_VIEWS } from "./views-grammar.js";
-import { VIEWS as BILLING_VIEWS } from "./views-billing.js";
-import { PRACTICE_VIEWS } from "./views-practice.js";
-import { PRON_VIEWS } from "./views-pronounce.js";
-import { REVIEW_VIEWS } from "./views-review.js";
-import { renderWelcome, pendingResource } from "./welcome.js";
 import { lockedPanel, featureForView, navLock, planLabel } from "./upgrade.js";
 import { themeSwitcher, brandMark } from "../shared/ui.js";
 import { autoHideTopbar } from "../shared/autohide.js";
+import { createSideNav, useShortcut } from "../shared/sidenav.js";
 
 const root = document.getElementById("root");
 try { const l = localStorage.getItem("xuelu.lang"); if (l) setLang(l); } catch(e){}
@@ -62,6 +53,7 @@ async function boot(){
     if (recovering) return renderNewPassword();
     if (previewWanted){
       const adm = await api.db.get(`admins/${user.uid}`).catch(() => null);
+      const { renderWelcome } = await welcome();
       return renderWelcome({ root, api, mode: "signin", preview: !!adm && adm.status !== "disabled", onLanguage: () => location.reload() });
     }
     root.innerHTML = "";
@@ -76,9 +68,9 @@ async function boot(){
     if (/^p\d+$/.test(start)) A.view = { name:"pattern", params:{ n:+start.slice(1) } };
     else if (VIEWS[start]) A.view = { name:start, params };
     if (query) history.replaceState(null, "", location.pathname + location.search);
-    render();
+    render(); preloadViews();
     // a free download chosen on the welcome page before signing up
-    const res = pendingResource();
+    const res = (await welcome()).pendingResource();
     if (res) dialog({ title: t("wl_res_ready"), body: h("div",{class:"stack"}, h("p",null, res.title || ""),
       h("a",{class:"btn primary",href:res.url,target:"_blank",rel:"noopener",download:""}, icon("download"), t("wl_download"))), actions:[{ label:t("close"), value:true }] });
   });
@@ -90,6 +82,7 @@ async function boot(){
 // ---------- auth ----------
 // Signed out: the welcome page with the sign-in card (js/learner/welcome.js). mode = signin | register | reset.
 async function renderAuth(mode){
+  const { renderWelcome } = await welcome();
   return renderWelcome({ root, api: A.api, mode, onLanguage: m => withTransition(() => renderAuth(m), { kind:"fade" }) });
 }
 
@@ -117,39 +110,54 @@ function renderDisabled(){
 }
 
 // ---------- shell ----------
-const VIEWS = Object.assign({}, LV.VIEWS, TV.VIEWS, LAB_VIEWS, MEDIA_VIEWS, HANDWRITING_VIEWS, BILLING_VIEWS, CARD_VIEWS, GRAMMAR_VIEWS, PRACTICE_VIEWS, PRON_VIEWS, REVIEW_VIEWS, {
-  chars: HANDWRITING_VIEWS.handwriting, script_lab: HANDWRITING_VIEWS.handwriting
-});
-// Grouped so the sidebar reads as sections instead of one long flat list.
+// Screens are loaded the first time they are opened (the code of every screen at start-up was over 1 MB on a phone).
+// The service worker keeps them all for offline use. [module, export, screens] (scripts/e2e_nav.mjs checks this list).
+export const LAZY_VIEWS = [
+  ["./views-labs.js", "LAB_VIEWS", ["culture_lab","particle_lab","kinship_lab","classifiers_lab"]],
+  ["./views-soundlab.js", "SOUND_VIEWS", ["tone_lab","pronounce_lab"]],
+  ["./views-media.js", "MEDIA_VIEWS", ["videos","video"]],
+  ["./views-handwriting.js", "HANDWRITING_VIEWS", ["handwriting"]],
+  ["./views-cards.js", "CARD_VIEWS", ["cards"]],
+  ["./views-grammar.js", "GRAMMAR_VIEWS", ["grammar","grammarItem"]],
+  ["./views-billing.js", "VIEWS", ["plans","checkout","payment","myplan"]],
+  ["./views-practice.js", "PRACTICE_VIEWS", ["practice","practice_report"]],
+  ["./views-pronounce.js", "PRON_VIEWS", ["speak"]],
+  ["./views-review.js", "REVIEW_VIEWS", ["review"]]
+];
+const VIEWS = Object.assign({}, LV.VIEWS, TV.VIEWS);
+for (const [mod, name, views] of LAZY_VIEWS) for (const v of views) VIEWS[v] = params => import(mod).then(m => m[name][v](params));
+VIEWS.chars = VIEWS.script_lab = params => import("./views-handwriting.js").then(m => m.HANDWRITING_VIEWS.handwriting(params));
+// after the first screen, the most used screens are fetched in the background (no wait when they are opened)
+const preloadViews = () => { const run = () => ["./views-practice.js","./views-review.js","./views-pronounce.js"].forEach(m => import(m).catch(() => {}));
+  (window.requestIdleCallback || (f => setTimeout(f, 1500)))(run); };
+const welcome = () => import("./welcome.js");
+// Grouped so the sidebar reads as sections that fold open and closed (js/shared/sidenav.js). Related screens share one
+// entry: the four culture labs are tabs of "Culture & context", the tone and sound labs are tabs of one "Sound lab".
 const NAV_GROUPS = [
-  { title: "nav_group_overview", items: [
+  { key:"overview", title: "nav_group_overview", items: [
     ["home","nav_home","home"],
     ["progress","nav_progress","chart"]
   ]},
-  { title: "nav_group_learn", items: [
+  { key:"learn", title: "nav_group_learn", items: [
     ["paths","nav_learn","path"],
     ["videos","nav_videos","video"],
     ["dict","nav_dict","dict"],
     ["vocab","nav_vocab","cards"],
     ["grammar","nav_grammar","structure"],
     ["patterns","nav_patterns","gen"],
-    ["handwriting","nav_script","pen"]
+    ["handwriting","nav_script","pen"],
+    ["pinyin","nav_pinyin","book"]
   ]},
-  { title: "nav_group_practice", items: [
+  { key:"practice", title: "nav_group_practice", items: [
     ["practice","nav_practice","practice"],
     ["review","nav_review","review"],
     ["speak","nav_speak","mic"],
-    ["pronounce_lab","nav_pronounce","headphones"],
-    ["tone_lab","nav_tone_lab","sound"]
+    ["tone_lab","nav_soundlab","sound"]
   ]},
-  { title: "nav_group_labs", items: [
-    ["culture_lab","nav_culture","globe"],
-    ["particle_lab","nav_particles","flame"],
-    ["kinship_lab","nav_kinship","users"],
-    ["classifiers_lab","nav_classifiers","layers"],
-    ["pinyin","nav_pinyin","book"]
+  { key:"labs", title: "nav_group_labs", items: [
+    ["culture_lab","nav_culture_hub","globe"]
   ]},
-  { title: "nav_group_myspace", items: [
+  { key:"me", title: "nav_group_myspace", items: [
     ["saved","nav_saved","bookmark"],
     ["notes","nav_notes","note"],
     ["downloads","nav_offline","download"],
@@ -157,8 +165,10 @@ const NAV_GROUPS = [
     ["account","nav_account","user"]
   ]}
 ];
+// words that also find a menu entry in "Find a page" (the screens inside a combined entry)
+const NAV_KEYWORDS = { culture_lab: "nav_particles nav_kinship nav_classifiers", tone_lab: "nav_tone_lab nav_pronounce", speak: "nav_pronounce", handwriting: "nav_pinyin" };
 const TABS = [["home","nav_home","home"],["paths","nav_learn","path"],["dict","nav_dict","dict"],["videos","nav_videos","video"],["practice","nav_practice","practice"],["more","nav_more","more"]];
-const PARENT = { practice_report:"practice", video:"videos", lesson:"paths", path:"paths", pattern:"patterns", grammarItem:"grammar", quiz:"practice", gen:"patterns", handwriting:"handwriting", videos:"videos", vocab:"vocab", cards:"vocab", grammar:"grammar", tone_lab:"tone_lab", pronounce_lab:"pronounce_lab", culture_lab:"culture_lab", particle_lab:"culture_lab", kinship_lab:"culture_lab", classifiers_lab:"culture_lab" };
+const PARENT = { practice_report:"practice", pronounce_lab:"tone_lab", video:"videos", lesson:"paths", path:"paths", pattern:"patterns", grammarItem:"grammar", quiz:"practice", gen:"patterns", handwriting:"handwriting", videos:"videos", vocab:"vocab", cards:"vocab", grammar:"grammar", tone_lab:"tone_lab", culture_lab:"culture_lab", particle_lab:"culture_lab", kinship_lab:"culture_lab", classifiers_lab:"culture_lab" };
 // Mobile bottom bar only pins 5 tabs; "More" opens the full grouped menu in a sheet.
 function openMoreMenu(){
   const cur = PARENT[A.view.name] || A.view.name;
@@ -171,21 +181,24 @@ function openMoreMenu(){
       ...g.items.map(([id,k,ic]) => h("button",{class:"nav-btn","aria-current":cur===id?"page":null,onclick:()=>go(id)}, icon(ic), t(k), navLock(id)))))));
   document.body.append(scrim, sheet);
 }
-let searchPop, netEl;
-function render(){
-  const cur = PARENT[A.view.name] || A.view.name;
+let searchPop, netEl, shell = null;
+// The shell (menu, top bar, tab bar) is built once and kept while the learner moves between pages: only the page in
+// <main> changes. It is rebuilt when what it shows changes (language, name, photo, plan, the toggles) or when another
+// screen (sign-in, welcome) replaced it. The menu so keeps its scroll position and nothing is wired up twice.
+const shellKey = () => [lang(), A.isAdmin, displayName(), ((A.profile && A.profile.avatar) || "").length, A.ent && A.ent.planId, A.ent && A.ent.tier, A.ent && A.ent.status, A.api.mode].join("|");
+function buildShell(){
   root.innerHTML = "";
-  const side = h("nav",{class:"side","aria-label":"Main"},
-    h("div",{class:"brand"}, brandMark(), h("div",null, h("b",null,A.settings.appName||"LaoLao"), h("small",null,t("tagline")))));
-  NAV_GROUPS.forEach(g => {
-    side.append(h("div",{class:"side-group-label"}, t(g.title)));
-    g.items.forEach(([id,k,ic]) => { const due = id==="review" ? srsDue().length : 0;
-      side.append(h("button",{class:"nav-btn","aria-current":cur===id?"page":null,onclick:()=>go(id)}, cur===id ? h("span",{class:"nav-ind","aria-hidden":"true"}) : null, icon(ic), t(k), due ? h("span",{class:"count"},due) : navLock(id))); });
-  });
+  const navTexts = { find:t("nav_find"), rail:t("nav_collapse"), expand:t("nav_expand"), recent:t("nav_recent"), all:t("nav_all_pages"), none:t("nav_none"), hint:t("nav_find_hint") };
+  const sections = NAV_GROUPS.map(g => ({ key:g.key, title:t(g.title), items:g.items.map(([id,k,ic]) => ({ key:id, label:t(k), icon:ic,
+    keywords:(NAV_KEYWORDS[id] || "").split(" ").filter(Boolean).map(x => t(x) + " " + x).join(" "),
+    extra: () => { const due = id==="review" ? srsDue().length : 0; return due ? h("span",{class:"count"},due) : navLock(id); } })) }));
   // the admin link is only useful to administrators (access is still checked in the admin app and the database)
-  if (A.isAdmin) side.append(h("div",{class:"sep"}), h("a",{class:"nav-btn",href:"admin/",style:"text-decoration:none;color:var(--accent);font-weight:600"}, icon("shield"), (lang()==="lo"?"ຈັດການລະບົບ ":"Admin Backend ")+"(CMS)"));
   netEl = h("span",{class:"netdot"}, h("i"), " ");
-  side.append(h("div",{class:"side-foot"}, netEl));
+  const footer = [A.isAdmin ? h("a",{class:"nav-btn sn-admin",href:"admin/",title:"Admin CMS"}, icon("shield"), h("span",{class:"sn-lbl"}, (lang()==="lo"?"ຈັດການລະບົບ ":"Admin Backend ")+"(CMS)")) : null,
+    h("div",{class:"side-foot"}, netEl)];
+  const sn = createSideNav({ sections, storageKey:"laolao.nav", onGo: it => go(it.key), texts: navTexts, footer,
+    brand: h("div",{class:"brand"}, brandMark(), h("div",{class:"sn-lbl"}, h("b",null,A.settings.appName||"LaoLao"), h("small",null,t("tagline")))) });
+  useShortcut(sn);
   const search = h("input",{id:"search",type:"search",autocomplete:"off","aria-label":t("search_ph"),placeholder:t("search_ph")});
   searchPop = h("div",{class:"search-pop",hidden:true});
   const p = prefs();
@@ -199,8 +212,7 @@ function render(){
       h("div",{class:"langsw",role:"group","aria-label":t("ui_lang")}, [["en","EN"],["lo","ລາວ"],["zh","中"]].map(([l,n]) => h("button",{"aria-pressed":String(lang()===l),lang:l==="zh"?"zh-CN":l,onclick:()=>setLanguage(l)}, n)))),
     profileChip());
   const main = h("main",{id:"main",tabindex:"-1"});
-  const tabs = h("nav",{class:"tabbar","aria-label":"Tabs"}, TABS.map(([id,k,ic]) => { const on = id==="more" ? !TABS.some(x=>x[0]===cur) : cur===id;
-    return h("button",{"aria-current":on?"page":null,onclick:()=>id==="more" ? openMoreMenu() : go(id)}, on ? h("span",{class:"tab-ind","aria-hidden":"true"}) : null, icon(ic), t(k)); }));
+  const tabs = h("nav",{class:"tabbar","aria-label":"Tabs"}, TABS.map(([id,k,ic]) => h("button",{"data-tab":id,onclick:()=>id==="more" ? openMoreMenu() : go(id)}, icon(ic), t(k))));
   const demoBarEl = A.api.mode==="demo" ? h("div",{class:"demo-bar",style:"display:flex;justify-content:space-between;align-items:center;padding:4px 14px;flex-wrap:wrap;gap:8px"},
     h("span",null, t("demo_banner")),
     h("div",{class:"row",style:"gap:8px"},
@@ -212,15 +224,27 @@ function render(){
       }}, icon("shield"), "Open Admin CMS (admin@demo.laolao) →")
     )
   ) : "";
-  root.append(demoBarEl, h("div",{class:"app"}, side, h("div",{class:"mainwrap"}, top, main)), tabs);
+  const app = h("div",{class:"app"}, sn.el, h("div",{class:"mainwrap"}, top, main));
+  root.append(demoBarEl, app, tabs);
   autoHideTopbar();
   setupSearch(search);
   updateNet();
+  shell = { key: shellKey(), app, main, tabs, sn };
+}
+function render(){
+  const cur = PARENT[A.view.name] || A.view.name;
+  if (!shell || shell.key !== shellKey() || !shell.app.isConnected) buildShell();
+  const { main, tabs, sn } = shell;
+  sn.setActive(cur); sn.refresh();
+  tabs.querySelectorAll("button").forEach(b => { const id = b.dataset.tab, on = id==="more" ? !TABS.some(x=>x[0]===cur) : cur===id;
+    if (on) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current");
+    const ind = b.querySelector(".tab-ind"); if (on && !ind) b.prepend(h("span",{class:"tab-ind","aria-hidden":"true"})); else if (!on && ind) ind.remove(); });
+  main.innerHTML = "";
+  if (!document.startViewTransition){ main.classList.remove("enter"); void main.offsetWidth; main.classList.add("enter"); }   // browsers without View Transitions: a CSS fade-in
   const fn = VIEWS[A.view.name] || VIEWS.home;
   // Router guard: a view the plan does not include shows the locked screen (also for direct links like #tone_lab).
   // The attempt is reported to the database (Admin → Access logs). Content above the plan is never in the browser anyway.
   const need = featureForView(A.view.name, A.view.params);
-  if (!document.startViewTransition) main.classList.add("enter");      // browsers without View Transitions: a CSS fade-in
   if (need && A.ac && !A.ac.can(need)){ main.append(lockedPanel({ feature:need })); A.ac.report(need); return Promise.resolve(); }
   try { const el = fn(A.view.params||{}); return Promise.resolve(el).then(x => { main.innerHTML=""; main.append(x); }).catch(e => { console.error(e); main.append(h("div",{class:"banner"}, errText(e))); }); }
   catch(e){ console.error(e); main.append(h("div",{class:"banner"}, errText(e))); return Promise.resolve(); }
@@ -286,6 +310,7 @@ function openProfileMenu(anchor){
 }
 function updateNet(){ if (!netEl) return; const on = navigator.onLine; netEl.className = "netdot"+(on?"":" off"); netEl.lastChild.textContent = on ? t("online")+" · "+t("offline_ok") : t("offline")+" · "+t("sync_note").split(".")[0]; }
 
+let searchCloser = null, searchClickInstalled = false;
 function setupSearch(inp){
   let sel=-1, items=[];
   const close = () => { searchPop.hidden = true; sel=-1; };
@@ -308,7 +333,8 @@ function setupSearch(inp){
     else if (e.key==="Enter"){ if (sel>=0) items[sel].click(); else { const q = inp.value.trim(); close(); if (q) go("dict",{q}); } }
     else if (e.key==="Escape") close();
   });
-  document.addEventListener("click", e => { if (!e.target.closest(".search")) close(); });
+  searchCloser = close;
+  if (!searchClickInstalled){ searchClickInstalled = true; document.addEventListener("click", e => { if (!e.target.closest(".search") && searchCloser) searchCloser(); }); }   // once: the shell can be rebuilt
 }
 
 boot().catch(e => { console.error(e); root.innerHTML=""; root.append(h("div",{class:"banner",style:"margin:40px"}, errText(e))); });

@@ -11,7 +11,7 @@ import { shapeItem } from "../shared/shape.js";
 import { setSpeechSettings, setAudioLibrary, setAudioGate } from "../shared/speech.js";
 import { ctx } from "../shared/widgets.js";
 import { coachInit, coachTrim } from "../shared/practice-coach.js";
-import { pronInit } from "../shared/pron-course.js";
+import { pronInit } from "../shared/pron-profile.js";
 import { setSfx, sfx } from "../shared/sfx.js";
 import { mergeRules, lessonPoints, reviewPoints, dailyAward, levelFromXP, wilsonLower, skillMastery, earnedAchievements, handwritingRound } from "../shared/scoring.js";
 

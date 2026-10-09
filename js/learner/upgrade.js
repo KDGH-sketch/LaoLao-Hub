@@ -4,7 +4,7 @@ import { h, icon, dialog, fmtDate, tr, toast } from "../shared/ui.js";
 import { t, lang } from "../shared/i18n.js";
 import { featureByKey, ROUTE_FEATURE, PRACTICE_FEATURE } from "../shared/features.js";
 import { planIncluding } from "../shared/access.js";
-import { setFeature } from "../shared/practice-library.js";
+import { setFeature } from "../shared/practice-feature.js";
 import { encodeReturn, planPrice, money, enabledMethods, methodCurrency } from "../shared/billing.js";
 import { planLabel as sharedPlanLabel } from "../shared/plan-format.js";
 import { A } from "./core.js";

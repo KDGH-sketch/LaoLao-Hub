@@ -7,6 +7,7 @@
 // makeQuestions(set, env) → questions; env = { L, dict, rand, content:{ patterns, dialogues, vocab, characters }, patternQuestions }
 import { THEMES, FN, GRAMMAR, TONE_PAIRS, TONE_RULES } from "./practice-bank.js";
 import { CONSONANTS, VOWELS, NUMERALS, TONE_MARKS, SIGNS } from "./lao-script.js";
+import { ADV_MODES } from "./practice-feature.js";
 
 const L3 = (en, lo, zh) => ({ en, lo, zh });
 export const TRACKS = [
@@ -54,7 +55,6 @@ export const GROUPS = [
 const THEME = Object.fromEntries(THEMES.map(x => [x.id, x]));
 const GROUP = Object.fromEntries(GROUPS.map(x => [x.id, x]));
 const GRAM = Object.fromEntries(GRAMMAR.map(x => [x.id, x]));
-const ADV_MODES = new Set(["talk","say","spell","grammar","pattern","dialogue","rules","hear","write","marks"]);
 
 // ---------- the catalog ----------
 export function buildCatalog(content = {}){
@@ -99,9 +99,8 @@ const cap = s => String(s).charAt(0).toUpperCase() + String(s).slice(1);
 const titleOf = t => typeof t === "string" ? L3(t, t, t) : L3(t && (t.en || t.lo) || "Dialogue", t && (t.lo || t.en) || "Dialogue", t && (t.zh || t.en) || "Dialogue");
 const meaningEn = v => v && v.tr && v.tr.en && (v.tr.en.meaning || (typeof v.tr.en === "string" ? v.tr.en : "")) || v.en || "";
 export const PRACTICE_COUNT = () => buildCatalog().length;
-// the plan feature a set needs (the router guard and the lock badges)
-export const setFeature = id => { const m = String(id || "").split(":"); const mode = m[0] === "th" ? m[2] : m[0] === "gr" ? m[2] : { gm:"grammar", tn:m[1], sc:m[1], pt:"pattern", dl:"dialogue", vt:"teacher" }[m[0]];
-  return ADV_MODES.has(mode) || (m[0] === "tn" && ADV_MODES.has(m[1])) ? "practice.advanced" : "practice.basic"; };
+// the plan feature a set needs (the router guard and the lock badges): js/shared/practice-feature.js
+export { setFeature } from "./practice-feature.js";
 
 // ---------- helpers ----------
 export function seeded(seed){ let a = 0; for (const c of String(seed)) a = (a * 31 + c.charCodeAt(0)) >>> 0;

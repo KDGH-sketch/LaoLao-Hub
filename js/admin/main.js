@@ -20,6 +20,7 @@ import { publishPanel } from "./publish.js";
 import { viewWelcome, viewPromotions } from "./welcome-admin.js";
 import { viewPayments } from "./payments.js";
 import { viewVoiceStudio } from "./voice-studio.js";
+import { createSideNav, useShortcut } from "../shared/sidenav.js";
 
 const root = document.getElementById("root");
 const pref = (() => { try { return localStorage.getItem("xuelu.admin.lang") || "en"; } catch(e){ return "en"; } })();
@@ -302,34 +303,25 @@ function rolePreviewSwitch(){
   );
 }
 
-function renderShell(){
+// The shell (menu, top bar) is built once and kept while the admin moves between pages; only <main> changes. It is
+// rebuilt when the language, the role (or role preview) or the account changes, or when asked (profile changes).
+let adminShell = null;
+const adminShellKey = () => [lang(), getActiveRole() || S.me.role, S.me.email, S.api.mode].join("|");
+const activeNavId = () => { for (const sec of NAV_SECTIONS) for (const it of sec.items) if (isItemActive(it)) return it.id; return null; };
+function buildAdminShell(){
   root.innerHTML = "";
   const effectiveRole = getActiveRole() || S.me.role;
-  const side = h("nav",{class:"side","aria-label":"Admin",style:"overflow-y:auto;max-height:100vh"},
-    h("div",{class:"brand"}, brandMark(), h("div",null, h("b",null,"LaoLao"), h("small",null,t("adm_title")+" · "+t("role_"+effectiveRole)))));
-
-  NAV_SECTIONS.forEach(sec => {
-    const secItems = sec.items.filter(it => canViewMenu(it.id));
-    if (!secItems.length) return;
-    side.append(h("div",{class:"side-group-label"}, lang()==="lo" ? sec.title[1] : sec.title[0]));
-    secItems.forEach(it => {
-      const active = isItemActive(it);
-      side.append(h("button",{
-        class: "nav-btn",
-        "aria-current": active ? "page" : null,
-        onclick: () => go(it.view, it.params || {})
-      },
-        active ? h("span",{class:"nav-ind","aria-hidden":"true"}) : null,     // the sliding highlight, as in the learner app
-        icon(it.icon),
-        lang() === "lo" ? it.label[1] : it.label[0]
-      ));
-    });
-  });
-
-  side.append(h("div",{class:"sep"}), h("a",{class:"nav-btn",href:"../",style:"text-decoration:none"}, icon("home"), t("adm_open_learner")),
-    h("button",{class:"nav-btn",onclick:adminSignOut}, icon("logout"), t("sign_out")),
-    h("div",{class:"side-foot"}, S.me.email));
-
+  const L2 = (en, lo) => lang() === "lo" ? lo : en;
+  const sections = NAV_SECTIONS.map((sec, i) => ({ key: "s" + i, title: lang()==="lo" ? sec.title[1] : sec.title[0],
+    items: sec.items.filter(it => canViewMenu(it.id)).map(it => ({ key: it.id, label: lang() === "lo" ? it.label[1] : it.label[0], icon: it.icon, item: it })) })).filter(sec => sec.items.length);
+  const sn = createSideNav({ sections, storageKey: "laolao.admnav", ariaLabel: "Admin", onGo: x => go(x.item.view, x.item.params || {}),
+    texts: { find: L2("Find a page","ຊອກຫາໜ້າ"), rail: L2("Collapse menu","ຫຍໍ້ເມນູ"), expand: L2("Expand menu","ຂະຫຍາຍເມນູ"), recent: L2("Recent","ລ່າສຸດ"), all: L2("All pages","ທຸກໜ້າ"),
+      none: L2("No page matches.","ບໍ່ພົບໜ້າທີ່ກົງກັນ."), hint: L2("↑ ↓ to choose · Enter to open · Esc to close","↑ ↓ ເລືອກ · Enter ເປີດ · Esc ປິດ") },
+    brand: h("div",{class:"brand"}, brandMark(), h("div",{class:"sn-lbl"}, h("b",null,"LaoLao"), h("small",null,t("adm_title")+" · "+t("role_"+effectiveRole)))),
+    footer: [h("div",{class:"sep"}), h("a",{class:"nav-btn",href:"../",style:"text-decoration:none",title:t("adm_open_learner")}, icon("home"), h("span",{class:"sn-lbl"}, t("adm_open_learner"))),
+      h("button",{class:"nav-btn",type:"button",onclick:adminSignOut,title:t("sign_out")}, icon("logout"), h("span",{class:"sn-lbl"}, t("sign_out"))),
+      h("div",{class:"side-foot sn-lbl"}, S.me.email)] });
+  useShortcut(sn);
   const top = h("header",{class:"topbar"},
     h("button",{class:"ib hide-desk","aria-label":t("nav_more")||"Menu",onclick:openAdminMenu}, icon("menu")),
     h("div",{class:"mbrand"}, brandMark(), h("b",null,t("adm_title"))),
@@ -340,11 +332,20 @@ function renderShell(){
       h("a",{class:"btn sm ghost",href:"../",style:"text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:5px 9px",title:t("adm_open_learner")}, icon("home"), h("span",{class:"hide-sm"}, t("adm_open_learner"))),
       langSwitch()),
     publishChip(),
-    adminProfileChip({ rerender: () => renderShell(), rolePreview: () => { const el = rolePreviewSwitch(); if (!el) return null; el.classList.remove("hide-sm"); el.addEventListener("change", closeAdminProfile); return el; } }));
+    adminProfileChip({ rerender: () => renderShell(true), rolePreview: () => { const el = rolePreviewSwitch(); if (!el) return null; el.classList.remove("hide-sm"); el.addEventListener("change", closeAdminProfile); return el; } }));
 
   const main = h("main",{id:"main"});
-  root.append(demoBar(), h("div",{class:"app adm"}, side, h("div",{class:"mainwrap"}, top, main)));
-
+  const app = h("div",{class:"app adm"}, sn.el, h("div",{class:"mainwrap"}, top, main));
+  root.append(demoBar(), app);
+  adminShell = { key: adminShellKey(), app, main, top, sn };
+}
+function renderShell(force){
+  if (force || !adminShell || adminShell.key !== adminShellKey() || !adminShell.app.isConnected) buildAdminShell();
+  const { main, top, sn } = adminShell;
+  sn.setActive(activeNavId());
+  // the publish button shows the live state: refreshed on every page
+  const pc = top.querySelector(".pub-chip"), fresh = publishChip(); if (pc && fresh) pc.replaceWith(fresh);
+  main.innerHTML = "";
   let allowed = canViewMenu(S.view);
   if (S.view === "contentList" || S.view === "editor") {
     allowed = canViewMenu(S.params?.type || "content");
