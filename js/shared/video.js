@@ -186,6 +186,7 @@ export async function mountPlayer(host, url, { onTime = () => {}, onState = () =
     v.addEventListener("play", () => { onState("playing"); watch(() => v.currentTime); });
     v.addEventListener("pause", () => { onState("paused"); stop(); onTime(v.currentTime); });
     v.addEventListener("seeked", () => onTime(v.currentTime));
+    v.addEventListener("ended", () => { stop(); onTime(v.currentTime); onState("ended"); });
     return ctl;
   }
 

@@ -19,6 +19,7 @@ import { VIEWS as BILLING_VIEWS } from "./views-billing.js";
 import { renderWelcome, pendingResource } from "./welcome.js";
 import { lockedPanel, featureForView, navLock, planLabel } from "./upgrade.js";
 import { themeSwitcher, brandMark } from "../shared/ui.js";
+import { autoHideTopbar } from "../shared/autohide.js";
 
 const root = document.getElementById("root");
 try { const l = localStorage.getItem("xuelu.lang"); if (l) setLang(l); } catch(e){}
@@ -209,6 +210,7 @@ function render(){
     )
   ) : "";
   root.append(demoBarEl, h("div",{class:"app"}, side, h("div",{class:"mainwrap"}, top, main)), tabs);
+  autoHideTopbar();
   setupSearch(search);
   updateNet();
   const fn = VIEWS[A.view.name] || VIEWS.home;

@@ -142,10 +142,24 @@ function videoCard(v){
         !rc.empty ? h("span",{class:"chip lv"}, icon("review"), LL("Recap","ສະຫຼຸບ")) : null)));
 }
 
+// ---------- what to watch next ----------
+// Videos finished on this device (to suggest something new first)
+const WATCHED = "laolao.video.watched";
+const watchedSet = () => { try { return new Set(JSON.parse(localStorage.getItem(WATCHED) || "[]")); } catch(e){ return new Set(); } };
+const markWatched = id => { try { const w = watchedSet(); w.delete(String(id)); w.add(String(id)); localStorage.setItem(WATCHED, JSON.stringify([...w].slice(-300))); } catch(e){} };
+// The next video of the course first (the ones after this one, same category), then the same category, then the rest;
+// videos not watched yet before watched ones, and a stage close to this one before a far one.
+export function relatedVideos(v, list = videoList(), seen = watchedSet()){
+  const i = list.findIndex(x => String(x.id) === String(v.id));
+  const order = i >= 0 ? list.slice(i + 1).concat(list.slice(0, i)) : list.filter(x => String(x.id) !== String(v.id));
+  const score = x => (x.category === v.category ? 0 : 2) + (seen.has(String(x.id)) ? 4 : 0) + (Math.abs((x.level || 1) - (v.level || 1)) > 1 ? 1 : 0);
+  return order.map((x, k) => [x, score(x), k]).sort((a, b) => a[1] - b[1] || a[2] - b[2]).map(a => a[0]);
+}
+
 // ---------- one video: player · synced transcript · recap ----------
 // Videos per period: watching the same video again in the same period is not counted twice (ref)
-MEDIA_VIEWS.video = ({ id }) => findVideo(id) ? withUse("videos.watch", { ref:String(id) }, () => videoView({ id })) : videoView({ id });
-function videoView({ id }){
+MEDIA_VIEWS.video = ({ id, autoplay }) => findVideo(id) ? withUse("videos.watch", { ref:String(id) }, () => videoView({ id, autoplay })) : videoView({ id });
+function videoView({ id, autoplay }){
   const v = findVideo(id);
   if (!v) return h("div",{class:"stack"}, h("button",{class:"btn ghost sm",style:"align-self:flex-start",onclick:()=>go("videos")}, icon("left"), LL("All videos","ວິດີໂອທັງໝົດ")), h("div",{class:"empty"}, LL("This video is not available.","ບໍ່ພົບວິດີໂອນີ້.")));
   const src = videoSource(v.embedUrl), tx = transcriptOf(v), rc = recapOf(v), lines = tx.lines;
@@ -219,8 +233,18 @@ function videoView({ id }){
     rc.vocab.length ? h("h3",{class:"vd-sub"}, LL("Key vocabulary","ຄຳສັບສຳຄັນ")) : null,
     rc.vocab.length ? h("div",{class:"vd-vocab"}, rc.vocab.map(w => h("button",{class:"btn sm ghost",onclick:()=>speak(w.lo)}, icon("speaker"), h("b",{class:"lo"}, w.lo), w.rom ? h("span",{class:"vd-rom"}, w.rom) : null, w.en ? h("span",{class:"small muted"}, w.en) : null))) : null);
 
+  // --- 4. more videos: what to watch next (on phones its own tab) ---
+  const related = relatedVideos(v), seen = watchedSet();
+  const morePanel = related.length ? h("section",{class:"vd-panel vd-more","data-panel":"more"},
+    h("div",{class:"vd-panel-head"}, h("h2",null, icon("video"), LL("Watch next","ເບິ່ງຕໍ່"))),
+    h("div",{class:"vd-more-grid"}, related.slice(0, 6).map((x, k) => {
+      const c = videoCard(x);
+      if (k === 0) c.querySelector(".vthumb").append(h("span",{class:"vd-upnext-tag"}, LL("Up next","ຕໍ່ໄປ")));
+      if (seen.has(String(x.id))) c.querySelector(".vthumb").append(h("span",{class:"vd-seen-tag"}, icon("check"), LL("Watched","ເບິ່ງແລ້ວ")));
+      return c; }))) : null;
+
   // --- tabs (phones show one panel at a time) ---
-  const tabs = h("div",{class:"seg vd-tabs",role:"tablist"}, [["transcript", LL("Transcript","ບົດຖອດຄວາມ")], ["recap", LL("Recap","ສະຫຼຸບ")]].map(([k, label]) =>
+  const tabs = h("div",{class:"seg vd-tabs",role:"tablist"}, [["transcript", LL("Transcript","ບົດຖອດຄວາມ")], ["recap", LL("Recap","ສະຫຼຸບ")], ...(morePanel ? [["more", LL("Next","ຕໍ່ໄປ")]] : [])].map(([k, label]) =>
     h("button",{role:"tab","aria-pressed":String(k==="transcript"),onclick:e=>{ root.dataset.tab = k; $$("button",tabs).forEach(b=>b.setAttribute("aria-pressed","false")); e.currentTarget.setAttribute("aria-pressed","true"); if (k==="transcript") scrollToActive(true); }}, label)));
 
   // --- sync ---
@@ -230,7 +254,11 @@ function videoView({ id }){
     const top = el.offsetTop - linesBox.clientHeight * 0.3;
     linesBox.scrollTo({ top: Math.max(0, top), behavior: force ? "auto" : "smooth" });
   }
+  // After a jump the player keeps reporting its old time for up to a second; those readings are ignored, so the caption
+  // doesn't flick back and a second quick swipe counts from the line just chosen.
+  let seekGuard = null;
   function onTime(t){
+    if (seekGuard && Date.now() < seekGuard.until){ if (Math.abs(t - seekGuard.t) > 1.5) return; } else seekGuard = null;
     const i = activeIndex(lines, t);
     if (i === cur) return;
     if (lineEls[cur]) lineEls[cur].classList.remove("on");
@@ -243,22 +271,78 @@ function videoView({ id }){
   function seekTo(t){
     if (t == null) return;
     userScrolled = false; resume.hidden = true;
-    if (ctl && ctl.sync){ ctl.seek(t, true); onTime(t); }
+    if (ctl && ctl.sync){ seekGuard = null; onTime(t); seekGuard = { t, until: Date.now() + 1500 }; ctl.seek(t, true); }
     else if (src.watch) window.open(src.watch + "&t=" + Math.floor(t) + "s", "_blank", "noopener");
   }
 
   // wide screens: transcript beside the player (same height); narrower: below it; recap underneath
   const root = h("div",{class:"vd","data-tab":"transcript"}, head,
     h("div",{class:"vd-watch"}, stage, h("div",{class:"vd-side"}, transcriptPanel)),
-    tabs, recapPanel);
+    tabs, recapPanel, morePanel);
+  root.__upNext = () => showUpNext();                    // used by the browser tests (a real end needs the whole video)
+
+  // --- 5. the end of the video: up next (8 s countdown), replay, or pick another ---
+  const wrap = stage.querySelector(".video-embed-wrap");
+  let upNext = null, countdown = null;
+  const closeUpNext = () => { clearInterval(countdown); countdown = null; if (upNext){ upNext.remove(); upNext = null; } };
+  const openVideo = x => { closeUpNext(); go("video", { id: x.id, autoplay: 1 }); };
+  function showUpNext(){
+    closeUpNext();
+    const nx = related[0], SECS = 8;
+    let left = SECS;
+    const ring = h("span",{class:"vd-next-ring",style:"--p:0"}, h("b",{class:"tabnum"}, String(left)));
+    const cancel = h("button",{class:"btn sm vd-next-cancel",onclick:()=>{ clearInterval(countdown); countdown = null; ring.remove(); cancel.remove(); }}, LL("Cancel","ຍົກເລີກ"));
+    upNext = h("div",{class:"vd-next",role:"dialog","aria-label":LL("Up next","ຕໍ່ໄປ")},
+      nx ? h("div",{class:"vd-next-card"},
+        h("span",{class:"eyebrow"}, LL("Up next","ຕໍ່ໄປ")),
+        h("button",{class:"vd-next-item",onclick:()=>openVideo(nx)},
+          videoSource(nx.embedUrl).thumb ? h("img",{src:videoSource(nx.embedUrl).thumb,alt:"",loading:"lazy"}) : h("span",{class:"vthumb-ph"}, icon("video")),
+          h("span",{class:"vd-next-t"}, h("b",null, tr(nx.title, lang())), nx.level ? h("small",null,"Stage "+nx.level) : null), ring),
+        h("div",{class:"row vd-next-btns"},
+          h("button",{class:"btn primary sm",onclick:()=>openVideo(nx)}, icon("play"), LL("Play now","ຫຼິ້ນດຽວນີ້")), cancel,
+          h("button",{class:"btn sm ghost vd-next-replay",onclick:()=>{ closeUpNext(); if (ctl) ctl.seek(0, true); }}, icon("repeat"), LL("Replay","ເບິ່ງຄືນ"))))
+      : h("div",{class:"vd-next-card"}, h("b",null, LL("You've reached the end","ເບິ່ງຈົບແລ້ວ")),
+          h("div",{class:"row vd-next-btns"}, h("button",{class:"btn sm primary",onclick:()=>{ closeUpNext(); if (ctl) ctl.seek(0, true); }}, icon("repeat"), LL("Replay","ເບິ່ງຄືນ")),
+            h("button",{class:"btn sm",onclick:()=>go("videos")}, LL("All videos","ວິດີໂອທັງໝົດ")))));
+    wrap.append(upNext);
+    if (nx){ countdown = setInterval(() => {
+      if (!upNext || !upNext.isConnected){ clearInterval(countdown); return; }
+      left--; ring.style.setProperty("--p", String(Math.round(100 * (SECS - left) / SECS))); ring.firstChild.textContent = String(Math.max(0, left));
+      if (left <= 0) openVideo(nx);
+    }, 1000); }
+  }
+
+  // --- 6. finger gestures on the caption bar: swipe ← → for the next / previous line, double-tap to hear it again ---
+  if (caption && lines.length){
+    let x0 = null, y0 = 0, tLast = 0;
+    const jump = d => { const i = Math.min(lines.length - 1, Math.max(0, (cur < 0 ? (d > 0 ? -1 : 1) : cur) + d)); seekTo(lines[i].start);   // cur is the line just chosen
+      caption.classList.remove("swipe-l", "swipe-r"); void caption.offsetWidth; caption.classList.add(d > 0 ? "swipe-l" : "swipe-r"); };
+    caption.addEventListener("pointerdown", e => { x0 = e.clientX; y0 = e.clientY; });
+    caption.addEventListener("pointerup", e => {
+      if (x0 === null) return; const dx = e.clientX - x0, dy = e.clientY - y0; x0 = null;
+      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.5){ jump(dx < 0 ? 1 : -1); tLast = 0; return; }
+      const now = Date.now(); if (now - tLast < 320){ tLast = 0; if (cur >= 0) seekTo(lines[cur].start); else jump(1); } else tLast = now;
+    });
+    caption.addEventListener("pointercancel", () => { x0 = null; });
+    let hinted = false; try { hinted = localStorage.getItem("laolao.video.gesturehint") === "1"; } catch(e){}
+    if (!hinted && matchMedia("(pointer:coarse)").matches){
+      caption.append(h("div",{class:"vd-gesture-hint"}, LL("Swipe ← → for the next line · double-tap to hear it again","ປັດ ← → ເພື່ອໄປແຖວຕໍ່ໄປ · ແຕະສອງເທື່ອເພື່ອຟັງອີກ")));
+      try { localStorage.setItem("laolao.video.gesturehint", "1"); } catch(e){}
+    }
+    caption.title = LL("Swipe for the next line · double-tap to repeat","ປັດເພື່ອໄປແຖວຕໍ່ໄປ · ແຕະສອງເທື່ອເພື່ອຟັງອີກ");
+  }
+
   waitConnected(host).then(async () => {
     ctl = await mountPlayer(host, v.embedUrl, { onTime, onState: st => {
+      if (st === "ended"){ markWatched(v.id); logEvent("video_done", { ref:v.id }); showUpNext(); return; }
       if (st !== "playing") return;
+      closeUpNext();
       if (!logged){ logged = true; logEvent("video", { ref:v.id }); touchDay(); }
       // phones: bring the player to the top so the transcript has room below it
       if (matchMedia("(max-width:700px)").matches){ const top = stage.getBoundingClientRect().top; if (top > 4) window.scrollTo({ top: window.scrollY + top, behavior: "smooth" }); }
     } });
     root.__player = ctl;
+    if (autoplay && ctl.sync) ctl.play();               // arrived from "Up next": keep watching (the browser may still ask for a tap)
     if (!ctl.sync && lines.length) transcriptPanel.querySelector(".vd-panel-head").append(h("p",{class:"small muted vd-nosync"}, LL("Live sync is unavailable here — tap a line to open YouTube at that moment.","ບໍ່ສາມາດເລື່ອນຕາມໄດ້ — ແຕະແຖວເພື່ອເປີດ YouTube ທີ່ເວລານັ້ນ.")));
   });
   return root;
