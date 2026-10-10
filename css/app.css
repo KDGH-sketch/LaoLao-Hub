@@ -2560,3 +2560,13 @@ html{background:var(--bg)}
   .topbar,.wl .wl-nav{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--bg)}
   .pmenu{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--surface)}
 }
+/* ---------- app frame (iPhone / iPad): the page never scrolls, only the app area does (js/shared/scroller.js) ----------
+   iPad Safari moved the pinned tab bar and side menu with the page when it bounced past the end, leaving an empty band.
+   With the app as a screen-sized frame there is no page to bounce; the app area's own bounce is switched off, which
+   Safari honours for a scrolling element. Only while the app is open (:has(> .app)): the welcome and sign-in pages
+   scroll as before. Old iOS without :has() (before 15.4) keeps the normal page. */
+html.ios:has(#root > .app),html.ios:has(#root > .app) body{height:100%;overflow:hidden;overscroll-behavior:none}
+html.ios:has(#root > .app) #root{height:100vh;height:100dvh;display:flex;flex-direction:column}
+html.ios:has(#root > .app) #root > *{flex:none}
+html.ios:has(#root > .app) #root > .app{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:none;-webkit-overflow-scrolling:touch}
+html.ios:has(#root > .app) .side{height:var(--frame-h,100dvh)}   /* the visible height of the app area (measured: a demo bar above it is not counted) */

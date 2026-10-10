@@ -15,9 +15,12 @@ const ok = (c, m, d) => { console.log((c ? "  PASS " : "  FAIL ") + m + (!c && d
 const J = JSON.stringify;
 const shot = n => b.screenshot(path.join(SHOTS, "video-" + n + ".png"));
 const device = (w, hh, mobile = true) => b.send("Emulation.setDeviceMetricsOverride", { width: w, height: hh, deviceScaleFactor: mobile ? 2 : 1, mobile, screenOrientation: w > hh ? { type: "landscapePrimary", angle: 90 } : { type: "portraitPrimary", angle: 0 } });
-const scrollTo = async y => { await b.eval(`window.scrollTo(0, ${y})`); await sleep(120); await b.eval(`window.dispatchEvent(new Event("scroll"))`); await sleep(450); };
+// scrolls whatever scrolls the app: the page, or the app area on iPhone / iPad (js/shared/scroller.js)
+const scrollTo = async y => { await b.eval(`import("/js/shared/scroller.js").then(m => m.scrollToTop({ top: ${y} }))`); await sleep(500); };
+// positions from the top of what scrolls (the window, or on iPhone / iPad the app area, under a demo banner in tests)
 const geo = () => b.eval(`(() => { const t = document.querySelector(".topbar").getBoundingClientRect(), s = document.querySelector(".vd-stage").getBoundingClientRect();
-  return { barTop: Math.round(t.top), barBottom: Math.round(t.bottom), stageTop: Math.round(s.top), hide: document.documentElement.classList.contains("tb-hide"), y: Math.round(scrollY) }; })()`);
+  const frame = document.querySelector("html.ios #root > .app"), o = frame && getComputedStyle(frame).overflowY === "auto" ? frame.getBoundingClientRect().top : 0;
+  return { barTop: Math.round(t.top - o), barBottom: Math.round(t.bottom - o), stageTop: Math.round(s.top - o), hide: document.documentElement.classList.contains("tb-hide"), y: Math.round((document.querySelector("html.ios #root > .app") || {}).scrollTop || scrollY) }; })()`);
 // three short timed lines so the caption has something to move between
 const LINES = [{ start: 0, text: "ສະບາຍດີ", en: "Hello" }, { start: 6, text: "ຂອບໃຈ", en: "Thank you" }, { start: 12, text: "ລາກ່ອນ", en: "Goodbye" }];
 
@@ -113,7 +116,7 @@ try {
 
   console.log("\ntablet and desktop");
   await device(820, 1180); await sleep(600);
-  await b.eval(`window.scrollTo(0, 0)`); await sleep(300);
+  await scrollTo(0);
   ok(await b.eval(`document.documentElement.scrollWidth <= innerWidth + 1`), "tablet: no sideways scrolling");
   await device(1366, 900, false); await sleep(700);
   await scrollTo(400); g = await geo();

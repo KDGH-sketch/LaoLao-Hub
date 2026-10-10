@@ -1,4 +1,5 @@
 // Learner Views: Video Learning Feed
+import { scrollToTop, scrollPos } from "../shared/scroller.js";
 import { h, $$, icon, toast, tr, stripTone, videoSource } from "../shared/ui.js";
 import { transcriptOf, recapOf, mountPlayer, activeIndex, formatTime, parseTime } from "../shared/video.js";
 import { t, lang } from "../shared/i18n.js";
@@ -339,7 +340,7 @@ function videoView({ id, autoplay }){
       closeUpNext();
       if (!logged){ logged = true; logEvent("video", { ref:v.id }); touchDay(); }
       // phones: bring the player to the top so the transcript has room below it
-      if (matchMedia("(max-width:700px)").matches){ const top = stage.getBoundingClientRect().top; if (top > 4) window.scrollTo({ top: window.scrollY + top, behavior: "smooth" }); }
+      if (matchMedia("(max-width:700px)").matches){ const top = stage.getBoundingClientRect().top; if (top > 4) scrollToTop({ top: scrollPos() + top, behavior: "smooth" }); }
     } });
     root.__player = ctl;
     if (autoplay && ctl.sync) ctl.play();               // arrived from "Up next": keep watching (the browser may still ask for a tap)

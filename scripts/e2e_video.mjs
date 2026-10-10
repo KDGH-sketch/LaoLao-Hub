@@ -42,7 +42,7 @@ await new Promise(r => server.listen(0, "127.0.0.1", r));
 const BASE = `http://127.0.0.1:${server.address().port}`;
 
 let failed = 0;
-const ok = (cond, name) => { console.log((cond ? "  PASS " : "  FAIL ") + name); if (!cond) failed++; };
+const ok = (cond, name, d) => { console.log((cond ? "  PASS " : "  FAIL ") + name + (!cond && d !== undefined ? "  → " + JSON.stringify(d) : "")); if (!cond) failed++; };
 const b = await launch({ width: 1366, height: 900 });
 const clickText = (sel, re) => b.eval(`(() => { const el = [...document.querySelectorAll(${JSON.stringify(sel)})].find(e => ${re}.test(e.textContent)); if (el) el.click(); return !!el; })()`);
 
@@ -104,14 +104,16 @@ try {
 
   if (ready){
     for (const [t, idx] of [[1, 0], [5, 1], [10, 2], [16, 3], [23, 4]]){
+      // the real YouTube player can take a moment to report its new time: wait for the line (up to 8 s), then check
+      const want = ["line one","line two","line three","line four","line five"][idx];
       await b.eval(`document.querySelector(".vd").__player.seek(${t}, false)`);
-      await sleep(400);
-      const st = await b.eval(`({ on: [...document.querySelectorAll(".vd-line")].findIndex(l => l.classList.contains("on")),
-        cap: document.querySelector(".vd-cap-text").textContent })`);
-      ok(st.on === idx && st.cap.includes(["line one","line two","line three","line four","line five"][idx]), `at ${t}s line ${idx + 1} is highlighted and shown as the caption`);
+      const state = `({ on: [...document.querySelectorAll(".vd-line")].findIndex(l => l.classList.contains("on")), cap: document.querySelector(".vd-cap-text").textContent })`;
+      await b.waitFor(`(() => { const s = ${state}; return s.on === ${idx} && s.cap.includes(${JSON.stringify(want)}); })()`, 8000).catch(() => {});
+      const st = await b.eval(state);
+      ok(st.on === idx && st.cap.includes(want), `at ${t}s line ${idx + 1} is highlighted and shown as the caption`, st);
     }
     await b.eval(`document.querySelector(".vd").__player.seek(10, false)`);   // line 3 has a translation
-    await sleep(400);
+    await b.waitFor(`document.querySelector(".vd-cap-sub").textContent.includes("Third line")`, 8000).catch(() => {});
     const sub = await b.eval(`document.querySelector(".vd-cap-sub").textContent`);
     ok(sub.includes("Third line (test translation)"), `caption shows the translation under the line ("${sub}")`);
 

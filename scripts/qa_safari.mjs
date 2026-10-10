@@ -108,7 +108,7 @@ for (const [w, h, name] of SIZES){
       const tb = document.querySelector(".topbar"), cs = getComputedStyle(tb), side = document.querySelector(".side");
       const out = { found: at > 0, blur: cs.webkitBackdropFilter || cs.backdropFilter || "none", bg: cs.backgroundColor,
         overscroll: CSS.supports("overscroll-behavior-y", "none") ? getComputedStyle(document.documentElement).overscrollBehaviorY : "unsupported",
-        sideFits: side && getComputedStyle(side).display !== "none" ? Math.abs(side.getBoundingClientRect().height - innerHeight) <= 1 : null };
+        sideFits: side && getComputedStyle(side).display !== "none" ? (r => Math.abs(r.bottom - innerHeight) <= 1 && r.top >= -1)(side.getBoundingClientRect()) : null };
       st.remove(); return out;
     });
     ok(ios.found && (ios.blur === "none" || ios.blur === "") && !/rgba\([^)]*, 0(\.\d+)?\)$/.test(ios.bg) && ["none", "unsupported"].includes(ios.overscroll) && ios.sideFits !== false,

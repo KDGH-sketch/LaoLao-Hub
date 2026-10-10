@@ -13,13 +13,14 @@ import * as TV from "./views-tools.js";
 import { lockedPanel, featureForView, navLock, planLabel } from "./upgrade.js";
 import { themeSwitcher, brandMark } from "../shared/ui.js";
 import { autoHideTopbar } from "../shared/autohide.js";
+import { scrollToTop } from "../shared/scroller.js";
 import { createSideNav, useShortcut } from "../shared/sidenav.js";
 
 const root = document.getElementById("root");
 try { const l = localStorage.getItem("xuelu.lang"); if (l) setLang(l); } catch(e){}
 
 // Moving between pages slides the content (forward from the right, back from the left); see "transitions" in css/app.css
-const show = kind => withTransition(() => { const done = render(); window.scrollTo(0,0); return done; }, { kind });
+const show = kind => withTransition(() => { const done = render(); scrollToTop(); return done; }, { kind });
 export function go(name, params={}, push=true){ if (push) A.hist.push(A.view); A.view = { name, params }; closeSheet(); closeProfileMenu(); show(push ? "page" : "back"); }
 export function back(){ const v = A.hist.pop(); closeSheet(); closeProfileMenu(); if (v){ A.view = v; show("back"); } else go("home",{},false); }
 A.go = go; A.back = back; A.signOut = (...a) => signOutNow(...a);

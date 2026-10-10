@@ -1,4 +1,5 @@
 // LaoLao Admin Backend
+import { setupFrame, measureFrame } from "../shared/scroller.js";
 import { getApi } from "../api/index.js";
 import { OWNER_EMAIL } from "../config.js";
 import { h, $, $$, icon, toast, dialog, confirmDialog, fmtDate, errText, brandMark } from "../shared/ui.js";
@@ -337,6 +338,7 @@ function buildAdminShell(){
   const main = h("main",{id:"main"});
   const app = h("div",{class:"app adm"}, sn.el, h("div",{class:"mainwrap"}, top, main));
   root.append(demoBar(), app);
+  setupFrame(); measureFrame();                 // iPhone / iPad: the app is a screen-sized frame (js/shared/scroller.js)
   adminShell = { key: adminShellKey(), app, main, top, sn };
 }
 function renderShell(force){

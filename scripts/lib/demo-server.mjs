@@ -1,5 +1,6 @@
 // Static server for browser tests: serves the repository with an empty env-config.js,
 // so the app runs in DEMO mode (data stays in the test browser; Supabase is never contacted).
+// LAOLAO_FRAME=1 runs the app as on an iPhone / iPad: a screen-sized frame where only the app area scrolls.
 import http from "http";
 import fs from "fs";
 import path from "path";
@@ -12,7 +13,7 @@ const MIME = { ".html":"text/html", ".js":"application/javascript", ".mjs":"appl
 export async function startDemoServer(){
   const server = http.createServer((req, res) => {
     let p = decodeURIComponent(new URL(req.url, "http://x").pathname);
-    if (p === "/env-config.js"){ res.writeHead(200, { "Content-Type": "application/javascript" }); return res.end('window.__OWNER_EMAIL__ = "owner@test.local";'); }
+    if (p === "/env-config.js"){ res.writeHead(200, { "Content-Type": "application/javascript" }); return res.end('window.__OWNER_EMAIL__ = "owner@test.local";' + (process.env.LAOLAO_FRAME ? " window.__FORCE_FRAME__ = true;" : "")); }
     if (p.endsWith("/")) p += "index.html";
     const file = path.join(ROOT, p);
     if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()){ res.writeHead(404); return res.end("not found"); }

@@ -1,4 +1,5 @@
 // Shared admin state and Role-Based Access Control (RBAC)
+import { scrollToTop } from "../shared/scroller.js";
 import { t, lang } from "../shared/i18n.js";
 import { h, icon, discardDialog } from "../shared/ui.js";
 import { OWNER_EMAIL } from "../config.js";
@@ -147,7 +148,7 @@ export async function go(view, params = {}) {
   S.view = view;
   S.params = params;
   S.render();
-  window.scrollTo(0, 0);
+  scrollToTop();
 }
 
 export async function refreshPlans() {
