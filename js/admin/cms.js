@@ -12,6 +12,7 @@ import { checkWebItem, uploadChecked, migrateLegacyPromo } from "./web-checks.js
 import { SCHEMAS, STEP_TYPE_TO_COL, APP_PAGES } from "./schemas.js";
 import { parseTime, formatTime, normalizeSegments } from "../shared/video.js";
 import { publishFlow } from "./main.js";
+import { loadPack, planPack, importPack, PACK_TYPES } from "../shared/content-pack.js";
 import { shapeItem, shapeAll } from "../shared/shape.js";
 import { TYPES as IMPORTABLE } from "./import-map.js";
 import { normalizeGrammar, parseFormula, formulaMarkers, tagTokens, meaningful, wrongOrders, ROLES } from "../shared/grammar.js";
@@ -24,6 +25,46 @@ export async function engine(){ await loadDict(); if (!LEXICON){ LEXICON = {}; (
 export function autoPinyin(eng, zh){ const toks = eng.tokenize(segment(zh).join(" ")); return { tokens: toks.map(x=>({ z:x.z, p:x.p })), py: eng.pinyinLine(toks) }; }
 
 // ---------- content home ----------
+// The curriculum pack: lessons, words, patterns, grammar, dialogues, quizzes, culture and paths for Stage 1–6
+// (data/curriculum-pack.json). Check shows what is new; Import adds only the new items (nothing existing is changed).
+function packPanel(){
+  const body = h("div",{class:"stack",style:"gap:10px","aria-live":"polite"});
+  const L2 = (en, lo) => lang() === "lo" ? lo : en;
+  const NAMES = { vocabulary:["Words","ຄຳສັບ"], patterns:["Sentence patterns","ໂຄງສ້າງປະໂຫຍກ"], grammar:["Grammar points","ໄວຍາກອນ"], dialogues:["Dialogues","ບົດສົນທະນາ"], quizzes:["Quizzes","ແບບທົດສອບ"],
+    lessons:["Lessons","ບົດຮຽນ"], culture:["Culture stories","ວັດທະນະທຳ"], paths:["Learning paths","ເສັ້ນທາງການຮຽນ"] };
+  let pack = null;
+  const check = async () => {
+    body.replaceChildren(h("p",{class:"small muted"}, L2("Checking…","ກຳລັງກວດ…")));
+    try { pack = pack || await loadPack(); const plan = await planPack(S.api, pack);
+      body.replaceChildren(
+        h("div",{class:"pack-grid"}, PACK_TYPES.map(ty => h("div",{class:"pack-cell"}, h("b",{class:"tabnum"}, String(plan.types[ty].add)), h("span",null, L2(...NAMES[ty])),
+          h("small",{class:"muted"}, plan.types[ty].existing ? L2(plan.types[ty].existing + " already there", "ມີແລ້ວ " + plan.types[ty].existing) : L2("all new","ໃໝ່ທັງໝົດ"))))),
+        plan.add ? h("div",{class:"row"}, h("button",{class:"btn primary",onclick:()=>run(plan)}, icon("download"), L2("Import " + plan.add + " new items","ນຳເຂົ້າ " + plan.add + " ລາຍການໃໝ່")),
+          h("span",{class:"small muted"}, L2("Existing items are never changed.","ລາຍການທີ່ມີແລ້ວຈະບໍ່ຖືກປ່ຽນ.")))
+          : h("div",{class:"banner ok"}, L2("Everything in the pack is already in your content.","ເນື້ອຫາທັງໝົດມີແລ້ວ.")));
+    } catch(e){ body.replaceChildren(h("div",{class:"banner"}, errText(e))); }
+  };
+  const run = async plan => {
+    if (!await confirmDialog(L2("Import the curriculum pack?","ນຳເຂົ້າຊຸດຫຼັກສູດ?"), L2(plan.add + " new items will be added. Nothing that already exists is changed. Learners see them after you publish.", "ຈະເພີ່ມ " + plan.add + " ລາຍການໃໝ່. ລາຍການເກົ່າບໍ່ປ່ຽນ."), L2("Import","ນຳເຂົ້າ"), t("cancel"))) return;
+    const bar = h("i"), label = h("span",{class:"small muted tabnum"});
+    body.replaceChildren(h("div",{class:"imp-bar"}, bar), label);
+    const res = await importPack(S.api, pack, S.me.uid, { onStep: (d, n, ty) => { bar.style.width = (n ? Math.round(100 * d / n) : 100) + "%"; label.textContent = d + " / " + n + (ty ? " · " + L2(...NAMES[ty]) : ""); } });
+    markUnpublished(); audit("import", "curriculum-pack", res.added + " added" + (res.failed.length ? ", " + res.failed.length + " failed" : ""));
+    body.replaceChildren(h("div",{class:"banner " + (res.failed.length ? "" : "ok")}, L2("Added " + res.added + " items" + (res.failed.length ? ", " + res.failed.length + " failed" : ""), "ເພີ່ມ " + res.added + " ລາຍການ")),
+      res.failed.length ? h("details",null, h("summary",{class:"small"}, L2("What failed","ສິ່ງທີ່ລົ້ມເຫຼວ")), h("div",{class:"small mono"}, res.failed.slice(0, 30).map(f => h("div",null, f.path + ": " + f.error)))) : null,
+      h("div",{class:"row"}, h("button",{class:"btn primary",onclick:()=>publishFlow()}, icon("upload"), t("publish_now"))));
+  };
+  // a pack file from this computer (e.g. the paid stages, kept out of the public site)
+  const file = h("input",{type:"file",accept:".json,application/json",hidden:true,onchange:async e => { const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+    try { const p = JSON.parse(await f.text()); if (!p || !p.items || !PACK_TYPES.some(ty => Array.isArray(p.items[ty]))) throw new Error(L2("This is not a curriculum pack file.","ບໍ່ແມ່ນໄຟລ໌ຊຸດຫຼັກສູດ.")); pack = p; check(); }
+    catch(err){ toast(errText(err), "err"); } }});
+  // the buttons stay put; results appear below them
+  return h("section",{class:"panel pack-panel stack",style:"gap:10px"}, h("h3",null, icon("learn"), " ", L2("Curriculum pack · Stage 1–6","ຊຸດຫຼັກສູດ · ຂັ້ນ 1–6")),
+    h("p",{class:"small"}, L2("A full course for one year: Stage 1 to 6 with lessons, words, dialogues, patterns, grammar, quizzes, culture and a learning path per stage.","ຫຼັກສູດໜຶ່ງປີ: ຂັ້ນ 1 ຫາ 6.")),
+    h("div",{class:"row"}, h("button",{class:"btn",onclick:check}, icon("search"), L2("Check what's new","ກວດສິ່ງທີ່ໃໝ່")),
+      h("button",{class:"btn ghost",onclick:()=>file.click()}, icon("upload"), L2("Use a pack file…","ໃຊ້ໄຟລ໌ຊຸດຫຼັກສູດ…")), file),
+    body);
+}
 export async function viewContentHome(){
   const counts = await Promise.all(CONTENT_TYPES.map(async ty => [ty, await S.api.db.count(ty).catch(()=>0)]));
   const ICON = {
@@ -32,7 +73,7 @@ export async function viewContentHome(){
     videos:"play", tones:"speaker", culture:"culture", characters:"chars", dictionary:"dict",
     places:"globe", festivals:"star", offers:"gift", resources:"download"
   };
-  return h("div",null, h("div",{class:"pagehead"}, h("h1",null,t("adm_content")), h("p",null,"Universal Content Management System: Create, edit, duplicate, bulk-manage, and publish curriculum entities.")),
+  return h("div",{class:"stack-l"}, canEditMenu("lessons") ? packPanel() : null, h("div",{class:"pagehead"}, h("h1",null,t("adm_content")), h("p",null,"Universal Content Management System: Create, edit, duplicate, bulk-manage, and publish curriculum entities.")),
     h("div",{class:"grid3"}, counts.map(([ty,n]) => h("button",{class:"qs",onclick:()=>go("contentList",{type:ty})}, h("span",{class:"qi",style:"background:var(--surface-2);color:var(--accent)"}, icon(ICON[ty]||"content")), h("span",null, h("b",null,t("type_"+ty)||ty), h("div",{class:"small muted"}, n+" "+t("items")))))));
 }
 

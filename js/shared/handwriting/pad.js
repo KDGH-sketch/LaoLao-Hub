@@ -2,16 +2,17 @@
 // Everything is stored and redrawn in normalised coordinates (0..1), so resizing or rotating the device never distorts
 // the drawing. Used by the learner activity, quizzes and the admin Stroke Editor.
 //
-//   const pad = createPad({ guideChar:"ກ", onStroke: points => … })
+//   const pad = createPad({ guideChar:"ກ", onStroke: points => … })   (fullSmoothing: the whole smoothing setting for a mouse too)
 //   pad.el  · pad.setGuide({ level, template, current }) · pad.setInk(strokes) · pad.flash(points, kind) · pad.enable(on)
 //   pad.animate(template, { speed }) → Promise (stroke-order demonstration drawn from the stroke data)
 import { h } from "../ui.js";
 import { strokeDrawMs } from "./model.js";
+import { getPen, onPenChange, PEN_SIZES, createStabilizer, smoothStroke, tracePath } from "./smooth.js";
 
 const DPR = () => Math.min(3, (typeof window !== "undefined" && window.devicePixelRatio) || 1);
 const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
-export function createPad({ guideChar = "", label = "", onStroke = null, onStart = () => {} } = {}){
+export function createPad({ guideChar = "", label = "", onStroke = null, onStart = () => {}, fullSmoothing = false } = {}){
   const glyph = h("div", { class: "hwp-glyph", lang: "lo", "aria-hidden": "true" }, guideChar);
   const guide = h("canvas", { class: "hwp-layer", "aria-hidden": "true" });
   const ink = h("canvas", { class: "hwp-layer hwp-ink", role: "img", "aria-label": label || "Drawing area" });
@@ -33,9 +34,7 @@ export function createPad({ guideChar = "", label = "", onStroke = null, onStart
   function line(ctx, pts, color, width, dash){
     if (pts.length < 2) return;
     ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineCap = "round"; ctx.lineJoin = "round"; if (dash) ctx.setLineDash(dash);
-    ctx.beginPath(); const a = P(pts[0]); ctx.moveTo(a[0], a[1]);
-    for (let i = 1; i < pts.length; i++){ const b = P(pts[i]); ctx.lineTo(b[0], b[1]); }
-    ctx.stroke(); ctx.restore();
+    tracePath(ctx, pts, p => P(p)); ctx.stroke(); ctx.restore();
   }
   function dot(ctx, p, r, color, text){
     const [x, y] = P(p); ctx.save(); ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
@@ -48,7 +47,12 @@ export function createPad({ guideChar = "", label = "", onStroke = null, onStart
     ctx.save(); ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(b[0] + Math.cos(ang) * L * 0.4, b[1] + Math.sin(ang) * L * 0.4);
     ctx.lineTo(b[0] - Math.cos(ang - 0.5) * L, b[1] - Math.sin(ang - 0.5) * L); ctx.lineTo(b[0] - Math.cos(ang + 0.5) * L, b[1] - Math.sin(ang + 0.5) * L); ctx.closePath(); ctx.fill(); ctx.restore();
   }
+  // guide lines keep their size; the learner's ink follows the pen size setting (a square pad is wider than a word
+  // cell, so the share is smaller)
   const W = () => Math.max(4, size * 0.035);
+  let pen = getPen();
+  const WI = () => Math.max(4, size * PEN_SIZES[pen.size] * 0.6);
+  const stopPen = onPenChange(v => { pen = v; drawInk(); });
 
   // Guide levels: 1 faint letter + all strokes · 2 the current stroke only · 3 its start dot only · 4 nothing.
   // show:"all" (admin editor / preview) draws every stroke with its number.
@@ -69,9 +73,9 @@ export function createPad({ guideChar = "", label = "", onStroke = null, onStart
   function drawInk(){
     ictx.clearRect(0, 0, size, size);
     const inkC = css("--ink") || "#0F172A";
-    strokes.forEach(s => line(ictx, s.points, s.color || inkC, W(), null));
-    flashes.forEach(f => line(ictx, f.points, f.color, W(), null));
-    if (cur) line(ictx, cur.points, css("--accent") || "#0284C7", W(), null);
+    strokes.forEach(s => line(ictx, s.points, s.color || inkC, WI(), null));
+    flashes.forEach(f => line(ictx, f.points, f.color, WI(), null));
+    if (cur) line(ictx, cur.points, css("--accent") || "#0284C7", WI(), null);
   }
 
   // ---------- input ----------
@@ -79,7 +83,9 @@ export function createPad({ guideChar = "", label = "", onStroke = null, onStart
   ink.addEventListener("pointerdown", e => {
     if (!enabled || anim || (e.pointerType === "mouse" && e.button !== 0)) return;
     e.preventDefault(); try { ink.setPointerCapture(e.pointerId); } catch(err){}
-    cur = { id: e.pointerId, t0: performance.now(), type: e.pointerType, points: [[...norm(e), 0]], pressure: [] };
+    // smooth pen: full strength for a finger, half for a pen or mouse (./smooth.js); time stays the third value
+    const level = e.pointerType === "touch" || fullSmoothing ? pen.smooth : Math.round(pen.smooth / 2), stab = createStabilizer(level, [size, size]);
+    cur = { id: e.pointerId, t0: performance.now(), type: e.pointerType, level, stab, points: stab.start([...norm(e), 0]), pressure: [] };
     if (e.pressure) cur.pressure.push(e.pressure);
     flashes = []; onStart(); drawInk();
   });
@@ -87,12 +93,14 @@ export function createPad({ guideChar = "", label = "", onStroke = null, onStart
     if (!cur || e.pointerId !== cur.id) return;
     e.preventDefault();
     const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
-    for (const ev of (evs.length ? evs : [e])){ cur.points.push([...norm(ev), Math.round(performance.now() - cur.t0)]); if (ev.pressure) cur.pressure.push(ev.pressure); }
+    for (const ev of (evs.length ? evs : [e])){ cur.points.push(...cur.stab.move([...norm(ev), Math.round(performance.now() - cur.t0)])); if (ev.pressure) cur.pressure.push(ev.pressure); }
     drawInk();
   });
   const end = e => {
     if (!cur || e.pointerId !== cur.id) return;
     const done = cur; cur = null;
+    if (e.type === "pointerup") done.points.push(...done.stab.end([...norm(e), Math.round(performance.now() - done.t0)]));
+    done.points = smoothStroke(done.points, done.level);
     if (done.points.length < 2) done.points.push([done.points[0][0] + 0.001, done.points[0][1], 1]);
     drawInk();
     const handler = api.onStroke || onStroke;
@@ -129,7 +137,7 @@ export function createPad({ guideChar = "", label = "", onStroke = null, onStart
   const stop = () => { if (anim){ anim.cancel(); anim = null; } };
 
   const api = {
-    el, onStroke: null, get size(){ return size; }, get animating(){ return !!anim; },
+    el, onStroke: null, get size(){ return size; }, get animating(){ return !!anim; }, get template(){ return guideState.template; },
     setGuide(state){ guideState = Object.assign({}, guideState, state); drawGuide(); },
     setGlyph(ch){ glyph.textContent = ch || ""; },
     setInk(list){ strokes = list.map(s => Array.isArray(s) ? { points: s } : s); flashes = []; drawInk(); },
@@ -139,8 +147,9 @@ export function createPad({ guideChar = "", label = "", onStroke = null, onStart
     enable(on){ enabled = !!on; el.classList.toggle("locked", !enabled); },
     animate, stop,
     refresh(){ size = 0; fit(); },
-    destroy(){ stop(); if (ro) ro.disconnect(); }
+    destroy(){ stop(); if (ro) ro.disconnect(); stopPen(); }
   };
+  el.__pad = api;                                         // for the browser tests
   requestAnimationFrame(fit);
   return api;
 }

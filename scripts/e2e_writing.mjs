@@ -43,6 +43,7 @@ try {
   await b.goto(srv.base + "/"); await b.waitFor(`!!document.querySelector("#em")`, 60000);
   await b.eval(`(() => { const e = document.querySelector("#em"), p = document.querySelector("#pw"); e.value = "learner@demo.laolao"; p.value = "demo1234"; (e.form || p.form).requestSubmit(); })()`);
   await b.waitFor(`!!document.querySelector(".app .topbar")`, 60000); await sleep(800);
+  await b.eval(`window.__errs = []; window.addEventListener("error", e => window.__errs.push(String(e.message || e.error || e.type)))`);
   await b.eval(`import("/js/learner/core.js").then(m => { m.setPref("uiLang", "en"); m.setPref("explainLang", "en"); })`); await sleep(300);
   await b.eval(`document.fonts && document.fonts.load("48px 'Noto Sans Lao'")`).catch(() => {});
 
@@ -119,6 +120,79 @@ try {
   await b.eval(`[...document.querySelectorAll(".hww .btn")].find(x => /Show writing order/.test(x.innerText))?.click()`); await sleep(400);
   ok(await b.eval(`/Watch the order/.test(document.querySelector(".hww .hw-fb").innerText)`), "Show writing order plays the order");
 
+  console.log("\nwriting a word on a phone, with a finger");
+  await b.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await b.send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
+  await b.eval(`try { localStorage.removeItem("laolao.hw.view"); localStorage.removeItem("laolao.hw.pen"); } catch(e){}`);
+  await goL("handwriting", { sec: "words" }); await b.waitFor(`!!document.querySelector(".hww-card")`, 15000); await sleep(700);
+  await b.eval(`[...document.querySelectorAll(".hwh-group .seg button")].find(x => /Long/.test(x.innerText)).click()`); await sleep(700);
+  const ph = await b.eval(`(() => { const cp = document.querySelector(".hww .cp"), s = cp.querySelector(".cp-strip"); return { focus: cp.classList.contains("focus"), cells: +cp.dataset.cells,
+    thumbs: cp.querySelectorAll(".cp-thumb").length, on: cp.querySelector(".cp-thumb.on")?.dataset.i, w: s.offsetWidth, h: s.offsetHeight, next: document.querySelector(".hww-next")?.innerText.replace(/\\s+/g, " "),
+    view: document.querySelector('.hww-view [aria-pressed="true"]')?.innerText, sw: document.documentElement.scrollWidth }; })()`);
+  ok(ph.focus && ph.view === "One letter", "a long word on a phone opens one letter at a time", ph);
+  ok(ph.w >= 320 && ph.h >= 400 && ph.sw <= 391, `one big box (${ph.w}×${ph.h} px, was 84 px wide) and no sideways scrolling`, ph);
+  ok(ph.thumbs === ph.cells && ph.on === "0", `the whole word as a small map (${ph.thumbs} letters), the current one marked`, ph);
+  ok(/^Next letter/.test(ph.next), "a big Next letter button: " + ph.next, ph);
+  await b.eval(`document.querySelector(".hww-next").click()`); await sleep(200);
+  ok(/Write .* in the box first/.test(await fb()), "Next on an empty box asks to write the letter first");
+  // write every letter with touch strokes in the big box, pressing Next in between
+  const longWord = await b.eval(`document.querySelector(".hww-model").innerText`);
+  const lcells = await b.eval(`import("/js/shared/lao-script.js").then(m => m.writingCells(${J(longWord)}).map(c => c.text))`);
+  async function touchInBox(strokes){
+    const g = await b.eval(`(() => { const s = document.querySelector(".hww .cp-strip"); s.scrollIntoView({ block: "center" }); const r = s.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; })()`);
+    await sleep(120);
+    for (const st of strokes){
+      const P = p => ({ x: g.x + p[0] * g.w, y: g.y + p[1] * g.h });
+      await b.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [P(st[0])] });
+      // a finger moves in many small steps
+      for (let k = 1; k < st.length; k++) for (let j = 1; j <= 6; j++){ const a = st[k - 1], c = st[k]; await b.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [P([a[0] + (c[0] - a[0]) * j / 6, a[1] + (c[1] - a[1]) * j / 6])] }); }
+      await b.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    }
+    await sleep(100);
+  }
+  for (let i = 0; i < lcells.length; i++){
+    const st = await glyphStrokes(lcells[i]);
+    await touchInBox(st.filter(s => s[0][1] >= 0.3 && s[0][1] <= 0.78).concat(st.filter(s => s[0][1] < 0.3 || s[0][1] > 0.78)));
+    if (i < lcells.length - 1){
+      ok(await b.eval(`document.querySelector(".hww .cp").__pad.cellInk(${i}).length > 0`), "box " + (i + 1) + " (" + lcells[i] + "): the finger strokes are kept");
+      await b.eval(`document.querySelector(".hww-next").click()`); await sleep(250);
+      if (i === 0) ok(await b.eval(`document.querySelector(".cp-thumb.on").dataset.i === "1" && document.querySelector('.cp-thumb[data-i="0"]') !== null`), "Next moves to the second letter; the map follows");
+    }
+  }
+  ok(/Check/.test(await b.eval(`document.querySelector(".hww-next").innerText`)), "on the last letter the big button becomes Check");
+  await b.eval(`document.querySelector(".hww-next").click()`); await sleep(600);
+  r = await b.eval(`({ score: +(document.querySelector(".hww-result .hw-score b")?.innerText || -1), pass: !!document.querySelector(".hww-result .chip.lv"), cells: [...document.querySelectorAll(".hww-cell")].map(c => c.className.split(" ").pop()) })`);
+  ok(r.pass && r.cells.length === lcells.length, "writing " + longWord + " (" + lcells.length + " letters) one by one with a finger: passes (" + r.score + ")", r);
+  await shot("phone-one-letter");
+
+  console.log("\nviews and pen settings are remembered");
+  await b.eval(`[...document.querySelectorAll(".hww-view button")].find(x => /Whole word/.test(x.innerText)).click()`); await sleep(400);
+  ok(await b.eval(`!document.querySelector(".hww .cp").classList.contains("focus") && document.querySelector(".hww-next").hidden`), "Whole word: every box side by side, no Next button");
+  await goL("handwriting", { sec: "words" }); await sleep(900);
+  ok(await b.eval(`!document.querySelector(".hww .cp").classList.contains("focus")`), "the choice is remembered");
+  await b.eval(`[...document.querySelectorAll(".hww-view button")].find(x => /One letter/.test(x.innerText)).click()`); await sleep(300);
+  await b.eval(`document.querySelector(".hw-pen summary").click()`); await sleep(200);
+  const pen0 = await b.eval(`({ sum: document.querySelector(".hw-pen-sum").innerText, sizes: [...document.querySelectorAll(".hw-pen .seg button")].map(x => x.innerText), prev: !!document.querySelector(".hw-pen-prev") })`);
+  ok(/Smoothing: 5\/10 · Medium/.test(pen0.sum) && pen0.sizes.join() === "Thin,Medium,Thick" && pen0.prev, "Pen: smoothing 5/10 and medium to start, three sizes, a live preview", pen0);
+  const wob = async () => b.eval(`import("/js/shared/handwriting/smooth.js").then(m => { const ink = document.querySelector(".hww .cp").__pad.cellInk(0); return ink.length ? m.wobble(ink[ink.length - 1]) : -1; })`);
+  async function shakyStroke(){
+    const g = await b.eval(`(() => { const s = document.querySelector(".hww .cp-strip"); s.scrollIntoView({ block: "center" }); const r = s.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; })()`);
+    let sd = 11; const rn = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+    const pts = Array.from({ length: 50 }, (_, i) => ({ x: g.x + g.w * (0.15 + 0.7 * i / 49) + (rn() - 0.5) * 10, y: g.y + g.h * (0.5 + 0.12 * Math.sin(i / 49 * Math.PI * 2)) + (rn() - 0.5) * 10 }));
+    await b.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [pts[0]] });
+    for (const p of pts.slice(1)) await b.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [p] });
+    await b.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }); await sleep(150);
+  }
+  const setSmooth = v => b.eval(`(() => { const r = document.querySelector(".hw-pen input[type=range]"); r.value = "${v}"; r.dispatchEvent(new Event("input", { bubbles: true })); })()`);
+  await setSmooth(0); await shakyStroke(); const wRaw = await wob();
+  await b.eval(`[...document.querySelectorAll(".hww .btn")].find(x => /Clear/.test(x.innerText)).click()`); await sleep(200);
+  await setSmooth(10); await shakyStroke(); const wSmooth = await wob();
+  ok(wRaw > 0 && wSmooth >= 0 && wSmooth < wRaw * 0.4, `the same shaky finger line: wobble ${wRaw.toFixed(2)} with smoothing off, ${wSmooth.toFixed(2)} at 10`, { wRaw, wSmooth });
+  await b.eval(`[...document.querySelectorAll(".hw-pen .seg button")].find(x => /Thick/.test(x.innerText)).click()`); await sleep(150);
+  ok(await b.eval(`(() => { try { const v = JSON.parse(localStorage.getItem("laolao.hw.pen")); return v.smooth === 10 && v.size === "l"; } catch(e){ return false; } })()`) && /10\/10 · Thick/.test(await b.eval(`document.querySelector(".hw-pen-sum").innerText`)), "smoothing 10 and a thick pen are saved on this device");
+  await shot("phone-pen");
+  await b.send("Emulation.setTouchEmulationEnabled", { enabled: false });
+
   console.log("\nphone and tablet");
   for (const [w, hh] of [[375, 812], [390, 844], [820, 1180]]){
     await b.send("Emulation.setDeviceMetricsOverride", { width: w, height: hh, deviceScaleFactor: 2, mobile: w < 900 }); await sleep(400);
@@ -132,7 +206,7 @@ try {
   await b.send("Emulation.setDeviceMetricsOverride", { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
   ok(!(await b.eval(`/\\bnull\\b|undefined|NaN/.test(document.querySelector("main").innerText)`)), "no stray null / undefined / NaN");
   const errs = b.consoleLog.filter(l => /exception|error/i.test(l) && !/favicon|audio|speech|play\(\)/i.test(l));
-  ok(errs.length === 0, "no JS errors", errs.slice(0, 3));
+  ok(errs.length === 0, "no JS errors", { errs: errs.slice(0, 3), messages: await b.eval(`window.__errs || []`) });
 } catch(e){ console.log("  FAIL " + e.message); failed++; await shot("error").catch(() => {}); }
 await b.close(); srv.close && srv.close();
 console.log(failed ? `\n${failed} writing checks FAILED` : "\nAll writing checks passed");

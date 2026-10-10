@@ -69,7 +69,7 @@ export function compareShape(glyph, ink, { grid = GRID, tol = 4, pass = PASS } =
 const r3 = x => Math.round(x * 1000) / 1000;
 
 export const FONT = "'Noto Sans Lao', 'Phetsarath OT', 'Saysettha OT', sans-serif";
-export const SCALE = 0.62;              // letter size as a share of the cell width
+export const SCALE = 0.72;              // letter size as a share of the cell width (bigger guide letters to write over, on phones too)
 // Draws `text` into a cell of width w and height h (pixels) on a 2D context: the guide on screen and the target of
 // the check are drawn by this one function, so they always line up.
 export function drawGlyph(ctx, text, w, h, { x = 0, y = 0, font = FONT, scale = SCALE, color = "#000" } = {}){

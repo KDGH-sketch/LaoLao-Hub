@@ -172,7 +172,10 @@ function validateGeneric(rows, type, { existing, refs }){
     T.check(f, { errors, warnings, refs });
     if (lost.length){ for (const list of [errors, warnings]) for (let k = list.length - 1; k >= 0; k--) if (list[k].code === "not_lao") list.splice(k, 1); }
     const key = T.grouped ? group : T.key(f);
-    const match = key ? (by1.get(String(key)) || (by2 && T.key2 && by2.get(String(T.key2(f) || "")) ) || null) : null;
+    // a row with its own ID matches only that ID; only rows without an ID fall back to the title
+    // (otherwise "d-taxi · Taking a tuk-tuk" would overwrite another dialogue that happens to share the title)
+    const ownId = T.grouped ? (T.group(f) ? f.id : lastHead && lastHead.id) : f.id;
+    const match = key ? (by1.get(String(key)) || (!ownId && by2 && T.key2 && by2.get(String(T.key2(f) || "")) ) || null) : null;
     if (!T.grouped && key && !lost.length){ if (seen.has(key)) errors.push({ col: T.columns[0].header, code: "duplicate", value: seen.get(key) }); else seen.set(key, line); }
     out.push({ line, fields: f, errors, warnings, group, existing: match, action: errors.length ? "error" : match ? "update" : "new" });
   }

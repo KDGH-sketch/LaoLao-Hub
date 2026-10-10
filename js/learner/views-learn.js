@@ -207,7 +207,7 @@ function lessonView(id, l){
   if (objs.length) root.append(h("section",{class:"card"}, h("h3",{style:"margin-bottom:8px"},t("objectives")), h("ul",{class:"obj"+(EL==="lo"?" lo":"")}, objs.map(o=>h("li",null,o)))));
   // dialogue
   (l.dialogues||[]).forEach(did => { const d = A.byType.dialogues[did]; if (!d) return;
-    const box = h("div",{class:"card",style:"padding-block:4px"}); d.lines.forEach(x => box.append(sentenceEl(ensureTokens(x, A.engine), { speaker:x.speaker })));
+    const box = h("div",{class:"card",style:"padding-block:4px"}); d.lines.forEach(x => box.append(sentenceEl(ensureTokens(x, A.engine), { speaker:x.speaker || x.sp })));
     root.append(h("section",{class:"sect"}, h("div",{class:"spread"}, h("h2",null,t("dialogue")+" · "+T(d.title)), h("button",{class:"btn sm",onclick:()=>{ speak(d.lines.map(x=>x.zh).join("")); recordAnswer("listening", true); }}, icon("play"), t("play_dialogue"))), box)); });
   // vocabulary
   if ((l.vocab||[]).length){ const D = dict();
@@ -240,69 +240,7 @@ function lessonView(id, l){
   return root;
 }
 
-// ---------- patterns ----------
-VIEWS.patterns = ({ q="", mode="lv" }) => {
-  const list = h("div",{class:"plist"});
-  const draw = () => { list.innerHTML="";
-    const f = q.trim().toLowerCase(), qp = stripTone(q);
-    const match = p => !f || String(p.n)===f || p.hz.includes(q.trim()) || pMeaning(p).toLowerCase().includes(f) || (qp.length>1 && stripTone(p.py).includes(qp));
-    const all = Object.values(A.P);
-    const groups = mode==="lv" ? [1,2,3,4,5,6].map(L=>["Stage "+L, all.filter(p=>p.level===L)]) : "ABCDEFGHIJKLMNOPQRS".split("").map(s=>[s+" · "+secName(s), all.filter(p=>p.sec===s)]);
-    groups.forEach(([title, items]) => { items = items.filter(match).sort((a,b)=>a.n-b.n);
-      const lk = mode==="lv" ? A.catalog.filter(c => c.type==="patterns" && c.tier>A.tier && ("Stage "+c.level)===title) : [];
-      if (!items.length && !lk.length) return;
-      list.append(h("div",{class:"group-h"}, h("h2",null,title), h("span",{class:"muted small"}, items.filter(p=>A.prog.patterns[p.n]).length+" / "+(items.length+lk.length)+" "+t("learned_all"))));
-      items.forEach(p => list.append(h("button",{class:"prow",onclick:()=>go("pattern",{n:p.n})}, h("span",{class:"pn"},"#"+String(p.n).padStart(3,"0")), h("span",{class:"ph lo",lang:"lo"},p.hz), h("span",{class:"pm"+(expLang()==="lo"?" lo":"")},pMeaning(p)), h("span",{class:"status"+(A.prog.patterns[p.n]?" done":"")}))));
-      if (lk.length && !f) list.append(h("div",Object.assign(lockedRow(lk[0].tier),{class:"prow locked-row"}), h("span",{class:"pn"},icon("lock")), h("span",{class:"ph"}, lk.length+" "+t("patterns")), h("span",{class:"pm"}, t("locked_d",{s:tierName(lk[0].tier)})), h("span")));
-    });
-    if (!list.childElementCount) list.append(h("div",{class:"empty"},t("search_none")));
-  };
-  const seg = h("div",{class:"seg"}, [["lv","by_levels"],["sec","by_sections"]].map(([k,l]) => h("button",{"aria-pressed":String(mode===k),onclick:e=>{ mode=k; $$("button",seg).forEach(b=>b.setAttribute("aria-pressed","false")); e.currentTarget.setAttribute("aria-pressed","true"); draw(); }}, t(l))));
-  draw();
-  return h("div",null, pageHead(t("nav_patterns"), null, h("button",{class:"btn primary",onclick:()=>go("gen")}, icon("spark"), t("gen_title"))),
-    h("div",{class:"spread",style:"margin-bottom:14px"}, seg, h("input",{class:"input",style:"max-width:280px",placeholder:t("filter_ph"),value:q,oninput:debounce(e=>{ q=e.target.value; draw(); },120)})), list);
-};
-function formulaEl(f){
-  const box = h("div",{class:"formula"});
-  const loc = s => lang()==="en" ? s.replace(/\bS\b/g,"Subject").replace(/\bV\b/g,"Verb").replace(/\bO\b/g,"Object").replace(/\bN\b/g,"Noun").replace(/\bM\b/g,"Measure") : s.replace(/\b(S|V|O|Adj|N|Time|Place|Num|M|VP|Clause)\b/g, m=>t(m));
-  f.split(/\s+\/\s+(?=[A-Z(]|[\u0E80-\u0EFF])/).forEach((alt,ai) => { if (ai) box.append(h("span",{class:"fplus",style:"flex-basis:100%;height:0"}));
-    alt.split(/\s\+\s/).forEach((part,i) => { if (i) box.append(h("span",{class:"fplus"},"+")); const hz = /[\u0E80-\u0EFF]/.test(part); box.append(h("span",{class:"fchip"+(hz?" hz lo":""),lang:hz?"lo":null}, hz?part:loc(part))); }); });
-  return box;
-}
-VIEWS.pattern = ({ n }) => {
-  const p = A.P[n];
-  if (!p){ const lk = lockedItem("patterns","p"+String(n).padStart(3,"0")); return lk ? lockedPanel({ tier:lk.tier }) : h("div",{class:"empty"}, t("no_rows")); }
-  setLast("pattern", n); touchDay();
-  const EL = expLang(), root = h("div",{class:"stack-l"}), trx = p.tr[EL] && p.tr[EL].how ? p.tr[EL] : p.tr.en;
-  const learned = !!A.prog.patterns[n];
-  const lbtn = h("button",{class:"btn"+(learned?" jade":""),onclick:e=>{ const on = !A.prog.patterns[n]; learnPattern(n, on); e.currentTarget.className="btn"+(on?" jade":""); e.currentTarget.textContent = on?t("learned"):t("mark_learned"); }}, learned?t("learned"):t("mark_learned"));
-  root.append(h("div",null, h("div",{class:"crumb"}, h("button",{onclick:()=>go("patterns")},t("nav_patterns")), "›", h("span",null,"Stage "+p.level), "›", h("span",null,p.sec+" · "+secName(p.sec))),
-    h("div",{class:"phead"}, h("div",null, h("span",{class:"bigno"},"#"+String(p.n).padStart(3,"0")),
-        h("div",{class:"row",style:"gap:14px"}, h("span",{class:"pat-big lo",lang:"lo"},p.hz), h("button",{class:"ib","aria-label":t("play"),onclick:()=>speak(p.hz.replace(/[.…+A-Za-z/ ]+/g,"，"))}, icon("speaker"))),
-        h("div",{class:"py",style:"font-size:1.1rem",html:pyHTML(p.py)}), h("div",{class:"pmean"}, p.tr.en.meaning), p.tr.lo && p.tr.lo.meaning ? h("div",{class:"plo",lang:"lo"}, p.tr.lo.meaning) : null),
-      h("div",{class:"row"}, h("span",{class:"chip lv"},"Stage "+p.level), toggleBtn("p:"+n, { type:"pattern", n }, "btn sm"), lbtn))));
-  if (p.formula) root.append(h("section",{class:"sect"}, h("h2",null,t("structure")), formulaEl(p.formula)));
-  if (trx.how) root.append(h("section",{class:"sect"}, h("h2",null,t("how_why")), h("p",{class:"why"+(trx===p.tr.lo?" lo":"")}, trx.how)));
-  if (trx.note || p.tr.en.note) root.append(h("section",{class:"sect"}, h("h2",null,t("note")), h("p",{class:"why"}, trx.note || p.tr.en.note)));
-  if (p.mistake) root.append(h("section",{class:"sect"}, h("h2",null,t("mistake")), h("div",{class:"mistake"}, h("span",{class:"mk-x"},"✗"), h("span",{class:"hz bad lo",lang:"lo"},p.mistake.wrong), h("span",{class:"mk-v"},"✓"),
-    h("span",null, h("span",{class:"hz lo",lang:"lo"},p.mistake.right), " ", h("button",{class:"ib","aria-label":t("play"),onclick:()=>speak(p.mistake.right.split("/")[0])},icon("play"))), h("p",{class:"reason"}, T(p.mistake.tr)))));
-  const ex = h("div",{class:"card",style:"padding-block:4px"}); p.examples.forEach(e => ex.append(sentenceEl(exampleOf(p,e), { markers:p.markers, fix:e.fixed })));
-  root.append(h("section",{class:"sect"}, h("div",{class:"spread"}, h("h2",null,t("examples")), h("button",{class:"btn sm ghost",onclick:()=>speak(p.examples.map(e=>e.zh).join(""))}, icon("play"), t("play_all"))), ex));
-  if (p.gen && p.gen.length){
-    const gb = h("div",{class:"card",style:"padding-block:4px"}); let count = 5;
-    const gen = append => { if (!append) gb.innerHTML=""; genMany(p,count).forEach(s => gb.append(sentenceEl(s, { markers:p.markers }))); logEvent("generate", { ref:"#"+n }); };
-    root.append(h("section",{class:"sect"}, h("div",{class:"spread"}, h("h2",null,t("gen_title")), h("div",{class:"row"},
-      h("div",{class:"seg"}, [3,5,10].map(c => h("button",{"aria-pressed":String(c===count),onclick:e=>{ count=c; $$("button",e.currentTarget.parentNode).forEach(b=>b.setAttribute("aria-pressed","false")); e.currentTarget.setAttribute("aria-pressed","true"); }}, c))),
-      h("button",{class:"btn primary sm",onclick:()=>gen(false)}, icon("spark"), t("generate")), h("button",{class:"btn sm",onclick:()=>gen(true)}, t("gen_more")))), gb));
-    gen(false);
-  }
-  const qbox = h("div",{class:"quiz"});
-  root.append(h("section",{class:"sect"}, h("div",{class:"card spread"}, h("div",null, h("h3",null,t("practice_this")), h("p",{class:"muted small"}, t("pr_order")+" · "+t("pr_blank")+" · "+t("pr_meaning")+" · "+t("pr_listen"))),
-    h("button",{class:"btn primary",onclick:()=>{ runQuiz(qbox, patternQuestions([p], 8), { key:"pattern:"+n, onAnswer:(q,ok,m)=>recordAnswer(q.skill,ok,m), onFinish:r=>{ if (r.passed && r.pct >= 75 && !A.prog.patterns[n]) { learnPattern(n,true); toast(t("learned")); } }, onAgain:()=>go("pattern",{n},false) }); qbox.scrollIntoView({behavior:"smooth"}); }}, t("start"), icon("right"))), qbox));
-  const all = Object.values(A.P).sort((a,b)=>(a.level-b.level)||(a.n-b.n)), i = all.indexOf(p), pv = all[i-1], nx = all[i+1];
-  root.append(h("div",{class:"pnav"}, pv ? h("button",{class:"btn",onclick:()=>go("pattern",{n:pv.n})}, icon("left"), h("span",{class:"hz"},pv.hz)) : h("span"), nx ? h("button",{class:"btn",onclick:()=>go("pattern",{n:nx.n})}, h("span",{class:"hz"},nx.hz), icon("right")) : h("span")));
-  return root;
-};
+// ---------- patterns: js/learner/views-patterns.js (Pattern Studio) ----------
 
 // ---------- grammar: js/learner/views-grammar.js (Grammar Studio) ----------
 
@@ -323,7 +261,7 @@ VIEWS.vocab = ({ words, title, lv }) => {
 
 // ---------- dialogues (standalone) ----------
 VIEWS.dialogue = ({ id }) => { const d = A.byType.dialogues[id]; if (!d) return h("div",{class:"empty"},t("no_rows"));
-  const box = h("div",{class:"card",style:"padding-block:4px"}); d.lines.forEach(x => box.append(sentenceEl(ensureTokens(x, A.engine), { speaker:x.speaker })));
+  const box = h("div",{class:"card",style:"padding-block:4px"}); d.lines.forEach(x => box.append(sentenceEl(ensureTokens(x, A.engine), { speaker:x.speaker || x.sp })));
   return h("div",null, pageHead(T(d.title), null, h("button",{class:"btn",onclick:()=>speak(d.lines.map(x=>x.zh).join(""))}, icon("play"), t("play_dialogue"))), box); };
 
 // ---------- what's new ----------

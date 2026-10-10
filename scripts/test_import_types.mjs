@@ -105,5 +105,13 @@ for (const type of TYPE_ORDER){
 }
 ok(parseTimedLines("[1:02:03] ສະບາຍດີ").lines[0].start === 3723, "transcript times with hours");
 
+// a row with its own ID never overwrites a different item that only shares the title
+const other = [{ id: "d-c1-19", title: { en: "Taking a tuk-tuk" }, lines: [] }];
+const dlgRows = rows => validateRows([head("dialogues"), ...rows.map(o => row("dialogues", o))], "dialogues", { existing: other }).rows;
+r = dlgRows([{ DialogueID: "d-taxi", Title_EN: "Taking a tuk-tuk", Speaker: "A", Lao: "ໄປ ຕະຫຼາດ" }, { Speaker: "B", Lao: "ໄດ້" }]);
+ok(r.every(x => x.action === "new" && !x.existing), "dialogue with its own ID and a title used elsewhere → new, not an update of the other one", r.map(x => x.action));
+r = dlgRows([{ Title_EN: "Taking a tuk-tuk", Speaker: "A", Lao: "ໄປ ຕະຫຼາດ" }]);
+ok(r[0].action === "update" && r[0].existing.id === "d-c1-19", "without an ID, the title still finds the existing dialogue", r.map(x => x.action));
+
 console.log(failed ? `\n${failed} import type checks FAILED` : "\nAll import type checks passed");
 process.exit(failed ? 1 : 0);

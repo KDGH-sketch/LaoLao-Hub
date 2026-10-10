@@ -138,6 +138,17 @@ try {
   await ok(target === "char-ຄ", "ຄ has no template yet");
   await b.eval(`[...document.querySelectorAll(".tbl tbody tr")].find(r => /char-ຄ/.test(r.innerText)).click()`); await sleep(1200);
   await ok(await b.eval(`!!document.querySelector(".hwp") && /No strokes yet/.test(document.body.innerText)`), "Stroke Editor opens with an empty template");
+  // the Pen panel is under the Stroke editor too: a shaky mouse stroke becomes a smooth template stroke
+  await ok(await b.eval(`!!document.querySelector(".hw-act .hw-pen")`), "the Stroke editor has the Pen panel (smoothing and size)");
+  const setSmooth = v => b.eval(`(() => { const d = document.querySelector(".hw-act .hw-pen"); d.open = true; const r = d.querySelector("input[type=range]"); r.value = "${v}"; r.dispatchEvent(new Event("input", { bubbles: true })); })()`);
+  const tplWobble = () => b.eval(`import("/js/shared/handwriting/smooth.js").then(m => { const t = document.querySelector(".hw-act .hwp").__pad.template; const s = t && t.strokes[t.strokes.length - 1]; return s ? m.wobble(s.points) : -1; })`);
+  const WAVE = Array.from({ length: 14 }, (_, i) => [0.2 + 0.6 * i / 13, 0.5 + 0.15 * Math.sin(i / 13 * Math.PI)]);
+  await setSmooth(0); await drawStroke(WAVE, "mouse", 0.03); const wRaw = await tplWobble();
+  await b.eval(`[...document.querySelectorAll(".hwe-item")].pop().querySelector('[title="Delete"]').click()`); await sleep(150);
+  await setSmooth(10); await drawStroke(WAVE, "mouse", 0.03); const wSm = await tplWobble();
+  await b.eval(`[...document.querySelectorAll(".hwe-item")].pop().querySelector('[title="Delete"]').click()`); await sleep(150);
+  await ok(wRaw > 0 && wSm >= 0 && wSm < wRaw * 0.5, "with smoothing at 10 a shaky mouse stroke is saved smooth (wobble " + wRaw.toFixed(2) + " → " + wSm.toFixed(2) + ")");
+  await setSmooth(5);
   const A1 = [[0.30,0.36],[0.36,0.30],[0.30,0.26],[0.26,0.32],[0.30,0.38],[0.35,0.62],[0.36,0.80]], A2 = [[0.36,0.30],[0.52,0.20],[0.68,0.30],[0.70,0.55],[0.70,0.80]], A3 = [[0.2,0.9],[0.8,0.9]];
   const items = () => b.eval(`document.querySelectorAll(".hwe-item").length`);
   const itemBtn = (i, title) => b.eval(`[...document.querySelectorAll(".hwe-item")][${i}].querySelector('[title="${title}"]').click()`);

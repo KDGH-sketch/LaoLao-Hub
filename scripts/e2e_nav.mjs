@@ -75,8 +75,8 @@ try {
     for (const [mod, name, views] of m.LAZY_VIEWS){ const x = await import("/js/learner/" + mod.slice(2)); for (const v of views) if (typeof (x[name] || {})[v] !== "function") bad.push(mod + " " + v);
       const real = Object.keys(x[name] || {}); for (const r of real) if (!views.includes(r)) bad.push(mod + " exports " + r + " (not in the list)"); }
     return { n: m.LAZY_VIEWS.reduce((a, x) => a + x[2].length, 0), bad }; })`);
-  ok(lazy.n === 20 && !lazy.bad.length, `the list of ${lazy.n} lazily loaded screens matches what each module provides`, lazy.bad);
-  for (const v of ["culture_lab","tone_lab","videos","handwriting","cards","grammar","myplan","plans","practice","practice_report","speak","review","chars"]){
+  ok(lazy.n === 22 && !lazy.bad.length, `the list of ${lazy.n} lazily loaded screens matches what each module provides`, lazy.bad);
+  for (const v of ["culture_lab","tone_lab","videos","handwriting","cards","grammar","patterns","myplan","plans","practice","practice_report","speak","review","chars"]){
     await go(v); const st = await b.eval(`({ banner: document.querySelector("main .banner")?.innerText || "", n: document.querySelector("main").innerText.length })`);
     if (st.n < 40 || /error|undefined/i.test(st.banner)) ok(false, v + " opens", st); }
   ok(true, "every lazily loaded screen opens");

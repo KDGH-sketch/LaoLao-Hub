@@ -60,8 +60,9 @@ try {
   const map = await b.eval(`({ cards: document.querySelectorAll(".gs-card").length, ring: document.querySelector(".gs-hero .gs-ring")?.innerText.replace(/\\s+/g, " "),
     legend: document.querySelectorAll(".gs-legend-row .gb").length, demo: document.querySelectorAll(".gs-demo .tok").length, cont: document.querySelector(".gs-hero .btn.primary")?.innerText || "",
     formulas: document.querySelectorAll(".gs-card .gs-formula").length })`);
-  ok(map.cards === 3 && map.formulas === 3, "every grammar point is a card with its formula as coloured blocks", map);
-  ok(/0\/3/.test(map.ring) && /Start/.test(map.cont), "overall progress ring, and a Start button for the next point", map);
+  const NG = await b.eval(`import("/js/learner/core.js").then(m => Object.keys(m.A.byType.grammar).length)`);   // starter points + the Stage 1–6 course
+  ok(NG >= 3 && map.cards === NG && map.formulas === NG, `every grammar point (${NG}) is a card with its formula as coloured blocks`, map);
+  ok(map.ring === "0/" + NG + " mastered" && /Start/.test(map.cont), "overall progress ring, and a Start button for the next point", map);
   ok(map.legend === 8 && map.demo === 4, "the building-block legend with a live example (food · Lao · tasty · very)", map);
   await shot("map");
 
@@ -115,7 +116,8 @@ try {
   ok(fx.opts >= 3 && /right word order/.test(fx.q), "spot the mistake: 3 or more versions of the sentence", fx);
   const f1 = await fixOnce(norm);
   const why = await b.eval(`document.querySelector(".gs-fb")?.innerText || ""`);
-  ok(f1.ok && /Why:/.test(why), "picking the right order: Correct, and why the others are wrong", { f1, why });
+  ok(f1.ok && /Why the other order is wrong:/.test(why), "picking the right order: Correct, and why the other order is wrong", { f1, why });
+  ok(new Set(f1.opts).size === f1.opts.length, "no two choices are the same sentence", f1.opts);
   await shot("fix");
   await clickText(".gs-panel .btn.primary", "/^Next$/"); await sleep(400);
   const f2 = await fixOnce(norm);
@@ -137,7 +139,7 @@ try {
   ok(saved.db && saved.db.best === 100 && saved.db.masteredAt, "…and saved to the learner's progress in the database", saved.db);
   await goL("grammar"); await sleep(800);
   const after = await b.eval(`({ ring: document.querySelector(".gs-hero .gs-ring")?.innerText.replace(/\\s+/g, " "), st: [...document.querySelectorAll(".gs-card")].map(x => x.dataset.status), cont: document.querySelector(".gs-hero .btn.primary")?.innerText })`);
-  ok(/1\/3/.test(after.ring) && after.st.includes("mastered") && !/Sentence Structure/.test(after.cont), "the map shows 1/3 mastered and suggests the next point", after);
+  ok(after.ring === "1/" + NG + " mastered" && after.st.includes("mastered") && !/Sentence Structure/.test(after.cont), "the map shows 1 mastered and suggests the next point", after);
 
   console.log("\nLao interface, night, phone");
   await b.eval(`(() => { const e = [...document.querySelectorAll(".topbar .langsw button")].find(x => x.textContent.trim() === "ລາວ"); e && e.click(); })()`); await sleep(1200);

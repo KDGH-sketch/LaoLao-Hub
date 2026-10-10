@@ -7,6 +7,7 @@ import { loadDict, dict, chars, mergeVocabulary } from "../shared/dict.js";
 import { makeEngine } from "../shared/engine.js";
 import { updateStats, isTricky, srsGradeFor } from "../shared/flashcards.js";
 import { normalizeGrammar } from "../shared/grammar.js";
+import { patternProg } from "../shared/pattern-studio.js";
 import { shapeItem } from "../shared/shape.js";
 import { setSpeechSettings, setAudioLibrary, setAudioGate } from "../shared/speech.js";
 import { ctx } from "../shared/widgets.js";
@@ -320,6 +321,19 @@ export function saveGrammar(id, patch){
   const upd = {}; for (const f in patch) upd["grammar."+k+"."+f] = patch[f]; upd["grammar."+k+".at"] = cur.at;
   progUpdate(upd); touchDay();
   return cur;
+}
+
+// ---------- pattern studio ----------
+// progress.pstudio[n] = the same step record as a grammar point. Mastering a pattern also marks it learned
+// (progress.patterns[n], used by the home page, paths and Review); a pattern learned before the studio counts as mastered.
+export const patternProgress = n => patternProg((A.prog.pstudio || {})[n], A.prog.patterns[n]);
+export function savePattern(n, patch){
+  const cur = Object.assign({}, (A.prog.pstudio || {})[n], patch, { at: Date.now() });
+  A.prog.pstudio = Object.assign({}, A.prog.pstudio, { [n]: cur });
+  const upd = {}; for (const f in patch) upd["pstudio."+n+"."+f] = patch[f]; upd["pstudio."+n+".at"] = cur.at;
+  progUpdate(upd); touchDay();
+  if (patch.masteredAt && !A.prog.patterns[n]) learnPattern(n, true);
+  return patternProg(cur, A.prog.patterns[n]);
 }
 
 // ---------- flashcards ----------

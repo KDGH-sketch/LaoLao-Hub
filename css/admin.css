@@ -460,3 +460,8 @@ table.tbl tr.clickable:hover td{background:var(--surface-2)}
 .hwa-cov-row{display:grid;gap:6px;min-width:0}
 .hwa-cov-chips{display:flex;flex-wrap:wrap;gap:4px}
 .hwa-cov-chips .chip{cursor:pointer;font-family:var(--f-lo);font-size:1rem;min-height:32px;border:1px solid var(--line);background:var(--surface)}
+/* Curriculum pack panel (All content) */
+.pack-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.pack-cell{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;background:var(--surface-2);min-width:0}
+.pack-cell b{font-size:1.35rem;line-height:1.1}
+.pack-cell span{font-weight:600;overflow-wrap:anywhere}

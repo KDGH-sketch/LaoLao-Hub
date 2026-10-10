@@ -309,7 +309,7 @@ function dialogueRound(id, env){
   const qs = [];
   for (let i = 1; i < lines.length && qs.length < 8; i++){ const prev = lines[i - 1], cur = lines[i]; const dd = others(otherLines, cur.zh, 2, env);
     const trOf = l => l.tr ? meanIn({ en:l.tr.en || "", zh:l.tr.zh || "" }, env.L) : "";
-    qs.push({ type:"reply", skill:"speaking", ask:ASK.reply, context:[{ text:prev.zh, py:prev.py || "", tr:trOf(prev), sp:prev.sp }], options:[cur.zh, ...dd], answer:0, after:trOf(cur), say:cur.zh,
+    qs.push({ type:"reply", skill:"speaking", ask:ASK.reply, context:[{ text:prev.zh, py:prev.py || "", tr:trOf(prev), sp:prev.sp || prev.speaker }], options:[cur.zh, ...dd], answer:0, after:trOf(cur), say:cur.zh,
       item:{ k:cur.zh, py:cur.py || "", en:(cur.tr && cur.tr.en) || "", zh:(cur.tr && cur.tr.zh) || "" } }); }
   return qs;
 }

@@ -5,6 +5,7 @@ import { h, icon, toast, dialog, confirmDialog, errText, fmtDate } from "../shar
 import { lang } from "../shared/i18n.js";
 import { saveContent } from "../shared/content.js";
 import { createPad } from "../shared/handwriting/pad.js";
+import { penPanel } from "../shared/handwriting/pen-panel.js";
 import { playDemo, checkAnimationFile, ANIM_MAX_BYTES } from "../shared/handwriting/animator.js";
 import { makeStroke, readTemplate, validateTemplate, mergeHwRules, DEFAULT_HW_RULES, GUIDE_LEVELS, FORMAT_VERSION } from "../shared/handwriting/model.js";
 import { createSession } from "../shared/handwriting/recognizer.js";
@@ -86,7 +87,8 @@ export async function viewHandwritingEditor({ id }){
   const platform = (S.settings && S.settings.handwriting) || {};
 
   // --- drawing pad: every stroke drawn here becomes a template stroke ---
-  const pad = createPad({ guideChar: row.char, label: L(["Stroke editor", "ບ່ອນແຕ້ມເສັ້ນ"]), onStroke: pts => {
+  // the template is usually drawn with a mouse: the whole smoothing setting applies (Pen panel under the pad)
+  const pad = createPad({ guideChar: row.char, label: L(["Stroke editor", "ບ່ອນແຕ້ມເສັ້ນ"]), fullSmoothing: true, onStroke: pts => {
     if (!editable) return;
     const s = makeStroke(pts, { id: mode === "redraw" && strokes[sel] ? strokes[sel].id : "s" + Date.now().toString(36).slice(-5) });
     if (!s || s.len < 0.03){ toast(L(["Too short: draw the whole stroke.", "ສັ້ນເກີນ: ແຕ້ມທັງເສັ້ນ."]), "err"); pad.setInk([]); return; }
@@ -219,7 +221,7 @@ export async function viewHandwritingEditor({ id }){
     };
     const again = () => { session = createSession(tpl(), R); tpad._ink = []; tpad.setInk([]); log.innerHTML = ""; out.innerHTML = ""; tpad.setGuide({ level: R.guide, template: tpl(), current: 0 }); tpad.enable(true); };
     wrap.append(h("p", { class: "small muted" }, L(["Draw like a learner: this runs exactly the learner's checking with the settings above (saved or not). Numbers are distances as a share of the box.", "ແຕ້ມຄືຜູ້ຮຽນ: ໃຊ້ການກວດແບບດຽວກັບຜູ້ຮຽນ ກັບການຕັ້ງຄ່າຂ້າງເທິງ."])),
-      tpad.el,
+      tpad.el, penPanel(),
       h("div", { class: "row" }, btn("play", L(["Play demonstration", "ເບິ່ງການສາທິດ"]), async () => { tpad.enable(false); await playDemo(tpad, tpl(), { speed: R.demo.speed }); again(); }),
         btn("repeat", L(["Test again", "ທົດສອບອີກ"]), again), R.feedback === "final" ? btn("check", L(["Check", "ກວດ"]), finish, "btn sm primary") : null),
       log, out);
@@ -272,5 +274,5 @@ export async function viewHandwritingEditor({ id }){
         editable ? h("button", { class: "btn", onclick: () => save(false) }, icon("check"), t("save")) : null,
         editable ? h("button", { class: "btn primary", onclick: () => save(true) }, icon("upload"), L(["Save & publish", "ບັນທຶກ ແລະ ເຜີຍແຜ່"])) : null)),
     !editable ? h("div", { class: "notice" }, icon("info"), h("span", null, L(["Read-only: you can view and test, but not change templates.", "ອ່ານຢ່າງດຽວ: ເບິ່ງ ແລະ ທົດສອບໄດ້ ແຕ່ແກ້ໄຂບໍ່ໄດ້."]))) : null,
-    h("div", { class: "hw-act" }, pad.el, h("div", { class: "hw-side" }, tabs, tabBody)));
+    h("div", { class: "hw-act" }, h("div", { class: "stack" }, pad.el, penPanel()), h("div", { class: "hw-side" }, tabs, tabBody)));
 }

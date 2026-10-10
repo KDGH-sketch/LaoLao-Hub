@@ -21,7 +21,7 @@ const J = JSON.stringify;
 const shot = n => b.screenshot(path.join(SHOTS, "import-" + n + ".png"));
 
 // files made here: a new word, a grammar sheet, a sheet with a missing column, a fake .xls
-const vocabNew = [templateSheets("vocabulary")[0].rows[0], ["ມ່ວນ", "", "fun, enjoyable", "", "好玩", "adj", "1", "feelings", "ມື້ນີ້ມ່ວນຫຼາຍ", "Today is a lot of fun", ""], ["ໄປ", "", "to go (updated)", "", "", "", "", "", "", "", ""]];
+const vocabNew = [templateSheets("vocabulary")[0].rows[0], ["ເຮັດ", "", "to do, make", "", "做", "v", "1", "verbs", "ເຮັດວຽກຫຼາຍ", "Doing a lot of work", ""], ["ໄປ", "", "to go (updated)", "", "", "", "", "", "", "", ""]];
 fs.writeFileSync(path.join(TMP, "vocab-new.xlsx"), writeXlsx([{ name: "Data", header: true, rows: vocabNew }]));
 const gram = templateSheets("grammar"); fs.writeFileSync(path.join(TMP, "grammar.xlsx"), writeXlsx(gram));
 fs.writeFileSync(path.join(TMP, "missing.xlsx"), writeXlsx([{ name: "Data", header: true, rows: [["English", "Chinese"], ["water", "水"]] }]));
@@ -108,11 +108,11 @@ try {
   const res = await b.eval(`document.querySelector(".imp .banner.ok, .imp .banner.bad")?.innerText || ""`);
   ok(/Saved 2 \/ 2 \(1 new, 1 updated\)/.test(res), "import complete: 2 saved", res);
   await shot("done");
-  const nw = await db("vocabulary/ມ່ວນ"), up = await db("vocabulary/ໄປ");
-  ok(nw && nw.hz === "ມ່ວນ" && nw.tr.en.meaning === "fun, enjoyable" && nw.tr.zh.meaning === "好玩" && nw.pos === "adj" && nw.level === 1 && nw.status === "published" && nw.tags.join() === "feelings",
+  const nw = await db("vocabulary/ເຮັດ"), up = await db("vocabulary/ໄປ");
+  ok(nw && nw.hz === "ເຮັດ" && nw.tr.en.meaning === "to do, make" && nw.tr.zh.meaning === "做" && nw.pos === "v" && nw.level === 1 && nw.status === "published" && nw.tags.join() === "verbs",
     "the new word is stored with its meanings, type, stage and topic", nw);
   ok(nw && nw.py && /[a-z]/.test(nw.py), "its romanization was filled in automatically: " + (nw && nw.py), nw && nw.py);
-  ok(nw && nw.examples[0].zh === "ມື້ນີ້ມ່ວນຫຼາຍ" && nw.examples[0].tr.en === "Today is a lot of fun", "its example sentence is stored the way learners' pages read it", nw && nw.examples);
+  ok(nw && nw.examples[0].zh === "ເຮັດວຽກຫຼາຍ" && nw.examples[0].tr.en === "Doing a lot of work", "its example sentence is stored the way learners' pages read it", nw && nw.examples);
   ok(up.tr.en.meaning === "to go (updated)" && up.py === before.py && up.level === before.level && JSON.stringify(up.tags) === JSON.stringify(before.tags) && (up.version || 1) === (before.version || 1) + 1,
     "the existing word: only the filled cell changed, everything else kept, version +1", { before, up });
   const vers = await b.eval(`import("/js/admin/state.js").then(m => m.S.api.db.list("vocabulary/ໄປ/versions"))`);

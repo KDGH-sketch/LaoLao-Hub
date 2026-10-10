@@ -14,6 +14,7 @@ import { dict } from "../shared/dict.js";
 import { createPad } from "../shared/handwriting/pad.js";
 import { sfx } from "../shared/sfx.js";
 import { createCellPad } from "../shared/handwriting/cellpad.js";
+import { penPanel } from "../shared/handwriting/pen-panel.js";
 import { glyphMask, inkMask, compareShape, PASS } from "../shared/handwriting/shape.js";
 import { playDemo } from "../shared/handwriting/animator.js";
 import { readTemplate, mergeHwRules } from "../shared/handwriting/model.js";
@@ -234,8 +235,16 @@ function strokeActivity(c, { onNext }){
   return h("div", { class: "hw-act" }, pad.el,
     h("div", { class: "hw-side" },
       h("div", { class: "row small muted" }, t("hw_strokes", { n }), " · ", t("hw_guide_" + rules.guide), tpl.sample ? h("span", { class: "chip warn", title: t("hw_sample_d") }, t("hw_sample")) : null),
-      steps, fb, h("div", { class: "hw-tools" }, demoBtn, undoBtn, clearBtn, checkBtn), result));
+      steps, fb, h("div", { class: "hw-tools" }, demoBtn, undoBtn, clearBtn, checkBtn), penPanel(), result));
 }
+
+// ---------- pen settings: js/shared/handwriting/pen-panel.js (also in Admin → Stroke editor) ----------
+// word view: "focus" (one big cell at a time, the default on phones) or "strip" (the whole word side by side)
+const VIEW_KEY = "laolao.hw.view";
+const savedView = () => { try { return localStorage.getItem(VIEW_KEY) || ""; } catch(e){ return ""; } };
+const saveView = v => { try { localStorage.setItem(VIEW_KEY, v); } catch(e){} };
+// automatic choice: one cell at a time when the cells of the whole word would be narrower than 112 px
+const autoView = n => n > 1 && ((typeof window !== "undefined" ? Math.min(window.innerWidth, document.documentElement.clientWidth || 9999) : 1200) - 48) / n < 112 ? "focus" : "strip";
 
 // ---------- writing by shape: one letter (its cells) or a whole word ----------
 // guide: trace (the letter faint in the cell) · copy (the model above, empty cells) · memory (the model hidden)
@@ -248,7 +257,8 @@ function writeBoard(target, { record, onNext, onNew, allowMemory = true, wordMod
   const model = h("div", { class: "hww-model", lang: "lo", "aria-hidden": "true" }, target);
   const result = h("div");
   let counted = false;
-  const pad = createCellPad({ cells, aspect, label: t("hw_canvas", { c: target }), maxCell: wordMode ? 170 : 230, minCell: wordMode ? 84 : 110,
+  let view = cells.length > 1 ? (savedView() || autoView(cells.length)) : "strip";
+  const pad = createCellPad({ cells, aspect, view, label: t("hw_canvas", { c: target }), maxCell: wordMode ? 170 : 230, minCell: wordMode ? 84 : 110,
     onStart: () => { if (!t0) t0 = Date.now(); if (!counted){ counted = true; allowUse("handwriting.practice", { ref: target }).then(ok => { if (!ok){ pad.enable(false); } }); } },
     onStroke: (pts, { cell, cy }) => {
       if (done) return false;
@@ -271,11 +281,25 @@ function writeBoard(target, { record, onNext, onNew, allowMemory = true, wordMod
     results[i] = r; pad.setCellState(i, r.passed ? "ok" : "bad");
     return r;
   }
+  // one-letter view: "Next letter" checks this cell and moves on (in the strip view, writing in the next cell does that)
+  function nextCell(){
+    if (done) return;
+    if (!pad.cellInk(current).length){ msg("error", "hw_next_empty", { c: cells[current].text }); return; }
+    if (current >= cells.length - 1) return finish();
+    check(current); current++; pad.setCurrent(current); drawNext();
+    msg("info", current === cells.length - 1 ? "hw_last_cell" : "hw_keep_going", { n: current + 1, m: cells.length });
+  }
+  const nextBtn = h("button", { class: "btn primary hww-next", onclick: () => nextCell() });
+  function drawNext(){
+    const last = current >= cells.length - 1;
+    nextBtn.hidden = view !== "focus" || cells.length < 2 || done;
+    put(nextBtn, ...(last ? [icon("check"), t("hw_check")] : [t("hw_next_letter"), h("span", { class: "lo", lang: "lo" }, " " + cells[current + 1].text), icon("right")]));
+  }
   function finish(){
     if (done) return;
     if (!pad.cellInk(current).length && current === 0){ msg("error", "hw_shape_empty"); return; }
     for (let i = current; i < cells.length; i++) check(i);
-    done = true; pad.enable(false); model.classList.add("shown");
+    done = true; pad.enable(false); model.classList.add("shown"); drawNext();
     const total = Math.round(results.reduce((a, r) => a + r.score, 0) / cells.length), passed = results.every(r => r.passed);
     const worst = results.reduce((a, r, i) => (!a || r.score < a.r.score) ? { r, i } : a, null);
     const sc = { total, passed, errors: passed ? {} : { shape: results.filter(r => !r.passed).length }, components: { shape: total }, strokes: [] };
@@ -292,22 +316,28 @@ function writeBoard(target, { record, onNext, onNew, allowMemory = true, wordMod
         onNext ? h("button", { class: "btn" + (passed ? " primary" : ""), onclick: onNext }, t("next"), icon("right")) : null)));
   }
   function reset(){ done = false; current = 0; results.fill(null); baseDone.forEach((_, i) => baseDone[i] = !(cells[i].base || cells[i].kind === "mark") || cells[i].steps.length < 2);
-    pad.clear(); pad.enable(true); pad.setCurrent(0); result.replaceChildren(); model.classList.toggle("shown", guide !== "memory"); msg("info", wordMode ? "hw_word_start" : "hw_shape_start"); }
-  const undo = () => { if (done) return; const i = pad.undo(); if (i >= 0 && i < current && !pad.cellInk(current).length){ current = i; pad.setCurrent(i); }
+    pad.clear(); pad.enable(true); pad.setCurrent(0); result.replaceChildren(); drawNext(); model.classList.toggle("shown", guide !== "memory"); msg("info", wordMode ? "hw_word_start" : "hw_shape_start"); }
+  const undo = () => { if (done) return; const i = pad.undo(); if (i >= 0 && i < current && !pad.cellInk(current).length){ current = i; pad.setCurrent(i); results[i] = null; pad.setCellState(i, ""); drawNext(); }
     if (i >= 0 && !pad.cellInk(i).some(s => zoneOf((Math.min(...s.map(p => p[1])) + Math.max(...s.map(p => p[1]))) / 2) === "middle")) baseDone[i] = !(cells[i].base || cells[i].kind === "mark") || cells[i].steps.length < 2; };
   const guideSeg = h("div", { class: "seg hww-guide", role: "group", "aria-label": t("hw_guide") }, ["trace", "copy", ...(allowMemory ? ["memory"] : [])].map(g =>
     h("button", { "aria-pressed": String(g === guide), title: t("hw_guide_" + g + "_d"), onclick: e => { guide = g; [...guideSeg.children].forEach(b => b.setAttribute("aria-pressed", String(b === e.currentTarget)));
       pad.setGuide(g === "trace" ? "trace" : "copy"); model.classList.toggle("shown", g !== "memory" || done); } }, t("hw_guide_" + g))));
   model.classList.add("shown");
+  const viewSeg = cells.length > 1 ? h("div", { class: "seg hww-view", role: "group", "aria-label": t("hw_view") }, ["focus", "strip"].map(v =>
+    h("button", { "aria-pressed": String(v === view), title: t("hw_view_" + v + "_d"), onclick: e => { view = v; saveView(v); [...viewSeg.children].forEach(b => b.setAttribute("aria-pressed", String(b === e.currentTarget)));
+      pad.setView(v); drawNext(); } }, icon(v === "focus" ? "edit" : "list"), t("hw_view_" + v)))) : null;
+  drawNext();
   // (the button is kept in a variable: after the await, the event no longer knows which element it came from)
   const orderBtn = h("button", { class: "btn", onclick: async () => { orderBtn.disabled = true; pad.enable(false); msg("info", "hw_watch_order");
     await pad.showOrder({ step: reducedMotion() ? 250 : 650 }); orderBtn.disabled = false; if (!done) pad.enable(true); msg("info", wordMode ? "hw_word_start" : "hw_shape_start"); } }, icon("play"), t("hw_show_order"));
   return h("div", { class: "hww" },
-    h("div", { class: "hww-top" }, model, guideSeg),
+    h("div", { class: "hww-top" }, model, h("div", { class: "row hww-switches" }, viewSeg, guideSeg)),
     h("div", { class: "hww-pad" }, pad.el),
     fb,
+    h("div", { class: "hww-nextrow" }, nextBtn),
     h("div", { class: "hw-tools" }, orderBtn, h("button", { class: "btn", onclick: undo }, icon("left"), t("hw_undo")),
-      h("button", { class: "btn", onclick: reset }, icon("trash"), t("hw_clear")), h("button", { class: "btn primary", onclick: finish }, icon("check"), t("hw_check"))),
+      h("button", { class: "btn", onclick: reset }, icon("trash"), t("hw_clear")), h("button", { class: "btn" + (view === "focus" && cells.length > 1 ? "" : " primary") + " hww-check", onclick: finish }, icon("check"), t("hw_check"))),
+    penPanel(),
     result);
 }
 function shapeActivity(it, { onNext }){

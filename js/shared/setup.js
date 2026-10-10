@@ -1,5 +1,6 @@
 // Platform setup: first Super Admin, starter content import, and demo-mode sample data.
 import { buildBundles, TIERS, CONTENT_TYPES } from "./content.js";
+import { loadPack, importPack } from "./content-pack.js";
 
 export async function bootstrapOwner(api, user, name){
   const now = new Date();
@@ -110,6 +111,7 @@ export async function ensureDemo(api, onStep=()=>{}){
     if (!chars.some(c => c.handwriting)) await addSampleHandwriting(api, "admin-demo-owner");
     await addDemoPayments(api);
     await addWelcomeDemo(api);
+    await addCurriculumDemo(api, "admin-demo-owner", onStep);
     if (!revCount.length) {
       for (const roleKey of ["reviewer", "editor", "support"]) {
         const acc = DEMO[roleKey];
@@ -135,6 +137,7 @@ export async function ensureDemo(api, onStep=()=>{}){
   await addSampleHandwriting(api, adminUid);
   await addDemoPayments(api);
   await addWelcomeDemo(api, adminUid);
+  await addCurriculumDemo(api, adminUid, onStep);
 
   // Seed demo reviewer, editor, and support admin accounts
   for (const roleKey of ["reviewer", "editor", "support"]) {
@@ -171,5 +174,14 @@ export async function ensureDemo(api, onStep=()=>{}){
   await api.auth.signOut();
   if (api._flush) await api._flush();
   return true;
+}
+// demo mode shows the full Stage 1–6 course (data/curriculum-pack.json); added once, only what is missing
+async function addCurriculumDemo(api, who, onStep = () => {}){
+  try {
+    if (await api.db.get("lessons/c1-01").catch(() => null)) return;
+    onStep("curriculum");
+    const res = await importPack(api, await loadPack(), who);
+    if (res.added) await buildBundles(api, who);
+  } catch(e){ console.warn("curriculum pack:", e.message); }
 }
 function dk(ms){ const d = new Date(ms); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
