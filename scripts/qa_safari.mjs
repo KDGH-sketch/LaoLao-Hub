@@ -75,6 +75,45 @@ for (const [w, h, name] of SIZES){
     } catch(e){ crashed.push(key); try { await cur.ctx.close(); } catch(_){} cur = await open(w, h); }
   }
   ok(!problems.length, `${ROUTES.length - crashed.length} screens: buttons stretch their content, practice cards are whole, no sideways scrolling`, problems);
+  // iPad / iPhone: scrolling past the end of a page (the "rubber band" bounce). A real bounce needs a real iPad, so it is
+  // simulated: positions past the bottom, then springing back, must not slide the top bar in and out; and the iOS-only
+  // rules of css/app.css (@supports (-webkit-touch-callout:none)) are applied to check what they do on iOS.
+  try {
+    await cur.p.evaluate(() => import("/js/learner/main.js").then(m => m.go("patterns", {}))); await cur.p.waitForTimeout(1200);
+    const bounce = await cur.p.evaluate(async () => {
+      const frame = () => new Promise(f => requestAnimationFrame(() => requestAnimationFrame(f)));
+      const max = document.documentElement.scrollHeight - innerHeight;
+      if (max < 200) return { skip: "page too short" };
+      window.scrollTo(0, 0); await frame(); window.dispatchEvent(new Event("scroll")); await frame();
+      for (const y of [300, Math.round(max / 2), max]){ window.scrollTo(0, y); window.dispatchEvent(new Event("scroll")); await frame(); }
+      const small = matchMedia("(max-width:900px)").matches, hiddenAtEnd = document.documentElement.classList.contains("tb-hide");
+      const real = Object.getOwnPropertyDescriptor(Window.prototype, "scrollY") || Object.getOwnPropertyDescriptor(window, "scrollY");
+      const flips = [];
+      for (const y of [max + 40, max + 110, max + 150, max + 90, max + 30, max]){
+        Object.defineProperty(window, "scrollY", { configurable: true, get: () => y });
+        window.dispatchEvent(new Event("scroll")); await frame();
+        flips.push(document.documentElement.classList.contains("tb-hide"));
+      }
+      delete window.scrollY; if (real && !Object.getOwnPropertyDescriptor(window, "scrollY")) {}
+      return { small, hiddenAtEnd, flips };
+    });
+    if (bounce.skip) console.log("  NOTE bounce check skipped: " + bounce.skip);
+    else if (bounce.small) ok(bounce.hiddenAtEnd && bounce.flips.every(Boolean), "a bounce past the bottom of the page no longer slides the top bar back in", bounce);
+    const ios = await cur.p.evaluate(async () => {
+      const css = await (await fetch("/css/app.css")).text();
+      const at = css.indexOf("@supports (-webkit-touch-callout:none){");
+      const body = css.slice(css.indexOf("{", at) + 1, css.indexOf("\n}", at));
+      const st = document.createElement("style"); st.textContent = body; document.head.append(st);
+      await new Promise(f => setTimeout(f, 100));
+      const tb = document.querySelector(".topbar"), cs = getComputedStyle(tb), side = document.querySelector(".side");
+      const out = { found: at > 0, blur: cs.webkitBackdropFilter || cs.backdropFilter || "none", bg: cs.backgroundColor,
+        overscroll: CSS.supports("overscroll-behavior-y", "none") ? getComputedStyle(document.documentElement).overscrollBehaviorY : "unsupported",
+        sideFits: side && getComputedStyle(side).display !== "none" ? Math.abs(side.getBoundingClientRect().height - innerHeight) <= 1 : null };
+      st.remove(); return out;
+    });
+    ok(ios.found && (ios.blur === "none" || ios.blur === "") && !/rgba\([^)]*, 0(\.\d+)?\)$/.test(ios.bg) && ["none", "unsupported"].includes(ios.overscroll) && ios.sideFits !== false,
+      "iOS rules: solid top bar (no blur), page bounce off" + (ios.overscroll === "unsupported" ? " (not in this Safari)" : "") + (ios.sideFits ? ", side menu fits the visible screen" : ""), ios);
+  } catch(e){ console.log("  NOTE bounce check skipped: " + String(e.message).slice(0, 120)); }
   // writing a word with a finger: one big box on a phone, the stroke kept and smoothed (synthetic touch pointer events)
   try {
     await cur.p.evaluate(() => { try { localStorage.removeItem("laolao.hw.view"); localStorage.setItem("laolao.hw.pen", JSON.stringify({ smooth: 8, size: "m" })); } catch(e){} });

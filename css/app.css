@@ -2544,3 +2544,19 @@ main h1{font-weight:800;line-height:1.15}
 .hw-pen-row > b{min-width:2.5em;text-align:right}
 .hw-pen-prev{width:100%;max-width:360px;height:auto;aspect-ratio:240/64;border-radius:10px;background:var(--surface-2)}
 @media (max-width:600px){.hww-model{font-size:2rem}.hw-tools .btn{flex:1 1 auto;justify-content:center}}
+/* ---------- iPad / iPhone Safari: scrolling past the end ----------
+   1) the page "rubber-bands" past its last line: on iOS / iPadOS (Safari 16+) the bounce of the page itself is
+      switched off, and the space a bounce can still show (older iOS) has the page colour, not white;
+   2) bars pinned while scrolling that blur what is under them (backdrop-filter) are not painted by iOS Safari during
+      a fast scroll or a bounce — the bar and the panels under it flash blank. On iOS they are drawn solid instead;
+   3) 100vh on iPad Safari is the height *without* the toolbar, so the sticky side menu ran under the toolbar:
+      100dvh (the visible height) where supported.
+   @supports (-webkit-touch-callout:none) matches iOS and iPadOS browsers only (all of them use WebKit), so Android
+   keeps pull-to-refresh and desktop browsers keep the frosted bars. Checked by scripts/qa_safari.mjs. */
+html{background:var(--bg)}
+.side{height:100vh;height:100dvh}
+@supports (-webkit-touch-callout:none){
+  html,body{overscroll-behavior-y:none}
+  .topbar,.wl .wl-nav{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--bg)}
+  .pmenu{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--surface)}
+}

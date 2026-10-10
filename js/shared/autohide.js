@@ -17,9 +17,16 @@ function mustShow(y){
   if (a && a.closest && a.closest(".topbar")) return true;
   return !!document.querySelector(".topbar .search-pop:not([hidden]), .pmenu:not(.out), .sheet:not(.out), .dialog:not(.out)");
 }
+// iPad / iPhone Safari report the "rubber band" bounce past the top or the bottom of the page as scrolling: past the
+// end y keeps growing, then shrinks as the page springs back — which read as "scrolling up" and slid the bar in and
+// out during the bounce. Only scrolling inside the page counts: a position past either end is ignored.
+const maxY = () => Math.max(0, (document.documentElement.scrollHeight || 0) - window.innerHeight);
+export const inBounce = (y, max) => y < 0 || y > max + 1;
 function update(){
   ticking = false;
-  const root = document.documentElement, y = Math.max(0, window.scrollY);
+  const root = document.documentElement, raw = window.scrollY, max = maxY();
+  if (inBounce(raw, max)) return;
+  const y = Math.max(0, Math.min(raw, max));
   if (mustShow(y)) root.classList.remove("tb-hide");
   else if (y > lastY + 6) root.classList.add("tb-hide");          // a little dead zone: no flicker on tiny moves
   else if (y < lastY - 6) root.classList.remove("tb-hide");
