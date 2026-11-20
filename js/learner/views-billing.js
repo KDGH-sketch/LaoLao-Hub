@@ -146,10 +146,20 @@ VIEWS.checkout = async (params = {}) => {
         h("span",{class:"bill-mi"+(info.kind === "transfer" ? " tr" : "")}, icon(info.kind === "qr" || info.kind === "transfer" ? "qr" : "card")),
         h("span",{class:"bill-mt"}, h("b",null, info.kind === "transfer" ? t("tr_method") : (info.brand || m)),
           h("span",{class:"small muted"}, info.kind === "transfer" ? t("tr_method_d") : info.kind === "qr" ? t("bl_qr_d") : t("bl_card_d"))),
-        h("span",{class:"bill-ma"}, okq ? money(q.amount, q.currency, lang()) : h("span",{class:"small muted"}, errorText(q && q.reason)))); }));
+        h("span",{class:"bill-ma"}, okq ? money(q.amount, q.currency, lang()) : h("span",{class:"bill-unavail",title:errorText(q && q.reason)}, t("tr_unavailable")))); }));
   }
+  // no method can be used right now (no card provider connected, bank transfer not switched on): say how to pay instead
+  const noneUsable = !usable.some(m => quotes[m] && quotes[m].ok);
   function drawSummary(){
     const q = method && quotes[method];
+    if (noneUsable){
+      const s = A.settings || {};
+      fill(summary, h("div",{class:"bill-none"}, h("span",{class:"bill-none-ic"}, icon("info")), h("b",null, t("tr_none_t")), h("p",{class:"small muted"}, t("tr_none_d")),
+        s.paymentInstructions ? h("p",{class:"small bill-none-inst"+lo()}, L(s.paymentInstructions)) : null,
+        s.paymentQrUrl ? h("img",{src:s.paymentQrUrl,alt:t("ac_qr"),class:"pay-qr",loading:"lazy"}) : null,
+        s.supportContact ? h("p",{class:"small"}, t("contact")+": ", /@/.test(s.supportContact) ? h("a",{href:"mailto:"+s.supportContact}, s.supportContact) : h("b",null, s.supportContact)) : null));
+      payBtn.hidden = true; return;
+    }
     if (!q || !q.ok){ fill(summary, h("div",{class:"banner"}, errorText(q && q.reason))); payBtn.disabled = true; payBtn.replaceChildren(t("bl_pay")); return; }
     const what = q.kind === "renew" ? t("bl_kind_renew", { d:fmtDate(q.endsAt, lang()) })
       : q.kind === "upgrade" ? t("bl_kind_upgrade", { p:planLabel(p), from:planLabel(planById(q.fromPlan)), n:q.creditDays, d:fmtDate(q.endsAt, lang()) })
@@ -195,6 +205,7 @@ VIEWS.checkout = async (params = {}) => {
     h("div",{class:"bill-co"},
       h("section",{class:"card stack"}, h("h2",null, t("bl_method")), methodsBox,
         gatewayDown && usable.includes("transfer") && usable.length > 1 ? h("p",{class:"small bill-down"}, icon("info"), t("tr_gateway_down")) : null,
+        noneUsable ? h("p",{class:"small bill-down"}, icon("info"), t("tr_none_methods")) : null,
         h("p",{class:"small muted bill-secure"}, icon("lock"), method === "transfer" ? t("tr_safe") : A.api.pay.live ? t("bl_card_safe") : t("bl_demo_note"))),
       h("section",{class:"card stack bill-side"}, h("h2",null, t("bl_summary")), summary, payBtn, msg)));
   return root;

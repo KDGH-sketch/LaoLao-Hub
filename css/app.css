@@ -988,7 +988,12 @@ h1 .ic,h2 .ic,h3 .ic,h4 .ic{width:var(--ic-md);height:var(--ic-md);vertical-alig
 .bill-method input{width:18px;height:18px;accent-color:var(--accent);margin:0}
 .bill-mi{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--surface-2);color:var(--accent)}
 .bill-mt{display:flex;flex-direction:column;min-width:0}
-.bill-ma{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.bill-ma{font-weight:700;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.bill-unavail{display:inline-block;padding:2px 10px;border-radius:99px;background:var(--surface-2);color:var(--ink-3);font-size:.78rem;font-weight:700}
+.bill-none{display:grid;justify-items:start;gap:6px;padding:14px;border-radius:14px;background:var(--surface-2)}
+.bill-none p{margin:0}
+.bill-none-ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--warn) 16%,var(--surface));color:var(--warn)}
+.bill-none-inst{white-space:pre-line;padding:10px 12px;border-radius:10px;background:var(--surface);border:1px solid var(--line);width:100%}
 .bill-sum{display:flex;flex-direction:column;gap:8px}
 .bill-sum p{margin:0}
 .bill-sum-plan{font-size:1.05rem}
