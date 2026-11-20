@@ -22,6 +22,7 @@ const SECTION_NAMES = { greetings:["Greetings ribbon","ແຖບຄຳທັກ�
 const GROUPS = [
   ["hero", ["Top of the page","ສ່ວນເທິງ"], [{ key:"hero", type:"object", label:["Hero","ສ່ວນເທິງ"], fields:[
     { key:"badge", type:"tr", label:["Badge","ປ້າຍ"] }, { key:"loWord", type:"text", cls:"lo", label:["Big Lao word","ຄຳລາວໃຫຍ່"] },
+    { key:"imageUrl", type:"image", alt:"imageAlt", focus:"imageFocus", label:["Background photo (optional; replaces the drawn sky and temple)","ຮູບພື້ນຫຼັງ (ແທນຮູບແຕ້ມ)"] },
     { row:[ { key:"h1a", type:"tr", label:["Headline, part 1","ຫົວຂໍ້ 1"] }, { key:"h1b", type:"tr", label:["Underlined part","ສ່ວນຂີດກ້ອງ"] }, { key:"h1c", type:"tr", label:["Part 3","ສ່ວນ 3"] } ] },
     { key:"lead", type:"tr", multiline:true, label:["Intro","ແນະນຳ"] },
     { row:[ { key:"ctaStart", type:"tr", label:["Main button","ປຸ່ມຫຼັກ"] }, { key:"ctaTour", type:"tr", label:["Second button","ປຸ່ມທີສອງ"] } ] },
@@ -38,7 +39,8 @@ const GROUPS = [
   ["about", ["About and closing","ກ່ຽວກັບ ແລະ ທ້າຍໜ້າ"], [
     { key:"about", type:"object", label:["About","ກ່ຽວກັບ"], fields:[ { key:"eyebrow", type:"tr", label:["Small heading","ຫົວຂໍ້ນ້ອຍ"] }, { key:"title", type:"tr", label:["Title","ຫົວຂໍ້"] },
       { key:"text", type:"tr", multiline:true, label:["Text","ຂໍ້ຄວາມ"] }, { key:"points", type:"list", label:["Points","ຈຸດເດັ່ນ"], itemLabel:["Point","ຈຸດ"], summary: x => x.en || "", item:[{ key:"", type:"tr", label:["Point","ຈຸດ"] }] },
-      { key:"tagline", type:"text", cls:"lo", label:["Lao tagline under the flower","ຄຳຂວັນພາສາລາວ"] } ] },
+      { key:"tagline", type:"text", cls:"lo", label:["Lao tagline under the flower","ຄຳຂວັນພາສາລາວ"] },
+      { key:"imageUrl", type:"image", alt:"imageAlt", focus:"imageFocus", label:["Photo (optional; replaces the champa flower)","ຮູບ (ແທນດອກຈຳປາ)"] } ] },
     { key:"closing", type:"object", label:["Closing call to action","ທ້າຍໜ້າ"], fields:[ { key:"title", type:"tr", label:["Title","ຫົວຂໍ້"] }, { key:"cta", type:"tr", label:["Button","ປຸ່ມ"] } ] } ]],
   ["footer", ["Footer, menu and SEO","ລຸ່ມສຸດ, ເມນູ ແລະ SEO"], [
     { key:"footer", type:"object", label:["Footer","ລຸ່ມສຸດ"], fields:[ { key:"copyright", type:"tr", label:["Copyright line","ລິຂະສິດ"] },

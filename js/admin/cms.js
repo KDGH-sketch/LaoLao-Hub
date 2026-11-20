@@ -533,6 +533,23 @@ async function normalize(type, d){
 
 // ---------- field renderers ----------
 const LANGS = [["en","EN"],["lo","ລາວ"],["zh","中文"]];
+// A photo from a phone is often 4000 px and 3–8 MB. Shrink it to at most 1600 px on the long side and save it as WebP
+// (JPEG where WebP cannot be written), turned the right way up. Small photos and GIF-like files are left alone.
+const kb = n => n > 1e6 ? (n / 1e6).toFixed(1) + " MB" : Math.round(n / 1e3) + " KB";
+export async function shrinkPhoto(file, max = 1600){
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type || "")) return file;
+  let bmp;
+  try { bmp = await createImageBitmap(file, { imageOrientation: "from-image" }); } catch(e){ return file; }
+  const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
+  if (scale === 1 && file.size <= 900e3){ bmp.close && bmp.close(); return file; }
+  const w = Math.round(bmp.width * scale), hh = Math.round(bmp.height * scale);
+  const c = document.createElement("canvas"); c.width = w; c.height = hh;
+  const g = c.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(bmp, 0, 0, w, hh); bmp.close && bmp.close();
+  const blob = await new Promise(r => c.toBlob(b => r(b), "image/webp", .84));
+  const out = blob && blob.type === "image/webp" ? blob : await new Promise(r => c.toBlob(r, "image/jpeg", .86));
+  if (!out || out.size >= file.size) return file;
+  return new File([out], file.name.replace(/\.\w+$/, "") + (out.type === "image/webp" ? ".webp" : ".jpg"), { type: out.type });
+}
 export function renderField(f, obj, type){
   if (f.row) return h("div",{class:"field-row"}, f.row.map(x => renderField(x, obj, type)));
   const label = L(f.label||""), help = f.help ? L(f.help) : null;
@@ -546,16 +563,38 @@ export function renderField(f, obj, type){
     case "datetime": { const v = get(); const el = h("input",{class:"input",type:"datetime-local",value: v ? String(v).slice(0,16) : "",oninput:e=>set(e.target.value || "")}); return fld(label, el, help || L(["Your local time","ເວລາທ້ອງຖິ່ນ"])); }
     case "image": case "file": {
       // upload to the public bucket (laolao-assets) after checking the type and size, or paste a link; images need alt text
+      // photos: shrunk in the browser before upload (phone photos are often 3–8 MB), and a focus point (f.focus) that
+      // keeps the subject in view however the page crops it (wide, square or tall cards)
       const isImg = f.type === "image";
-      const url = input(get(), set, { placeholder:"https://…" });
+      const url = input(get(), v => { set(v.trim()); show(); }, { placeholder:"https://…" });
       const preview = h("div",{class:"up-preview"});
-      const show = () => { preview.replaceChildren(); const v = get(); if (!v) return; preview.append(isImg ? h("img",{src:v,alt:"",style:"max-width:220px;max-height:140px;border-radius:10px"}) : h("a",{href:v,target:"_blank",rel:"noopener"}, v.split("/").pop().slice(0,60))); };
-      const file = h("input",{type:"file",accept: isImg ? "image/png,image/jpeg,image/webp" : (f.accept || "*/*"),onchange:async e=>{ const fl = e.target.files[0]; e.target.value = ""; if (!fl) return;
-        try { const u = await uploadChecked(fl, isImg ? "image" : "file", type); set(u); url.value = u; show(); toast(t("saved_ok")); } catch(err){ toast(errText(err),"err"); } }});
+      const removeBtn = h("button",{class:"btn sm ghost",type:"button",style:"align-self:flex-start",onclick:()=>{ set(""); if (f.focus) obj[f.focus] = ""; url.value = ""; show(); }}, icon("trash"), t("remove"));
+      const status = h("span",{class:"help",role:"status"});
+      const focusOf = () => (f.focus && obj[f.focus]) || "50% 50%";
+      function show(){
+        preview.replaceChildren(); const v = get(); removeBtn.hidden = !v; if (!v) return;
+        if (!isImg){ preview.append(h("a",{href:v,target:"_blank",rel:"noopener"}, v.split("/").pop().slice(0,60))); return; }
+        if (!f.focus){ preview.append(h("img",{src:v,alt:"",style:"max-width:220px;max-height:140px;border-radius:10px"})); return; }
+        const [fx, fy] = focusOf().split(" ");
+        const dot = h("span",{class:"pf-dot",style:`left:${fx};top:${fy}`});
+        const crops = [["wide","16 / 9"],["square","1 / 1"],["tall","3 / 4"]].map(([n, ar]) => h("figure",{class:"pf-crop"},
+          h("span",{style:`aspect-ratio:${ar};background-image:url("${v.replace(/"/g, "%22")}");background-position:${focusOf()}`}), h("figcaption",null, L({ wide:["Wide","ກວ້າງ"], square:["Square","ສີ່ຫຼ່ຽມ"], tall:["Tall","ສູງ"] }[n]))));
+        const pick = h("div",{class:"pf-pick",title:L(["Tap where the subject is","ແຕະບ່ອນທີ່ສຳຄັນໃນຮູບ"]),onclick:e=>{ const r = e.currentTarget.getBoundingClientRect();
+            const x = Math.round(Math.min(100, Math.max(0, (e.clientX - r.left) / r.width * 100))), y = Math.round(Math.min(100, Math.max(0, (e.clientY - r.top) / r.height * 100)));
+            obj[f.focus] = `${x}% ${y}%`; show(); }},
+          h("img",{src:v,alt:""}), dot);
+        preview.append(h("div",{class:"pf"}, pick, h("div",{class:"pf-side"}, h("span",{class:"help"}, L(["Focus point: tap the photo where the subject is. The page crops around it:","ຈຸດໂຟກັສ: ແຕະບ່ອນທີ່ສຳຄັນໃນຮູບ:"])), h("div",{class:"pf-crops"}, crops),
+          h("button",{class:"btn sm ghost",type:"button",onclick:()=>{ obj[f.focus] = ""; show(); }}, L(["Centre","ກາງ"])))));
+      }
+      const file = h("input",{type:"file",accept: isImg ? "image/png,image/jpeg,image/webp" : (f.accept || "*/*"),onchange:async e=>{ let fl = e.target.files[0]; e.target.value = ""; if (!fl) return;
+        try {
+          if (isImg){ status.textContent = L(["Preparing the photo…","ກຳລັງກຽມຮູບ…"]); const before = fl.size; fl = await shrinkPhoto(fl);
+            status.textContent = fl.size < before ? L(["Photo resized: ","ຫຍໍ້ຮູບແລ້ວ: "]) + kb(before) + " → " + kb(fl.size) : ""; }
+          const u = await uploadChecked(fl, isImg ? "image" : "file", type); set(u); url.value = u; if (f.focus) obj[f.focus] = ""; show(); toast(t("saved_ok"));
+        } catch(err){ status.textContent = ""; toast(errText(err),"err"); } }});
       show();
-      const parts = [h("label",{class:"btn sm",style:"align-self:flex-start"}, icon("upload"), L(isImg ? ["Upload image (PNG, JPEG, WebP, up to 5 MB)","ອັບໂຫຼດຮູບ (ສູງສຸດ 5 MB)"] : ["Upload file (up to 5 MB)","ອັບໂຫຼດໄຟລ໌ (ສູງສຸດ 5 MB)"]), h("span",{hidden:true}, file)),
-        h("span",{class:"help"}, t("or_url")), url, preview,
-        get() ? h("button",{class:"btn sm ghost",type:"button",style:"align-self:flex-start",onclick:()=>{ set(""); url.value = ""; show(); }}, icon("trash"), t("remove")) : null];
+      const parts = [h("label",{class:"btn sm",style:"align-self:flex-start"}, icon("upload"), L(isImg ? ["Upload photo (PNG, JPEG, WebP; large photos are resized)","ອັບໂຫຼດຮູບ (ຮູບໃຫຍ່ຈະຖືກຫຍໍ້)"] : ["Upload file (up to 5 MB)","ອັບໂຫຼດໄຟລ໌ (ສູງສຸດ 5 MB)"]), h("span",{hidden:true}, file)),
+        status, h("span",{class:"help"}, t("or_url")), url, preview, removeBtn];
       if (isImg && f.alt) parts.push(renderField({ key:f.alt, type:"tr", label:["Alt text: what the photo shows (required with a photo)","ຄຳອະທິບາຍຮູບ (ຈຳເປັນ)"] }, obj, type));
       return fld(label, h("div",{class:"stack",style:"gap:8px"}, parts), help);
     }

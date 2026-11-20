@@ -147,7 +147,10 @@ export const SCHEMAS = {
 const trl = (key, label, itemLabel) => ({ key, type:"list", label, itemLabel, item:[{ key:"", type:"tr", label:itemLabel }], summary: x => (x && (x.en || x.lo)) || "" });
 const PLACE_SCENES = [["luangprabang","Luang Prabang (monks, Phou Si)"],["vangvieng","Vang Vieng (karst, balloon)"],["phonsavan","Plain of Jars"],["vientiane","Vientiane (That Luang)"],
   ["champasak","Champasak (Wat Phou)"],["siphandon","Si Phan Don (islands, falls)"],["temple","Temple"],["mountain","Mountains"],["river","River"],["waterfall","Waterfall"],["market","Market"],["cave","Cave"]];
-SCHEMAS.places = { title: d => d.title, idHint:"luangprabang", web:true, defaults:{ access:"public", scene:"temple", lat:"", lon:"", title:{en:"",lo:"",zh:""}, laoName:"", badge:{en:"",lo:"",zh:""}, text:{en:"",lo:"",zh:""}, facts:[], words:[], unesco:"", imageUrl:"", imageAlt:{en:"",lo:"",zh:""} },
+// a real photo for a welcome-page item: upload (shrunk to fit), alt text, and a focus point for the crop
+const photo = (label, help) => ({ key:"imageUrl", type:"image", alt:"imageAlt", focus:"imageFocus", label, help });
+const PHOTO_DEF = { imageUrl:"", imageAlt:{en:"",lo:"",zh:""}, imageFocus:"" };
+SCHEMAS.places = { title: d => d.title, idHint:"luangprabang", web:true, defaults:{ access:"public", scene:"temple", lat:"", lon:"", title:{en:"",lo:"",zh:""}, laoName:"", badge:{en:"",lo:"",zh:""}, text:{en:"",lo:"",zh:""}, facts:[], words:[], unesco:"", ...PHOTO_DEF },
   fields:[
     { key:"title", type:"tr", label:["Place name","ຊື່ສະຖານທີ່"] },
     { row:[ { key:"laoName", type:"text", cls:"lo", label:["Name in Lao script","ຊື່ເປັນອັກສອນລາວ"] }, { key:"scene", type:"select", label:["Scene art","ຮູບປະກອບ"], options:PLACE_SCENES } ] },
@@ -159,8 +162,8 @@ SCHEMAS.places = { title: d => d.title, idHint:"luangprabang", web:true, default
     { key:"words", type:"list", label:["Lao words for this place","ຄຳສັບລາວຂອງສະຖານທີ່ນີ້"], itemLabel:["Word","ຄຳສັບ"], summary: w => (w.lo||"")+" · "+(w.en||""),
       item:[ { row:[ { key:"lo", type:"text", cls:"lo", label:["Lao","ລາວ"] }, { key:"rom", type:"text", label:["Romanization","ຄຳອ່ານ"] }, { key:"en", type:"text", label:["English","ອັງກິດ"] } ] },
              { key:"audio", type:"audio", label:["Recording (optional; otherwise the device reads it)","ສຽງບັນທຶກ"] } ] },
-    { key:"imageUrl", type:"image", alt:"imageAlt", label:["Photo instead of the drawn scene (optional)","ຮູບແທນຮູບແຕ້ມ"] } ] };
-SCHEMAS.festivals = { title: d => d.title, idHint:"pi-mai", web:true, defaults:{ access:"public", month:1, lunar:false, art:"generic", dateText:{en:"",lo:"",zh:""}, title:{en:"",lo:"",zh:""}, laoName:"", text:{en:"",lo:"",zh:""} },
+    photo(["Photo instead of the drawn scene (optional)","ຮູບແທນຮູບແຕ້ມ"]) ] };
+SCHEMAS.festivals = { title: d => d.title, idHint:"pi-mai", web:true, defaults:{ access:"public", month:1, lunar:false, art:"generic", dateText:{en:"",lo:"",zh:""}, title:{en:"",lo:"",zh:""}, laoName:"", text:{en:"",lo:"",zh:""}, ...PHOTO_DEF },
   fields:[
     { key:"title", type:"tr", label:["Festival name","ຊື່ບຸນ"] },
     { row:[ { key:"laoName", type:"text", cls:"lo", label:["Name in Lao script","ຊື່ເປັນອັກສອນລາວ"] },
@@ -168,9 +171,10 @@ SCHEMAS.festivals = { title: d => d.title, idHint:"pi-mai", web:true, defaults:{
             { key:"art", type:"select", label:["Picture","ຮູບ"], options:[["water","Water bowl"],["rocket","Bamboo rocket"],["candle","Candle"],["fireboat","Fire boat"],["stupa","Stupa"],["flag","Flag"],["generic","Lanterns"]] } ] },
     { key:"dateText", type:"tr", label:["Date as shown (e.g. 13–16 April)","ວັນທີທີ່ສະແດງ"] },
     { key:"lunar", type:"bool", label:["Follows the lunar calendar (shows \"the date moves each year\")","ຕາມຈັນທະຄະຕິ"] },
-    { key:"text", type:"tr", multiline:true, label:["Description","ຄຳອະທິບາຍ"] } ] };
+    { key:"text", type:"tr", multiline:true, label:["Description","ຄຳອະທິບາຍ"] },
+    photo(["Photo instead of the drawing (optional)","ຮູບແທນຮູບແຕ້ມ"]) ] };
 SCHEMAS.offers = { title: d => d.title, idHint:"new-year-offer", web:true, defaults:{ access:"public", kind:"banner", placement:"promotions", active:true, planId:"", startsAt:"", endsAt:"",
-    title:{en:"",lo:"",zh:""}, text:{en:"",lo:"",zh:""}, badge:{en:"",lo:"",zh:""}, discountText:{en:"",lo:"",zh:""}, ctaLabel:{en:"",lo:"",zh:""} },
+    title:{en:"",lo:"",zh:""}, text:{en:"",lo:"",zh:""}, badge:{en:"",lo:"",zh:""}, discountText:{en:"",lo:"",zh:""}, ctaLabel:{en:"",lo:"",zh:""}, ...PHOTO_DEF },
   fields:[
     { key:"title", type:"tr", label:["Headline","ຫົວຂໍ້"] },
     { key:"text", type:"tr", multiline:true, label:["Text","ຂໍ້ຄວາມ"] },
@@ -180,22 +184,24 @@ SCHEMAS.offers = { title: d => d.title, idHint:"new-year-offer", web:true, defau
     { row:[ { key:"startsAt", type:"datetime", label:["Starts","ເລີ່ມ"] }, { key:"endsAt", type:"datetime", label:["Ends (hidden automatically after)","ສິ້ນສຸດ"] } ] },
     { row:[ { key:"badge", type:"tr", label:["Badge","ປ້າຍ"] }, { key:"discountText", type:"tr", label:["Discount text (e.g. 30% off)","ຂໍ້ຄວາມສ່ວນຫຼຸດ"] } ] },
     { key:"ctaLabel", type:"tr", label:["Button text","ຂໍ້ຄວາມປຸ່ມ"] },
+    photo(["Photo beside the offer (optional)","ຮູບຂ້າງໂປຣໂມຊັນ"]),
     { key:"active", type:"bool", label:["Active (shown inside its dates once published)","ເປີດໃຊ້"] } ],
   help:["The page shows an offer only between its start and end, and only if it is Published, Public and Active. Discounts are not applied automatically at checkout: say so in the text if a code or manual step is needed.",
         "ສະແດງສະເພາະລະຫວ່າງວັນເລີ່ມ ແລະ ວັນສິ້ນສຸດ. ສ່ວນຫຼຸດບໍ່ຖືກໃຊ້ອັດຕະໂນມັດຕອນຈ່າຍເງິນ."] };
-SCHEMAS.resources = { title: d => d.title, idHint:"starter-guide", web:true, defaults:{ access:"public", kind:"pdf", glyph:"", cover:1, requiresAccount:true, url:"", title:{en:"",lo:"",zh:""}, text:{en:"",lo:"",zh:""} },
+SCHEMAS.resources = { title: d => d.title, idHint:"starter-guide", web:true, defaults:{ access:"public", kind:"pdf", glyph:"", cover:1, requiresAccount:true, url:"", title:{en:"",lo:"",zh:""}, text:{en:"",lo:"",zh:""}, ...PHOTO_DEF },
   fields:[
     { key:"title", type:"tr", label:["Title","ຫົວຂໍ້"] },
     { key:"text", type:"tr", multiline:true, label:["Short description","ຄຳອະທິບາຍສັ້ນ"] },
     { row:[ { key:"kind", type:"select", label:["Kind","ປະເພດ"], options:[["pdf","PDF"],["audio","Audio"],["chart","Chart"],["cheatsheet","Cheat sheet"],["video","Video"]] },
             { key:"glyph", type:"text", cls:"lo", label:["Cover letters (Lao)","ຕົວອັກສອນໜ້າປົກ"] },
             { key:"cover", type:"select", num:true, label:["Cover colour","ສີໜ້າປົກ"], options:[[1,"Blue"],[2,"Amber"],[3,"Teal"],[4,"Violet"]] } ] },
+    photo(["Cover photo (optional; replaces the coloured cover)","ຮູບໜ້າປົກ"]),
     { key:"url", type:"file", label:["File (upload) or link","ໄຟລ໌ ຫຼື ລິ້ງ"], accept:"application/pdf,audio/*,image/*,video/mp4" },
     { key:"requiresAccount", type:"bool", label:["Ask visitors to create a free account first","ໃຫ້ສ້າງບັນຊີກ່ອນ"],
       help:["This is a sign-up step, not protection: the file link is public once published. Only put files here that may be shared freely.","ນີ້ແມ່ນຂັ້ນຕອນສະໝັກ ບໍ່ແມ່ນການປ້ອງກັນ: ລິ້ງໄຟລ໌ເປັນສາທາລະນະ."] } ] };
 // releases and culture can be featured as news on the welcome page
-SCHEMAS.releases.fields.push({ key:"featured", type:"bool", label:["Feature on the welcome page (News)","ສະແດງໃນໜ້າຕ້ອນຮັບ (ຂ່າວ)"] });
-SCHEMAS.culture.fields.push({ key:"featured", type:"bool", label:["Feature on the welcome page (News)","ສະແດງໃນໜ້າຕ້ອນຮັບ (ຂ່າວ)"] });
+SCHEMAS.releases.fields.push({ key:"featured", type:"bool", label:["Feature on the welcome page (News)","ສະແດງໃນໜ້າຕ້ອນຮັບ (ຂ່າວ)"] }, photo(["Photo for the welcome page News (optional)","ຮູບສຳລັບຂ່າວ"]));
+SCHEMAS.culture.fields.push({ key:"featured", type:"bool", label:["Feature on the welcome page (News)","ສະແດງໃນໜ້າຕ້ອນຮັບ (ຂ່າວ)"] }, photo(["Photo for the welcome page News (optional)","ຮູບສຳລັບຂ່າວ"]));
 
 export const STEP_TYPE_TO_COL = { lesson:"lessons", pattern:"patterns", grammar:"grammar", quiz:"quizzes", dialogue:"dialogues" };
 export const APP_PAGES = [["pinyin","Pinyin & tones"],["chars","Characters"],["speak","Pronunciation"],["gen","Sentence generator"],["dict","Dictionary"]];

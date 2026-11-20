@@ -1660,8 +1660,28 @@ details>summary{transition:color .2s}
     &[data-show]{translate:0 0;opacity:1;visibility:visible;transition:translate .5s cubic-bezier(.2,1.2,.35,1),opacity .3s,visibility 0s}}
   .wl .wl-footer{padding-block-end:calc(96px + env(safe-area-inset-bottom,0px))}}
 
+/* ----- real photos set in the admin (photoOf in welcome.js); the drawings stay when there is none ----- */
+.wl .wl-photo{display:block;inline-size:100%;block-size:100%;object-fit:cover;object-position:50% 50%}
+.wl .wl-hero.has-photo{background:var(--sky-0);padding-block-end:clamp(40px,7vw,90px);
+  > .wl-scene,> .wl-stars{display:none}
+  > .wl-hero-photo{position:absolute;inset:0;z-index:0;animation:wl-kenburns 26s ease-in-out infinite alternate}
+  &::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+    background:linear-gradient(90deg,rgba(3,14,30,.82) 0%,rgba(3,14,30,.55) 50%,rgba(3,14,30,.2) 100%),linear-gradient(0deg,rgba(3,14,30,.55),transparent 45%)}}
+@container wlhero (max-width:55rem){.wl .wl-hero.has-photo::before{background:linear-gradient(180deg,rgba(3,14,30,.78),rgba(3,14,30,.62) 60%,rgba(3,14,30,.8))}}
+.wl .wl-fcard .wl-fphoto{inline-size:100%;block-size:auto;aspect-ratio:96/72;border-radius:14px;transition:scale .5s}
+@media (hover:hover){.wl .wl-fcard:hover .wl-fphoto,.wl .wl-card:hover .wl-cover.has-photo .wl-photo,.wl .wl-story:hover .wl-thumb .wl-photo{scale:1.05}}
+.wl .wl-cover.has-photo{background:var(--surface-2);
+  .wl-photo{position:absolute;inset:0;transition:scale .5s}
+  .wl-chip{z-index:2}}
+.wl .wl-thumb.has-photo{position:relative;overflow:hidden;.wl-photo{position:absolute;inset:0;transition:scale .5s}}
+.wl .wl-promo.has-photo{align-items:stretch}
+.wl .wl-promo-ph{flex:0 1 260px;min-inline-size:min(100%,200px);aspect-ratio:4/3;border-radius:18px;overflow:hidden;box-shadow:0 14px 30px -18px rgba(2,30,60,.6)}
+.wl .wl-about-art.has-photo{.wl-photo{position:absolute;inset:0}
+  .wl-tagline{z-index:1;inset-inline:12px;padding:8px 12px;border-radius:14px;color:var(--ink);background:var(--glass);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}}
+
 @layer wl-motion{
-  @keyframes wl-in{from{opacity:0;transform:translateY(18px);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+  @keyframes wl-in{
+  @keyframes wl-kenburns{from{scale:1}to{scale:1.08}}from{opacity:0;transform:translateY(18px);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
   @keyframes wl-float{50%{translate:0 -10px}}
   @keyframes wl-drop{0%{opacity:0;translate:0 -30px;scale:.55;rotate:-8deg}60%{opacity:1}100%{opacity:1;translate:0 0;scale:1;rotate:0deg}}
   @keyframes wl-flash{0%{scale:1}40%{scale:1.14;background:color-mix(in srgb,var(--rc) 30%,transparent)}100%{scale:1}}

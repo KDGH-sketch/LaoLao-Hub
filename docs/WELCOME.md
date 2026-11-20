@@ -144,6 +144,7 @@ items, which are readable only after sign-in, and a download page in the app (no
 |---|---|
 | `node scripts/test_welcome_data.mjs` | Defaults = starter content; pins match the mockup; every place inside Laos; the editors' checks |
 | `npm run test:sql` | Visitors read only tier 0 and the published copy; who may write the new tables and `settings/welcome`; the migration runs twice |
+| `node scripts/e2e_welcome_photos.mjs` | A 12.9 MB photo resized to WebP before upload, the focus point, alt text required, the photo shown in each section (hero, festival, place, offer, resource, news, About) with its alt text and focus, phone and computer, Day and Night, removing a photo brings the drawing back |
 | `node scripts/e2e_welcome.mjs` | Plans from the table, registration closed, offer dates and on/off, empty resources, hidden news, draft / publish / revert / preview, a new place gets a pin, hashes, phone menu, sign-up source, keyboard sign-in, offline |
 | `npm run test:qa` | 20 sizes (280 to 3840 px) × Day and Night: no sideways scroll, clipping, small targets or tiny text, layout shift under 0.1; axe-core WCAG 2.2 AA on the page and on each admin screen; 200% text; 320 px reflow; skip link first; reduced motion |
 

@@ -20,6 +20,14 @@ const LT = o => o == null ? "" : typeof o === "string" ? o : (o[lang()] || o.en 
 const svgHTML = html => { const t = document.createElement("template"); t.innerHTML = html; return t.content.firstElementChild; };   // trusted art only
 const loEl = (tag, text, cls = "") => h(tag, { class: ("wl-lo " + cls).trim(), lang: "lo" }, text);
 const within = (p, ms = 2500) => Promise.race([Promise.resolve(p).catch(() => null), new Promise(r => setTimeout(() => r(null), ms))]);
+// a real photo set in the admin (places, festivals, offers, resources, news, About, the hero): only http(s) or an
+// uploaded data: image, the alt text the editor wrote, and the focus point as the crop centre
+const FOCUS_RE = /^\d{1,3}(\.\d)?% \d{1,3}(\.\d)?%$/;
+function photoOf(o, cls, alt, eager){
+  if (!o || !o.imageUrl || !/^https?:\/\/|^data:image\//.test(o.imageUrl)) return null;
+  return h("img", { class: ("wl-photo " + (cls || "")).trim(), src: o.imageUrl, alt: LT(o.imageAlt) || alt || "", loading: eager ? "eager" : "lazy", decoding: "async",
+    fetchpriority: eager ? "high" : null, style: FOCUS_RE.test(o.imageFocus || "") ? "object-position:" + o.imageFocus : null });
+}
 const ICONS = { book:"book", wave:"sound", pen:"pen", search:"search", repeat:"repeat", lamp:"culture" };
 
 // ---------- attribution: where this visit came from (kept in this tab until sign-up; see createLearnerProfile) ----------
@@ -139,6 +147,10 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
 
   function fillHero(){
     const H = M.W.hero;
+    hero.querySelectorAll(":scope > .wl-hero-photo").forEach(x => x.remove());
+    const hp = photoOf(H, "wl-hero-photo", "", true);
+    hero.classList.toggle("has-photo", !!hp);
+    if (hp) hero.prepend(hp);
     heroCopy.replaceChildren(
       h("span", { class: "wl-badge" }, h("i"), h("span", null, LT(H.badge))),
       h("h1", null, loEl("span", H.loWord || "ສະບາຍດີ", "wl-lo-word"), h("span", null, LT(H.h1a)), " ", h("em", null, LT(H.h1b)), " ", h("span", null, LT(H.h1c))),
@@ -349,7 +361,8 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
         const btn = !has ? h("button", { class: "wl-btn sm", type: "button", disabled: true }, t("wl_coming_soon"))
           : r.requiresAccount ? h("button", { class: "wl-btn sm" + (i ? "" : " primary"), type: "button", onclick: () => { try { sessionStorage.setItem(RESOURCE_KEY, JSON.stringify({ id: r.id, url: r.url, title })); } catch(e){} remember({ resourceId: r.id }); toAuth("register", t("wl_res_note", { r: title })); } }, icon("download"), t("wl_get_free"))
           : h("a", { class: "wl-btn sm" + (i ? "" : " primary"), href: r.url, target: "_blank", rel: "noopener", download: "" }, icon("download"), t("wl_download"));
-        return h("article", { class: "wl-card wl-rv" }, h("div", { class: "wl-cover c" + ((r.cover || (i % 4) + 1)) }, h("span", { class: "wl-chip" }, t("wl_kind_" + (r.kind || "pdf"))), loEl("span", r.glyph || "ລ")),
+        const cph = photoOf(r, "", title);
+        return h("article", { class: "wl-card wl-rv" }, h("div", { class: "wl-cover c" + ((r.cover || (i % 4) + 1)) + (cph ? " has-photo" : "") }, cph, h("span", { class: "wl-chip" }, t("wl_kind_" + (r.kind || "pdf"))), cph ? null : loEl("span", r.glyph || "ລ")),
           h("h3", null, title), h("p", null, LT(r.text)), btn);
       })) : h("p", { class: "wl-empty" }, t("wl_res_empty")));
     },
@@ -360,7 +373,7 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
     news(){
       const N = M.news; if (!N.length) return null;
       const story = (n, i, lead) => h("article", { class: "wl-card wl-story wl-rv" + (lead ? " lead" : "") },
-        h("div", { class: "wl-thumb g" + ((i % 4) + 1), "aria-hidden": "true" }, loEl("span", n.glyph || ((n.title && n.title.lo) || "ລ").slice(0, lead ? 8 : 1))),
+        (nph => h("div", { class: "wl-thumb g" + ((i % 4) + 1) + (nph ? " has-photo" : ""), "aria-hidden": nph ? null : "true" }, nph || loEl("span", n.glyph || ((n.title && n.title.lo) || "ລ").slice(0, lead ? 8 : 1))))(photoOf(n, "", LT(n.title))),
         h("div", { class: "wl-tx" }, h("div", { class: "wl-meta" }, h("span", { class: "wl-chip" + (n.type === "culture" ? " gold" : "") }, t(n.type === "culture" ? "wl_news_culture" : "wl_news_release")),
           n.date ? h("span", null, icon("clock"), n.date) : null),
           h("h3", null, LT(n.title)), n.loTitle || (n.title && n.title.lo && lang() !== "lo") ? loEl("p", n.loTitle || n.title.lo, "wl-lo-t") : null,
@@ -370,7 +383,7 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
     about(){
       const B = M.W.about;
       return h("section", { id: "w-about" }, h("div", { class: "wl-about" },
-        h("div", { class: "wl-about-art wl-rv" }, svgHTML(ART.CHAMPA), loEl("div", B.tagline || "", "wl-tagline")),
+        (aph => h("div", { class: "wl-about-art wl-rv" + (aph ? " has-photo" : "") }, aph || svgHTML(ART.CHAMPA), loEl("div", B.tagline || "", "wl-tagline")))(photoOf(B, "", LT(B.title))),
         h("div", { class: "wl-rv" }, h("span", { class: "wl-eyebrow" }, LT(B.eyebrow)), h("h2", null, LT(B.title)), h("p", null, LT(B.text)),
           h("ul", null, (B.points || []).map(p => h("li", null, icon("check"), LT(p)))))));
     },
@@ -431,7 +444,8 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
       count.replaceChildren(...[[d, "wl_days"], [String(hh).padStart(2, "0"), "wl_hours"], [String(mm).padStart(2, "0"), "wl_min"]].map(([v, k]) => h("div", null, h("b", null, String(v)), h("small", null, t(k))))); };
     tick(); if (count) timers.push(setInterval(() => { if (!count.isConnected) return; tick(); }, 30000));
     const plan = M.plans.find(p => p.id === o.planId);
-    return h("div", { class: "wl-promo wl-rv", "data-offer": o.id }, h("div", null,
+    const oph = photoOf(o, "", LT(o.title));
+    return h("div", { class: "wl-promo wl-rv" + (oph ? " has-photo" : ""), "data-offer": o.id }, oph ? h("div", { class: "wl-promo-ph" }, oph) : null, h("div", null,
       (o.badge || o.discountText) ? h("span", { class: "wl-chip gold" }, LT(o.badge) || LT(o.discountText)) : null, h("h3", null, LT(o.title)), o.text ? h("p", null, LT(o.text)) : null,
       h("button", { class: "wl-btn primary sm", type: "button", onclick: () => { remember({ offerId: o.id, planId: o.planId || null }); S.plan = plan ? planLabel(plan, lang()) : null;
         toAuth(M.app.allowRegistration === false ? "signin" : "register", plan && +planPrice(plan, "month", "USD") ? t("wl_upgrade_note", { p: planLabel(plan, lang()) }) : null); } }, LT(o.ctaLabel) || t("wl_btn_register"))), count);
@@ -476,7 +490,7 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
       tabs.querySelectorAll("[role=tab]").forEach(x => { const on = x.dataset.id === id; x.setAttribute("aria-selected", String(on)); x.tabIndex = on ? 0 : -1; if (on && focus) x.focus(); });
       pins.forEach(n => n.dataset.on = String(n.dataset.id === id));
       // an uploaded image replaces the drawn scene (its alt text describes it); otherwise the scene art
-      stage.replaceChildren(p.imageUrl && /^https?:|^data:image\//.test(p.imageUrl) ? h("img", { class: "wl-scn", src: p.imageUrl, alt: LT(p.imageAlt) || LT(p.title), loading: "lazy" }) : svgHTML(ART.SCENES[p.scene] || ART.SCENES.temple), badge);
+      stage.replaceChildren(photoOf(p, "wl-scn", LT(p.title)) || svgHTML(ART.SCENES[p.scene] || ART.SCENES.temple), badge);
       badge.textContent = LT(p.badge); badge.hidden = !LT(p.badge);
       name.textContent = LT(p.title); lo.textContent = p.laoName || ""; text.textContent = LT(p.text);
       facts.replaceChildren(...(p.facts || []).map(f => h("span", { class: "wl-chip" }, LT(f))));
@@ -495,7 +509,7 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
     let k = F.findIndex(f => (f.month || 0) >= m); if (k < 0) k = 0;
     const list = h("ul", { class: "wl-fest", "aria-label": t("wl_fest_label") }, F.map((f, i) => h("li", { class: "wl-fcard", "data-now": String(i === k), "data-m": String(f.month || "") },
       i === k ? h("span", { class: "wl-chip gold wl-now" }, t(F[k].month === m ? "wl_this_month" : "wl_next_up")) : null,
-      svgHTML(ART.FEST_ART[f.art] || ART.FEST_ART.generic), h("span", { class: "wl-mo" }, LT(f.dateText)), h("h3", null, LT(f.title)), loEl("div", f.laoName || "", "wl-lo-t"),
+      photoOf(f, "wl-fphoto", LT(f.title)) || svgHTML(ART.FEST_ART[f.art] || ART.FEST_ART.generic), h("span", { class: "wl-mo" }, LT(f.dateText)), h("h3", null, LT(f.title)), loEl("div", f.laoName || "", "wl-lo-t"),
       h("p", null, LT(f.text)), f.lunar ? h("small", { class: "wl-lunar" }, icon("moon"), t("wl_lunar")) : null)));
     const sync = () => { if (list.scrollWidth > list.clientWidth + 1) list.setAttribute("tabindex", "0"); else list.removeAttribute("tabindex"); };
     if (typeof ResizeObserver !== "undefined") new ResizeObserver(sync).observe(list);

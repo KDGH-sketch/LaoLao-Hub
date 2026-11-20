@@ -12,6 +12,7 @@ const MIME = {
 };
 const LO_RE = /[຀-໿]/;
 const HTML_RE = /<\s*\/?\s*[a-z!][^>]*>/i;
+export const FOCUS_RE = /^\d{1,3}(\.\d)?% \d{1,3}(\.\d)?%$/;     // the photo focus point, "x% y%" (CSS object-position)
 const URL_OK = v => !v || /^https:\/\/[^\s<>"]+$/i.test(v) || /^http:\/\/(localhost|127\.0\.0\.1)[:/][^\s<>"]*$/i.test(v) || /^data:(image|audio|application\/pdf)[\w.+/-]*;base64,/.test(v);
 
 // ---------- uploads (images, files, audio): type and size checked before anything is sent ----------
@@ -31,6 +32,13 @@ export function checkWebItem(type, o){
     if (Array.isArray(v)) return v.forEach((x, i) => walk(x, path + "[" + (i + 1) + "]"));
     if (v && typeof v === "object"){
       const keys = Object.keys(v);
+      // any photo (a place, a festival, an offer, the About section…): a usable link, alt text, and a valid focus point
+      if (typeof v.imageUrl === "string" && v.imageUrl){
+        const where = path ? " (" + path + ")" : "";
+        if (!URL_OK(v.imageUrl)) errors.push(L(["Photo: use a full https:// link","ຮູບ: ໃຊ້ລິ້ງ https:// ເຕັມ"]) + where);
+        if (!(v.imageAlt && String(v.imageAlt.en || "").trim())) errors.push(L(["A photo needs alt text (what it shows)","ຮູບຕ້ອງມີຄຳອະທິບາຍ"]) + where);
+      }
+      if (v.imageFocus && !FOCUS_RE.test(v.imageFocus)) errors.push(L(["Photo focus point is not valid","ຈຸດໂຟກັສຮູບບໍ່ຖືກ"]) + (path ? " (" + path + ")" : ""));
       if (keys.length && keys.every(k => ["en","lo","zh"].includes(k)) && (v.en || v.lo || v.zh)){
         const miss = ["lo","zh"].filter(k => !String(v[k] || "").trim());
         if (!String(v.en || "").trim()) warnings.push(path + ": " + L(["English is empty (it is the fallback)","ພາສາອັງກິດຫວ່າງ"]));
@@ -44,13 +52,12 @@ export function checkWebItem(type, o){
   const body = {}; for (const k in (o || {})) if (!skip.has(k)) body[k] = o[k];
   walk(body, "");
   const needTitle = () => { if (!o.title || !String(o.title.en || "").trim()) errors.push(L(["An English title is required","ຕ້ອງມີຫົວຂໍ້ພາສາອັງກິດ"])); };
-  for (const k of ["url","imageUrl"]) if (o[k] && !URL_OK(o[k])) errors.push(k + ": " + L(["use a full https:// link","ໃຊ້ລິ້ງ https:// ເຕັມ"]));
+  for (const k of ["url"]) if (o[k] && !URL_OK(o[k])) errors.push(k + ": " + L(["use a full https:// link","ໃຊ້ລິ້ງ https:// ເຕັມ"]));
   if (type === "places"){
     needTitle();
     if (o.lat === "" || o.lon === "" || o.lat == null || o.lon == null) errors.push(L(["Latitude and longitude are required","ຕ້ອງມີເສັ້ນຂະໜານ ແລະ ເສັ້ນແວງ"]));
     else if (!inLaos(o.lat, o.lon)) errors.push(L(["The coordinates are outside Laos (13.9 to 22.5 N, 100.1 to 107.7 E)","ພິກັດຢູ່ນອກລາວ"]));
     if (o.laoName && !LO_RE.test(o.laoName)) warnings.push(L(["The Lao name has no Lao letters","ຊື່ລາວບໍ່ມີອັກສອນລາວ"]));
-    if (o.imageUrl && !(o.imageAlt && String(o.imageAlt.en || "").trim())) errors.push(L(["A photo needs alt text (what it shows)","ຮູບຕ້ອງມີຄຳອະທິບາຍ"]));
     (o.words || []).forEach((w, i) => { if (w.audio && !URL_OK(w.audio)) errors.push(L(["Word","ຄຳ"]) + " " + (i + 1) + ": " + L(["audio link must be https://","ລິ້ງສຽງຕ້ອງເປັນ https://"])); });
     if (o.unesco !== "" && o.unesco != null && !(+o.unesco >= 1972 && +o.unesco <= 2100)) errors.push(L(["UNESCO year looks wrong","ປີ UNESCO ບໍ່ຖືກ"]));
   }
