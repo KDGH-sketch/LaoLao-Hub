@@ -35,6 +35,10 @@ export function gloss(w, lang){
   if (d) return meaning(w, lang).split(/;|\//)[0].replace(/\(.*?\)/g,"").trim();
   return [...w].map(c => CHARS && CHARS[c] ? (CHARS[c].d||"").split(/[;,]/)[0] : c).join(" + ");
 }
+// a word that is not in the dictionary, so gloss() can only spell it letter by letter
+export const isSpelled = w => !(DICT && DICT[w]) && [...w].some(c => CHARS && CHARS[c]);
+// the letters of a word with a short description each: [{ c:"ທ", d:"tho thung (flag) · Low consonant" }]
+export const spelling = w => [...w].map(c => ({ c, d: CHARS && CHARS[c] ? (CHARS[c].d || "").split(/[;,]/)[0].split(" · ").slice(0, 2).join(" · ") : "" }));
 // p = tone-marked romanization, a = the simple spelling people type (e.g. "sabaidee")
 function index(){ if (!INDEX) INDEX = Object.keys(DICT).map(k => ({ k, p: stripTone(DICT[k].p), a: stripTone(DICT[k].alt||""), en: " "+DICT[k].en.toLowerCase()+" ", lo: DICT[k].lo||"", d: DICT[k] })); return INDEX; }
 export function searchDict(q, limit=40){

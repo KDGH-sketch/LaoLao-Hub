@@ -83,6 +83,15 @@ try {
   ok(pr.learn === 1 && pr.see === 1, "Learn and See are saved", pr);
   await shot("see");
 
+  console.log("\nwords not in the dictionary (#364 ທັງໆທີ່, ທີ່ສຸດ): short blocks, the spelling folds out");
+  await go("pattern", { n: 364, step: "see" });
+  const sp = await b.eval(`(() => { const c = document.querySelector(".gs-ex"), d = c && c.querySelector(".gs-spell");
+    return { tall: Math.max(...[...c.querySelectorAll(".tok")].map(x => x.getBoundingClientRect().height)), tags: c.querySelectorAll(".gs-gl-sp").length,
+      closed: !!d && !d.open, shown: d ? d.querySelector(".gs-spell-w").checkVisibility() : true }; })()`);
+  ok(sp.tall < 130 && sp.tags === 2 && sp.closed && !sp.shown, "blocks stay short; a 'letters' tag instead of the spelling; the spelling is folded away", sp);
+  await b.eval(`document.querySelector(".gs-ex .gs-spell summary").click()`); await sleep(250);
+  ok(await b.eval(`document.querySelectorAll(".gs-ex .gs-spell[open] li").length >= 10 && document.documentElement.scrollWidth <= innerWidth`), "Spell it out opens the letters, one card each");
+
   console.log("\nthe Sentence Lab (a pattern with a generator: #1)");
   await go("pattern", { n: 1, step: "see" });
   const lab = await b.eval(`!!document.querySelector(".ps-lab")`);

@@ -3,7 +3,7 @@
 // Build (put shuffled blocks in order) and Fix (pick the right word order out of believable wrong ones).
 import { h, icon, pyHTML, tr, reducedMotion } from "../shared/ui.js";
 import { t, lang } from "../shared/i18n.js";
-import { gloss } from "../shared/dict.js";
+import { gloss, isSpelled, spelling } from "../shared/dict.js";
 import { speak, audioSource } from "../shared/speech.js";
 import { openWord } from "../shared/widgets.js";
 import { ROLES, parseFormula, meaningful, checkBuild, shuffleWords, wrongOrders } from "../shared/grammar.js";
@@ -27,11 +27,22 @@ export function formulaBlocks(f, { big = false } = {}){
         big ? h("small", null, p.lit ? RL("M") : (p.alt || []).length ? (p.alt.map(c => RL(c)).join(" / ")) : RL(p.code, "hint")) : null)]).filter(Boolean));
 }
 // a sentence as role-coloured blocks; tap a block to open the word
+// A word missing from the dictionary would show its whole letter-by-letter spelling in the block (a very tall box):
+// its block gets a short "letters" tag instead, and the spelling folds out under the sentence ("Spell it out").
 export function sentenceBlocks(toks, { gloss: showGloss = false, rom = true, roles = true } = {}){
-  return h("div", { class: "gs-sent" + (roles ? "" : " plain"), lang: "lo" }, meaningful(toks).map((w, i) =>
+  const words = meaningful(toks);
+  const row = h("div", { class: "gs-sent" + (roles ? "" : " plain"), lang: "lo" }, words.map((w, i) =>
     h("button", { type: "button", class: "gb tok", "data-role": w.role, "data-i": i, onclick: () => openWord(w.z), title: RL(w.role) },
       h("b", { class: "lo" }, w.z), rom && w.p ? h("small", { html: pyHTML(w.p) }) : null,
-      showGloss ? h("em", { class: "gs-gl" }, gl(w)) : null)));
+      showGloss ? (isSpelled(w.z) ? h("em", { class: "gs-gl gs-gl-sp" }, t("gs_letters_tag")) : h("em", { class: "gs-gl" }, gl(w))) : null)));
+  const spelled = showGloss ? [...new Set(words.map(w => w.z).filter(isSpelled))] : [];
+  if (!spelled.length) return row;
+  return h("div", { class: "gs-sent-wrap" }, row,
+    h("details", { class: "gs-spell" },
+      h("summary", null, icon("down"), t("gs_letters_show"), " ", h("span", { class: "lo", lang: "lo" }, spelled.join(", "))),
+      spelled.map(z => h("div", { class: "gs-spell-w" },
+        h("b", { class: "lo", lang: "lo" }, z),
+        h("ul", null, spelling(z).map(x => h("li", null, h("span", { class: "lo", lang: "lo" }, /\p{M}/u.test(x.c) ? "◌" + x.c : x.c), x.d ? h("small", null, x.d) : null)))))));
 }
 // lights the words up one by one while the sentence plays (an estimate of the speaking pace)
 export function karaoke(box, zh){
