@@ -8,6 +8,7 @@ import { METHODS, CURRENCIES, money, methodCurrency } from "../shared/billing.js
 import { S, L, t, isSuper, canSupport, planName, lockedScreen } from "./state.js";
 import { shrinkPhoto } from "../shared/image.js";
 import { uploadChecked } from "./web-checks.js";
+import { refreshAdminNotify } from "./notify.js";
 
 const STATUS = { created:["Started","ເລີ່ມແລ້ວ"], pending:["Pending","ລໍຖ້າ"], paid:["Paid","ຈ່າຍແລ້ວ"], failed:["Failed","ບໍ່ສຳເລັດ"], cancelled:["Cancelled","ຍົກເລີກ"],
   expired:["Expired","ໝົດເວລາ"], refunded:["Refunded","ຄືນເງິນແລ້ວ"], review:["Slip to approve","ລໍຖ້າອະນຸມັດສະລິບ"], rejected:["Slip rejected","ສະລິບຖືກປະຕິເສດ"], duplicate:["Duplicate","ຊ້ຳ"], mismatch:["Mismatch","ບໍ່ກົງກັນ"] };
@@ -19,6 +20,7 @@ const ERR = { forbidden:["Only a Super Admin can refund.","ສະເພາະ Su
   already_refunded:["Already refunded.","ຄືນເງິນແລ້ວ."], order_not_paid:["Only paid orders can be refunded.","ຄືນເງິນໄດ້ສະເພາະຄຳສັ່ງທີ່ຈ່າຍແລ້ວ."],
   transaction_reused:["This bank reference was already used to pay another order. Check the slip: it may have been sent twice.","ເລກອ້າງອີງນີ້ຖືກໃຊ້ຈ່າຍຄຳສັ່ງອື່ນແລ້ວ. ກວດສອບສະລິບ."],
   amount_mismatch:["The amount received is not the order's amount, so the plan was not opened. The order is marked for review.","ຈຳນວນເງິນບໍ່ກົງກັບຄຳສັ່ງ, ບໍ່ໄດ້ເປີດແພັກ."],
+  empty_message:["Write a message first.","ຂຽນຂໍ້ຄວາມກ່ອນ."], too_many_messages:["This order already has 50 messages.","ຂໍ້ຄວາມເຕັມແລ້ວ."],
   order_not_in_review:["This slip was already handled.","ສະລິບນີ້ຖືກຈັດການແລ້ວ."],
   refund_not_confirmed:["The provider did not confirm the refund. Nothing was changed.","ທະນາຄານບໍ່ຢືນຢັນການຄືນເງິນ. ບໍ່ມີການປ່ຽນແປງ."], network_error:["No connection.","ບໍ່ມີການເຊື່ອມຕໍ່."] };
 const errMsg = e => ERR[e && (e.code || e.message)] ? L(ERR[e.code || e.message]) : errText(e);
@@ -49,12 +51,31 @@ export async function viewPayments(p = {}){
   // ---- orders ----
   let q = "", fs = review.length && p.review ? "review" : "";
   const obody = h("tbody");
+  const DELETABLE = ["created","pending","expired","cancelled","failed","rejected"];
+  const paidIds = new Set(payments.map(pm => pm.orderId));
+  const canDelete = o => isSuper() && DELETABLE.includes(o.status) && !paidIds.has(o.id);
+  const picked = new Set();
+  const bulk = h("div",{class:"ord-bulk",hidden:true});
+  const drawBulk = () => { bulk.hidden = !picked.size;
+    bulk.replaceChildren(h("b",null, picked.size + " " + L(["selected","ເລືອກ"])), h("button",{class:"btn sm danger",onclick:()=>removeOrders([...picked])}, icon("trash"), L(["Delete","ລຶບ"])),
+      h("button",{class:"btn sm ghost",onclick:()=>{ picked.clear(); drawOrders(); }}, L(["Clear selection","ຍົກເລີກການເລືອກ"]))); };
+  async function removeOrders(ids){
+    if (!ids.length) return;
+    if (!await confirmDialog(L(["Delete orders","ລຶບຄຳສັ່ງ"]), L(["Delete ","ລຶບ "]) + ids.length + L([" order(s) for good? Paid and refunded orders, and orders with any payment recorded, are always kept.",
+      " ຄຳສັ່ງ? ຄຳສັ່ງທີ່ຈ່າຍແລ້ວ ຫຼື ມີການຈ່າຍ ຈະຖືກເກັບໄວ້."]), L(["Delete","ລຶບ"]), t("cancel"), true)) return;
+    try { const r = await S.api.pay.deleteOrders(ids); toast(L(["Deleted: ","ລຶບແລ້ວ: "]) + r.deleted + (r.kept ? " · " + L(["kept: ","ເກັບໄວ້: "]) + r.kept : ""), "ok");
+      S.api.db.add("activity", { uid:S.me.uid, type:"orders_deleted", ref:String(r.deleted), at:new Date() }).catch(() => {}); refreshAdminNotify(); S.render(); }
+    catch(e){ toast(errMsg(e), "err"); }
+  }
+  const stale = () => orders.filter(o => canDelete(o) && (o.createdAt || 0) < Date.now() - 7 * 864e5 && o.status !== "rejected" && !(o.method === "transfer" && o.status === "created" && (o.createdAt || 0) > Date.now() - 3 * 864e5));
   const drawOrders = () => {
     const f = q.trim().toLowerCase();
     const list = orders.filter(o => (!fs || (fs === "review" ? o.needsReview : o.status === fs))
       && (!f || o.id.toLowerCase().includes(f) || ((who[o.uid] && ((who[o.uid].email || "") + " " + (who[o.uid].name || ""))) || "").toLowerCase().includes(f)));
-    obody.replaceChildren(...list.map(o => h("tr",{class:"clickable",onclick:()=>orderDialog(o)},
-      h("td",null, h("code",{class:"small"}, o.id), o.needsReview ? h("div",null, h("span",{class:"pill expired"}, L(["Review","ກວດສອບ"]))) : null),
+    obody.replaceChildren(...list.map(o => h("tr",{class:"clickable"+(picked.has(o.id)?" picked":""),onclick:()=>orderDialog(o)},
+      isSuper() ? h("td",{class:"ord-pick",onclick:e=>e.stopPropagation()}, canDelete(o) ? h("input",{type:"checkbox","aria-label":L(["Select","ເລືອກ"])+" "+o.id,checked:picked.has(o.id),onchange:e=>{ e.target.checked ? picked.add(o.id) : picked.delete(o.id); e.target.closest("tr").classList.toggle("picked", e.target.checked); drawBulk(); }})
+        : h("span",{class:"ord-lock",title:L(["Kept: money was recorded for this order","ເກັບໄວ້: ມີການຈ່າຍເງິນ"])}, icon("lock"))) : null,
+      h("td",null, h("code",{class:"small"}, o.id), o.needsReview ? h("div",null, h("span",{class:"pill expired"}, L(["Review","ກວດສອບ"]))) : null, (o.messages||[]).length ? h("div",{class:"small muted"}, icon("send"), " ", String(o.messages.length)) : null),
       h("td",null, person(o.uid)),
       h("td",null, planName(o.planId), h("div",{class:"small muted"}, cyc(o.cycle))),
       h("td",{class:"tabnum"}, money(o.amount, o.currency, lang())),
@@ -62,16 +83,20 @@ export async function viewPayments(p = {}){
       h("td",null, pill(o.status)),
       h("td",{class:"small tabnum"}, fmtDate(o.createdAt, lang(), true)),
       h("td",{class:"small tabnum"}, o.paidAt ? fmtDate(o.paidAt, lang(), true) : "—"))));
-    if (!list.length) obody.append(h("tr",null, h("td",{colspan:"8",class:"muted"}, t("no_rows"))));
+    if (!list.length) obody.append(h("tr",null, h("td",{colspan:"9",class:"muted"}, t("no_rows"))));
+    drawBulk();
   };
   const ordersPane = h("div",{class:"stack"},
     h("div",{class:"toolbar"},
       h("input",{class:"input grow",placeholder:L(["Search order number, name or email","ຄົ້ນຫາເລກຄຳສັ່ງ, ຊື່ ຫຼື ອີເມວ"]),oninput:e=>{ q = e.target.value; drawOrders(); }}),
       h("select",{class:"input","aria-label":t("status"),onchange:e=>{ fs = e.target.value; drawOrders(); }},
-        h("option",{value:""}, t("status")+": "+t("all")), h("option",{value:"review",selected:fs==="review"}, L(["Needs review","ຕ້ອງກວດສອບ"])),
-        ["review","rejected","paid","pending","created","failed","cancelled","expired","refunded"].map(s => h("option",{value:s}, L(STATUS[s]))))),
+        h("option",{value:""}, t("status")+": "+t("all")+" ("+orders.length+")"), h("option",{value:"review",selected:fs==="review"}, L(["Needs review","ຕ້ອງກວດສອບ"])+" ("+review.length+")"),
+        ["review","rejected","paid","pending","created","failed","cancelled","expired","refunded"].map(st => h("option",{value:st}, L(STATUS[st])+" ("+orders.filter(o => o.status === st).length+")"))),
+      isSuper() && stale().length ? h("button",{class:"btn sm",title:L(["Delete expired, cancelled, failed and abandoned orders older than 7 days (never paid ones only)","ລຶບຄຳສັ່ງເກົ່າທີ່ບໍ່ໄດ້ຈ່າຍ"]),onclick:()=>removeOrders(stale().map(o => o.id))},
+        icon("trash"), L(["Clean up","ລ້າງ"])+" ("+stale().length+")") : null),
+    bulk,
     h("div",{class:"tbl-wrap"}, h("table",{class:"tbl"}, h("thead",null, h("tr",null,
-      [L(["Order","ຄຳສັ່ງ"]), t("learner"), t("plan"), L(["Amount","ຈຳນວນ"]), L(["Method","ວິທີຈ່າຍ"]), t("status"), L(["Created","ສ້າງເມື່ອ"]), L(["Paid","ຈ່າຍເມື່ອ"])].map(x => h("th",null,x)))), obody)));
+      [isSuper() ? "" : null, L(["Order","ຄຳສັ່ງ"]), t("learner"), t("plan"), L(["Amount","ຈຳນວນ"]), L(["Method","ວິທີຈ່າຍ"]), t("status"), L(["Created","ສ້າງເມື່ອ"]), L(["Paid","ຈ່າຍເມື່ອ"])].map(x => h("th",null,x)))), obody)));
 
   // ---- payments (what the provider reported) ----
   const paymentsPane = h("div",{class:"tbl-wrap"}, h("table",{class:"tbl"},
@@ -103,6 +128,7 @@ export async function viewPayments(p = {}){
         "ມີການຈ່າຍເງິນທີ່ບໍ່ກົງກັບຄຳສັ່ງນີ້. ບໍ່ໄດ້ປົດລັອກຫຍັງ. ກວດສອບໃນລະບົບຂອງທະນາຄານ ແລະ ຄືນເງິນຖ້າຈຳເປັນ."])) : null,
       pays.length ? h("div",null, h("h3",null, L(["Provider transactions","ທຸລະກຳຈາກທະນາຄານ"])),
         h("div",{class:"feed"}, pays.map(pm => h("div",{class:"feed-row"}, h("span",{class:"small"}, pm.provider+" · ", h("code",null, pm.txnId), " · "+(pm.brand || mName(pm.method))+(pm.last4 ? " •••• "+pm.last4 : "")+" · "+money(pm.amount, pm.currency, lang())+(pm.reason ? " · "+pm.reason : "")), pill(pm.status))))) : null,
+      canSupport() ? messagesBox(o) : null,
       h("details",null, h("summary",{class:"small"}, L(["History","ປະຫວັດ"])+" ("+(o.history||[]).length+")"),
         h("div",{class:"feed"}, (o.history||[]).map(x => h("div",{class:"feed-row"}, h("span",{class:"small"}, L(STATUS[x.status] || [x.status]) + (x.note ? " · " + x.note : "") + (x.provider ? " · " + x.provider : "")), h("span",{class:"small muted"}, fmtDate(x.at, lang(), true)))))));
     const actions = [{ label:t("close"), value:true }];
@@ -157,23 +183,48 @@ export async function viewPayments(p = {}){
   };
   const tseg = h("div",{class:"seg",role:"group"}, [["review",["To approve","ລໍຖ້າອະນຸມັດ"]],["rejected",["Rejected","ປະຕິເສດ"]],["paid",["Approved","ອະນຸມັດແລ້ວ"]],["all",["All transfers","ທັງໝົດ"]]].map(([k, l]) =>
     h("button",{type:"button","aria-pressed":String(tf===k),onclick:e=>{ tf = k; tseg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === e.currentTarget))); drawTransfers(); }},
-      L(l), k === "review" && slipsWaiting.length ? h("span",{class:"tr-badge"}, String(slipsWaiting.length)) : null)));
+      L(l), (n => n ? h("span",{class:"tr-badge"+(k === "review" ? "" : " soft")}, String(n)) : null)(orders.filter(o => o.method === "transfer" && (k === "all" ? true : o.status === k)).length))));
   const transfersPane = h("div",{class:"stack"},
     h("p",{class:"small muted"}, L(["Learners who paid by bank transfer sent these slips. Check that the money arrived in the account (amount and reference), then approve: the plan opens at once. Rejecting asks the learner for a new slip.",
       "ຜູ້ຮຽນທີ່ໂອນເງິນສົ່ງສະລິບເຫຼົ່ານີ້. ກວດວ່າເງິນເຂົ້າບັນຊີແລ້ວ ຈຶ່ງອະນຸມັດ: ແພັກຈະເປີດທັນທີ."])),
     tseg, tgrid);
+  function messagesBox(o){
+    const list = h("ul",{class:"msg-list"});
+    const drawList = () => list.replaceChildren(...((o.messages || []).length ? o.messages.map(m => h("li",{class:m.kind === "rejected" ? "rej" : ""},
+      h("p",null, m.text), h("small",{class:"muted"}, (m.kind === "rejected" ? L(["Rejection","ປະຕິເສດ"]) + " · " : "") + (who[m.by] ? (who[m.by].name || who[m.by].email) : L(["Team","ທີມງານ"])) + " · " + fmtDate(m.at, lang(), true))))
+      : [h("li",{class:"empty"}, h("small",{class:"muted"}, L(["No messages yet. The learner sees what you write here, in their notifications and on their order.","ຍັງບໍ່ມີຂໍ້ຄວາມ."])))]));
+    const txt = h("textarea",{class:"input",rows:"2",maxlength:"1000",placeholder:L(["Write to the learner (they get a notification)…","ຂຽນເຖິງຜູ້ຮຽນ…"])});
+    const send = h("button",{class:"btn sm primary",type:"button",onclick:async()=>{
+      const v = txt.value.trim(); if (!v) return;
+      send.disabled = true;
+      try { const r = await S.api.pay.message(o.id, v); o.messages = [...(o.messages || []), { at:r.at, by:S.me.uid, from:"team", kind:"message", text:v }]; txt.value = ""; drawList(); toast(L(["Sent to the learner.","ສົ່ງເຖິງຜູ້ຮຽນແລ້ວ."]), "ok"); }
+      catch(e){ toast(errMsg(e), "err"); } finally { send.disabled = false; }
+    }}, icon("send"), L(["Send","ສົ່ງ"]));
+    drawList();
+    return h("details",{class:"msg-box",open:(o.messages || []).length > 0},
+      h("summary",null, icon("send"), " ", L(["Messages with the learner","ຂໍ້ຄວາມກັບຜູ້ຮຽນ"]), " (" + (o.messages || []).length + ")"),
+      list, h("div",{class:"msg-write"}, txt, send));
+  }
+
   async function reviewDialog(o){
     const sl = await S.api.pay.slip(o.id).catch(() => null) || {};
     const ref = h("input",{class:"input",value:sl.ref || "",maxlength:"60",placeholder:L(["Reference on the slip","ເລກອ້າງອີງໃນສະລິບ"])});
     const amt = h("input",{class:"input tabnum",type:"number",min:"0",step:"any",value:String(o.amount)});
-    const reason = h("textarea",{class:"input",rows:"2",placeholder:L(["Why? The learner sees this.","ເຫດຜົນ (ຜູ້ຮຽນຈະເຫັນ)"])});
+    const reason = h("input",{class:"input",maxlength:"300",placeholder:L(["Short reason (the learner sees it)","ເຫດຜົນສັ້ນໆ (ຜູ້ຮຽນຈະເຫັນ)"])});
+    const u0 = who[o.uid] || {};
+    const note = h("textarea",{class:"input",rows:"4",maxlength:"1000",placeholder:L(["Message to the learner: what happened and what to do next","ຂໍ້ຄວາມເຖິງຜູ້ຮຽນ: ເກີດຫຍັງຂຶ້ນ ແລະ ຕ້ອງເຮັດແນວໃດ"])});
+    const fillNote = r => { note.value = L(["Hello ","ສະບາຍດີ "]) + (u0.name || "") + ",\n" + L(["We could not approve your transfer slip for order ","ພວກເຮົາອະນຸມັດສະລິບຂອງຄຳສັ່ງ "]) + o.id + L([": "," ບໍ່ໄດ້: "]) + r.toLowerCase()
+      + ".\n" + L(["Please check the payment and send a new slip from the same page. If you need help, just reply to us.","ກະລຸນາກວດສອບ ແລ້ວສົ່ງສະລິບໃໝ່. ຖ້າຕ້ອງການຄວາມຊ່ວຍເຫຼືອ ຕິດຕໍ່ພວກເຮົາ."]); };
     const msg = h("p",{class:"small",role:"alert",style:"color:var(--bad)"});
     const u = who[o.uid] || {};
     const kv = (k, v) => [h("dt",null,k), h("dd",null,v)];
     const img = sl.image ? h("a",{href:sl.image,target:"_blank",rel:"noopener",class:"tr-big",title:L(["Open full size","ເປີດຂະໜາດເຕັມ"])}, h("img",{src:sl.image,alt:L(["Transfer slip","ສະລິບການໂອນ"])})) : h("div",{class:"tr-big empty"}, icon("image"), L(["No slip image","ບໍ່ມີຮູບສະລິບ"]));
     let rejecting = false;
     const rejectBox = h("div",{class:"stack tr-reject",hidden:true},
-      h("div",{class:"chips"}, REASONS.map(r => h("button",{type:"button",class:"chip",onclick:()=>{ reason.value = L(r); reason.focus(); }}, L(r)))), reason);
+      h("span",{class:"lbl"}, L(["Why is it rejected?","ເປັນຫຍັງປະຕິເສດ?"])),
+      h("div",{class:"chips"}, REASONS.map(r => h("button",{type:"button",class:"chip",onclick:()=>{ reason.value = L(r); fillNote(L(r)); note.focus(); }}, L(r)))), reason,
+      h("span",{class:"lbl"}, L(["Message to the learner","ຂໍ້ຄວາມເຖິງຜູ້ຮຽນ"])), note,
+      h("span",{class:"help"}, L(["They see it at once: a notification, and on their transfer page.","ຜູ້ຮຽນຈະເຫັນທັນທີ ໃນການແຈ້ງເຕືອນ ແລະ ໜ້າການໂອນ."])));
     const body = h("div",{class:"tr-review"},
       img,
       h("div",{class:"stack"},
@@ -190,13 +241,14 @@ export async function viewPayments(p = {}){
         h("div",{class:"field-row"}, h("div",{class:"field"}, h("span",{class:"lbl"}, L(["Bank reference","ເລກອ້າງອີງທະນາຄານ"])), ref,
             h("span",{class:"help"}, L(["Saved as the transaction: the same reference cannot pay two orders.","ບັນທຶກເປັນທຸລະກຳ: ເລກດຽວກັນຈ່າຍສອງຄຳສັ່ງບໍ່ໄດ້."]))),
           h("div",{class:"field"}, h("span",{class:"lbl"}, L(["Amount received","ຈຳນວນທີ່ໄດ້ຮັບ"]) + " (" + o.currency + ")"), amt)),
+        (o.messages || []).length ? messagesBox(o) : null,
         rejectBox, msg));
     await dialog({ title:L(["Approve transfer","ອະນຸມັດການໂອນ"]) + " · " + o.id, wide:true, body,
       actions:[{ label:t("cancel"), value:false },
         { label:L(["Reject…","ປະຕິເສດ…"]), danger:true, onClick: async () => {
           if (!rejecting){ rejecting = true; rejectBox.hidden = false; reason.focus(); return false; }
           if (!reason.value.trim()){ msg.textContent = L(["Tell the learner why (choose or write a reason).","ໃສ່ເຫດຜົນ."]); return false; }
-          try { await S.api.pay.review(o.id, false, { reason: reason.value.trim() }); toast(L(["Slip rejected: the learner was asked for a new one.","ປະຕິເສດແລ້ວ."]), "ok");
+          try { await S.api.pay.review(o.id, false, { reason: reason.value.trim(), message: note.value.trim() }); toast(L(["Slip rejected: the learner was told why and asked for a new one.","ປະຕິເສດແລ້ວ ແລະ ແຈ້ງຜູ້ຮຽນແລ້ວ."]), "ok"); refreshAdminNotify();
             S.api.db.add("activity", { uid:S.me.uid, type:"transfer_rejected", ref:o.id, at:new Date() }).catch(() => {}); S.render(); return true; }
           catch(e){ msg.textContent = errMsg(e); return false; } } },
         { label:L(["Approve and open the plan","ອະນຸມັດ ແລະ ເປີດແພັກ"]), primary:true, onClick: async () => {
@@ -204,7 +256,7 @@ export async function viewPayments(p = {}){
           if (!(a > 0)){ msg.textContent = L(["Enter the amount received.","ໃສ່ຈຳນວນທີ່ໄດ້ຮັບ."]); return false; }
           if (a !== +o.amount && !await confirmDialog(L(["Amount differs","ຈຳນວນບໍ່ກົງ"]), L(["The amount received is not the order's amount. The plan will NOT open and the order will be marked for review. Continue?","ຈຳນວນບໍ່ກົງ. ແພັກຈະບໍ່ເປີດ. ສືບຕໍ່ບໍ?"]), L(["Continue","ສືບຕໍ່"]), t("cancel"))) return false;
           try { const r = await S.api.pay.review(o.id, true, { ref: ref.value.trim(), amount: a });
-            toast(L(["Approved: the plan is open until ","ອະນຸມັດແລ້ວ: ແພັກເປີດຮອດ "]) + fmtDate(r.expiresAt, lang()), "ok");
+            toast(L(["Approved: the plan is open until ","ອະນຸມັດແລ້ວ: ແພັກເປີດຮອດ "]) + fmtDate(r.expiresAt, lang()), "ok"); refreshAdminNotify();
             S.api.db.add("activity", { uid:S.me.uid, type:"transfer_approved", ref:o.id, at:new Date() }).catch(() => {}); S.render(); return true; }
           catch(e){ msg.textContent = errMsg(e); return false; } } }] });
   }
@@ -304,8 +356,9 @@ export async function viewPayments(p = {}){
     pane.replaceChildren(k === "transfers" ? transfersPane : k === "orders" ? ordersPane : k === "payments" ? paymentsPane : await settingsPane());
   };
   if (!p.tab && slipsWaiting.length) tab = "transfers";          // slips waiting: open on them
+  const TABN = { transfers: [slipsWaiting.length, ""], orders: [orders.length, " soft"], payments: [payments.length, " soft"] };
   [["transfers", L(["Transfers","ໂອນເງິນ"])], ["orders", L(["Orders","ຄຳສັ່ງຊື້"])], ["payments", L(["Transactions","ທຸລະກຳ"])], ["settings", L(["Settings","ຕັ້ງຄ່າ"])]].forEach(([k, label]) =>
-    tabsEl.append(h("button",{"data-k":k,"aria-pressed":String(tab===k),onclick:()=>showTab(k)}, label, k === "transfers" && slipsWaiting.length ? h("span",{class:"tr-badge"}, String(slipsWaiting.length)) : null)));
+    tabsEl.append(h("button",{"data-k":k,"aria-pressed":String(tab===k),onclick:()=>showTab(k)}, label, TABN[k] && TABN[k][0] ? h("span",{class:"tr-badge"+TABN[k][1]}, String(TABN[k][0])) : null)));
   drawOrders(); drawTransfers();
   const wrap = h("div",{class:"stack-l"},
     h("div",{class:"pagehead"}, h("h1",null, L(["Payments","ການຈ່າຍເງິນ"])), h("p",null, L(["Orders, provider transactions and refunds. Card numbers are never stored: only the brand and last 4 digits the provider reports.",

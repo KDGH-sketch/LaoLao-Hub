@@ -342,6 +342,8 @@ export async function createSupabaseApi(supabaseUrl, supabaseAnonKey, opts = {})
         order: async id => { const o = await api.db.get("orders/" + id); if (!o) throw Object.assign(new Error("order_not_found"), { code: "order_not_found" }); return Object.assign({ id }, o); },
         slip: id => api.db.get("slips/" + id),
         review: (id, approve, info) => api.rpc("ll_review_slip", { p_order: id, p_approve: !!approve, p_info: info || {} }).then(okOr),
+        message: (id, text) => api.rpc("ll_order_message", { p_order: id, p_text: text }).then(okOr),
+        deleteOrders: ids => api.rpc("ll_delete_orders", { p_ids: ids || [] }).then(okOr),
         cancelOrder: id => api.rpc("ll_cancel_my_order", { p_order: id }),
         setCancel: on => api.rpc("ll_set_cancel", { p_cancel: !!on }),
         schedule: planId => api.rpc("ll_schedule_plan", { p_plan: planId }),

@@ -9,6 +9,7 @@ import { bootstrapOwner, importSeed, ensureDemo, DEMO } from "../shared/setup.js
 import { loadDict } from "../shared/dict.js";
 import { createWaitingScreen, dokChampaSvg } from "../shared/lao-decorations.js";
 import { adminProfileChip, adminSignOut, loadAdminProfile, closeAdminProfile } from "./profile.js";
+import { adminBell } from "./notify.js";
 import { S, L, t, go, isSuper, isOwner, getActiveRole, canContent, canSupport, canViewMenu, canEditMenu, canManageAdmins, canManageSettings, refreshPlans, fld, lockedScreen } from "./state.js";
 import { viewLearners, viewLearner } from "./learners.js";
 import { viewPlans } from "./plans.js";
@@ -333,6 +334,7 @@ function buildAdminShell(){
       rolePreviewSwitch(),
       h("a",{class:"btn sm ghost",href:"../",style:"text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:5px 9px",title:t("adm_open_learner")}, icon("home"), h("span",{class:"hide-sm"}, t("adm_open_learner"))),
       langSwitch()),
+    adminBell(),
     publishChip(),
     adminProfileChip({ rerender: () => renderShell(true), rolePreview: () => { const el = rolePreviewSwitch(); if (!el) return null; el.classList.remove("hide-sm"); el.addEventListener("change", closeAdminProfile); return el; } }));
 

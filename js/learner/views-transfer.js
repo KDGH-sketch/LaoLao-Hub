@@ -64,6 +64,16 @@ VIEWS.transfer = async (params = {}) => {
     h("div", { class: "tr-ref" }, h("span", null, icon("edit"), t("tr_ref_note")), h("code", null, o.id), copyBtn(o.id, t("tr_order"))),
     L(T.instructions) ? h("p", { class: "small muted tr-inst" + (lang() === "lo" ? " lo" : "") }, L(T.instructions)) : null);
 
+  // ----- messages from the team about this order (why a slip was rejected, what to do…) -----
+  function thread(){
+    const ms = (o.messages || []).filter(m => m.from === "team");
+    if (!ms.length) return null;
+    return h("section", { class: "tr-thread", "aria-label": t("tr_msgs") }, h("h3", null, icon("send"), t("tr_msgs")),
+      h("ul", null, ms.slice(-6).map(m => h("li", { class: m.kind === "rejected" ? "rej" : "" },
+        h("span", { class: "tr-thread-av", "aria-hidden": "true" }, "LL"),
+        h("div", null, h("p", null, m.text), h("small", null, t("tr_team") + " · " + fmtDate(m.at, lang(), true)))))));
+  }
+
   // ----- step 2: the slip -----
   function slipForm(){
     let image = null;
@@ -139,7 +149,7 @@ VIEWS.transfer = async (params = {}) => {
         h("button", { class: "btn primary", onclick: () => go("checkout", { plan: o.planId, cycle: o.cycle }) }, t("tr_start_again")));
       return;
     }
-    fill(right, ...(o.status === "review" && !replacing ? await waiting() : slipForm()));
+    fill(right, ...(o.status === "review" && !replacing ? await waiting() : slipForm()), thread());
   }
   async function load(){
     try { const n = await A.api.pay.order(id); const changed = n.status !== o.status; o = n; if (changed || n.status !== "review") draw(); else poll(); }

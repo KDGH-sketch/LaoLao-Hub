@@ -8,6 +8,7 @@ import { onMissingAudio, speak } from "../shared/speech.js";
 import { openWord, closeSheet } from "../shared/widgets.js";
 import { createWaitingScreen, dokChampaSvg, LAO_SAMPLES } from "../shared/lao-decorations.js";
 import { A, loadAccount, refreshAccess, prefs, setPref, applyPrefs, srsDue, T, createLearnerProfile, rememberPendingProfile, displayName, avatarEl, imageToAvatar, saveProfile, setThemeFrom } from "./core.js";
+import { bellButton, stopNotify } from "./notify.js";
 import * as LV from "./views-learn.js";
 import * as TV from "./views-tools.js";
 import { lockedPanel, featureForView, navLock, planLabel } from "./upgrade.js";
@@ -215,7 +216,7 @@ function buildShell(){
       h("button",{class:"tg","data-k":"showPy","aria-pressed":String(p.showPy),onclick:e=>{ setPref("showPy",!prefs().showPy); e.currentTarget.setAttribute("aria-pressed",String(prefs().showPy)); }}, t("show_pinyin")),
       h("button",{class:"tg","data-k":"showTr","aria-pressed":String(p.showTr),onclick:e=>{ setPref("showTr",!prefs().showTr); e.currentTarget.setAttribute("aria-pressed",String(prefs().showTr)); }}, t("show_trans")),
       h("div",{class:"langsw",role:"group","aria-label":t("ui_lang")}, [["en","EN"],["lo","ລາວ"],["zh","中"]].map(([l,n]) => h("button",{"aria-pressed":String(lang()===l),lang:l==="zh"?"zh-CN":l,onclick:()=>setLanguage(l)}, n)))),
-    profileChip());
+    bellButton(), profileChip());
   const main = h("main",{id:"main",tabindex:"-1"});
   const tabs = h("nav",{class:"tabbar","aria-label":"Tabs"}, TABS.map(([id,k,ic]) => h("button",{"data-tab":id,onclick:()=>id==="more" ? openMoreMenu() : go(id)}, icon(ic), t(k))));
   const demoBarEl = A.api.mode==="demo" ? h("div",{class:"demo-bar",style:"display:flex;justify-content:space-between;align-items:center;padding:4px 14px;flex-wrap:wrap;gap:8px"},
@@ -275,7 +276,7 @@ export async function signOutNow(){
   if (!await confirmDialog(t("pf_logout_q"), t("pf_logout_d"), t("sign_out"), t("cancel"), true)) return;
   closeProfileMenu();
   document.body.classList.add("leaving");                   // the app fades away before the sign-in screen appears
-  import("./promo.js").then(m => m.forgetPromo()).catch(() => {});      // the next sign-in shows the promotion again
+  import("./promo.js").then(m => m.forgetPromo()).catch(() => {}); stopNotify();      // the next sign-in shows the promotion again
   setTimeout(async () => { try { await A.api.auth.signOut(); } finally { document.body.classList.remove("leaving"); } }, 260);
 }
 function openProfileMenu(anchor){

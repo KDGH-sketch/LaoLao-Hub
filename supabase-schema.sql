@@ -553,7 +553,10 @@ begin
     return r;
   end if;
   update public.orders set data = data || jsonb_build_object('status', 'rejected', 'rejectReason', left(coalesce(p_info ->> 'reason', ''), 300),
-      'rejectedBy', v_uid, 'rejectedAt', now_ms,
+      'rejectedBy', v_uid, 'rejectedAt', now_ms, 'lastMessageAt', now_ms,
+      -- what the team tells the learner (the reason and, if written, a message), kept as a conversation on the order
+      'messages', coalesce(data -> 'messages', '[]'::jsonb) || jsonb_build_array(jsonb_build_object('at', now_ms, 'by', v_uid, 'from', 'team', 'kind', 'rejected',
+        'text', left(trim(coalesce(nullif(trim(p_info ->> 'message'), ''), p_info ->> 'reason', '')), 1000), 'reason', left(coalesce(p_info ->> 'reason', ''), 300))),
       'history', coalesce(data -> 'history', '[]'::jsonb) || jsonb_build_array(jsonb_build_object('at', now_ms, 'status', 'rejected', 'by', v_uid,
         'note', left(coalesce(p_info ->> 'reason', ''), 120)))),
       updated_at = now() where id = p_order;
@@ -563,6 +566,48 @@ revoke all on function public.ll_submit_slip(text, jsonb) from public, anon;
 revoke all on function public.ll_review_slip(text, boolean, jsonb) from public, anon;
 grant execute on function public.ll_submit_slip(text, jsonb) to authenticated;
 grant execute on function public.ll_review_slip(text, boolean, jsonb) to authenticated;
+
+-- 6. The team writes to the learner about an order (why a slip was rejected, what to do next…). The learner reads it on
+--    the order (own orders only) and gets a notification. Support, admin and Super Admin; at most 50 messages per order.
+create or replace function public.ll_order_message(p_order text, p_text text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare v_uid text := auth.uid()::text; now_ms numeric := round(extract(epoch from now()) * 1000); t text := left(trim(coalesce(p_text, '')), 1000); o jsonb;
+begin
+  if not public.ll_can_support() then return '{"ok":false,"reason":"forbidden"}'::jsonb; end if;
+  if t = '' then return '{"ok":false,"reason":"empty_message"}'::jsonb; end if;
+  select data into o from public.orders where id = p_order for update;
+  if o is null then return '{"ok":false,"reason":"order_not_found"}'::jsonb; end if;
+  if jsonb_array_length(coalesce(o -> 'messages', '[]'::jsonb)) >= 50 then return '{"ok":false,"reason":"too_many_messages"}'::jsonb; end if;
+  update public.orders set data = data || jsonb_build_object('lastMessageAt', now_ms,
+      'messages', coalesce(data -> 'messages', '[]'::jsonb) || jsonb_build_array(jsonb_build_object('at', now_ms, 'by', v_uid, 'from', 'team', 'kind', 'message', 'text', t))),
+      updated_at = now() where id = p_order;
+  return jsonb_build_object('ok', true, 'at', now_ms);
+end $$;
+
+-- 7. Super Admin clears out orders that never became money: started, expired, cancelled, failed or rejected, and with
+--    no payment recorded against them (paid, refunded, mismatched or duplicate payments stay: they are the money trail).
+--    Their slips go too. Returns how many were deleted.
+create or replace function public.ll_delete_orders(p_ids jsonb) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare n int; ids text[];
+begin
+  if not public.ll_is_super() then return '{"ok":false,"reason":"forbidden"}'::jsonb; end if;
+  ids := array(select jsonb_array_elements_text(coalesce(p_ids, '[]'::jsonb)));
+  if coalesce(array_length(ids, 1), 0) = 0 then return '{"ok":true,"deleted":0}'::jsonb; end if;
+  if array_length(ids, 1) > 500 then return '{"ok":false,"reason":"too_many"}'::jsonb; end if;
+  with del as (
+    delete from public.orders o where o.id = any(ids)
+      and coalesce(o.data ->> 'status', '') in ('created', 'pending', 'expired', 'cancelled', 'failed', 'rejected')
+      and not exists (select 1 from public.payments p where p.data ->> 'orderId' = o.id)
+    returning o.id)
+  select count(*) into n from del;
+  delete from public.slips s where s.id = any(ids) and not exists (select 1 from public.orders o where o.id = s.id);
+  return jsonb_build_object('ok', true, 'deleted', n, 'kept', array_length(ids, 1) - n);
+end $$;
+revoke all on function public.ll_order_message(text, text) from public, anon;
+revoke all on function public.ll_delete_orders(jsonb) from public, anon;
+grant execute on function public.ll_order_message(text, text) to authenticated;
+grant execute on function public.ll_delete_orders(jsonb) to authenticated;
 
 -- The checkout page was opened at the provider (service key)
 create or replace function public.ll_order_checkout(p_order text, p_provider text, p_ref jsonb) returns jsonb

@@ -227,8 +227,29 @@ export function reviewSlip(store, by, id, approve, info = {}, now = Date.now()){
     return r;
   }
   const reason = String(info.reason || "").slice(0, 300);
-  store.put("orders", id, Object.assign({}, o, { status: "rejected", rejectReason: reason, rejectedBy: by, rejectedAt: now, history: hist(o, { at: now, status: "rejected", by, note: reason.slice(0, 120) }) }));
+  const text = String((String(info.message || "").trim()) || reason).trim().slice(0, 1000);
+  store.put("orders", id, Object.assign({}, o, { status: "rejected", rejectReason: reason, rejectedBy: by, rejectedAt: now, lastMessageAt: now,
+    messages: [...(o.messages || []), { at: now, by, from: "team", kind: "rejected", text, reason }], history: hist(o, { at: now, status: "rejected", by, note: reason.slice(0, 120) }) }));
   return { ok: true, status: "rejected" };
+}
+// ll_order_message (demo mode): the team writes to the learner about an order
+export function orderMessage(store, by, id, text, now = Date.now()){
+  const t = String(text || "").trim().slice(0, 1000);
+  if (!t) return { ok: false, reason: "empty_message" };
+  const o = store.get("orders", id);
+  if (!o) return { ok: false, reason: "order_not_found" };
+  if ((o.messages || []).length >= 50) return { ok: false, reason: "too_many_messages" };
+  store.put("orders", id, Object.assign({}, o, { lastMessageAt: now, messages: [...(o.messages || []), { at: now, by, from: "team", kind: "message", text: t }] }));
+  return { ok: true, at: now };
+}
+// ll_delete_orders (demo mode): only orders that never became money, and with no payment recorded against them
+export const DELETABLE = ["created", "pending", "expired", "cancelled", "failed", "rejected"];
+export function deleteOrders(store, ids, del){
+  const list = (ids || []).slice(0, 500), pays = store.list("payments");
+  let n = 0;
+  for (const id of list){ const o = store.get("orders", id);
+    if (o && DELETABLE.includes(o.status) && !pays.some(p => p.orderId === id)){ del("orders", id); del("slips", id); n++; } }
+  return { ok: true, deleted: n, kept: list.length - n };
 }
 
 export function failOrder(store, id, status, info = {}, now = Date.now()){

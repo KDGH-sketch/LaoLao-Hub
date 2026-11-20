@@ -207,6 +207,21 @@ console.log("bank transfer: slip, review, approval (supabase-transfer-migration.
   const reuse = await asRpc(U.adm, "ll_review_slip", { p_order: t2.id, p_approve: true, p_info: { ref: "BCEL-88-OK" } });
   ok(!reuse.ok && reuse.reason === "transaction_reused" && (await row("orders", t2.id)).status === "review", "one bank reference cannot pay two orders");
   ok((await asRpc(U.adm, "ll_review_slip", { p_order: t1.id, p_approve: false, p_info: {} })).reason === "order_not_in_review", "a paid order cannot be rejected afterwards");
+  // messages to the learner, and clearing out orders
+  const rj = await asRpc(T, "ll_create_order", { p_plan:"premium", p_cycle:"year", p_method:"transfer" });
+  await asRpc(T, "ll_submit_slip", { p_order: rj.id, p_slip: { image: IMG.replace("ADUlEQVR42mNk", "ADUlEQVR42mNz") } });
+  await asRpc(U.adm, "ll_review_slip", { p_order: rj.id, p_approve: false, p_info: { reason: "The slip cannot be read", message: "Hello, the photo is blurry. Please send a screenshot." } });
+  const mo = await row("orders", rj.id);
+  ok(mo.status === "rejected" && mo.messages.length === 1 && /blurry/.test(mo.messages[0].text) && mo.messages[0].reason === "The slip cannot be read", "a rejection keeps the reason and the message to the learner");
+  ok((await asRpc(T, "ll_order_message", { p_order: rj.id, p_text: "hi" })).reason === "forbidden", "a learner cannot post as the team");
+  ok((await asRpc(U.adm, "ll_order_message", { p_order: rj.id, p_text: "   " })).reason === "empty_message", "an empty message is refused");
+  ok((await asRpc(U.adm, "ll_order_message", { p_order: rj.id, p_text: "Any news?" })).ok && (await row("orders", rj.id)).messages.length === 2, "the team writes to the learner on an order");
+  ok(await as(T, async () => (await db.query("select data->'messages' m from public.orders where id = $1", [rj.id])).rows[0].m.length) === 2, "the learner reads the messages on their own order");
+  ok((await asRpc(T, "ll_delete_orders", { p_ids: [rj.id] })).reason === "forbidden", "a learner cannot delete orders");
+  const dl = await asRpc(U.adm, "ll_delete_orders", { p_ids: [rj.id, t1.id] });
+  ok(dl.ok && dl.deleted === 1 && dl.kept === 1 && !(await row("orders", rj.id)) && !!(await row("orders", t1.id)), "Super Admin deletes the rejected order; the paid one is kept");
+  ok(!(await row("slips", rj.id)), "the deleted order's slip goes too");
+  ok((await asRpc(U.adm, "ll_delete_orders", { p_ids: [t2.id] })).deleted === 0, "an order with a payment recorded against it is kept (money trail)");
   await put("settings", "app", { defaultPlanId:"free", allowRegistration:true, payments: PAY });
 }
 
