@@ -1226,7 +1226,7 @@ details>summary{transition:color .2s}
 @supports not selector(:popover-open){.wl .wl-sheet{display:none}.wl .wl-sheet.open{display:block;opacity:1;transform:none}}
 @container wlnav (max-width:66rem){.wl .wl-links{display:none}.wl .wl-menu-btn{display:inline-flex}.wl .wl-tools{margin-inline-start:auto}}
 @container wlnav (min-width:66.0625rem){.wl .wl-sheet{display:none!important}}
-@container wlnav (max-width:33rem){.wl #wl-go-signin{display:none}.wl .wl-brand > span{display:none}}
+@container wlnav (max-width:33rem){.wl .wl-brand > span{display:none}}
 @container wlnav (max-width:24.99rem){.wl .wl-nav-lang{display:none}}
 @container wlnav (min-width:25rem){.wl .wl-sheet-lang{display:none}}
 
@@ -1530,7 +1530,152 @@ details>summary{transition:color .2s}
 @media (prefers-reduced-motion:reduce){.wl .wl-river{stroke-dashoffset:0}.wl *,.wl *::before,.wl *::after{animation:none!important;transition-duration:.01ms!important}}
 @media (prefers-contrast:more){.wl{--line:currentColor}.wl .wl-card,.wl .wl-fcard,.wl .wl-j-panel{border-width:2px}}
 @media (forced-colors:active){.wl .wl-btn,.wl .wl-input,.wl .wl-fcard,.wl .wl-card{border:1px solid CanvasText}.wl .wl-pin::before{background:Highlight}}
-@media (pointer:coarse){.wl :is(.wl-chips button,.wl-words button,.wl-seg button,.wl-btn.sm,.wl-tabs button,.wl-linkbtn,.wl-menu-btn,.wl-sheet > button,.wl-brand,.wl-links button){min-block-size:44px;min-inline-size:44px}}
+@media (pointer:coarse){.wl :is(.wl-x,.wl-st-next,.wl-chips button,.wl-words button,.wl-seg button,.wl-btn.sm,.wl-tabs button,.wl-linkbtn,.wl-menu-btn,.wl-sheet > button,.wl-brand,.wl-links button){min-block-size:44px;min-inline-size:44px}}
+
+/* ==========================================================================================================
+   Welcome 2: open hero (no sign-in card), the live sentence builder, the sign-in pill, the glass pop-up,
+   the phone dock and the scroll progress line. js/learner/welcome.js (glassDialog, sentenceStage, startHooks)
+   ========================================================================================================== */
+.wl{--r-s:#0270AC;--r-m:#92400E;--r-v:#047857;--r-o:#6D28D9;--glass:color-mix(in srgb,var(--surface) 72%,transparent);--glass-edge:rgba(255,255,255,.6);--glass-hi:rgba(255,255,255,.75)}
+:root[data-theme="night"] .wl,:root[data-theme="dark"] .wl{--r-s:#38BDF8;--r-m:#FBBF24;--r-v:#34D399;--r-o:#C4B5FD;--glass:color-mix(in srgb,var(--surface) 66%,transparent);--glass-edge:rgba(255,255,255,.14);--glass-hi:rgba(255,255,255,.12)}
+@media (prefers-color-scheme:dark){:root[data-theme="system"] .wl,:root[data-theme="auto"] .wl,:root:not([data-theme]) .wl{--r-s:#38BDF8;--r-m:#FBBF24;--r-v:#34D399;--r-o:#C4B5FD;--glass:color-mix(in srgb,var(--surface) 66%,transparent);--glass-edge:rgba(255,255,255,.14);--glass-hi:rgba(255,255,255,.12)}}
+@supports not (background:color-mix(in srgb,red 50%,blue)){.wl{--glass:var(--surface)}}
+
+/* ----- nav: the sign-in pill with words beside the icon; the theme picker moves into the menu on phones ----- */
+.wl .wl-signin{display:inline-flex;align-items:center;gap:9px;min-block-size:44px;padding:4px 14px 4px 4px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-align:start;
+  box-shadow:0 6px 18px -12px rgba(2,60,100,.6);transition:transform .25s cubic-bezier(.2,1.4,.4,1),box-shadow .25s,border-color .25s;
+  &:hover{border-color:var(--accent);box-shadow:0 10px 24px -12px var(--accent)}
+  &:active{transform:scale(.96)}}
+.wl .wl-signin-ic{inline-size:34px;block-size:34px;border-radius:50%;display:grid;place-items:center;flex:none;color:#fff;background:linear-gradient(140deg,#0270AC,#38BDF8);position:relative;
+  .ic{inline-size:18px;block-size:18px}
+  &::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid #38BDF8;opacity:0;animation:wl-halo 3.2s 2s ease-out infinite}}
+.wl .wl-signin-tx{display:grid;line-height:1.1;b{font-size:.92rem;font-weight:700}small{font-size:.78rem;color:var(--ink-3);font-weight:600}}
+@media (hover:hover){.wl .wl-signin:hover{transform:translateY(-1px)}}
+.wl .wl-sheet-tools{display:flex;flex-wrap:wrap;gap:8px;margin:6px;.wl-seg{margin:0}}
+@container wlnav (max-width:40rem){.wl .wl-nav-theme{display:none}.wl .wl-signin-tx small{display:none}.wl .wl-signin{padding-inline-end:12px}}
+@container wlnav (min-width:40.0625rem){.wl .wl-sheet-theme{display:none}}
+.wl .wl-progress{position:absolute;inset-inline:0;inset-block-end:-1px;block-size:3px;transform-origin:0 50%;transform:scaleX(0);pointer-events:none;
+  background:linear-gradient(90deg,#CE1126,#FBBF24 45%,#38BDF8);display:none}
+@supports (animation-timeline:scroll()){.wl .wl-progress{display:block;animation:wl-prog linear both;animation-timeline:scroll(root)}}
+
+/* ----- hero: open layout, copy rises in, the stage floats and tilts with the pointer ----- */
+@container wlhero (min-width:55.0625rem){.wl .wl-hero-grid{grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);align-items:center;min-block-size:min(500px,58dvh)}}
+@container wlhero (max-width:55rem){.wl .wl-auth-wrap{max-inline-size:560px}}
+.wl .wl-hero-copy > *{animation:wl-in .9s cubic-bezier(.2,.9,.3,1.15) both;animation-delay:calc(var(--i,0) * 110ms + 80ms)}
+.wl .wl-stage-wrap{position:relative;perspective:1000px}
+.wl .wl-auth-wrap .wl-bloom{inset-block-start:-52px;inset-inline-end:-22px;inline-size:80px;block-size:80px}
+
+/* ----- the live sentence builder ----- */
+.wl .wl-stage-card{position:relative;display:flex;flex-direction:column;gap:14px;padding:clamp(18px,3vw,26px);border-radius:28px;color:var(--ink);
+  background:var(--glass);backdrop-filter:blur(22px) saturate(1.6);-webkit-backdrop-filter:blur(22px) saturate(1.6);
+  border:1px solid var(--glass-edge);box-shadow:0 30px 70px -28px rgba(2,30,60,.65),inset 0 1px 0 var(--glass-hi);
+  transform:rotateY(calc(var(--px,0) * -7deg)) rotateX(2deg);transition:transform .6s cubic-bezier(.2,.8,.3,1);transform-style:preserve-3d;
+  animation:wl-float 7s ease-in-out infinite, wl-in 1s .45s cubic-bezier(.2,.9,.3,1.1) both}
+.wl .wl-st-top{display:flex;align-items:center;gap:12px;padding-inline-end:44px}
+.wl .wl-st-live{display:inline-flex;align-items:center;gap:8px;font-size:.78rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);
+  i{inline-size:8px;block-size:8px;border-radius:50%;background:#10B981;box-shadow:0 0 0 0 #10B981;animation:wl-ping 2s infinite}}
+.wl .wl-stage-card .wl-bars span{background:var(--accent)}
+.wl .wl-stage-card.playing .wl-bars span{animation:wl-eq .7s infinite ease-in-out;&:nth-child(2){animation-delay:.15s}&:nth-child(3){animation-delay:.3s}&:nth-child(4){animation-delay:.1s}}
+.wl .wl-st-formula{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.wl .wl-st-plus{color:var(--ink-3);font-weight:700;font-size:.85rem}
+.wl .wl-st-f{--rc:var(--ink-3);font-size:.8rem;font-weight:800;padding:3px 10px;border-radius:99px;color:var(--rc);background:color-mix(in srgb,var(--rc) 13%,transparent);border:1px dashed color-mix(in srgb,var(--rc) 55%,transparent)}
+.wl :is(.wl-st-f,.wl-st-b).r-s{--rc:var(--r-s);--k:0}.wl :is(.wl-st-f,.wl-st-b).r-m{--rc:var(--r-m);--k:1}
+.wl :is(.wl-st-f,.wl-st-b).r-v{--rc:var(--r-v);--k:2}.wl :is(.wl-st-f,.wl-st-b).r-o{--rc:var(--r-o);--k:3}
+.wl .wl-st-row{display:flex;flex-wrap:wrap;gap:8px;min-block-size:84px;align-items:flex-start}
+.wl .wl-st-b{--rc:var(--accent);display:grid;justify-items:center;gap:1px;min-inline-size:64px;min-block-size:44px;padding:8px 12px 7px;border-radius:16px;
+  border:2px solid color-mix(in srgb,var(--rc) 60%,transparent);background:color-mix(in srgb,var(--rc) 9%,var(--surface));color:var(--ink);
+  box-shadow:inset 0 -3px 0 color-mix(in srgb,var(--rc) 35%,transparent);transition:transform .25s cubic-bezier(.2,1.4,.4,1);
+  b{font:700 1.4rem/1.25 var(--f-lo)}
+  small{font-size:.8rem;font-weight:800;color:var(--rc)}
+  em{font-style:normal;font-size:.8rem;color:var(--ink-3)}
+  &:active{transform:scale(.94)}}
+@media (hover:hover){.wl .wl-st-b:hover{transform:translateY(-3px) rotate(-1.5deg)}}
+.wl .wl-st-out{display:grid;gap:2px;padding:10px 14px;border-radius:16px;background:color-mix(in srgb,var(--surface-2) 70%,transparent)}
+.wl .wl-st-lao{font:700 1.15rem var(--f-lo);color:var(--ink)}
+.wl .wl-st-en{font-size:.92rem;color:var(--ink-2)}
+.wl .wl-st-ctl{display:flex;align-items:center;gap:10px}
+.wl .wl-st-next{min-inline-size:40px;padding-inline:0;border-radius:50%;margin-inline-start:auto}
+.wl .wl-st-dots{display:flex;align-items:center;gap:6px;
+  i{inline-size:8px;block-size:8px;border-radius:99px;background:color-mix(in srgb,var(--ink) 25%,transparent);transition:inline-size .3s,background .3s;
+    &[data-on]{inline-size:20px;background:var(--accent)}}}
+/* a new sentence: the role chips flash, the blocks drop in one by one, then the whole line appears */
+.wl .wl-stage-card.go .wl-st-b{animation:wl-drop .7s cubic-bezier(.2,1.5,.4,1) both;animation-delay:calc(var(--k) * 230ms + 120ms)}
+.wl .wl-stage-card.go .wl-st-f{animation:wl-flash .7s ease both;animation-delay:calc(var(--k) * 230ms + 120ms)}
+.wl .wl-stage-card.go .wl-st-out{animation:wl-in .7s 1.15s cubic-bezier(.2,.9,.3,1.1) both}
+/* reading it aloud: each block lights up in turn */
+.wl .wl-stage-card.playing .wl-st-b{animation:wl-karaoke .55s ease both;animation-delay:calc(var(--k) * 380ms)}
+
+/* ----- the glass sign-in pop-up ----- */
+.wl .wl-glass{position:fixed;inset:0;margin:auto;padding:0;border:0;background:transparent;color:var(--ink);overflow:visible;
+  inline-size:min(440px,calc(100vw - 32px));max-inline-size:none;block-size:fit-content;max-block-size:calc(100dvh - 32px)}
+.wl .wl-glass::backdrop{background:rgba(4,18,36,.42);-webkit-backdrop-filter:blur(10px) saturate(1.2);backdrop-filter:blur(10px) saturate(1.2)}
+.wl .wl-glass[open]{animation:wl-pop .6s cubic-bezier(.2,1.3,.35,1) both}
+.wl .wl-glass[open]::backdrop{animation:wl-fade .4s ease both}
+.wl .wl-glass.out{animation:wl-popout .24s ease-in both}
+.wl .wl-glass.out::backdrop{animation:wl-fade .24s ease reverse both}
+.wl .wl-glass-in{position:relative;z-index:1;display:flex;flex-direction:column;gap:12px;max-block-size:calc(100dvh - 32px);overflow:auto;overscroll-behavior:contain;
+  padding:22px 22px 12px;border-radius:32px;background:var(--glass);-webkit-backdrop-filter:blur(30px) saturate(1.8);backdrop-filter:blur(30px) saturate(1.8);
+  border:1px solid var(--glass-edge);box-shadow:0 40px 90px -24px rgba(2,24,52,.6),inset 0 1px 0 var(--glass-hi);transition:translate .3s cubic-bezier(.2,.9,.3,1)}
+.wl .wl-glass-in > *{animation:wl-in .6s cubic-bezier(.2,.9,.3,1.1) both}
+.wl .wl-glass-in > :nth-child(3){animation-delay:.08s}.wl .wl-glass-in > :nth-child(4){animation-delay:.16s}.wl .wl-glass-in > :nth-child(5){animation-delay:.24s}
+.wl .wl-grab{display:none;inline-size:40px;block-size:5px;border-radius:3px;background:color-mix(in srgb,var(--ink) 25%,transparent);margin:-8px auto 0;flex:none}
+.wl .wl-x{position:absolute;inset-block-start:14px;inset-inline-end:14px;z-index:2;inline-size:36px;block-size:36px;border-radius:50%;border:0;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink-2);transition:background .2s,transform .2s;
+  &:hover{background:color-mix(in srgb,var(--ink) 14%,transparent);transform:rotate(90deg)}}
+.wl .wl-glass-head{display:flex;align-items:center;gap:14px;padding-inline-end:40px;touch-action:none}
+.wl .wl-glass-logo{inline-size:58px;block-size:58px;flex:none;border-radius:19px;display:grid;place-items:center;background:linear-gradient(150deg,#FFFFFF,#DCEFFC);
+  box-shadow:0 10px 24px -10px rgba(2,112,172,.7),inset 0 1px 0 #fff;animation:wl-wiggle 1s .2s cubic-bezier(.3,1.6,.5,1) both;
+  .wl-logo{inline-size:42px;block-size:42px}}
+.wl .wl-glass-hi{font:700 1.65rem/1.25 var(--f-lo-display);color:var(--accent)}
+.wl .wl-hookline{font-size:.9rem;color:var(--ink-2);line-height:1.4}
+.wl .wl-glass .wl-auth{background:none;border:0;box-shadow:none;padding:0;-webkit-backdrop-filter:none;backdrop-filter:none;border-radius:0}
+.wl .wl-glass .wl-tabs{background:color-mix(in srgb,var(--ink) 8%,transparent);border-radius:13px}
+.wl .wl-glass .wl-input{background:color-mix(in srgb,var(--surface) 70%,transparent);border-color:color-mix(in srgb,var(--ink) 14%,transparent);border-radius:14px;min-block-size:48px}
+.wl .wl-glass .wl-btn.primary[type=submit]{min-block-size:50px;border-radius:14px;font-size:1.02rem;background:linear-gradient(135deg,var(--accent),var(--accent-hover));box-shadow:0 12px 26px -12px var(--accent)}
+.wl .wl-glass .wl-demo{background:color-mix(in srgb,var(--surface) 45%,transparent)}
+.wl .wl-keep{align-self:center;color:var(--ink-2);text-decoration:none;font-weight:600}
+.wl .wl-burst i:nth-child(6n+1){--c:#FBBF24}.wl .wl-burst i:nth-child(6n+2){--c:#FFFFFF}.wl .wl-burst i:nth-child(6n+3){--c:#CE1126}.wl .wl-burst i:nth-child(6n+4){--c:#38BDF8}.wl .wl-burst i:nth-child(6n+5){--c:#FDE68A}.wl .wl-burst i:nth-child(6n){--c:#0270AC}
+.wl .wl-burst{position:absolute;inset:0;z-index:3;pointer-events:none;
+  i{position:absolute;inset-inline-start:50%;inset-block-start:38%;inline-size:var(--s);block-size:calc(var(--s) * 1.45);border-radius:60% 0 60% 0;background:var(--c);
+    box-shadow:0 1px 3px rgba(0,0,0,.25);opacity:0;animation:wl-burst 1.4s cubic-bezier(.12,.8,.3,1) var(--d) both}}
+/* phones: a bottom sheet you can pull down */
+@media (max-width:35.99rem){
+  .wl .wl-glass{inline-size:100%;margin:auto 0 0;max-block-size:calc(100dvh - 24px)}
+  .wl .wl-glass[open]{animation:wl-sheetup .55s cubic-bezier(.2,1.1,.3,1) both}
+  .wl .wl-glass.out{animation:wl-sheetdown .26s ease-in both}
+  .wl .wl-glass-in{border-radius:30px 30px 0 0;border-block-end:0;padding:18px max(18px,env(safe-area-inset-left,0px)) calc(12px + env(safe-area-inset-bottom,0px));max-block-size:calc(100dvh - 24px)}
+  .wl .wl-grab{display:block}
+  .wl .wl-glass-hi{font-size:1.4rem}
+  .wl .wl-glass-logo{inline-size:50px;block-size:50px;border-radius:16px;.wl-logo{inline-size:36px;block-size:36px}}}
+
+/* ----- the phone dock: Start free · Sign in, once the hero has scrolled away ----- */
+.wl .wl-dock{display:none}
+@media (max-width:47.99rem){
+  .wl .wl-dock{position:fixed;z-index:25;inset-inline:max(12px,env(safe-area-inset-left,0px));inset-block-end:calc(10px + env(safe-area-inset-bottom,0px));
+    display:flex;gap:8px;padding:8px;border-radius:22px;background:var(--glass);-webkit-backdrop-filter:blur(20px) saturate(1.6);backdrop-filter:blur(20px) saturate(1.6);
+    border:1px solid var(--glass-edge);box-shadow:0 18px 40px -16px rgba(2,24,52,.55);translate:0 160%;opacity:0;visibility:hidden;
+    transition:translate .5s cubic-bezier(.2,1.2,.35,1),opacity .3s,visibility 0s .5s;
+    .wl-btn{flex:1;min-block-size:46px;border-radius:15px}
+    .wl-btn.ghost{background:var(--surface);color:var(--ink);border-color:var(--line);flex:.8}
+    &[data-show]{translate:0 0;opacity:1;visibility:visible;transition:translate .5s cubic-bezier(.2,1.2,.35,1),opacity .3s,visibility 0s}}
+  .wl .wl-footer{padding-block-end:calc(96px + env(safe-area-inset-bottom,0px))}}
+
+@layer wl-motion{
+  @keyframes wl-in{from{opacity:0;transform:translateY(18px);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+  @keyframes wl-float{50%{translate:0 -10px}}
+  @keyframes wl-drop{0%{opacity:0;translate:0 -30px;scale:.55;rotate:-8deg}60%{opacity:1}100%{opacity:1;translate:0 0;scale:1;rotate:0deg}}
+  @keyframes wl-flash{0%{scale:1}40%{scale:1.14;background:color-mix(in srgb,var(--rc) 30%,transparent)}100%{scale:1}}
+  @keyframes wl-karaoke{0%{scale:1}40%{scale:1.1;translate:0 -4px;box-shadow:0 10px 22px -8px var(--rc),inset 0 -3px 0 var(--rc)}100%{scale:1;translate:0 0}}
+  @keyframes wl-halo{0%{transform:scale(.9);opacity:.8}70%,100%{transform:scale(1.5);opacity:0}}
+  @keyframes wl-prog{to{transform:scaleX(1)}}
+  @keyframes wl-pop{0%{opacity:0;transform:translateY(40px) scale(.86)}60%{opacity:1}100%{opacity:1;transform:none}}
+  @keyframes wl-popout{to{opacity:0;transform:translateY(16px) scale(.94)}}
+  @keyframes wl-fade{from{opacity:0}to{opacity:1}}
+  @keyframes wl-sheetup{from{transform:translateY(100%)}to{transform:none}}
+  @keyframes wl-sheetdown{to{transform:translateY(100%)}}
+  @keyframes wl-wiggle{0%{transform:scale(0) rotate(-30deg)}60%{transform:scale(1.15) rotate(8deg)}80%{transform:scale(.96) rotate(-4deg)}100%{transform:none}}
+  @keyframes wl-burst{0%{opacity:1;transform:translate(-50%,-50%) scale(.2) rotate(0)}70%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--tx)),calc(-50% + var(--ty) + 70px)) scale(1) rotate(var(--r))}}
+}
 @media (orientation:landscape) and (max-height:520px){.wl .wl-hero{padding-block-end:clamp(120px,24vw,200px)}.wl .wl-scene{block-size:150px}}
 
 /* ---------- one design system: the learner app and the admin share these tokens, type and components ---------- */
@@ -1754,7 +1899,21 @@ main h1{font-weight:800;line-height:1.15}
 .gs-sent .tok{cursor:pointer;transition:transform .15s,box-shadow .15s}
 .gs-sent .tok:hover{transform:translateY(-2px)}
 .gs-sent .tok.lit,.gs-answer .tok.lit{transform:translateY(-4px) scale(1.06);box-shadow:0 6px 14px -6px var(--rc)}
-.gs-gl{font-style:normal;font-size:.75rem;color:var(--ink-2);max-width:12ch;text-align:center;overflow-wrap:anywhere}
+.gs-gl{font-style:normal;font-size:.75rem;color:var(--ink-2);max-width:12ch;text-align:center;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow:hidden}
+.gs-gl-sp{color:var(--ink-3);font-size:.7rem;padding:1px 7px;border-radius:999px;background:color-mix(in srgb,var(--rc) 12%,transparent)}
+.gs-sent-wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;min-width:0}
+.gs-spell{min-width:0;border-top:1px dashed var(--line);padding-top:6px}
+.gs-spell summary{cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:44px;font-size:.85rem;font-weight:600;color:var(--ink-2);list-style:none}
+.gs-spell summary::-webkit-details-marker{display:none}
+.gs-spell summary svg{width:16px;height:16px;transition:transform .2s}
+.gs-spell[open] summary svg{transform:rotate(180deg)}
+.gs-spell-w{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;margin:4px 0 10px}
+.gs-spell-w > b{font-size:1.15rem}
+.gs-spell ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;max-width:720px}
+.gs-spell li{display:grid;justify-items:center;align-content:start;gap:1px;padding:5px 8px;border:1px solid var(--line);border-radius:10px;background:var(--surface);text-align:center}
+.gs-spell li .lo{font-family:var(--f-lo);font-size:1.25rem;line-height:1.3}
+.gs-spell li small{font-size:.7rem;color:var(--ink-3);line-height:1.25}
+@media (prefers-reduced-motion:reduce){.gs-spell summary svg{transition:none}}
 .gs-ex{display:grid;gap:10px}
 .gs-ex-foot{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
 .gs-ex-tr{margin:0;color:var(--ink-2)}

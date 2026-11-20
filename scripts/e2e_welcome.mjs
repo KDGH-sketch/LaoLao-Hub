@@ -50,7 +50,39 @@ try {
   await ok(await b.eval(`!!document.querySelector("form.auth-card #em") && !!document.querySelector("#pw") && !!document.querySelector(".msg[role=alert]")`), "sign-in card keeps #em, #pw, .msg[role=alert] and .auth-card");
   await ok(await b.eval(`document.querySelectorAll(".wl-pin").length === 6 && document.querySelectorAll(".wl-fcard").length === 6`), "journey: 6 places with pins, festival calendar: 6");
   await ok(await b.eval(`document.querySelectorAll(".wl-fcard[data-now=true]").length === 1`), "festival calendar: the current festival is highlighted");
-  await ok(/Learn Lao, one/.test(await text()) && /Welcome back/.test(await text()), "hero copy and sign-in card in English");
+  await ok(/Learn Lao, one/.test(await text()) && !/Welcome back/.test(await text()) && !(await b.eval(`document.querySelector("#wl-dlg").open`)), "hero copy in English; the sign-in card waits in the closed pop-up");
+
+  step("the glass sign-in pop-up");
+  const isOpen = () => b.eval(`document.querySelector("#wl-dlg").open`);
+  const key = async (k, c, n) => { await b.send("Input.dispatchKeyEvent", { type: "keyDown", key: k, code: c, windowsVirtualKeyCode: n }); await b.send("Input.dispatchKeyEvent", { type: "keyUp", key: k, code: c, windowsVirtualKeyCode: n }); };
+  await ok(/Sign in/.test(await b.eval(`document.querySelector("#wl-go-signin").innerText`)) && await b.eval(`!!document.querySelector("#wl-go-signin .wl-signin-ic svg")`), "the top bar has a Sign in button with an icon and words");
+  await b.eval(`document.querySelector("#wl-go-signin").click()`); await sleep(700);
+  await ok(await b.eval(`document.querySelector("#wl-dlg").open && document.querySelector("#wl-tab-in").getAttribute("aria-selected") === "true" && document.activeElement.id === "em"`) && /Welcome back/.test(await text()), "Sign in opens the pop-up on Sign in, with the email field focused");
+  await key("Escape", "Escape", 27); await sleep(600);
+  await ok(!(await isOpen()), "Esc closes it");
+  await b.eval(`document.querySelector(".wl-hero-cta .wl-btn").click()`); await sleep(700);
+  await ok(await b.eval(`document.querySelector("#wl-dlg").open && document.querySelector("#wl-tab-up").getAttribute("aria-selected") === "true" && document.activeElement.id === "nm"`), "Start free opens it on Create account");
+  await b.eval(`document.querySelector("#wl-dlg .wl-keep").click()`); await sleep(600);
+  await ok(!(await isOpen()), "Not now closes it");
+  await ok(await b.eval(`(() => { const c = document.querySelector(".wl-stage-card"); return !!c && c.querySelectorAll(".wl-st-b").length === 4 && /I want to/.test(c.innerText); })()`), "the hero shows the live sentence builder (4 blocks and the translation)");
+  const first = await b.eval(`document.querySelector(".wl-st-lao").innerText`);
+  await b.eval(`document.querySelector(".wl-st-next").click()`); await sleep(400);
+  await ok(first !== await b.eval(`document.querySelector(".wl-st-lao").innerText`), "Next shows another sentence");
+
+  step("hooks: the automatic pop-up");
+  await ok(!(await isOpen()), "under automation, no automatic pop-up unless a test asks for one");
+  await b.eval(`try { localStorage.setItem("laolao.wl.hookSec", "2"); sessionStorage.removeItem("laolao.wl.hooked"); } catch(e){}`);
+  await visitor(); await sleep(1200);
+  await ok(await b.eval(`document.querySelector("#wl-dlg").open && /exploring for a minute/.test(document.querySelector(".wl-hookline").innerText) && document.querySelector("#wl-tab-up").getAttribute("aria-selected") === "true"`), "after the wait, the pop-up opens on its own with the timer message, on Create account");
+  await b.eval(`document.querySelector("#wl-dlg .wl-x").click()`); await sleep(600);
+  await visitor(); await sleep(1500);
+  await ok(!(await isOpen()), "it opens on its own only once per visit");
+  await b.eval(`try { sessionStorage.removeItem("laolao.wl.hooked"); localStorage.setItem("laolao.wl.hookSec", "600"); } catch(e){}`);
+  await visitor();
+  for (let k = 0; k < 4; k++){ await b.eval(`document.querySelectorAll(".wl-chips button")[${k}].click()`); await sleep(150); }
+  await sleep(500);
+  await ok(await b.eval(`document.querySelector("#wl-dlg").open && /4 Lao sounds/.test(document.querySelector(".wl-hookline").innerText)`), "4 taps on Lao sounds open it with the 'nice ear' message");
+  await b.eval(`try { localStorage.removeItem("laolao.wl.hookSec"); sessionStorage.removeItem("laolao.wl.hooked"); } catch(e){}`);
 
   step("plans come from the plans table");
   await save("plans/premium", { prices: { month: { USD: 7.77, LAK: 100000 }, year: { USD: 59, LAK: 990000 } } });
@@ -136,8 +168,16 @@ try {
 
   step("phone: menu");
   await b.viewport(390, 844, true); await visitor();
+  await ok(await b.eval(`(() => { const th = document.querySelector(".wl-nav-theme"), si = document.querySelector("#wl-go-signin"); return getComputedStyle(th).display === "none" && si.getBoundingClientRect().width > 60 && /Sign in/.test(si.innerText); })()`), "phone: the theme picker is hidden from the top bar; Sign in keeps its words");
+  await b.eval(`document.querySelector("#wl-go-signin").click()`); await sleep(800);
+  await ok(await b.eval(`(() => { const r = document.querySelector("#wl-dlg .wl-glass-in").getBoundingClientRect(); return document.querySelector("#wl-dlg").open && Math.abs(r.bottom - innerHeight) < 2 && r.width >= innerWidth - 1; })()`), "phone: the pop-up is a bottom sheet across the screen");
+  await b.eval(`document.querySelector("#wl-dlg .wl-x").click()`); await sleep(600);
+  await b.eval(`scrollTo(0, 2200)`); await sleep(900);
+  await ok(await b.eval(`document.querySelector(".wl-dock").hasAttribute("data-show")`), "phone: past the hero, the Start free · Sign in dock slides up");
+  await b.eval(`scrollTo(0, 0)`); await sleep(500);
   await b.eval(`document.querySelector(".wl-menu-btn").click()`); await sleep(500);
   await ok(await b.eval(`(() => { const s = document.querySelector("#wl-sheet"); try { return s.matches(":popover-open"); } catch(e){ return s.classList.contains("open"); } })()`), "the mobile menu opens (Popover API)");
+  await ok(await b.eval(`!!document.querySelector("#wl-sheet .wl-sheet-theme")`), "phone: the theme picker is in the menu");
   await b.eval(`document.querySelector("#wl-sheet [data-scroll='about']").click()`); await sleep(800);
   await ok(await b.eval(`(() => { const s = document.querySelector("#wl-sheet"); try { return !s.matches(":popover-open"); } catch(e){ return !s.classList.contains("open"); } })()`), "choosing a section closes it");
   await ok(await b.eval(`document.documentElement.scrollWidth <= innerWidth + 1`), "no sideways scroll on a phone");
@@ -156,6 +196,7 @@ try {
 
   step("keyboard sign-in");
   await visitor();
+  await b.eval(`document.querySelector("#wl-go-signin").click()`); await sleep(700);
   await b.eval(`document.querySelector("#em").focus()`);
   await b.send("Input.insertText", { text: "free@demo.laolao" });
   await b.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 }); await b.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });

@@ -1,11 +1,40 @@
 # The welcome page
 
-The page visitors see before they sign in: the hero with the sign-in card, greetings, the alphabet, the journey through
-Laos, the festival calendar, services, free resources, promotions and plans, news, about, and the closing call to action.
-Design: [mockups/welcome-landing.html](mockups/welcome-landing.html). Code: `js/learner/welcome.js` (page),
-`welcome-data.js` (defaults), `welcome-scenes.js` (drawings), `js/admin/welcome-admin.js` and `web-checks.js` (admin).
+The page visitors see before they sign in: the hero with the live sentence builder, greetings, the alphabet, the journey
+through Laos, the festival calendar, services, free resources, promotions and plans, news, about, and the closing call to
+action. Signing in and creating an account happen in a glass pop-up. Design: [mockups/welcome-landing.html](mockups/welcome-landing.html).
+Code: `js/learner/welcome.js` (page), `welcome-data.js` (defaults), `welcome-scenes.js` (drawings),
+`js/admin/welcome-admin.js` and `web-checks.js` (admin).
 
 Everything on it is managed in the Admin Backend under **Website & Welcome**. No code changes are needed day to day.
+
+## Sign-in pop-up and hooks
+
+The page opens without a sign-in form, so visitors can look around first. Sign-in, registration and password reset live
+in one pop-up (`glassDialog()`): a frosted-glass card in the middle of the screen, a bottom sheet on phones (pull it down
+to close), with a burst of champa petals when it opens. Esc, the ×, *Not now, keep exploring* or a tap outside close it.
+
+**What opens it**
+
+| Trigger | Opens on | Message at the top |
+|---|---|---|
+| *Sign in* in the top bar (icon with "Sign in · or start free"), the phone dock | Sign in | none |
+| *Start free*, the closing button, a plan, an offer, a free resource | Create account (Sign in when registration is closed) | the plan / offer / resource note, as before |
+| **1 minute** on the page (time the tab is visible; `startHooks()`) | Create account | "You've been exploring for a minute…" |
+| The mouse heading for the tabs or address bar, after 15 s (computers only) | Create account | "Before you go…" |
+| **4 taps** on Lao sounds (alphabet, greeting, sentence builder, journey words, pattern demo; `nudge()`) | Create account | "Nice ear! You've already played 4 Lao sounds…" |
+
+The three automatic hooks open the pop-up **at most once per visit** (`sessionStorage` `laolao.wl.hooked`), never in the
+admin preview, and never while the pop-up or the phone menu is open. Automated browsers get no automatic pop-up unless
+a test sets `localStorage` `laolao.wl.hookSec` (the wait in seconds).
+
+**Hero.** The right side (below the text on phones) is the live sentence builder (`sentenceStage()`): *I + want + verb +
+object* built block by block from the *pattern demo* words in the Welcome Page editor, with role colours, romanization,
+the whole line and its translation. It moves to the next sentence every few seconds, pauses while pointed at, and reads
+the sentence (*Hear it*) or a single word (tap a block) aloud.
+
+**Top bar.** The theme picker is hidden on phones and sits in the menu instead. On phones a *Start free · Sign in* dock
+slides up once the hero has scrolled away. A thin line under the top bar shows how far down the page you are.
 
 ## Running the page: step by step
 

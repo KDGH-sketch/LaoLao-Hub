@@ -14,6 +14,8 @@ import * as D from "./welcome-data.js";
 import * as ART from "./welcome-scenes.js";
 
 const RESOURCE_KEY = "laolao.pendingResource";
+const HOOK_KEY = "laolao.wl.hooked";          // the automatic sign-in pop-up shows at most once per visit (this tab)
+const HOOK_SEC_KEY = "laolao.wl.hookSec";      // tests: a shorter wait than 60 s, and hooks on under automation
 const LT = o => o == null ? "" : typeof o === "string" ? o : (o[lang()] || o.en || "");   // editor text, falling back to English
 const svgHTML = html => { const t = document.createElement("template"); t.innerHTML = html; return t.content.firstElementChild; };   // trusted art only
 const loEl = (tag, text, cls = "") => h(tag, { class: ("wl-lo " + cls).trim(), lang: "lo" }, text);
@@ -71,9 +73,10 @@ async function fetchData(api, preview){
 }
 
 // ---------- page ----------
-let timers = [];
+let timers = [], exitHook = null;
 export async function renderWelcome({ root, api, mode = "signin", preview = false, onLanguage }){
   timers.forEach(clearInterval); timers = [];
+  if (exitHook){ document.removeEventListener("mouseout", exitHook); exitHook = null; }
   captureAttribution();
   document.documentElement.lang = lang() === "zh" ? "zh-CN" : lang();
   const keep = { em: (root.querySelector("#em") || {}).value || "", nm: (root.querySelector("#nm") || {}).value || "" };
@@ -87,7 +90,7 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
   // ----- nav -----
   const scrollTo = id => { const el = page.querySelector("#w-" + id); if (el) el.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" }); };
   const navBtn = (id, cls) => h("button", { type: "button", class: cls, "data-scroll": id, onclick: () => { closeSheet(); scrollTo(id); } }, LT(M.W.nav[id]));
-  const themeSeg = h("div", { class: "wl-seg", role: "group", "aria-label": t("theme") },
+  const themeSeg = cls => h("div", { class: "wl-seg " + cls, role: "group", "aria-label": t("theme") },
     [["day","sun","theme_light"],["night","moon","theme_dark"],["system","monitor","theme_auto"]].map(([k, ic, l]) =>
       h("button", { type: "button", "aria-pressed": String(normTheme(getTheme()) === k), "aria-label": t(l), title: t(l), "data-theme-set": k,
         onclick: e => { const r = e.currentTarget.getBoundingClientRect(); page.querySelectorAll("[data-theme-set]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.themeSet === k)));
@@ -101,11 +104,14 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
   function closeSheet(){ try { if (hasPopover) sheet.hidePopover(); else sheet.classList.remove("open"); } catch(e){} }
   const menuBtn = h("button", { class: "wl-btn sm wl-menu-btn", type: "button", "aria-label": t("wl_menu"), popovertarget: "wl-sheet",
     onclick: hasPopover ? null : () => sheet.classList.toggle("open") }, icon("menu"));
-  const signinBtn = h("button", { class: "wl-btn sm", type: "button", id: "wl-go-signin", onclick: () => toAuth("signin") }, t("sign_in"));
+  // the sign-in button in the top bar: an icon with the words beside it, on every screen size
+  const signinBtn = h("button", { class: "wl-signin", type: "button", id: "wl-go-signin", onclick: () => toAuth("signin") },
+    h("span", { class: "wl-signin-ic", "aria-hidden": "true" }, icon("user")),
+    h("span", { class: "wl-signin-tx" }, h("b", null, t("sign_in")), h("small", null, t("wl_signin_aside"))));
   const nav = h("header", { class: "wl-nav" }, h("div", { class: "wl-nav-in" },
     h("button", { type: "button", class: "wl-brand", "aria-label": (M.app.appName || "LaoLao") + " · " + t("wl_top"), onclick: () => window.scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" }) },
       brandMark("wl-logo"), h("span", null, h("span", { class: "wl-brand-name" }, M.app.appName || "LaoLao"), h("small", { lang: "lo" }, "ຮຽນພາສາລາວ"))),
-    links, h("div", { class: "wl-tools" }, themeSeg, langSeg("wl-nav-lang"), signinBtn, menuBtn)), sheet);
+    links, h("div", { class: "wl-tools" }, themeSeg("wl-nav-theme"), langSeg("wl-nav-lang"), signinBtn, menuBtn)), h("span", { class: "wl-progress", "aria-hidden": "true" }), sheet);
   const skip = h("a", { class: "wl-skip", href: "#w-main", onclick: e => { e.preventDefault(); const m = page.querySelector("#w-main"); m.focus(); m.scrollIntoView(); } }, t("wl_skip"));
 
   // ----- hero with the sign-in card -----
@@ -116,8 +122,11 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
   for (let i = 0; i < 16; i++) drift.append(h("i", { style: `--x:${rnd(2,98).toFixed(0)}%;--s:${rnd(7,13).toFixed(0)}px;--t:${rnd(11,20).toFixed(1)}s;--d:-${rnd(0,18).toFixed(1)}s` }));
   const heroCopy = h("div", { class: "wl-hero-copy" });
   const auth = authCard();
+  const stageBox = h("div", { class: "wl-stage-wrap" });
   hero.append(stars, drift, svgHTML(ART.HERO), h("div", { class: "wl-hero-grid" }, heroCopy,
-    h("div", { class: "wl-auth-wrap" }, h("div", { class: "wl-bloom", "aria-hidden": "true" }, svgHTML(ART.CHAMPA)), auth.el)));
+    h("div", { class: "wl-auth-wrap" }, h("div", { class: "wl-bloom", "aria-hidden": "true" }, svgHTML(ART.CHAMPA)), stageBox)));
+  const dlg = glassDialog();
+  const dock = h("div", { class: "wl-dock", "aria-hidden": "true" });
   if (!reducedMotion() && matchMedia("(hover:hover)").matches)
     hero.addEventListener("pointermove", e => { const r = hero.getBoundingClientRect(); hero.style.setProperty("--px", (((e.clientX - r.left) / r.width) * 2 - 1).toFixed(3)); });
   const heroStrip = h("div", { class: "wl-offer-strips" });
@@ -126,7 +135,7 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
   const sectionsBox = h("div", { class: "wl-sections" });
   main.append(heroStrip, hero, sectionsBox);
   const footer = h("footer", { class: "wl-footer" });
-  page.append(...[skip, nav, preview ? h("div", { class: "wl-preview", role: "status" }, icon("eye"), t("wl_preview_banner")) : null, main, footer].filter(Boolean));
+  page.append(...[skip, nav, preview ? h("div", { class: "wl-preview", role: "status" }, icon("eye"), t("wl_preview_banner")) : null, main, footer, dock, dlg.el].filter(Boolean));
 
   function fillHero(){
     const H = M.W.hero;
@@ -138,13 +147,18 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
         h("button", { class: "wl-btn gold", type: "button", onclick: () => toAuth(M.app.allowRegistration === false ? "signin" : "register") }, h("span", null, LT(H.ctaStart)), icon("right")),
         sectionOn("journey") ? h("button", { class: "wl-btn ghost", type: "button", onclick: () => scrollTo("journey") }, LT(H.ctaTour)) : null),
       hearButton(H));
+    [...heroCopy.children].forEach((c, i) => c.style.setProperty("--i", i));
+    stageBox.replaceChildren(sentenceStage());
+    dock.replaceChildren(
+      h("button", { class: "wl-btn gold", type: "button", tabindex: "-1", onclick: () => toAuth(regMode()) }, h("span", null, LT(H.ctaStart)), icon("right")),
+      h("button", { class: "wl-btn ghost", type: "button", tabindex: "-1", onclick: () => toAuth("signin") }, icon("user"), t("sign_in")));
     document.title = LT(M.W.seo.title) || "LaoLao";
     let md = document.querySelector('meta[name="description"]');
     if (!md){ md = document.createElement("meta"); md.name = "description"; document.head.append(md); }
     md.content = LT(M.W.seo.description);
   }
   function hearButton(H){
-    const b = h("button", { class: "wl-hear", type: "button", onclick: () => { b.classList.add("playing"); speak((H.greeting && H.greeting.lo) || "ສະບາຍດີ"); setTimeout(() => b.classList.remove("playing"), 2000); } },
+    const b = h("button", { class: "wl-hear", type: "button", onclick: () => { b.classList.add("playing"); nudge(); speak((H.greeting && H.greeting.lo) || "ສະບາຍດີ"); setTimeout(() => b.classList.remove("playing"), 2000); } },
       svgHTML(ART.NOP), h("span", null, h("b", { lang: "lo", class: "wl-lo" }, ((H.greeting && H.greeting.lo) || "ສະບາຍດີ") + "! · " + ((H.greeting && H.greeting.rom) || "Sabaidee")), h("small", null, LT(H.hear))),
       h("span", { class: "wl-bars", "aria-hidden": "true" }, h("span"), h("span"), h("span"), h("span")));
     return b;
@@ -218,11 +232,87 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
     setMode(S.mode);
     return { el: form, setMode, refresh: () => setMode(S.mode) };
   }
-  // every call to action ends at the same card
-  function toAuth(m, note){
-    auth.setMode(m, note);
-    auth.el.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" });
-    setTimeout(() => { try { page.querySelector(m === "register" ? "#nm" : "#em").focus({ preventScroll: true }); } catch(e){} }, 400);
+  // every call to action ends at the same card, now in the glass pop-up
+  function regMode(){ return M.app.allowRegistration === false ? "signin" : "register"; }
+  function toAuth(m, note, hook){ dlg.open(m, note, hook); }
+
+  // ----- the glass sign-in pop-up (iOS style): a <dialog>, a bottom sheet on phones, a petal burst when it opens -----
+  function glassDialog(){
+    const hookLine = h("p", { class: "wl-hookline", hidden: true });
+    const burst = h("div", { class: "wl-burst", "aria-hidden": "true" });
+    const head = h("div", { class: "wl-glass-head" },
+      h("span", { class: "wl-glass-logo" }, brandMark("wl-logo")),
+      h("div", null, loEl("p", "ສະບາຍດີ!", "wl-glass-hi"), hookLine));
+    const grab = h("span", { class: "wl-grab", "aria-hidden": "true" });
+    const panel = h("div", { class: "wl-glass-in" }, grab,
+      h("button", { type: "button", class: "wl-x", "aria-label": t("close"), title: t("close"), onclick: () => close() }, icon("x")),
+      head, auth.el,
+      h("button", { type: "button", class: "wl-linkbtn wl-keep", onclick: () => close() }, t("wl_keep_exploring")));
+    const el = h("dialog", { class: "wl-glass", id: "wl-dlg", "aria-labelledby": "wl-auth-title" }, burst, panel);
+    const isOpen = () => el.open;
+    function open(m, note, hook){
+      auth.setMode(m, note);
+      hookLine.hidden = !hook; hookLine.textContent = hook || "";
+      closeSheet();
+      if (!el.open){
+        el.classList.remove("out"); panel.style.translate = "";
+        try { el.showModal(); } catch(e){ el.setAttribute("open", ""); }
+        celebrate();
+      }
+      setTimeout(() => { try { el.querySelector(m === "register" ? "#nm" : "#em").focus({ preventScroll: true }); } catch(e){} }, reducedMotion() ? 0 : 380);
+    }
+    function close(){
+      if (!el.open) return;
+      if (reducedMotion()){ el.close(); return; }
+      el.classList.add("out");
+      setTimeout(() => { el.classList.remove("out"); try { el.close(); } catch(e){ el.removeAttribute("open"); } }, 240);
+    }
+    // a burst of champa petals and flag colours from behind the card
+    function celebrate(){
+      if (reducedMotion()) return;
+      burst.replaceChildren(...Array.from({ length: 26 }, (_, i) => { const a = (i / 26) * Math.PI * 2 + Math.random() * .4, r = 140 + Math.random() * 180;
+        return h("i", { style: "--tx:" + (Math.cos(a) * r).toFixed(0) + "px;--ty:" + (Math.sin(a) * r * .8 - 40).toFixed(0) + "px;--r:" + (Math.random() * 540 - 270).toFixed(0) + "deg;--d:" + (Math.random() * .12).toFixed(2) + "s;--s:" + (7 + Math.random() * 8).toFixed(0) + "px" }); }));
+      setTimeout(() => burst.replaceChildren(), 1700);
+    }
+    // close: Esc, a tap outside the card, or (on a phone) pulling the sheet down by its top
+    el.addEventListener("cancel", e => { e.preventDefault(); close(); });
+    let downOut = false;
+    el.addEventListener("pointerdown", e => { downOut = e.target === el; });
+    el.addEventListener("click", e => { if (e.target === el && downOut) close(); });
+    let y0 = null;
+    [grab, head].forEach(z => {
+      z.addEventListener("pointerdown", e => { if (e.pointerType === "mouse") return; y0 = e.clientY; panel.style.transition = "none"; try { z.setPointerCapture(e.pointerId); } catch(err){} });
+      z.addEventListener("pointermove", e => { if (y0 == null) return; panel.style.translate = "0 " + Math.max(0, e.clientY - y0) + "px"; });
+      const end = e => { if (y0 == null) return; const dy = e.clientY - y0; y0 = null; panel.style.transition = ""; panel.style.translate = ""; if (dy > 90) close(); };
+      z.addEventListener("pointerup", end); z.addEventListener("pointercancel", end);
+    });
+    return { el, open, close, isOpen };
+  }
+
+  // ----- hooks: the moments that invite the visitor to sign up (the automatic ones at most once per visit) -----
+  //   timer: 1 minute on the page · exit: the mouse heads for the tabs (computers, after 15 s) · engaged: 4 taps on Lao sounds
+  let taps = 0, hooksOn = false;
+  function nudge(){ taps++; if (taps === 4) autoHook("engaged", { n: taps }); }
+  function autoHook(kind, vars){
+    if (!hooksOn || dlg.isOpen() || !page.isConnected) return;
+    try { if (document.querySelector(".wl-sheet:popover-open")) return; } catch(e){}
+    hooksOn = false;
+    try { sessionStorage.setItem(HOOK_KEY, kind); } catch(e){}
+    toAuth(regMode(), null, t("wl_hook_" + kind, vars || {}));
+  }
+  function startHooks(){
+    if (preview) return;
+    let sec = 0, done = false;
+    try { sec = +localStorage.getItem(HOOK_SEC_KEY) || 0; done = !!sessionStorage.getItem(HOOK_KEY); } catch(e){}
+    if (done || (navigator.webdriver && !sec)) return;     // automated tests opt in (with a shorter wait)
+    hooksOn = true;
+    let left = (sec || 60) * 1000, last = Date.now();      // time the tab is actually visible, not while the pop-up is open
+    timers.push(setInterval(() => { const now = Date.now(); if (!document.hidden && !dlg.isOpen()) left -= now - last; last = now; if (left <= 0) autoHook("timer"); }, 500));
+    const t0 = Date.now();
+    if (matchMedia("(hover:hover) and (pointer:fine)").matches){
+      exitHook = e => { if (!e.relatedTarget && e.clientY <= 0 && Date.now() - t0 > 15000) autoHook("exit"); };
+      document.addEventListener("mouseout", exitHook);
+    }
   }
 
   // ----- sections -----
@@ -241,7 +331,7 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
       const chips = h("div", { class: "wl-chips", role: "group", "aria-label": t("wl_consonants") });
       M.W.alphabet.forEach(c => chips.append(h("button", { type: "button", "aria-pressed": "false", title: `${c.lo} ${c.name} (${c.meaning})`,
         onclick: e => { chips.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === e.currentTarget)));
-          note.replaceChildren(loEl("b", c.lo), " · ", h("b", null, c.name), ` (${c.meaning}) · /${c.ipa}/`); speak(c.lo); } }, loEl("b", c.lo), h("small", null, c.name))));
+          note.replaceChildren(loEl("b", c.lo), " · ", h("b", null, c.name), ` (${c.meaning}) · /${c.ipa}/`); speak(c.lo); nudge(); } }, loEl("b", c.lo), h("small", null, c.name))));
       return h("div", { class: "wl-alpha wl-rv" }, h("div", null, h("span", { class: "wl-eyebrow" }, LT((M.W.heads.alphabet || {}).eyebrow)), note), chips);
     },
     stats(){ return h("div", { class: "wl-strip wl-rv", role: "region", "aria-label": t("wl_at_glance") }, M.W.stats.map(s => h("div", null, h("b", null, s.value), h("span", null, LT(s.label))))); },
@@ -291,11 +381,46 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
         h("div", { class: "wl-flagbar", "aria-hidden": "true" }));
     }
   };
+  // ----- the hero's live sentence: Lao built block by block (subject + ຢາກ + verb + object); tap to hear -----
+  function sentenceStage(){
+    const items = M.W.patternDemo || []; if (!items.length) return h("div");
+    const ROLES = ["s", "m", "v", "o"];
+    const words = w => [["ຂ້ອຍ", "khoy", "I"], ["ຢາກ", "yak", "want to"], [w.vlo, w.vrom, w.ven], [w.lo, w.rom, w.en]];
+    const row = h("div", { class: "wl-st-row", lang: "lo" }), lao = loEl("p", "", "wl-st-lao"), en = h("p", { class: "wl-st-en" });
+    const dots = h("div", { class: "wl-st-dots", "aria-hidden": "true" });
+    const wave = h("span", { class: "wl-bars", "aria-hidden": "true" }, h("span"), h("span"), h("span"), h("span"));
+    const card = h("div", { class: "wl-stage-card", role: "group", "aria-label": t("wl_stage_t") });
+    let i = 0, hold = false;
+    const line = w => "ຂ້ອຍຢາກ" + w.vlo + w.lo;
+    function say(){ card.classList.add("playing"); speak(line(items[i])); setTimeout(() => card.classList.remove("playing"), 2200); }
+    function show(k, sayIt){
+      i = (k + items.length) % items.length; const w = items[i];
+      row.replaceChildren(...words(w).map(([lo, rom, mean], j) => h("button", { type: "button", class: "wl-st-b r-" + ROLES[j], style: "--i:" + j,
+        "aria-label": lo + " · " + rom + " · " + mean, onclick: () => { speak(lo); nudge(); } }, loEl("b", lo), h("small", null, rom), h("em", null, mean))));
+      lao.textContent = line(w); en.textContent = "I want to " + w.ven + " " + w.en + ".";
+      [...dots.children].forEach((d, n) => d.toggleAttribute("data-on", n === i));
+      card.classList.remove("go"); void card.offsetWidth; card.classList.add("go");
+      if (sayIt) say();
+    }
+    items.forEach(() => dots.append(h("i")));
+    card.append(
+      h("div", { class: "wl-st-top" }, h("span", { class: "wl-st-live" }, h("i"), t("wl_stage_t")), wave),
+      h("div", { class: "wl-st-formula", "aria-hidden": "true" }, ROLES.flatMap((r, j) => [j ? h("span", { class: "wl-st-plus" }, "+") : null, h("span", { class: "wl-st-f r-" + r }, t("wl_role_" + r))]).filter(Boolean)),
+      row, h("div", { class: "wl-st-out" }, lao, en),
+      h("div", { class: "wl-st-ctl" }, h("button", { type: "button", class: "wl-btn sm primary", onclick: () => { say(); nudge(); } }, icon("play"), t("wl_stage_play")), dots,
+        h("button", { type: "button", class: "wl-btn sm wl-st-next", "aria-label": t("wl_stage_next"), title: t("wl_stage_next"), onclick: () => { show(i + 1, true); nudge(); } }, icon("right"))));
+    show(0, false);
+    // the next sentence every few seconds, paused while the visitor points at or uses the card
+    ["pointerenter", "focusin"].forEach(ev => card.addEventListener(ev, () => hold = true));
+    ["pointerleave", "focusout"].forEach(ev => card.addEventListener(ev, () => hold = false));
+    if (!reducedMotion()) timers.push(setInterval(() => { if (!hold && !document.hidden && card.isConnected && !hero.hasAttribute("data-off") && !dlg.isOpen()) show(i + 1, false); }, 5600));
+    return card;
+  }
   function patternDemo(){
     const lao = loEl("div", "", "wl-p-lao"), trl = h("div", { class: "wl-p-tr" }), words = h("div", { class: "wl-words" });
     const pick = (w, sayIt) => { lao.textContent = "ຂ້ອຍຢາກ" + w.vlo + w.lo; trl.textContent = `khoy yak ${w.vrom} ${w.rom} · I want to ${w.ven} ${w.en}.`; if (sayIt) speak(lao.textContent); };
     M.W.patternDemo.forEach((w, i) => words.append(h("button", { type: "button", class: i ? "" : "sel", "aria-pressed": String(!i),
-      onclick: e => { words.querySelectorAll("button").forEach(x => { x.classList.toggle("sel", x === e.currentTarget); x.setAttribute("aria-pressed", String(x === e.currentTarget)); }); pick(w, true); } }, loEl("b", w.lo), h("small", null, w.en))));
+      onclick: e => { words.querySelectorAll("button").forEach(x => { x.classList.toggle("sel", x === e.currentTarget); x.setAttribute("aria-pressed", String(x === e.currentTarget)); }); pick(w, true); nudge(); } }, loEl("b", w.lo), h("small", null, w.en))));
     if (M.W.patternDemo[0]) pick(M.W.patternDemo[0], false);
     return h("div", { class: "wl-pattern", role: "group", "aria-label": t("wl_pattern_demo") }, words, lao, trl);
   }
@@ -356,7 +481,7 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
       name.textContent = LT(p.title); lo.textContent = p.laoName || ""; text.textContent = LT(p.text);
       facts.replaceChildren(...(p.facts || []).map(f => h("span", { class: "wl-chip" }, LT(f))));
       words.replaceChildren(...(p.words || []).map(w => h("div", { class: "wl-word" }, h("div", null, loEl("b", w.lo || ""), h("small", null, (w.rom || "") + " · " + (w.en || ""))),
-        h("button", { type: "button", class: "wl-btn sm", "aria-label": t("wl_listen", { w: w.rom || w.lo }), onclick: () => { if (w.audio && /^https?:/.test(w.audio)) new Audio(w.audio).play().catch(() => speak(w.lo)); else speak(w.lo); } }, icon("speaker")))));
+        h("button", { type: "button", class: "wl-btn sm", "aria-label": t("wl_listen", { w: w.rom || w.lo }), onclick: () => { nudge(); if (w.audio && /^https?:/.test(w.audio)) new Audio(w.audio).play().catch(() => speak(w.lo)); else speak(w.lo); } }, icon("speaker")))));
       panel.setAttribute("aria-labelledby", "wl-jt-" + id);
     }
     select(places[0].id);
@@ -384,7 +509,7 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
     // nav: the sections that are on and have something to show
     const shown = D.NAV_SECTIONS.filter(id => sectionsBox.querySelector("#w-" + id));
     links.replaceChildren(...shown.map(id => navBtn(id, "")));
-    sheet.replaceChildren(...shown.map(id => navBtn(id, "")), langSeg("wl-sheet-lang"));
+    sheet.replaceChildren(...shown.map(id => navBtn(id, "")), h("div", { class: "wl-sheet-tools" }, langSeg("wl-sheet-lang"), themeSeg("wl-sheet-theme")));
     heroStrip.replaceChildren(...M.offers.filter(o => o.placement === "hero").map(o => h("div", { class: "wl-strip-offer", "data-offer": o.id }, h("b", null, LT(o.title)), o.text ? h("span", null, LT(o.text)) : null,
       h("button", { class: "wl-btn sm gold", type: "button", onclick: () => { remember({ offerId: o.id, planId: o.planId || null }); toAuth("register"); } }, LT(o.ctaLabel) || t("wl_btn_register")))));
     const F = M.W.footer, app = M.app;
@@ -403,13 +528,16 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
     io = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting){ const id = en.target.id.slice(2);
       page.querySelectorAll(".wl-links [data-scroll]").forEach(b => b.dataset.scroll === id ? b.setAttribute("aria-current", "true") : b.removeAttribute("aria-current")); } }), { rootMargin: "-40% 0px -55% 0px" });
     D.NAV_SECTIONS.forEach(id => { const el = page.querySelector("#w-" + id); el && io.observe(el); });
-    po = new IntersectionObserver(es => es.forEach(en => en.target.toggleAttribute("data-off", !en.isIntersecting)), { rootMargin: "120px" });
+    po = new IntersectionObserver(es => es.forEach(en => { en.target.toggleAttribute("data-off", !en.isIntersecting);
+      // the phone dock (Start free · Sign in) once the hero has scrolled away
+      if (en.target === hero){ const show = !en.isIntersecting && en.boundingClientRect.top < 0; dock.toggleAttribute("data-show", show); dock.setAttribute("aria-hidden", String(!show));
+        dock.querySelectorAll("button").forEach(x => x.tabIndex = show ? 0 : -1); } }), { rootMargin: "120px" });
     [hero, page.querySelector("#w-journey"), page.querySelector(".wl-marquee")].forEach(el => el && po.observe(el));
   }
   const onVis = () => page.toggleAttribute("data-off", document.hidden);
   document.addEventListener("visibilitychange", onVis);
 
-  fillHero(); fillSections();
+  fillHero(); fillSections(); startHooks();
   // then the real data (each read gives up after 2.5 s; offline, the defaults stay)
   if (A.api){
     try {
@@ -417,7 +545,7 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
       if (page.isConnected){ M = fresh; fillHero(); auth.refresh(); fillSections(); }
     } catch(e){ console.warn("Welcome page: kept the defaults:", e && e.message); }
   }
-  return { page, model: () => M };
+  return { page, model: () => M, openAuth: toAuth };
 }
 
 // After sign-up: a free resource the visitor asked for on the welcome page (shown once in the app)
