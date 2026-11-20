@@ -24,11 +24,14 @@ const pl = o => planLabel(planById(o.planId)) || o.planId;
 const dayStart = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x.getTime(); };
 const ago = ms => { const m = Math.round((Date.now() - ms) / 6e4); return m < 1 ? t("nt_now") : m < 60 ? t("nt_min", { n: m }) : m < 1440 ? t("nt_hours", { n: Math.round(m / 60) }) : fmtDate(ms, lang()); };
 
-let orders = [], timer = null, bellEl = null, started = false;
+let orders = [], waiting = [], timer = null, bellEl = null, started = false;
 
 // ---------- what to tell the learner ----------
 function updates(){
   const out = [], now = Date.now();
+  // admins in the learner app: the slips waiting for them (they approve them in Admin → Payments)
+  if (A.isAdmin && waiting.length) out.push({ id: "adm:slips:" + waiting.map(o => o.id).join(","), at: Math.max(...waiting.map(o => o.slipAt || 0)), kind: "wait", ic: "shield",
+    title: t("nt_adm_slips", { n: waiting.length }), text: t("nt_adm_slips_d"), go: ["__admin", {}] });
   for (const o of orders){
     const tr = o.method === "transfer", view = tr && TRANSFER_OPEN.includes(o.status) ? ["transfer", { order: o.id }] : ["myplan", {}];
     if (tr && o.status === "review" && o.slipAt) out.push({ id: o.id + ":review:" + o.slipAt, at: o.slipAt, kind: "wait", ic: "hourglass", title: t("nt_slip_got"), text: t("nt_slip_got_d", { p: pl(o) }), go: view });
@@ -65,7 +68,7 @@ const unreadCount = () => { const seen = read(SEEN(), 0); return updates().filte
 
 // ---------- the bell ----------
 export function bellButton(){
-  if (!A.user || A.isAdmin) return null;
+  if (!A.user) return null;
   const badge = h("span", { class: "nb-badge", hidden: true, "aria-hidden": "true" });
   bellEl = h("button", { class: "nb", type: "button", "aria-label": t("nt_title"), title: t("nt_title"), "aria-haspopup": "dialog", onclick: () => openPanel() }, icon("bell"), badge);
   drawBadge(false);
@@ -83,10 +86,12 @@ function drawBadge(ring){
 // ---------- watching the orders ----------
 async function check(first = false){
   clearTimeout(timer);
-  if (!A.user || A.isAdmin) return;
+  if (!A.user) return;
   try {
+    // RLS: a learner reads only their own orders; an admin reads all of them, so keep only the admin's own here
     const list = await A.api.db.list("orders");
     orders = list.filter(o => o.uid === A.user.uid).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    waiting = A.isAdmin ? list.filter(o => o.method === "transfer" && o.status === "review" && o.uid !== A.user.uid) : [];
     announce(first);
   } catch(e){}
   drawBadge(!first);
@@ -157,7 +162,7 @@ export function closePanel(){
 function updatesList(list, seen){
   if (!list.length) return h("div", { class: "nempty" }, h("span", null, icon("bell")), h("b", null, t("nt_empty")), h("p", { class: "small muted" }, t("nt_empty_d")));
   return h("ul", { class: "nlist" }, list.map((n, i) => h("li", { class: "nitem k-" + n.kind + (n.at > seen ? " new" : ""), style: "--i:" + i },
-    h("button", { type: "button", disabled: !n.go, onclick: () => { if (!n.go) return; closePanel(); A.go(n.go[0], n.go[1]); } },
+    h("button", { type: "button", disabled: !n.go, onclick: () => { if (!n.go) return; closePanel(); if (n.go[0] === "__admin"){ location.href = "admin/"; return; } A.go(n.go[0], n.go[1]); } },
       h("span", { class: "nitem-ic" }, icon(n.ic)),
       h("span", { class: "nitem-tx" }, h("b", null, n.title), n.text ? h("span", null, n.text) : null, h("small", null, ago(n.at))),
       n.at > seen ? h("i", { class: "nitem-dot", "aria-label": t("nt_new") }) : null))));
@@ -170,7 +175,9 @@ function smartCalendar(){
   // the plan card: days left, how much of the period has passed
   const left = exp ? Math.max(0, Math.ceil((exp - now) / DAY)) : null;
   const pct = paid && start && exp > start ? Math.min(100, Math.max(0, Math.round(100 * (now - start) / (exp - start)))) : 0;
-  const card = paid
+  const card = A.isAdmin ? h("div", { class: "scal-plan" }, h("span", { class: "scal-ring free" }, icon("shield")),
+      h("div", null, h("b", null, t("nt_admin_plan")), h("p", { class: "small" }, t("nt_admin_plan_d"))))
+    : paid
     ? h("div", { class: "scal-plan" + (left <= 7 ? " soon" : "") },
         h("div", { class: "scal-ring", style: "--p:" + (100 - pct) }, h("b", null, String(left)), h("small", null, t("nt_days_left"))),
         h("div", null, h("b", null, planLabel(p) || a.planId), h("p", { class: "small" }, t("nt_until", { d: fmtDate(exp, lang()) })),

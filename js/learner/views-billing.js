@@ -235,6 +235,8 @@ VIEWS.payment = (params = {}) => {
     let o;
     try { o = await A.api.pay.status(id); }
     catch(e){ draw({ error:e.code || "network_error" }); return; }
+    // only the account that made the order sees its result here
+    if (o.uid && A.user && o.uid !== A.user.uid){ const m = await import("./views-transfer.js"); m.forgetLastOrder(id); fill(box, m.notYours(o)); return; }
     draw(o);
     if (ORDER_OPEN.includes(o.status) && tries++ < 60 && root.isConnected !== false){ timer = setTimeout(() => { if (document.body.contains(box)) load(); }, 3000); }
   }

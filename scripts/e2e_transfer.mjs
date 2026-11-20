@@ -114,6 +114,17 @@ try {
   const reused = await api(`try { await api.pay.review(${J(id2)}, true, { ref: "BCEL-REF-002" }); return "approved?!"; } catch(e){ return e.code; }`);
   ok(reused === "transaction_reused" && (await api(`return (await api.pay.order(${J(id2)})).status;`)) === "review", "a bank reference already used cannot pay a second order", reused);
 
+  step("another account's order is never shown in the learner app");
+  await login("admin@demo.laolao");                              // the admin, in the learner app
+  await go("transfer", { order: id2 });
+  ok(await b.eval(`!!document.querySelector(".tr-notyours") && !document.querySelector(".tr-amount") && !document.querySelector(".tr-qr")`), "an admin opening a learner's transfer link sees 'belongs to another account', not the order");
+  await go("payment", { order: id2 }); await sleep(800);
+  ok(await b.eval(`!!document.querySelector(".tr-notyours")`), "the payment result page refuses it too");
+  ok(await b.eval(`!!document.querySelector(".topbar .nb")`), "admins have the bell in the learner app too");
+  await b.eval(`document.querySelector(".topbar .nb").click()`); await sleep(600);
+  ok(/waiting for approval/.test(await b.eval(`(document.querySelector(".npanel") || {}).innerText || ""`)), "the admin's bell lists the slips waiting for approval");
+  await b.eval(`document.querySelector(".npanel .ib")?.click()`); await sleep(300);
+
   step("phone");
   await login("free@demo.laolao");
   await b.viewport(390, 844, true);

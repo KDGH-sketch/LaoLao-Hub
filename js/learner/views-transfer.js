@@ -26,6 +26,15 @@ async function copy(text, what){
 }
 const copyBtn = (text, what) => h("button", { type: "button", class: "ib tr-copy", "aria-label": t("tr_copy") + ": " + what, title: t("tr_copy"), onclick: () => copy(text, what) }, icon("copy"));
 
+// an order of another account (e.g. opened from an old link after switching accounts): say so, never show it
+export function forgetLastOrder(id){ try { if (sessionStorage.getItem("laolao.lastOrder") === id) sessionStorage.removeItem("laolao.lastOrder"); } catch(e){} }
+export function notYours(o){
+  return h("section", { class: "card tr-notyours", role: "status" }, h("span", { class: "tr-notyours-ic" }, icon("lock")),
+    h("h2", null, t("tr_not_yours")), h("p", { class: "muted" }, t(A.isAdmin ? "tr_not_yours_admin" : "tr_not_yours_d")),
+    h("div", { class: "row" }, A.isAdmin ? h("a", { class: "btn primary", href: "admin/" }, icon("shield"), t("tr_open_admin")) : null,
+      h("button", { class: "btn", onclick: () => go("myplan") }, icon("wallet"), t("bl_myplan"))));
+}
+
 VIEWS.transfer = async (params = {}) => {
   const id = params.order;
   const root = h("div", { class: "stack-l tr-page" });
@@ -35,6 +44,8 @@ VIEWS.transfer = async (params = {}) => {
   let o;
   try { o = await A.api.pay.order(id); }
   catch(e){ fill(root, back, h("div", { class: "banner" }, errorText(e.code || "server_error"))); return root; }
+  // only the account that made the order sees it here (admins can read every order, but review them in Admin → Payments)
+  if (o.uid !== A.user.uid){ forgetLastOrder(id); fill(root, back, notYours(o)); return root; }
   if (o.status === "paid"){ go("payment", { order: id }); return root; }
 
   const plan = planById(o.planId), amount = money(o.amount, o.currency, lang());

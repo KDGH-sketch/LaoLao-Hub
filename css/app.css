@@ -3161,3 +3161,9 @@ tr.picked td{background:color-mix(in srgb,var(--accent) 7%,transparent)}
 @keyframes np-fade{from{opacity:0}to{opacity:1}}
 @keyframes np-item{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.nb-badge,.nb-badge::after,.nb.ring .ic,.nspot,.nspot-ic,.nspot-party i,.npanel,.nitem,.nav-count,.ord-bulk{animation:none!important}}
+
+/* an order of another account (js/learner/views-transfer.js notYours) */
+.tr-notyours{max-width:560px;margin:24px auto;display:grid;justify-items:center;gap:10px;text-align:center;padding:28px 22px}
+.tr-notyours h2,.tr-notyours p{margin:0}
+.tr-notyours-ic{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--warn-2);color:var(--warn)}
+.tr-notyours-ic .ic{width:var(--ic-lg);height:var(--ic-lg)}
