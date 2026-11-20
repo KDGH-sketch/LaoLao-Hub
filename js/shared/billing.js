@@ -11,7 +11,12 @@ export const METHODS = {
   mastercard: { kind: "card", brand: "Mastercard", icon: "card" },
   visa:       { kind: "card", brand: "Visa", icon: "card" },
   onepay:     { kind: "qr",   brand: "BCEL OnePay", icon: "qr" },
+  // pay by bank transfer (BCEL One QR or account number) and upload the slip; an admin approves it (docs/PAYMENTS.md)
+  transfer:   { kind: "transfer", brand: "BCEL One transfer", icon: "qr" },
 };
+// transfer orders: waiting for the slip, slip under review, slip rejected (a new slip can be sent)
+export const TRANSFER_OPEN = ["created", "review", "rejected"];
+export const transferOn = settings => !!(settings && settings.payments && settings.payments.transfer && settings.payments.transfer.enabled === true);
 export const ORDER_OPEN = ["created", "pending"];
 
 const num = v => { if (typeof v === "number") return isFinite(v) ? v : null; if (typeof v === "string" && /^\s*-?\d+(\.\d+)?\s*$/.test(v)) return +v; return null; };
@@ -39,9 +44,12 @@ export function cycleEnd(fromMs, cycle){
 
 // ll_method_currency
 export const methodCurrency = (settings, method) =>
-  String((settings && settings.payments && settings.payments.currency && settings.payments.currency[method]) || (["onepay", "laoqr"].includes(method) ? "LAK" : "USD")).toUpperCase();
+  String((settings && settings.payments && settings.payments.currency && settings.payments.currency[method]) || (["onepay", "laoqr", "transfer"].includes(method) ? "LAK" : "USD")).toUpperCase();
 // Methods offered right now (Settings → Payments)
-export const enabledMethods = settings => { const p = (settings && settings.payments) || {}; return p.enabled === true && Array.isArray(p.methods) ? p.methods.filter(m => METHODS[m]) : []; };
+// (bank transfer is offered on its own switch, even when online checkout is off)
+export const enabledMethods = settings => { const p = (settings && settings.payments) || {};
+  const online = p.enabled === true && Array.isArray(p.methods) ? p.methods.filter(m => METHODS[m] && m !== "transfer") : [];
+  return transferOn(settings) ? [...online, "transfer"] : online; };
 
 // Where to go after paying: an app view with simple parameters, never a URL (same rule as ll_create_order)
 export const RETURN_RE = /^[A-Za-z_]{1,30}(\?[A-Za-z0-9_=&.-]{0,160})?$/;
@@ -115,15 +123,20 @@ const orderId = () => "LLH-" + Array.from({ length: 10 }, () => "0123456789ABCDE
 export function createOrder(store, uid, { planId, cycle, method, returnTo = null }, now = Date.now()){
   if (!uid) return { ok: false, reason: "not_signed_in" };
   const s = store.get("settings", "app") || {}, pay = s.payments || {};
-  if (pay.enabled !== true) return { ok: false, reason: "payments_disabled" };
-  if (!Array.isArray(pay.methods) || !pay.methods.includes(method)) return { ok: false, reason: "method_unavailable" };
+  if (method === "transfer"){ if (!transferOn(s)) return { ok: false, reason: "method_unavailable" }; }
+  else {
+    if (pay.enabled !== true) return { ok: false, reason: "payments_disabled" };
+    if (!Array.isArray(pay.methods) || !pay.methods.includes(method)) return { ok: false, reason: "method_unavailable" };
+  }
   const cur = methodCurrency(s, method);
   const q = quote(store, uid, planId, cycle, cur, now);
   if (!q.ok) return q;
   const mine = store.list("orders").filter(o => o.uid === uid);
-  for (const o of mine) if (ORDER_OPEN.includes(o.status) && num(o.createdAt) < now - 3600000)
+  for (const o of mine) if ((ORDER_OPEN.includes(o.status) && o.method !== "transfer" && num(o.createdAt) < now - 3600000)
+      || (o.status === "created" && o.method === "transfer" && num(o.createdAt) < now - 3 * DAY))
     store.put("orders", o.id, Object.assign({}, o, { status: "expired", history: hist(o, { at: now, status: "expired" }) }));
-  const open = store.list("orders").filter(o => o.uid === uid && ORDER_OPEN.includes(o.status) && o.planId === planId && o.cycle === cycle && o.method === method
+  const openSt = method === "transfer" ? TRANSFER_OPEN : ORDER_OPEN;
+  const open = store.list("orders").filter(o => o.uid === uid && openSt.includes(o.status) && o.planId === planId && o.cycle === cycle && o.method === method
     && o.currency === cur && num(o.amount) === q.amount && o.kind === q.kind).sort((x, y) => y.createdAt - x.createdAt)[0];
   if (open) return Object.assign({}, open, { ok: true, reused: true });
   if (mine.filter(o => num(o.createdAt) > now - 3600000).length >= 20) return { ok: false, reason: "too_many_orders" };
@@ -175,6 +188,47 @@ export function activateOrder(store, id, pay, now = Date.now()){
     source: "payment", orderId: id, amount: o.amount, currency: o.currency, creditDays: credit, by: "payment", at: now });
   store.put("orders", id, Object.assign({}, o, { status: "paid", paidAt: rec.paidAt, paymentId: pid, activatedUntil: ends, history: hist(o, { at: now, status: "paid", payment: pid }) }));
   return { ok: true, planId: o.planId, expiresAt: ends, kind };
+}
+
+// ll_submit_slip (demo mode): the learner's transfer slip → the order waits for an admin
+const SLIP_RE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
+const hash = str => { let h1 = 0x811c9dc5; for (let i = 0; i < str.length; i += 7) h1 = Math.imul(h1 ^ str.charCodeAt(i), 16777619) >>> 0; return h1.toString(16) + ":" + str.length; };
+const cleanRef = v => String(v || "").replace(/[^A-Za-z0-9 _./-]/g, "").slice(0, 60);
+export function submitSlip(store, uid, id, slip = {}, now = Date.now()){
+  if (!uid) return { ok: false, reason: "not_signed_in" };
+  const o = store.get("orders", id);
+  if (!o || o.uid !== uid) return { ok: false, reason: "order_not_found" };
+  if (o.method !== "transfer") return { ok: false, reason: "not_a_transfer" };
+  if (!TRANSFER_OPEN.includes(o.status)) return { ok: false, reason: "order_not_open" };
+  const img = slip.image;
+  if (typeof img !== "string" || img.length > 3000000 || !SLIP_RE.test(img)) return { ok: false, reason: "slip_invalid" };
+  const prev = store.get("slips", id), n = (prev && num(prev.count)) || 0;
+  if (n >= 10) return { ok: false, reason: "too_many_slips" };
+  const hsh = hash(img), dup = (store.list("slips").find(x => x.hash === hsh && x.id !== id) || {}).id || null;
+  store.put("slips", id, { uid, orderId: id, image: img, hash: hsh, ref: cleanRef(slip.ref), paidAt: ms(slip.paidAt), note: String(slip.note || "").slice(0, 300), at: now, count: n + 1, dupOf: dup });
+  const { rejectReason, ...rest } = o;
+  const d = Object.assign(rest, { status: "review", slipAt: now, slipRef: cleanRef(slip.ref), slipDupOf: dup, history: hist(o, { at: now, status: "review", note: "slip" }) });
+  store.put("orders", id, d);
+  return Object.assign({ id, ok: true }, d);
+}
+// ll_review_slip (demo mode): approve (through activateOrder, like a verified payment) or reject
+export function reviewSlip(store, by, id, approve, info = {}, now = Date.now()){
+  const o = store.get("orders", id);
+  if (!o) return { ok: false, reason: "order_not_found" };
+  if (o.method !== "transfer") return { ok: false, reason: "not_a_transfer" };
+  if (o.status !== "review") return { ok: false, reason: "order_not_in_review" };
+  const sl = store.get("slips", id) || {};
+  if (approve){
+    const txn = String((String(info.ref || "").trim()) || sl.ref || id).replace(/[^A-Za-z0-9_.-]/g, "") || id;
+    const amt = num(info.amount) != null ? num(info.amount) : num(o.amount);
+    const r = activateOrder(store, id, { provider: "transfer", txnId: txn.slice(0, 60), amount: amt, currency: o.currency, method: "transfer", paidAt: sl.paidAt || now,
+      verification: { approvedBy: by, approvedAt: now, slipHash: sl.hash || null, note: String(info.note || "").slice(0, 300) } }, now);
+    if (r.ok) store.put("orders", id, Object.assign(store.get("orders", id), { approvedBy: by, approvedAt: now }));
+    return r;
+  }
+  const reason = String(info.reason || "").slice(0, 300);
+  store.put("orders", id, Object.assign({}, o, { status: "rejected", rejectReason: reason, rejectedBy: by, rejectedAt: now, history: hist(o, { at: now, status: "rejected", by, note: reason.slice(0, 120) }) }));
+  return { ok: true, status: "rejected" };
 }
 
 export function failOrder(store, id, status, info = {}, now = Date.now()){

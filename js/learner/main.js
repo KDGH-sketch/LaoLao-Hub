@@ -73,7 +73,7 @@ async function boot(){
     // a free download chosen on the welcome page before signing up
     const res = (await welcome()).pendingResource();
     // a free account: the promotion pop-up once per sign-in (not on top of the download, nor on the checkout pages)
-    if (!res && !["plans","checkout","payment","myplan"].includes(A.view && A.view.name)) import("./promo.js").then(m => m.maybeShowPromo()).catch(() => {});
+    if (!res && !["plans","checkout","payment","myplan","transfer"].includes(A.view && A.view.name)) import("./promo.js").then(m => m.maybeShowPromo()).catch(() => {});
     if (res) dialog({ title: t("wl_res_ready"), body: h("div",{class:"stack"}, h("p",null, res.title || ""),
       h("a",{class:"btn primary",href:res.url,target:"_blank",rel:"noopener",download:""}, icon("download"), t("wl_download"))), actions:[{ label:t("close"), value:true }] });
   });
@@ -124,6 +124,7 @@ export const LAZY_VIEWS = [
   ["./views-grammar.js", "GRAMMAR_VIEWS", ["grammar","grammarItem"]],
   ["./views-patterns.js", "PATTERN_VIEWS", ["patterns","pattern"]],
   ["./views-billing.js", "VIEWS", ["plans","checkout","payment","myplan"]],
+  ["./views-transfer.js", "VIEWS", ["transfer"]],
   ["./views-practice.js", "PRACTICE_VIEWS", ["practice","practice_report"]],
   ["./views-pronounce.js", "PRON_VIEWS", ["speak"]],
   ["./views-review.js", "REVIEW_VIEWS", ["review"]]

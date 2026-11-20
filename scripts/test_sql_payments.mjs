@@ -171,6 +171,45 @@ ok((await asRpc("service", "ll_refund_order", { p_order:o1.id, p_info:{} })).alr
 ok((await asRpc("service", "ll_refund_order", { p_order:pend.id, p_info:{} })).reason === "order_not_paid", "an unpaid order cannot be refunded");
 ok((await rows("payments")).every(p => p.uid !== U.granted) && (await asRpc(U.granted, "ll_entitlements", {})).planId === "premium", "admin-granted Premium works with no payment records");
 
+console.log("bank transfer: slip, review, approval (supabase-transfer-migration.sql)");
+{
+  const T = U.other, IMG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+  const IMG2 = IMG.replace("ADUlEQVR42mNk", "ADUlEQVR42mNg");
+  const off = await asRpc(T, "ll_create_order", { p_plan:"premium", p_cycle:"month", p_method:"transfer" });
+  ok(!off.ok && off.reason === "method_unavailable", "transfer refused while Settings → Bank transfer is off");
+  await put("settings", "app", { defaultPlanId:"free", allowRegistration:true, payments: Object.assign({}, PAY, { enabled:false, transfer:{ enabled:true, accountNumber:"123" } }) });
+  const t1 = await asRpc(T, "ll_create_order", { p_plan:"premium", p_cycle:"month", p_method:"transfer" });
+  ok(t1.ok && t1.method === "transfer" && t1.currency === "LAK" && t1.amount === 100000 && t1.status === "created", "transfer works even with online checkout off: 100,000 LAK from the plan");
+  ok(!(await asRpc(T, "ll_create_order", { p_plan:"premium", p_cycle:"month", p_method:"mastercard" })).ok, "cards stay refused while online checkout is off");
+  ok((await asRpc(U.free, "ll_submit_slip", { p_order: t1.id, p_slip: { image: IMG } })).reason === "order_not_found", "another learner cannot send a slip for this order");
+  ok((await asRpc(T, "ll_submit_slip", { p_order: t1.id, p_slip: { image: "javascript:alert(1)" } })).reason === "slip_invalid", "a slip that is not a PNG / JPEG / WebP image is refused");
+  ok((await asRpc(T, "ll_submit_slip", { p_order: t1.id, p_slip: { image: "data:image/png;base64," + "A".repeat(3000001) } })).reason === "slip_invalid", "a slip over 3 MB is refused");
+  const sub = await asRpc(T, "ll_submit_slip", { p_order: t1.id, p_slip: { image: IMG, ref: "BCEL<script>-77", paidAt: now, note: "paid" } });
+  ok(sub.ok && sub.status === "review" && sub.slipRef === "BCELscript-77", "the slip puts the order in review; the reference is cleaned");
+  ok((await asRpc(T, "ll_create_order", { p_plan:"premium", p_cycle:"month", p_method:"transfer" })).id === t1.id, "choosing the same plan again returns the order under review");
+  ok(await as(T, async () => (await db.query("select id from public.slips")).rows.length) === 1, "the learner reads their own slip");
+  ok(await as(U.free, async () => (await db.query("select id from public.slips")).rows.length) === 0, "another learner cannot read it");
+  ok(await err(T, "update public.slips set data = '{}'::jsonb") === null && (await as(T, async () => (await db.query("select data->>'ref' r from public.slips")).rows[0].r)) === "BCELscript-77", "a learner cannot change a slip directly (no write policy)");
+  ok(await err(T, "update public.orders set data = data || '{\"status\":\"paid\"}'::jsonb where id = $1", [t1.id]) === null && (await row("orders", t1.id)).status === "review", "a learner cannot mark the order paid");
+  ok((await asRpc(T, "ll_review_slip", { p_order: t1.id, p_approve: true, p_info: {} })).reason === "forbidden", "a learner cannot approve their own slip");
+  const rej = await asRpc(U.adm, "ll_review_slip", { p_order: t1.id, p_approve: false, p_info: { reason: "The amount does not match" } });
+  ok(rej.ok && (await row("orders", t1.id)).status === "rejected" && (await row("orders", t1.id)).rejectReason === "The amount does not match", "an admin rejects it with a reason");
+  ok((await asRpc(T, "ll_submit_slip", { p_order: t1.id, p_slip: { image: IMG2, ref: "BCEL-88" } })).status === "review", "the learner sends a new slip after a rejection");
+  const bad = await asRpc(U.adm, "ll_review_slip", { p_order: t1.id, p_approve: true, p_info: { amount: 90000 } });
+  ok(!bad.ok && bad.reason === "amount_mismatch" && (await row("access", T)).planId === "free" && (await row("orders", t1.id)).needsReview === true, "approving with the wrong amount opens nothing and flags the order");
+  const good = await asRpc(U.adm, "ll_review_slip", { p_order: t1.id, p_approve: true, p_info: { ref: "BCEL-88-OK" } });
+  const acc = await row("access", T);
+  ok(good.ok && (await row("orders", t1.id)).status === "paid" && acc.planId === "premium" && acc.status === "active" && acc.source === "payment", "approving opens Premium (through ll_activate_order)");
+  ok((await row("payments", "transfer__BCEL-88-OK")).verification.approvedBy === U.adm, "the payment row records the bank reference and who approved");
+  const t2 = await asRpc(T, "ll_create_order", { p_plan:"premium", p_cycle:"year", p_method:"transfer" });
+  const dup = await asRpc(T, "ll_submit_slip", { p_order: t2.id, p_slip: { image: IMG2 } });
+  ok(dup.slipDupOf === t1.id, "the same slip image on a second order is flagged");
+  const reuse = await asRpc(U.adm, "ll_review_slip", { p_order: t2.id, p_approve: true, p_info: { ref: "BCEL-88-OK" } });
+  ok(!reuse.ok && reuse.reason === "transaction_reused" && (await row("orders", t2.id)).status === "review", "one bank reference cannot pay two orders");
+  ok((await asRpc(U.adm, "ll_review_slip", { p_order: t1.id, p_approve: false, p_info: {} })).reason === "order_not_in_review", "a paid order cannot be rejected afterwards");
+  await put("settings", "app", { defaultPlanId:"free", allowRegistration:true, payments: PAY });
+}
+
 console.log("JS mirror: quotes for every account");
 const snapZ = await snapshot();
 let same = 0, total = 0;

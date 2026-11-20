@@ -4,7 +4,7 @@
 // verified on the server (supabase/functions/payments). In demo mode a test checkout inside the app stands in for the provider.
 import { h, icon, toast, tr, fmtDate, dialog, confirmDialog } from "../shared/ui.js";
 import { t, lang } from "../shared/i18n.js";
-import { METHODS, CYCLES, planPrice, forSale, money, yearlySaving, enabledMethods, methodCurrency, decodeReturn, ORDER_OPEN } from "../shared/billing.js";
+import { METHODS, CYCLES, planPrice, forSale, money, yearlySaving, enabledMethods, methodCurrency, decodeReturn, ORDER_OPEN, TRANSFER_OPEN } from "../shared/billing.js";
 import { ROUTE_FEATURE } from "../shared/features.js";
 import { A, refreshAccess } from "./core.js";
 import { featureName, planLabel, usageMeters, RETURN_KEY } from "./upgrade.js";
@@ -115,7 +115,8 @@ VIEWS.plans = (params = {}) => {
 const ERR = { payments_disabled:"bl_err_disabled", method_unavailable:"bl_err_method", not_for_sale:"bl_err_not_for_sale", plan_unavailable:"bl_err_not_for_sale",
   downgrade_at_period_end:"bl_err_downgrade", already_unlimited:"bl_err_unlimited", admin_account:"bl_admin_all", account_suspended:"ac_paused_d",
   account_disabled:"ac_paused_d", too_many_orders:"bl_err_too_many", network_error:"bl_err_network", provider_not_configured:"bl_err_provider",
-  payment_service_unavailable:"bl_err_provider", server_error:"bl_err_server", not_signed_in:"bl_err_signin", no_paid_plan:"bl_err_no_paid", not_a_downgrade:"bl_err_not_down" };
+  payment_service_unavailable:"bl_err_provider", slip_invalid:"tr_err_slip", too_many_slips:"tr_err_too_many", not_a_transfer:"bl_err_server", order_not_open:"tr_err_closed",
+  order_not_in_review:"tr_err_closed", transaction_reused:"tr_err_reused", amount_mismatch:"tr_err_amount", currency_mismatch:"tr_err_amount", forbidden:"bl_err_server", server_error:"bl_err_server", not_signed_in:"bl_err_signin", no_paid_plan:"bl_err_no_paid", not_a_downgrade:"bl_err_not_down" };
 export const errorText = code => t(ERR[code] || "bl_err_server");
 
 VIEWS.checkout = async (params = {}) => {
@@ -126,12 +127,15 @@ VIEWS.checkout = async (params = {}) => {
   const methods = methodsOn();
   if (!methods.length){ add(root, back, h("div",{class:"banner"}, t("bl_err_disabled"))); return root; }
   // what the provider can take right now (live config); demo mode accepts every method
-  const cfg = await A.api.pay.config().catch(() => ({ methods: [] }));
-  const usable = methods.filter(m => !cfg.methods || !cfg.methods.length || cfg.methods.includes(m));
+  const cfg = await A.api.pay.config().catch(() => ({ provider: null, methods: [] }));
+  // live mode with no payments function / provider: online methods cannot work, the bank transfer still can
+  const gatewayDown = !!A.api.pay.live && !cfg.provider;
+  const usable = methods.filter(m => m === "transfer" || gatewayDown || !cfg.methods || !cfg.methods.length || cfg.methods.includes(m));
   // one quote per currency (cards may charge USD, QR LAK)
   const quotes = {};
-  await Promise.all(usable.map(async m => { quotes[m] = await A.api.pay.quote(p.id, cycle, m).catch(e => ({ ok:false, reason:e.code || "server_error" })); }));
-  let method = usable.find(m => quotes[m] && quotes[m].ok) || usable[0] || null;
+  await Promise.all(usable.map(async m => { quotes[m] = gatewayDown && m !== "transfer" ? { ok:false, reason:"provider_not_configured" }
+    : await A.api.pay.quote(p.id, cycle, m).catch(e => ({ ok:false, reason:e.code || "server_error" })); }));
+  let method = (gatewayDown && quotes.transfer && quotes.transfer.ok ? "transfer" : null) || usable.find(m => quotes[m] && quotes[m].ok) || usable[0] || null;
   const summary = h("div",{class:"bill-sum"}), payBtn = h("button",{class:"btn primary bill-pay",type:"button"}), msg = h("p",{class:"small bill-msg",role:"alert"});
   const methodsBox = h("div",{class:"bill-methods",role:"radiogroup","aria-label":t("bl_method")});
 
@@ -139,8 +143,9 @@ VIEWS.checkout = async (params = {}) => {
     fill(methodsBox, ...usable.map(m => { const q = quotes[m], info = METHODS[m] || {}, okq = q && q.ok;
       return h("label",{class:"bill-method"+(method===m?" on":"")+(okq?"":" off")},
         h("input",{type:"radio",name:"pm",value:m,checked:method===m,disabled:!okq,onchange:()=>{ method = m; drawMethods(); drawSummary(); }}),
-        h("span",{class:"bill-mi"}, icon(info.kind === "qr" ? "qr" : "card")),
-        h("span",{class:"bill-mt"}, h("b",null, info.brand || m), h("span",{class:"small muted"}, info.kind === "qr" ? t("bl_qr_d") : t("bl_card_d"))),
+        h("span",{class:"bill-mi"+(info.kind === "transfer" ? " tr" : "")}, icon(info.kind === "qr" || info.kind === "transfer" ? "qr" : "card")),
+        h("span",{class:"bill-mt"}, h("b",null, info.kind === "transfer" ? t("tr_method") : (info.brand || m)),
+          h("span",{class:"small muted"}, info.kind === "transfer" ? t("tr_method_d") : info.kind === "qr" ? t("bl_qr_d") : t("bl_card_d"))),
         h("span",{class:"bill-ma"}, okq ? money(q.amount, q.currency, lang()) : h("span",{class:"small muted"}, errorText(q && q.reason)))); }));
   }
   function drawSummary(){
@@ -155,13 +160,19 @@ VIEWS.checkout = async (params = {}) => {
       h("p",{class:"small"}, what),
       q.kind === "upgrade" && q.creditDays ? h("p",{class:"small muted"}, icon("gift"), " ", t("bl_credit_d", { n:q.creditDays })) : null,
       h("p",{class:"small muted"}, t("bl_manual_renewal")));
-    payBtn.disabled = false; payBtn.replaceChildren(icon("shield"), t("bl_pay_amount", { a:money(q.amount, q.currency, lang()) }));
+    payBtn.disabled = false; payBtn.replaceChildren(icon(method === "transfer" ? "qr" : "shield"), t(method === "transfer" ? "tr_continue" : "bl_pay_amount", { a:money(q.amount, q.currency, lang()) }));
   }
   let busy = false;
   payBtn.addEventListener("click", async () => {
     if (busy || !method) return;
     busy = true; payBtn.disabled = true; msg.textContent = ""; payBtn.replaceChildren(t("bl_starting"));
     try {
+      // bank transfer: the order is made in the database, then the transfer page shows the QR and takes the slip
+      if (method === "transfer"){
+        const o = await A.api.pay.transfer({ planId:p.id, cycle, returnTo: savedReturn() });
+        try { sessionStorage.setItem("laolao.lastOrder", o.id); } catch(e){}
+        go("transfer",{ order:o.id }); return;
+      }
       const r = await A.api.pay.checkout({ planId:p.id, cycle, method, returnTo: savedReturn() });
       try { sessionStorage.setItem("laolao.lastOrder", r.order.id); } catch(e){}
       const ck = r.checkout || {};
@@ -183,7 +194,8 @@ VIEWS.checkout = async (params = {}) => {
   add(root, back, pageHead(t("bl_checkout_title"), null),
     h("div",{class:"bill-co"},
       h("section",{class:"card stack"}, h("h2",null, t("bl_method")), methodsBox,
-        h("p",{class:"small muted bill-secure"}, icon("lock"), A.api.pay.live ? t("bl_card_safe") : t("bl_demo_note"))),
+        gatewayDown && usable.includes("transfer") && usable.length > 1 ? h("p",{class:"small bill-down"}, icon("info"), t("tr_gateway_down")) : null,
+        h("p",{class:"small muted bill-secure"}, icon("lock"), method === "transfer" ? t("tr_safe") : A.api.pay.live ? t("bl_card_safe") : t("bl_demo_note"))),
       h("section",{class:"card stack bill-side"}, h("h2",null, t("bl_summary")), summary, payBtn, msg)));
   return root;
 };
@@ -221,6 +233,7 @@ VIEWS.payment = (params = {}) => {
         h("div",{class:"row bill-ra"}, btn(t("bl_check_again"), load, "btn primary"), btn(t("bl_back_plans"), () => go("plans"))));
       return;
     }
+    if (o.method === "transfer" && TRANSFER_OPEN.includes(o.status)){ go("transfer",{ order:o.id }); return; }
     const plan = planById(o.planId), back = decodeReturn(o.returnTo), retName = returnLabel(o.returnTo);
     const meta = h("dl",{class:"kv bill-kv"}, h("dt",null,t("bl_order")), h("dd",{class:"bill-mono"}, o.id), h("dt",null,t("bl_plan")), h("dd",null, planLabel(plan) || o.planId, " · ", t(o.cycle==="year"?"bl_yearly":"bl_monthly")),
       h("dt",null,t("bl_amount")), h("dd",null, money(o.amount, o.currency, lang())), h("dt",null,t("status")), h("dd",null, h("span",{class:"bill-pill "+(o.status==="paid"?"ok":"")}, t("bl_os_"+o.status))));
@@ -287,6 +300,11 @@ VIEWS.myplan = async () => {
   const scheduled = c.paid && a.scheduledPlanId ? h("div",{class:"banner bill-sched"}, icon("clock"),
     h("span",null, t("bl_scheduled_line", { cur:planLabel(plan), next:planLabel(planById(a.scheduledPlanId)), d:fmtDate(c.exp, lang()) })),
     h("button",{class:"btn",onclick:async()=>{ const r = await A.api.pay.schedule(null).catch(e => ({ ok:false, reason:e.code })); if (!r.ok) return toast(errorText(r.reason),"err"); await refreshAccess(); toast(t("saved")); A.render(); }}, t("bl_keep_plan"))) : null;
+  // a bank transfer that is not finished: back to its page
+  const openTransfer = orders.find(o => o.method === "transfer" && TRANSFER_OPEN.includes(o.status));
+  const transferBanner = openTransfer ? h("div",{class:"banner bill-tr"}, icon(openTransfer.status === "review" ? "hourglass" : "qr"),
+    h("span",null, t(openTransfer.status === "review" ? "tr_banner_review" : openTransfer.status === "rejected" ? "tr_banner_rejected" : "tr_banner_pay", { p:planLabel(planById(openTransfer.planId)) || openTransfer.planId })),
+    h("button",{class:"btn sm primary",onclick:()=>go("transfer",{ order:openTransfer.id })}, t("tr_open"))) : null;
   const cancelling = c.paid && a.cancelAtPeriodEnd ? h("div",{class:"banner"}, icon("info"), " ", t("bl_cancelling_d", { p:planLabel(plan), d:fmtDate(c.exp, lang()) })) : null;
   const soon = c.paid && !a.cancelAtPeriodEnd && c.exp - nowMs() < 7 * 86400000 ? h("div",{class:"banner"}, icon("clock"), " ", t("bl_ends_soon", { d:fmtDate(c.exp, lang()) })) : null;
   const acts = h("div",{class:"row bill-ra"},
@@ -310,10 +328,11 @@ VIEWS.myplan = async () => {
         h("td",null, (planLabel(planById(o.planId)) || o.planId)+" · "+t(o.cycle==="year"?"bl_yearly":"bl_monthly")),
         h("td",{class:"tabnum"}, money(o.amount, o.currency, lang())),
         h("td",null, h("span",{class:"bill-pill "+(o.status==="paid"?"ok":"")}, t("bl_os_"+o.status))),
-        h("td",null, h("button",{class:"btn sm",onclick:()=>receipt(o, payments.find(p => p.id === o.paymentId))}, t(o.status === "paid" || o.status === "refunded" ? "bl_receipt" : "bl_details"))))))))
+        h("td",null, o.method === "transfer" && TRANSFER_OPEN.includes(o.status) ? h("button",{class:"btn sm primary",onclick:()=>go("transfer",{ order:o.id })}, t("tr_open"))
+          : h("button",{class:"btn sm",onclick:()=>receipt(o, payments.find(p => p.id === o.paymentId))}, t(o.status === "paid" || o.status === "refunded" ? "bl_receipt" : "bl_details"))))))))
       : h("p",{class:"small muted"}, t("bl_no_history")));
 
-  add(root, pageHead(t("bl_myplan"), null),
+  add(root, pageHead(t("bl_myplan"), null), transferBanner,
     h("section",{class:"card stack bill-current"},
       h("div",{class:"spread"}, h("div",null, h("div",{class:"small muted"}, t("current_plan")), h("h2",{class:"bill-cur-name"}, c.isAdmin ? t("adm_title") : (planLabel(ent.status==="expired" ? planById(ent.planId) : plan) || ent.planId || "—"))),
         h("span",{class:"bill-cur-ic"}, icon("wallet"))),

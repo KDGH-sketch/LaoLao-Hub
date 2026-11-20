@@ -326,12 +326,22 @@ export async function createSupabaseApi(supabaseUrl, supabaseAnonKey, opts = {})
         if (!r.ok){ const code = (data && data.error) || (r.status === 404 ? "payment_service_unavailable" : "server_error"); throw Object.assign(new Error(code), { code, status: r.status }); }
         return data;
       }
+      // database functions answer { ok:false, reason } instead of failing: turn that into an error with the reason as code
+      const okOr = r => { if (r && r.ok === false) throw Object.assign(new Error(r.reason || "server_error"), { code: r.reason || "server_error" }); return r; };
       return {
         live: true,
         config: () => call("/config").catch(() => ({ provider: null, methods: [] })),
         quote: (planId, cycle, method) => api.rpc("ll_my_quote", { p_plan: planId, p_cycle: cycle, p_method: method }),
         checkout: args => call("/checkout", { method: "POST", body: args }),
-        status: id => call("/status?order=" + encodeURIComponent(id)).then(r => r.order),
+        // the order's status from the payments function; when it is not deployed, straight from the database (own orders)
+        status: id => call("/status?order=" + encodeURIComponent(id)).then(r => r.order)
+          .catch(async e => { const o = await api.db.get("orders/" + id).catch(() => null); if (o) return Object.assign({ id }, o); throw e; }),
+        // bank transfer: database functions only (no payments function needed), see supabase-transfer-migration.sql
+        transfer: args => api.rpc("ll_create_order", { p_plan: (args || {}).planId, p_cycle: (args || {}).cycle, p_method: "transfer", p_return: (args || {}).returnTo || null }).then(okOr),
+        submitSlip: (id, slip) => api.rpc("ll_submit_slip", { p_order: id, p_slip: slip || {} }).then(okOr),
+        order: async id => { const o = await api.db.get("orders/" + id); if (!o) throw Object.assign(new Error("order_not_found"), { code: "order_not_found" }); return Object.assign({ id }, o); },
+        slip: id => api.db.get("slips/" + id),
+        review: (id, approve, info) => api.rpc("ll_review_slip", { p_order: id, p_approve: !!approve, p_info: info || {} }).then(okOr),
         cancelOrder: id => api.rpc("ll_cancel_my_order", { p_order: id }),
         setCancel: on => api.rpc("ll_set_cancel", { p_cancel: !!on }),
         schedule: planId => api.rpc("ll_schedule_plan", { p_plan: planId }),

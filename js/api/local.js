@@ -1,7 +1,7 @@
 // Demo implementation of the data layer: same interface as js/api/supabase.js, stored in this browser.
 // Used automatically while env-config.js has no Supabase config.
 import { resolveEntitlements, consumeUsage, usageSnapshot, decide } from "../shared/access.js";
-import { METHODS, methodCurrency, quote, createOrder, orderCheckout, activateOrder, failOrder, refundOrder, setCancel, schedulePlan } from "../shared/billing.js";
+import { METHODS, methodCurrency, quote, createOrder, orderCheckout, activateOrder, failOrder, refundOrder, setCancel, schedulePlan, submitSlip, reviewSlip } from "../shared/billing.js";
 const DBKEY = "laolao.demo.db", AUTHKEY = "laolao.demo.auth", SESSKEY = "laolao.demo.session";
 const load = k => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch(e){ return null; } };
 const store = (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){ console.warn("Demo storage full", e); } };
@@ -181,6 +181,12 @@ export async function createLocalApi(){
         },
         status: async id => { const o = store.get("orders", id); if (!o || (o.uid !== me() && !role())) fail("order_not_found"); return Object.assign({ id }, o); },
         cancelOrder: async id => { const o = store.get("orders", id); if (!o || o.uid !== me()) return { ok: false, reason: "order_not_found" }; return done(failOrder(store, id, "cancelled", { reason: "learner_cancelled" })); },
+        // bank transfer: the order, the learner's slip, and the admin's approval (same rules as ll_submit_slip / ll_review_slip)
+        transfer: async args => { const o = createOrder(store, me(), Object.assign({}, args || {}, { method: "transfer" })); if (!o.ok) fail(o.reason); return done(o); },
+        submitSlip: async (id, slip) => { const r = submitSlip(store, me(), id, slip || {}); if (!r.ok) fail(r.reason); return done(r); },
+        order: async id => { const o = store.get("orders", id); if (!o || (o.uid !== me() && !role())) fail("order_not_found"); return Object.assign({ id }, o); },
+        slip: async id => { const o = store.get("orders", id); if (!o || (o.uid !== me() && !["super", "owner", "admin", "support"].includes(role()))) fail("forbidden"); return store.get("slips", id); },
+        review: async (id, approve, info) => { if (!["super", "owner", "admin", "support"].includes(role())) fail("forbidden"); const r = reviewSlip(store, me(), id, !!approve, info || {}); if (!r.ok) fail(r.reason); return done(r); },
         setCancel: async on => done(setCancel(store, me(), on)),
         schedule: async planId => done(schedulePlan(store, me(), planId)),
         refund: async ({ orderId, reason, ref, by } = {}) => {

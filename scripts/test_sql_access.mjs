@@ -230,6 +230,9 @@ console.log("welcome page: new tables and settings/welcome (docs/WELCOME.md)");
   ok(!(await tryWrite("free", "places", "x-free2")) && (await tryWrite("ed", "places", "x-ed2")), "after the migration the same rules apply");
   const calMig = fs.readFileSync(new URL("supabase-calendar-migration.sql", ROOT), "utf8");
   try { await db.exec(calMig); await db.exec(calMig); ok(true, "supabase-calendar-migration.sql runs, twice"); } catch(e){ ok(false, "calendar migration failed: " + e.message); }
+  const trMig = fs.readFileSync(new URL("supabase-transfer-migration.sql", ROOT), "utf8");
+  try { await db.exec(trMig); await db.exec(trMig); ok(true, "supabase-transfer-migration.sql runs, twice"); } catch(e){ ok(false, "transfer migration failed: " + e.message); }
+  ok(await asW(null, async () => (await all(`select id from public.slips`)).length) === 0, "anonymous: cannot read payment slips");
   ok(!(await tryWrite(null, "events", "x-anon2")) && !(await tryWrite("free", "events", "x-free3")) && (await tryWrite("ed", "events", "x-ed3")), "events after the calendar migration: editors write, learners and anonymous do not");
   ok(await asW(null, async () => (await all(`select id from public.events`)).length) === 0, "anonymous: cannot read the raw events table (only the bundle)");
   const applyOk = await asW("ed", async () => { try { await db.query(`select public.ll_apply('events', 'x-ed3', '[{"path":["n"],"inc":1}]'::jsonb)`); return true; } catch(e){ return e.message; } });

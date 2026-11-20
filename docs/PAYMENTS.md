@@ -86,6 +86,46 @@ Nothing is deleted: history, orders and payments stay.
 | Refund | **Access ends when the refund is confirmed**: the plan bought with that order ends at once and the learner returns to Free. Progress is kept |
 | Price change | Affects new orders only; orders keep the price they were created with |
 
+## Bank transfer (BCEL One QR) with admin approval
+
+Works **without any online payment provider**, and is offered first when the card gateway is not connected (the payments
+function is not deployed, or has no provider). Code: `js/learner/views-transfer.js` (learner), `js/admin/payments.js` →
+Transfers (admin), `ll_create_order` / `ll_submit_slip` / `ll_review_slip` (database), mirrored in `js/shared/billing.js`.
+
+**Learner**
+
+1. Plans or a locked feature → **Checkout** → *BCEL One transfer* → *Continue to transfer*. The order is made in the
+   database with the plan's price (LAK unless Settings say otherwise).
+2. **Pay**: the QR (with *Save QR* for phones), bank, account name and number, the exact amount, and the order code
+   (`LLH-…`) to write in the transfer note, each with a copy button.
+3. **Send the slip**: a screenshot or photo (PNG / JPEG / WebP, resized in the browser), the transaction number from the
+   slip (optional, speeds up checking), when they paid, a note.
+4. **Approval**: "Slip received: we are checking it", with a timeline. The page checks by itself (every 15 s, then every
+   minute) and opens the plan as soon as it is approved. If the slip is rejected, the learner sees the reason and sends a
+   new one. My learning plan shows a banner for an unfinished transfer.
+
+**Admin** (Payments → **Transfers**, opens first when slips are waiting; support, admin and Super Admin)
+
+- Cards with the slip, amount, learner, plan and how long ago; a warning when the same image was sent for another order.
+- *Review*: the slip large (tap for full size) next to the expected amount, learner, order code, payment time and note.
+  Check the money arrived in the account, then **Approve and open the plan**, or **Reject** with a reason (quick reasons:
+  amount does not match, slip cannot be read, no payment found, another account, slip already used).
+- Approving goes through the same `ll_activate_order` as a verified card payment: the bank reference becomes the
+  transaction id (**one reference cannot pay two orders**), and the amount received must equal the order's amount
+  (otherwise nothing opens and the order is flagged *Needs review*).
+
+**Settings** (Payments → Settings → *Bank transfer*, Super Admin): on / off, the QR picture (BCEL One → My QR), bank,
+account name and number, the currency learners pay in, instructions and "how long approval takes" (en / lo / zh).
+The bank transfer has its own switch: it works while online checkout is off.
+
+**Security**: the price comes from the plan; the slip is private (`slips` table: the learner and support / admin /
+Super Admin read it, nobody writes it directly); only `ll_review_slip` approves, and only for support, admin or Super
+Admin; every approval stores who approved, when and the slip's fingerprint; at most 10 slips per order, 3 MB each; a
+transfer order without a slip expires after 3 days.
+
+**Live project**: run `supabase-transfer-migration.sql` in the Supabase SQL Editor (safe to run again), then fill in
+Payments → Settings → Bank transfer and switch it on.
+
 ## Payment provider: BCEL
 
 Chosen by the business: a BCEL merchant account.
@@ -97,7 +137,7 @@ Chosen by the business: a BCEL merchant account.
   `CANCEL` = cancelled, `REVIEW` = pending.
   Public reference: [Secure Acceptance Hosted Checkout](https://developer.cybersource.com/docs/cybs/en-us/sa/developer/all/sa-hosted/secure-acceptance.html).
   BCEL also lists JCB, UnionPay and Amex; they appear on the same hosted page if BCEL enables them.
-- **BCEL OnePay QR** — not implemented: its merchant API is not public. It can be offered in Settings only once a provider
+- **BCEL OnePay QR** — no API integration (its merchant API is not public). Use the **bank transfer** above: learners pay with BCEL One and an admin approves the slip. It can be offered in Settings only once a provider
   adapter supports it (the checkout refuses methods the active provider does not support).
 - **Refunds** — Hosted Checkout has no refund call. Refund in BCEL's merchant portal, then record it in Admin → Payments with
   the portal's refund reference.
@@ -168,8 +208,9 @@ the manual instructions (Settings → payment instructions / QR image) instead o
 
 | Command | Covers |
 |---|---|
-| `node scripts/test_sql_payments.mjs` | Orders and price snapshot, tampering as a learner (insert / update / call service functions), wrong amount / currency, duplicates, transaction reuse, renew, upgrade credit, downgrade scheduling, cancel, failed / cancelled / pending / expired, refund, expiry, admin grants without payments, 112 quotes SQL = JavaScript |
+| `node scripts/test_sql_payments.mjs` | Bank transfer: own switch, slip checks (type, size, owner), review only by support / admin, reject with reason, wrong amount opens nothing, one reference one order, duplicate image flagged. Orders and price snapshot, tampering as a learner (insert / update / call service functions), wrong amount / currency, duplicates, transaction reuse, renew, upgrade credit, downgrade scheduling, cancel, failed / cancelled / pending / expired, refund, expiry, admin grants without payments, 112 quotes SQL = JavaScript |
 | `node scripts/test_payments_server.mjs` | The Edge Function in Node: checkout, fake success return, forged / tampered / replayed callbacks, verified payment, retry, pending, refunds, production safety, BCEL signing and reply parsing (offline) |
+| `node scripts/e2e_transfer.mjs` | Browser (demo): no card provider → transfer chosen; QR, amount, account and order code; slip upload; admin queue first; reject with a reason → new slip → approve → Premium active; a learner cannot approve; one reference, one order; the same image flagged; phone |
 | `node scripts/e2e_payments.mjs` | Browser (demo): locked feature → plans → checkout → decline → retry → pending → paid → back to the feature; My learning plan, receipt, cancel / reactivate, downgrade; "Maybe later"; admin orders and refund; phone and night layouts |
 
 All three run in `npm run test:sql` / `npm run test:e2e` and in CI before every deploy.

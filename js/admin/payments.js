@@ -6,15 +6,20 @@ import { h, icon, toast, dialog, confirmDialog, fmtDate, errText } from "../shar
 import { lang } from "../shared/i18n.js";
 import { METHODS, CURRENCIES, money, methodCurrency } from "../shared/billing.js";
 import { S, L, t, isSuper, canSupport, planName, lockedScreen } from "./state.js";
+import { shrinkPhoto } from "../shared/image.js";
+import { uploadChecked } from "./web-checks.js";
 
 const STATUS = { created:["Started","ເລີ່ມແລ້ວ"], pending:["Pending","ລໍຖ້າ"], paid:["Paid","ຈ່າຍແລ້ວ"], failed:["Failed","ບໍ່ສຳເລັດ"], cancelled:["Cancelled","ຍົກເລີກ"],
-  expired:["Expired","ໝົດເວລາ"], refunded:["Refunded","ຄືນເງິນແລ້ວ"], duplicate:["Duplicate","ຊ້ຳ"], mismatch:["Mismatch","ບໍ່ກົງກັນ"] };
-const PILL = { paid:"active", pending:"draft", created:"draft", failed:"expired", mismatch:"expired", duplicate:"expired", cancelled:"cancelled", expired:"cancelled", refunded:"archived" };
+  expired:["Expired","ໝົດເວລາ"], refunded:["Refunded","ຄືນເງິນແລ້ວ"], review:["Slip to approve","ລໍຖ້າອະນຸມັດສະລິບ"], rejected:["Slip rejected","ສະລິບຖືກປະຕິເສດ"], duplicate:["Duplicate","ຊ້ຳ"], mismatch:["Mismatch","ບໍ່ກົງກັນ"] };
+const PILL = { review:"draft", rejected:"expired", paid:"active", pending:"draft", created:"draft", failed:"expired", mismatch:"expired", duplicate:"expired", cancelled:"cancelled", expired:"cancelled", refunded:"archived" };
 const pill = s => h("span",{class:"pill "+(PILL[s]||"none")}, L(STATUS[s] || [s]));
 const cyc = c => L(c === "year" ? ["Yearly","ລາຍປີ"] : ["Monthly","ລາຍເດືອນ"]);
-const mName = m => (METHODS[m] && METHODS[m].brand) || m || "—";
+const mName = m => m === "transfer" ? L(["Bank transfer","ໂອນເງິນ"]) : (METHODS[m] && METHODS[m].brand) || m || "—";
 const ERR = { forbidden:["Only a Super Admin can refund.","ສະເພາະ Super Admin ຄືນເງິນໄດ້."], refund_reference_required:["Enter the refund reference from the provider's portal.","ໃສ່ເລກອ້າງອີງການຄືນເງິນຈາກລະບົບຂອງທະນາຄານ."],
   already_refunded:["Already refunded.","ຄືນເງິນແລ້ວ."], order_not_paid:["Only paid orders can be refunded.","ຄືນເງິນໄດ້ສະເພາະຄຳສັ່ງທີ່ຈ່າຍແລ້ວ."],
+  transaction_reused:["This bank reference was already used to pay another order. Check the slip: it may have been sent twice.","ເລກອ້າງອີງນີ້ຖືກໃຊ້ຈ່າຍຄຳສັ່ງອື່ນແລ້ວ. ກວດສອບສະລິບ."],
+  amount_mismatch:["The amount received is not the order's amount, so the plan was not opened. The order is marked for review.","ຈຳນວນເງິນບໍ່ກົງກັບຄຳສັ່ງ, ບໍ່ໄດ້ເປີດແພັກ."],
+  order_not_in_review:["This slip was already handled.","ສະລິບນີ້ຖືກຈັດການແລ້ວ."],
   refund_not_confirmed:["The provider did not confirm the refund. Nothing was changed.","ທະນາຄານບໍ່ຢືນຢັນການຄືນເງິນ. ບໍ່ມີການປ່ຽນແປງ."], network_error:["No connection.","ບໍ່ມີການເຊື່ອມຕໍ່."] };
 const errMsg = e => ERR[e && (e.code || e.message)] ? L(ERR[e.code || e.message]) : errText(e);
 
@@ -26,18 +31,20 @@ export async function viewPayments(p = {}){
   payments.sort((a, b) => (b.at || 0) - (a.at || 0));
   const who = Object.fromEntries(users.map(u => [u.id, u]));
   const person = uid => who[uid] ? h("div",null, h("b",null, who[uid].name || "—"), h("div",{class:"small muted"}, who[uid].email || "")) : h("code",{class:"small"}, String(uid || "").slice(0, 8));
-  let tab = ["orders","payments","settings"].includes(p.tab) ? p.tab : "orders";
+  let tab = ["transfers","orders","payments","settings"].includes(p.tab) ? p.tab : "orders";
 
   // ---- summary ----
   const since = new Date(); since.setDate(1); since.setHours(0, 0, 0, 0);
   const paidMonth = {}; orders.filter(o => o.status === "paid" && (o.paidAt || 0) >= since.getTime()).forEach(o => paidMonth[o.currency] = (paidMonth[o.currency] || 0) + (+o.amount || 0));
   const review = orders.filter(o => o.needsReview);
+  const slipsWaiting = orders.filter(o => o.method === "transfer" && o.status === "review").sort((a, b) => (a.slipAt || 0) - (b.slipAt || 0));
   const tile = (label, value, ic, cls = "") => h("div",{class:"panel pay-tile "+cls}, h("span",{class:"pay-tile-ic"}, icon(ic)), h("div",null, h("div",{class:"small muted"}, label), h("b",null, value)));
   const tiles = h("div",{class:"pay-tiles"},
     tile(L(["Received this month","ຮັບເງິນເດືອນນີ້"]), Object.keys(paidMonth).length ? Object.entries(paidMonth).map(([c, v]) => money(v, c, lang())).join(" · ") : "—", "wallet"),
     tile(L(["Paid orders","ຄຳສັ່ງທີ່ຈ່າຍແລ້ວ"]), String(orders.filter(o => o.status === "paid").length), "check"),
     tile(L(["Waiting for payment","ລໍຖ້າການຈ່າຍ"]), String(orders.filter(o => ["created","pending"].includes(o.status)).length), "clock"),
-    tile(L(["Needs review","ຕ້ອງກວດສອບ"]), String(review.length), "info", review.length ? "warn" : ""));
+    tile(L(["Needs review","ຕ້ອງກວດສອບ"]), String(review.length), "info", review.length ? "warn" : ""),
+    tile(L(["Transfers to approve","ໂອນເງິນລໍຖ້າອະນຸມັດ"]), String(slipsWaiting.length), "qr", slipsWaiting.length ? "warn pulse" : ""));
 
   // ---- orders ----
   let q = "", fs = review.length && p.review ? "review" : "";
@@ -62,7 +69,7 @@ export async function viewPayments(p = {}){
       h("input",{class:"input grow",placeholder:L(["Search order number, name or email","ຄົ້ນຫາເລກຄຳສັ່ງ, ຊື່ ຫຼື ອີເມວ"]),oninput:e=>{ q = e.target.value; drawOrders(); }}),
       h("select",{class:"input","aria-label":t("status"),onchange:e=>{ fs = e.target.value; drawOrders(); }},
         h("option",{value:""}, t("status")+": "+t("all")), h("option",{value:"review",selected:fs==="review"}, L(["Needs review","ຕ້ອງກວດສອບ"])),
-        ["paid","pending","created","failed","cancelled","expired","refunded"].map(s => h("option",{value:s}, L(STATUS[s]))))),
+        ["review","rejected","paid","pending","created","failed","cancelled","expired","refunded"].map(s => h("option",{value:s}, L(STATUS[s]))))),
     h("div",{class:"tbl-wrap"}, h("table",{class:"tbl"}, h("thead",null, h("tr",null,
       [L(["Order","ຄຳສັ່ງ"]), t("learner"), t("plan"), L(["Amount","ຈຳນວນ"]), L(["Method","ວິທີຈ່າຍ"]), t("status"), L(["Created","ສ້າງເມື່ອ"]), L(["Paid","ຈ່າຍເມື່ອ"])].map(x => h("th",null,x)))), obody)));
 
@@ -79,6 +86,7 @@ export async function viewPayments(p = {}){
 
   // ---- order detail, provider check and refund ----
   async function orderDialog(o){
+    if (o.method === "transfer" && o.status === "review" && canSupport()) return reviewDialog(o);
     const pays = payments.filter(pm => pm.orderId === o.id);
     const kv = (k, v) => [h("dt",null,k), h("dd",null,v)];
     const body = h("div",{class:"stack"},
@@ -123,6 +131,84 @@ export async function viewPayments(p = {}){
       } }] });
   }
 
+  // ---- bank transfers: slips to approve ----
+  const REASONS = [["The amount does not match","ຈຳນວນເງິນບໍ່ກົງກັນ"], ["The slip cannot be read","ອ່ານສະລິບບໍ່ໄດ້"], ["No payment found in our account","ບໍ່ພົບເງິນເຂົ້າບັນຊີ"],
+    ["Paid to another account","ໂອນເຂົ້າບັນຊີອື່ນ"], ["This slip was already used","ສະລິບນີ້ໃຊ້ແລ້ວ"]];
+  const ago = ms => { const m = Math.max(0, Math.round((Date.now() - (ms || 0)) / 60000)); return m < 60 ? m + " " + L(["min ago","ນາທີກ່ອນ"]) : m < 1440 ? Math.round(m / 60) + " " + L(["h ago","ຊົ່ວໂມງກ່ອນ"]) : Math.round(m / 1440) + " " + L(["days ago","ມື້ກ່ອນ"]); };
+  function slipThumb(o){
+    const box = h("div",{class:"tr-thumb"}, h("span",{class:"bill-spin","aria-hidden":"true"}));
+    S.api.pay.slip(o.id).then(sl => box.replaceChildren(sl && sl.image ? h("img",{src:sl.image,alt:L(["Transfer slip","ສະລິບການໂອນ"]),loading:"lazy"}) : icon("image"))).catch(() => box.replaceChildren(icon("image")));
+    return box;
+  }
+  let tf = "review";
+  const tgrid = h("div",{class:"tr-adm-grid"});
+  const drawTransfers = () => {
+    const list = orders.filter(o => o.method === "transfer" && (tf === "all" ? true : tf === "paid" ? o.status === "paid" : o.status === tf))
+      .sort((a, b) => tf === "review" ? (a.slipAt || 0) - (b.slipAt || 0) : (b.slipAt || b.createdAt || 0) - (a.slipAt || a.createdAt || 0));
+    tgrid.replaceChildren(...(list.length ? list.map((o, i) => h("button",{type:"button",class:"tr-adm-card"+(o.slipDupOf ? " dup" : ""),style:"--i:"+i,onclick:()=>o.status === "review" ? reviewDialog(o) : orderDialog(o)},
+      slipThumb(o),
+      h("div",{class:"tr-adm-tx"},
+        h("div",{class:"spread"}, h("b",{class:"tabnum tr-adm-amt"}, money(o.amount, o.currency, lang())), pill(o.status)),
+        person(o.uid),
+        h("div",{class:"small muted"}, planName(o.planId), " · ", cyc(o.cycle)),
+        h("div",{class:"small muted"}, icon("clock"), " ", o.slipAt ? ago(o.slipAt) : fmtDate(o.createdAt, lang(), true), o.slipRef ? " · " + o.slipRef : ""),
+        o.slipDupOf ? h("div",{class:"tr-adm-warn"}, icon("info"), L(["Same image as order ","ຮູບດຽວກັບຄຳສັ່ງ "]) + o.slipDupOf) : null)))
+      : [h("div",{class:"tr-adm-empty"}, icon("check"), h("b",null, tf === "review" ? L(["No slips waiting. All caught up!","ບໍ່ມີສະລິບລໍຖ້າ."]) : t("no_rows")))]));
+  };
+  const tseg = h("div",{class:"seg",role:"group"}, [["review",["To approve","ລໍຖ້າອະນຸມັດ"]],["rejected",["Rejected","ປະຕິເສດ"]],["paid",["Approved","ອະນຸມັດແລ້ວ"]],["all",["All transfers","ທັງໝົດ"]]].map(([k, l]) =>
+    h("button",{type:"button","aria-pressed":String(tf===k),onclick:e=>{ tf = k; tseg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === e.currentTarget))); drawTransfers(); }},
+      L(l), k === "review" && slipsWaiting.length ? h("span",{class:"tr-badge"}, String(slipsWaiting.length)) : null)));
+  const transfersPane = h("div",{class:"stack"},
+    h("p",{class:"small muted"}, L(["Learners who paid by bank transfer sent these slips. Check that the money arrived in the account (amount and reference), then approve: the plan opens at once. Rejecting asks the learner for a new slip.",
+      "ຜູ້ຮຽນທີ່ໂອນເງິນສົ່ງສະລິບເຫຼົ່ານີ້. ກວດວ່າເງິນເຂົ້າບັນຊີແລ້ວ ຈຶ່ງອະນຸມັດ: ແພັກຈະເປີດທັນທີ."])),
+    tseg, tgrid);
+  async function reviewDialog(o){
+    const sl = await S.api.pay.slip(o.id).catch(() => null) || {};
+    const ref = h("input",{class:"input",value:sl.ref || "",maxlength:"60",placeholder:L(["Reference on the slip","ເລກອ້າງອີງໃນສະລິບ"])});
+    const amt = h("input",{class:"input tabnum",type:"number",min:"0",step:"any",value:String(o.amount)});
+    const reason = h("textarea",{class:"input",rows:"2",placeholder:L(["Why? The learner sees this.","ເຫດຜົນ (ຜູ້ຮຽນຈະເຫັນ)"])});
+    const msg = h("p",{class:"small",role:"alert",style:"color:var(--bad)"});
+    const u = who[o.uid] || {};
+    const kv = (k, v) => [h("dt",null,k), h("dd",null,v)];
+    const img = sl.image ? h("a",{href:sl.image,target:"_blank",rel:"noopener",class:"tr-big",title:L(["Open full size","ເປີດຂະໜາດເຕັມ"])}, h("img",{src:sl.image,alt:L(["Transfer slip","ສະລິບການໂອນ"])})) : h("div",{class:"tr-big empty"}, icon("image"), L(["No slip image","ບໍ່ມີຮູບສະລິບ"]));
+    let rejecting = false;
+    const rejectBox = h("div",{class:"stack tr-reject",hidden:true},
+      h("div",{class:"chips"}, REASONS.map(r => h("button",{type:"button",class:"chip",onclick:()=>{ reason.value = L(r); reason.focus(); }}, L(r)))), reason);
+    const body = h("div",{class:"tr-review"},
+      img,
+      h("div",{class:"stack"},
+        h("div",{class:"tr-expect"}, h("span",{class:"small muted"}, L(["Expected amount","ຈຳນວນທີ່ຕ້ອງໄດ້ຮັບ"])), h("b",{class:"tabnum"}, money(o.amount, o.currency, lang()))),
+        o.slipDupOf ? h("div",{class:"banner warn"}, icon("info"), L(["This image was already sent for order ","ຮູບນີ້ຖືກສົ່ງສຳລັບຄຳສັ່ງ "]) + o.slipDupOf + L([". Check carefully before approving.",". ກວດສອບໃຫ້ດີ."])) : null,
+        h("dl",{class:"kv"},
+          kv(t("learner"), h("span",null, h("b",null, u.name || "—"), " ", h("span",{class:"small muted"}, u.email || o.uid))),
+          kv(t("plan"), planName(o.planId) + " · " + cyc(o.cycle)),
+          kv(L(["Order code (in the transfer note)","ລະຫັດຄຳສັ່ງ"]), h("code",null, o.id)),
+          kv(L(["Paid at (learner)","ເວລາໂອນ"]), sl.paidAt ? fmtDate(sl.paidAt, lang(), true) : "—"),
+          kv(L(["Sent","ສົ່ງເມື່ອ"]), fmtDate(o.slipAt, lang(), true) + " · " + ago(o.slipAt)),
+          sl.note ? kv(L(["Learner's note","ໝາຍເຫດ"]), sl.note) : null,
+          (sl.count || 0) > 1 ? kv(L(["Slips sent","ຈຳນວນສະລິບ"]), String(sl.count)) : null),
+        h("div",{class:"field-row"}, h("div",{class:"field"}, h("span",{class:"lbl"}, L(["Bank reference","ເລກອ້າງອີງທະນາຄານ"])), ref,
+            h("span",{class:"help"}, L(["Saved as the transaction: the same reference cannot pay two orders.","ບັນທຶກເປັນທຸລະກຳ: ເລກດຽວກັນຈ່າຍສອງຄຳສັ່ງບໍ່ໄດ້."]))),
+          h("div",{class:"field"}, h("span",{class:"lbl"}, L(["Amount received","ຈຳນວນທີ່ໄດ້ຮັບ"]) + " (" + o.currency + ")"), amt)),
+        rejectBox, msg));
+    await dialog({ title:L(["Approve transfer","ອະນຸມັດການໂອນ"]) + " · " + o.id, wide:true, body,
+      actions:[{ label:t("cancel"), value:false },
+        { label:L(["Reject…","ປະຕິເສດ…"]), danger:true, onClick: async () => {
+          if (!rejecting){ rejecting = true; rejectBox.hidden = false; reason.focus(); return false; }
+          if (!reason.value.trim()){ msg.textContent = L(["Tell the learner why (choose or write a reason).","ໃສ່ເຫດຜົນ."]); return false; }
+          try { await S.api.pay.review(o.id, false, { reason: reason.value.trim() }); toast(L(["Slip rejected: the learner was asked for a new one.","ປະຕິເສດແລ້ວ."]), "ok");
+            S.api.db.add("activity", { uid:S.me.uid, type:"transfer_rejected", ref:o.id, at:new Date() }).catch(() => {}); S.render(); return true; }
+          catch(e){ msg.textContent = errMsg(e); return false; } } },
+        { label:L(["Approve and open the plan","ອະນຸມັດ ແລະ ເປີດແພັກ"]), primary:true, onClick: async () => {
+          const a = +amt.value;
+          if (!(a > 0)){ msg.textContent = L(["Enter the amount received.","ໃສ່ຈຳນວນທີ່ໄດ້ຮັບ."]); return false; }
+          if (a !== +o.amount && !await confirmDialog(L(["Amount differs","ຈຳນວນບໍ່ກົງ"]), L(["The amount received is not the order's amount. The plan will NOT open and the order will be marked for review. Continue?","ຈຳນວນບໍ່ກົງ. ແພັກຈະບໍ່ເປີດ. ສືບຕໍ່ບໍ?"]), L(["Continue","ສືບຕໍ່"]), t("cancel"))) return false;
+          try { const r = await S.api.pay.review(o.id, true, { ref: ref.value.trim(), amount: a });
+            toast(L(["Approved: the plan is open until ","ອະນຸມັດແລ້ວ: ແພັກເປີດຮອດ "]) + fmtDate(r.expiresAt, lang()), "ok");
+            S.api.db.add("activity", { uid:S.me.uid, type:"transfer_approved", ref:o.id, at:new Date() }).catch(() => {}); S.render(); return true; }
+          catch(e){ msg.textContent = errMsg(e); return false; } } }] });
+  }
+
   // ---- settings (Super Admin) ----
   async function settingsPane(){
     if (!isSuper()) return h("p",{class:"muted"}, t("only_super"));
@@ -130,7 +216,7 @@ export async function viewPayments(p = {}){
     const pay = Object.assign({ enabled:false, methods:[], currency:{} }, app.payments || {});
     const cfg = await S.api.pay.config().catch(() => ({ provider:null, methods:[] }));
     const enabled = h("input",{type:"checkbox",class:"switch",checked:pay.enabled === true});
-    const rows = Object.entries(METHODS).map(([m, info]) => {
+    const rows = Object.entries(METHODS).filter(([m]) => m !== "transfer").map(([m, info]) => {
       const on = h("input",{type:"checkbox",checked:(pay.methods||[]).includes(m)});
       const cur = h("select",{class:"input",style:"width:auto"}, CURRENCIES.map(c => h("option",{value:c,selected:methodCurrency(app, m) === c}, c)));
       const supported = !cfg.methods || cfg.methods.includes(m);
@@ -144,12 +230,13 @@ export async function viewPayments(p = {}){
           : h("div",{class:"banner"}, icon("info"), L(["No payment provider is connected. Deploy the payments function and set its secrets (docs/PAYMENTS.md). Until then learners see the manual payment instructions.",
             "ຍັງບໍ່ໄດ້ເຊື່ອມຕໍ່ຜູ້ໃຫ້ບໍລິການ. ເບິ່ງ docs/PAYMENTS.md. ກ່ອນນັ້ນຜູ້ຮຽນຈະເຫັນວິທີຈ່າຍແບບແມນນວນ."])),
         h("p",{class:"small muted"}, L(["Provider keys are never stored here: they are Supabase secrets of the payments function.","ລະຫັດລັບບໍ່ໄດ້ເກັບທີ່ນີ້: ມັນຢູ່ໃນ Supabase secrets."]))),
+      transferSettings(app, pay),
       h("section",{class:"panel stack"}, h("h3",null, L(["Online checkout","ການຈ່າຍເງິນອອນລາຍ"])),
         h("label",{class:"row"}, enabled, L(["Learners can buy plans online","ຜູ້ຮຽນຊື້ແພັກເກດອອນລາຍໄດ້"])),
         h("p",{class:"small muted"}, L(["Methods offered, and the currency each one charges in. Prices come from each plan (Pricing Plans).","ວິທີຈ່າຍທີ່ເປີດ ແລະ ສະກຸນເງິນ. ລາຄາມາຈາກແຕ່ລະແພັກເກດ."])),
         h("div",{class:"stack",style:"gap:8px"}, rows.map(r => r.el)),
         h("div",{class:"row"}, h("button",{class:"btn primary",onclick:async()=>{
-          const next = { enabled: enabled.checked, methods: rows.filter(r => r.on.checked).map(r => r.m), currency: Object.fromEntries(rows.map(r => [r.m, r.cur.value])) };
+          const next = Object.assign({}, pay, { enabled: enabled.checked, methods: rows.filter(r => r.on.checked && r.m !== "transfer").map(r => r.m), currency: Object.assign({}, pay.currency, Object.fromEntries(rows.map(r => [r.m, r.cur.value]))) });
           try { await S.api.db.set("settings/app", { payments: next }, true); msg.textContent = t("saved_ok"); msg.style.color = "var(--jade)"; }
           catch(e){ msg.textContent = errText(e); msg.style.color = "var(--bad)"; }
         }}, t("save")), msg)),
@@ -163,16 +250,63 @@ export async function viewPayments(p = {}){
           h("li",null, L(["Manual grants (Learners → Assign plan) never create payment records.","ການມອບສິດດ້ວຍມື ບໍ່ສ້າງບັນທຶກການຈ່າຍເງິນ."])))));
   }
 
+  // Bank transfer (BCEL One QR or account): works without any online provider; an admin approves each slip
+  function transferSettings(app, pay){
+    const T = Object.assign({ enabled:false, bank:"BCEL One", accountName:"", accountNumber:"", qrImage:"", instructions:{ en:"", lo:"", zh:"" }, eta:{ en:"", lo:"", zh:"" } }, pay.transfer || {});
+    if (!T.instructions.en && app.paymentInstructions) T.instructions = { en: typeof app.paymentInstructions === "string" ? app.paymentInstructions : (app.paymentInstructions.en || ""), lo: (app.paymentInstructions && app.paymentInstructions.lo) || "", zh: "" };
+    const on = h("input",{type:"checkbox",class:"switch",checked:T.enabled === true});
+    const inp = (v, ph) => h("input",{class:"input",value:v || "",placeholder:ph || ""});
+    const bank = inp(T.bank, "BCEL One"), name = inp(T.accountName, "KHAMPHOUI …"), num = inp(T.accountNumber, "0101 …");
+    const cur = h("select",{class:"input",style:"width:auto"}, CURRENCIES.map(c => h("option",{value:c,selected:methodCurrency(app, "transfer") === c}, c)));
+    const tri = (o, rows = 3) => ["en","lo","zh"].map(l => h("textarea",{class:"input"+(l==="lo"?" lo":""),rows:String(rows),"data-l":l,placeholder:{ en:"English", lo:"ພາສາລາວ", zh:"中文" }[l]}, (o && o[l]) || ""));
+    const inst = tri(T.instructions), eta = tri(T.eta, 1);
+    let qr = T.qrImage || "";
+    const qrBox = h("div",{class:"tr-qr-adm"});
+    const drawQr = () => qrBox.replaceChildren(qr ? h("img",{src:qr,alt:"QR"}) : h("span",{class:"small muted"}, L(["No QR yet","ຍັງບໍ່ມີ QR"])));
+    const qrFile = h("input",{type:"file",accept:"image/png,image/jpeg,image/webp",hidden:true,onchange:async e=>{ const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+      try { const small = await shrinkPhoto(f, 900);
+        try { qr = await uploadChecked(small, "image", "payments"); } catch(err){ qr = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(small); }); }
+        drawQr(); toast(L(["QR ready: press Save.","QR ພ້ອມແລ້ວ: ກົດບັນທຶກ."]), "ok"); } catch(err){ toast(errText(err), "err"); } }});
+    drawQr();
+    const msg = h("p",{class:"small"});
+    const val = list => Object.fromEntries(list.map(x => [x.dataset.l, x.value.trim()]));
+    return h("section",{class:"panel stack tr-settings"},
+      h("h3",null, icon("qr"), " ", L(["Bank transfer (BCEL One QR)","ໂອນເງິນຜ່ານທະນາຄານ (BCEL One QR)"])),
+      h("p",{class:"small muted"}, L(["Learners pay by scanning your QR or transferring to your account, then upload the slip. You approve each slip in Payments → Transfers; the plan opens at once. Works without any online payment provider, and is offered first when the card gateway is not connected.",
+        "ຜູ້ຮຽນສະແກນ QR ຫຼື ໂອນເຂົ້າບັນຊີ ແລ້ວອັບໂຫຼດສະລິບ. ທ່ານອະນຸມັດໃນ ການຈ່າຍເງິນ → ໂອນເງິນ."])),
+      h("label",{class:"row"}, on, h("b",null, L(["Offer bank transfer to learners","ເປີດໃຫ້ຜູ້ຮຽນໂອນເງິນ"]))),
+      h("div",{class:"tr-set-grid"},
+        h("div",{class:"stack",style:"gap:8px"}, h("span",{class:"lbl"}, L(["Your QR code (from BCEL One: My QR)","QR ຂອງທ່ານ"])), qrBox,
+          h("div",{class:"row"}, h("button",{type:"button",class:"btn sm",onclick:()=>qrFile.click()}, icon("upload"), L(["Upload QR","ອັບໂຫຼດ QR"])),
+            h("button",{type:"button",class:"btn sm ghost",onclick:()=>{ qr = ""; drawQr(); }}, icon("trash"), t("remove"))), qrFile),
+        h("div",{class:"stack",style:"gap:8px"},
+          h("div",{class:"field"}, h("span",{class:"lbl"}, L(["Bank","ທະນາຄານ"])), bank),
+          h("div",{class:"field"}, h("span",{class:"lbl"}, L(["Account name","ຊື່ບັນຊີ"])), name),
+          h("div",{class:"field"}, h("span",{class:"lbl"}, L(["Account number","ເລກບັນຊີ"])), num),
+          h("div",{class:"field"}, h("span",{class:"lbl"}, L(["Currency learners pay in","ສະກຸນເງິນ"])), cur))),
+      h("div",{class:"field"}, h("span",{class:"lbl"}, L(["Instructions (optional)","ຄຳແນະນຳ"])), h("div",{class:"field-row"}, inst)),
+      h("div",{class:"field"}, h("span",{class:"lbl"}, L(["How long approval takes (shown while waiting, optional)","ໄລຍະເວລາອະນຸມັດ"])), h("div",{class:"field-row"}, eta),
+        h("span",{class:"help"}, L(["For example: We check slips every day between 8:00 and 20:00, usually within 2 hours.","ຕົວຢ່າງ: ພວກເຮົາກວດທຸກມື້ 8:00-20:00."]))),
+      h("div",{class:"row"}, h("button",{class:"btn primary",onclick:async()=>{
+        if (on.checked && !qr && !num.value.trim()){ msg.textContent = L(["Add your QR or your account number first.","ໃສ່ QR ຫຼື ເລກບັນຊີກ່ອນ."]); msg.style.color = "var(--bad)"; return; }
+        const next = Object.assign({}, pay, { transfer: { enabled: on.checked, bank: bank.value.trim() || "BCEL One", accountName: name.value.trim(), accountNumber: num.value.trim(), qrImage: qr,
+          instructions: val(inst), eta: val(eta) }, currency: Object.assign({}, pay.currency, { transfer: cur.value }) });
+        try { await S.api.db.set("settings/app", { payments: next }, true); Object.assign(pay, next); msg.textContent = t("saved_ok"); msg.style.color = "var(--jade)"; }
+        catch(e){ msg.textContent = errText(e); msg.style.color = "var(--bad)"; }
+      }}, t("save")), msg));
+  }
+
   const pane = h("div");
   const tabsEl = h("div",{class:"seg",role:"tablist"});
   const showTab = async k => {
     tab = k;
     tabsEl.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.k === k)));
-    pane.replaceChildren(k === "orders" ? ordersPane : k === "payments" ? paymentsPane : await settingsPane());
+    pane.replaceChildren(k === "transfers" ? transfersPane : k === "orders" ? ordersPane : k === "payments" ? paymentsPane : await settingsPane());
   };
-  [["orders", L(["Orders","ຄຳສັ່ງຊື້"])], ["payments", L(["Transactions","ທຸລະກຳ"])], ["settings", L(["Settings","ຕັ້ງຄ່າ"])]].forEach(([k, label]) =>
-    tabsEl.append(h("button",{"data-k":k,"aria-pressed":String(tab===k),onclick:()=>showTab(k)}, label)));
-  drawOrders();
+  if (!p.tab && slipsWaiting.length) tab = "transfers";          // slips waiting: open on them
+  [["transfers", L(["Transfers","ໂອນເງິນ"])], ["orders", L(["Orders","ຄຳສັ່ງຊື້"])], ["payments", L(["Transactions","ທຸລະກຳ"])], ["settings", L(["Settings","ຕັ້ງຄ່າ"])]].forEach(([k, label]) =>
+    tabsEl.append(h("button",{"data-k":k,"aria-pressed":String(tab===k),onclick:()=>showTab(k)}, label, k === "transfers" && slipsWaiting.length ? h("span",{class:"tr-badge"}, String(slipsWaiting.length)) : null)));
+  drawOrders(); drawTransfers();
   const wrap = h("div",{class:"stack-l"},
     h("div",{class:"pagehead"}, h("h1",null, L(["Payments","ການຈ່າຍເງິນ"])), h("p",null, L(["Orders, provider transactions and refunds. Card numbers are never stored: only the brand and last 4 digits the provider reports.",
       "ຄຳສັ່ງຊື້, ທຸລະກຳ ແລະ ການຄືນເງິນ. ບໍ່ເກັບເລກບັດ: ມີແຕ່ປະເພດບັດ ແລະ 4 ຕົວສຸດທ້າຍ."]))),

@@ -73,7 +73,7 @@ try {
   await click(".bill-plan button", /Choose Premium/); await sleep(1200);
 
   step("checkout: declined, retry, pending, paid");
-  await ok(await b.eval(`document.querySelectorAll(".bill-method").length === 3`) && /\$5\.99/.test(await text()) && /100,000/.test(await text()), "checkout: three methods; card in USD ($5.99), QR in LAK (100,000)");
+  await ok(await b.eval(`document.querySelectorAll(".bill-method").length === 4 && /BCEL One transfer/.test(document.querySelector(".bill-methods").innerText)`) && /\$5\.99/.test(await text()) && /100,000/.test(await text()), "checkout: four methods (cards, QR, bank transfer); card in USD ($5.99), QR in LAK (100,000)");
   await ok(/Starts today and is valid until/.test(await text()) && /do not renew automatically/.test(await text()), "summary explains the period and manual renewal");
   await b.screenshot(path.join(SHOTS, "pay-checkout-desktop.png"));
   await b.eval(`[...document.querySelectorAll(".bill-method input")].find(i => i.value === "visa").click()`); await sleep(200);

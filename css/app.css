@@ -2951,3 +2951,83 @@ html.ios:has(#root > .app) #root{height:100vh;height:100dvh;display:flex;flex-di
 html.ios:has(#root > .app) #root > *{flex:none}
 html.ios:has(#root > .app) #root > .app{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:none;-webkit-overflow-scrolling:touch}
 html.ios:has(#root > .app) .side{height:var(--frame-h,100dvh)}   /* the visible height of the app area (measured: a demo bar above it is not counted) */
+
+/* ---------- bank transfer: pay, send the slip, wait for approval (js/learner/views-transfer.js) ---------- */
+.bill-mi.tr{background:color-mix(in srgb,var(--jade) 16%,var(--surface));color:var(--jade)}
+.bill-down{display:flex;gap:8px;align-items:flex-start;margin:0;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--warn) 12%,var(--surface));color:var(--ink)}
+.bill-down .ic{flex:none;width:var(--ic-sm);height:var(--ic-sm);color:var(--warn);margin-top:2px}
+.tr-page.tr-in > *{animation:tr-rise .5s cubic-bezier(.2,.9,.3,1.1) both}
+.tr-page.tr-in > :nth-child(2){animation-delay:.05s}.tr-page.tr-in > :nth-child(3){animation-delay:.1s}.tr-page.tr-in > :nth-child(4){animation-delay:.15s}
+.tr-head p{max-width:60ch}
+.tr-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tr-steps li{position:relative;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--line);font-weight:700;font-size:.9rem;color:var(--ink-3);min-width:0}
+.tr-steps li span:last-child{min-width:0;overflow-wrap:anywhere}
+.tr-dot{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);color:var(--ink-3);transition:background .3s,color .3s}
+.tr-dot .ic{width:var(--ic-sm);height:var(--ic-sm)}
+.tr-steps li.done{color:var(--ink-2)}
+.tr-steps li.done .tr-dot{background:var(--jade);color:var(--surface)}
+.tr-steps li.now{color:var(--ink);border-color:var(--accent);box-shadow:0 8px 20px -14px var(--accent)}
+.tr-steps li.now .tr-dot{background:var(--accent-grad);color:var(--accent-ink);animation:tr-pulse 2s ease-in-out infinite}
+.tr-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+.tr-left{display:grid;gap:10px}
+.tr-h1,.tr-card h2{display:flex;align-items:center;gap:10px;margin:0;font:800 1.1rem var(--f-display)}
+.tr-num{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);font-size:.9rem}
+.tr-card{display:flex;flex-direction:column;gap:14px;border-radius:22px}
+.tr-amount{position:relative;display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 10px;padding:16px 18px;border-radius:18px;background:var(--accent-grad);color:var(--accent-ink);box-shadow:0 16px 34px -20px var(--accent)}
+.tr-amount > span{grid-column:1;font-size:.85rem;font-weight:700;opacity:.9}
+.tr-amount > b{grid-column:1;font:800 clamp(1.6rem,4vw,2.1rem) var(--f-display);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.tr-amount > small{grid-column:1 / -1;opacity:.9;font-weight:600}
+.tr-amount .tr-copy{grid-column:2;grid-row:1 / span 2;background:color-mix(in srgb,var(--accent-ink) 18%,transparent);color:var(--accent-ink)}
+.tr-copy{flex:none;border-radius:10px}
+.tr-qr{margin:0;display:grid;justify-items:center;gap:10px;padding:16px;border-radius:20px;background:var(--surface-2);text-align:center}
+.tr-qr img{width:min(260px,100%);aspect-ratio:1;object-fit:contain;background:#fff;border-radius:16px;padding:10px;box-shadow:0 10px 30px -16px rgba(0,0,0,.45)}
+.tr-qr figcaption{display:flex;gap:6px;align-items:flex-start;font-size:.86rem;color:var(--ink-2);max-width:34ch;text-align:left}
+.tr-qr figcaption .ic{flex:none;width:var(--ic-sm);height:var(--ic-sm);color:var(--accent);margin-top:2px}
+.tr-acct{display:grid;border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.tr-row{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 12px;background:var(--surface)}
+.tr-row + .tr-row{border-top:1px solid var(--line)}
+.tr-k{font-size:.82rem;color:var(--ink-3);font-weight:600}
+.tr-v{text-align:right;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.tr-ref{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 14px;border-radius:16px;border:1.5px dashed var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--surface))}
+.tr-ref > span{display:flex;align-items:center;gap:6px;font-size:.88rem;font-weight:700;flex:1 1 100%}
+.tr-ref > span .ic{width:var(--ic-sm);height:var(--ic-sm);color:var(--accent)}
+.tr-ref code{font:800 1.2rem ui-monospace,Menlo,Consolas,monospace;letter-spacing:.06em;color:var(--accent)}
+.tr-inst{white-space:pre-line;margin:0}
+.tr-drop{display:grid;justify-items:center;gap:6px;padding:26px 16px;border-radius:20px;border:2px dashed var(--line-2);background:var(--surface-2);text-align:center;cursor:pointer;transition:border-color .2s,background .2s,transform .2s}
+.tr-drop:hover,.tr-drop:focus-visible,.tr-drop.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
+.tr-drop.over{transform:scale(1.01)}
+.tr-drop.busy{opacity:.6;pointer-events:none}
+.tr-drop-ic{width:56px;height:56px;border-radius:18px;display:grid;place-items:center;background:var(--accent-grad);color:var(--accent-ink);box-shadow:0 10px 24px -14px var(--accent);animation:tr-bob 3s ease-in-out infinite}
+.tr-drop-ic .ic{width:var(--ic-lg);height:var(--ic-lg)}
+.tr-preview{display:grid;justify-items:center;gap:8px;padding:12px;border-radius:18px;background:var(--surface-2);animation:tr-rise .4s both}
+.tr-preview img{max-width:100%;max-height:320px;border-radius:12px;box-shadow:var(--shadow-sm)}
+.tr-send{min-height:52px;font-size:1.02rem;border-radius:14px}
+.tr-msg{margin:0;color:var(--bad)}
+.tr-rejected{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:16px;background:color-mix(in srgb,var(--bad) 10%,var(--surface));border:1px solid color-mix(in srgb,var(--bad) 35%,transparent)}
+.tr-rejected .ic{flex:none;width:var(--ic-md);height:var(--ic-md);color:var(--bad);margin-top:2px}
+.tr-rejected p{margin:2px 0 0}
+.tr-wait{display:grid;justify-items:center;gap:6px;text-align:center;padding:8px 0}
+.tr-wait h2{justify-content:center}
+.tr-hourglass{width:76px;height:76px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--accent);animation:tr-pulse 2.4s ease-in-out infinite}
+.tr-hourglass .ic{width:var(--ic-xl);height:var(--ic-xl);animation:tr-flip 3s ease-in-out infinite}
+.tr-hourglass.off{animation:none;color:var(--ink-3);background:var(--surface-2)}
+.tr-hourglass.off .ic{animation:none}
+.tr-timeline{list-style:none;margin:0;padding:0;display:grid}
+.tr-timeline li{position:relative;display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;padding:10px 0;color:var(--ink-3)}
+.tr-timeline li:not(:last-child)::after{content:"";position:absolute;left:13px;top:38px;bottom:-10px;width:2px;background:var(--line)}
+.tr-timeline li > .ic,.tr-timeline li > .bill-spin{justify-self:center;width:var(--ic-md);height:var(--ic-md)}
+.tr-timeline li.done{color:var(--ink)}
+.tr-timeline li.done > .ic{color:var(--jade)}
+.tr-timeline li.now{color:var(--ink);font-weight:700}
+.tr-timeline small{color:var(--ink-3)}
+.tr-mine{border-radius:14px;background:var(--surface-2);padding:8px 12px}
+.tr-mine summary{display:flex;gap:6px;align-items:center;cursor:pointer;font-weight:600;min-height:44px}
+.tr-mine summary .ic{width:var(--ic-sm);height:var(--ic-sm)}
+.tr-mine img{max-width:100%;max-height:300px;border-radius:12px;margin-top:6px}
+@media (max-width:820px){.tr-grid{grid-template-columns:minmax(0,1fr)}.tr-grid.review .tr-right{order:-1}}
+@media (max-width:520px){.tr-steps{grid-template-columns:minmax(0,1fr)}.tr-steps li{padding:8px 10px}}
+@keyframes tr-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes tr-pulse{50%{box-shadow:0 0 0 8px color-mix(in srgb,var(--accent) 14%,transparent)}}
+@keyframes tr-bob{50%{transform:translateY(-4px)}}
+@keyframes tr-flip{0%,40%{transform:rotate(0)}50%,90%{transform:rotate(180deg)}100%{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.tr-page.tr-in > *,.tr-steps li.now .tr-dot,.tr-drop-ic,.tr-preview,.tr-hourglass,.tr-hourglass .ic{animation:none}}

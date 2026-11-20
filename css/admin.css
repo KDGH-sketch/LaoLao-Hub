@@ -475,3 +475,36 @@ table.tbl tr.clickable:hover td{background:var(--surface-2)}
 .pack-cell{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;background:var(--surface-2);min-width:0}
 .pack-cell b{font-size:1.35rem;line-height:1.1}
 .pack-cell span{font-weight:600;overflow-wrap:anywhere}
+
+/* bank transfer slips to approve (js/admin/payments.js) */
+.tr-badge{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;margin-left:6px;border-radius:99px;background:var(--bad);color:var(--surface);font-size:.72rem;font-weight:800}
+.pay-tile.pulse .pay-tile-ic{animation:tr-adm-pulse 2s ease-in-out infinite}
+.tr-adm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.tr-adm-card{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;align-items:start;padding:12px;border-radius:16px;border:1px solid var(--line);background:var(--surface);text-align:left;cursor:pointer;
+  animation:tr-adm-in .4s both;animation-delay:calc(var(--i,0) * 40ms);transition:transform .2s,box-shadow .2s,border-color .2s;font:inherit;color:inherit}
+.tr-adm-card:hover{transform:translateY(-2px);border-color:var(--accent);box-shadow:var(--shadow)}
+.tr-adm-card.dup{border-color:var(--warn)}
+.tr-thumb{width:96px;height:120px;border-radius:12px;overflow:hidden;background:var(--surface-2);display:grid;place-items:center;color:var(--ink-3)}
+.tr-thumb img{width:100%;height:100%;object-fit:cover}
+.tr-adm-tx{display:grid;gap:4px;min-width:0}
+.tr-adm-amt{font-size:1.1rem}
+.tr-adm-warn{display:flex;gap:5px;align-items:center;font-size:.8rem;font-weight:700;color:var(--warn)}
+.tr-adm-warn .ic,.tr-adm-tx .ic{width:14px;height:14px}
+.tr-adm-empty{grid-column:1 / -1;display:grid;justify-items:center;gap:8px;padding:30px;border-radius:16px;background:var(--surface-2);color:var(--ink-2)}
+.tr-adm-empty .ic{width:36px;height:36px;color:var(--jade)}
+.tr-review{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:16px;align-items:start}
+.tr-big{display:block;border-radius:14px;overflow:hidden;background:var(--surface-2);max-height:70vh}
+.tr-big img{display:block;width:100%;height:auto;max-height:70vh;object-fit:contain}
+.tr-big.empty{display:grid;place-items:center;gap:6px;min-height:200px;color:var(--ink-3)}
+.tr-expect{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:12px 14px;border-radius:14px;background:var(--accent-grad);color:var(--accent-ink)}
+.tr-expect b{font-size:1.5rem}
+.tr-expect .small{color:inherit;opacity:.9}
+.tr-reject .chips{display:flex;flex-wrap:wrap;gap:6px}
+.tr-settings h3{display:flex;align-items:center;gap:6px}
+.tr-set-grid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px;align-items:start}
+.tr-qr-adm{width:200px;height:200px;border-radius:16px;border:1px dashed var(--line);background:#fff;display:grid;place-items:center;overflow:hidden}
+.tr-qr-adm img{width:100%;height:100%;object-fit:contain}
+@media (max-width:760px){.tr-review,.tr-set-grid{grid-template-columns:minmax(0,1fr)}}
+@keyframes tr-adm-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes tr-adm-pulse{50%{transform:scale(1.12)}}
+@media (prefers-reduced-motion:reduce){.tr-adm-card,.pay-tile.pulse .pay-tile-ic{animation:none}}

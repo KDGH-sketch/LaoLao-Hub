@@ -63,10 +63,26 @@ export const DEMO = {
 };
 // Demo only: sample online prices and the in-app test checkout, so plans can be "bought" without a provider.
 // Real projects set prices in Admin → Pricing Plans and switch payments on in Admin → Payments → Settings.
+// a QR-looking picture for demo mode (random squares with the three corner markers; it encodes nothing)
+function demoQr(){
+  const n = 25, cells = [];
+  let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  const finder = (x, y) => `<rect x="${x}" y="${y}" width="7" height="7" fill="black"/><rect x="${x + 1}" y="${y + 1}" width="5" height="5" fill="white"/><rect x="${x + 2}" y="${y + 2}" width="3" height="3" fill="black"/>`;
+  const inFinder = (x, y) => (x < 8 && y < 8) || (x > n - 9 && y < 8) || (x < 8 && y > n - 9);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (!inFinder(x, y) && rnd() > .52) cells.push(`<rect x="${x}" y="${y}" width="1" height="1"/>`);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 ${n + 4} ${n + 4}" shape-rendering="crispEdges"><rect x="-2" y="-2" width="${n + 4}" height="${n + 4}" fill="white"/><g fill="black">${cells.join("")}</g>${finder(0, 0)}${finder(n - 7, 0)}${finder(0, n - 7)}</svg>`;
+  return "data:image/svg+xml;base64," + btoa(svg);
+}
 export async function addDemoPayments(api){
   if (api.mode !== "demo") return;
   const app = await api.db.get("settings/app").catch(() => null) || {};
   if (!app.payments) await api.db.set("settings/app", { payments:{ enabled:true, methods:["mastercard","visa","onepay"], currency:{ mastercard:"USD", visa:"USD", onepay:"LAK" } } }, true);
+  // bank transfer with a sample account and a made-up QR picture (it pays nobody), so the slip flow can be tried
+  const pay = ((await api.db.get("settings/app").catch(() => null)) || {}).payments || {};
+  if (!pay.transfer) await api.db.set("settings/app", { payments: Object.assign({}, pay, { currency: Object.assign({ transfer:"LAK" }, pay.currency),
+    transfer:{ enabled:true, bank:"BCEL One", accountName:"LAOLAO DEMO CO.", accountNumber:"0000 1111 2222 333", qrImage: demoQr(),
+      instructions:{ en:"Demo account: no money moves. Pay, then upload any screenshot as the slip.", lo:"ບັນຊີທົດລອງ: ບໍ່ມີເງິນຍ້າຍ.", zh:"演示账户：不会真正付款。" },
+      eta:{ en:"Demo: an admin approves it in Admin → Payments → Transfers.", lo:"ທົດລອງ: admin ອະນຸມັດໃນ Admin → ການຈ່າຍເງິນ.", zh:"演示：管理员在 Admin → Payments → Transfers 审核。" } } }) }, true);
   const SAMPLE = { standard:{ month:{ LAK:50000, USD:2.99 }, year:{ LAK:500000, USD:29 } }, premium:{ month:{ LAK:100000, USD:5.99 }, year:{ LAK:990000, USD:59 } } };
   for (const [id, prices] of Object.entries(SAMPLE)){
     const p = await api.db.get(`plans/${id}`).catch(() => null);
