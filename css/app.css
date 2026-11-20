@@ -922,6 +922,36 @@ h1 .ic,h2 .ic,h3 .ic,h4 .ic{width:var(--ic-md);height:var(--ic-md);vertical-alig
 .promo-later{color:var(--ink-3)}
 .lockp-sale{display:grid;gap:10px;justify-items:center;width:100%;padding:12px 14px;border-radius:16px;border:1px dashed var(--warn);background:color-mix(in srgb,var(--warn) 10%,var(--surface))}
 .lockp-sale-h{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;text-align:center}
+/* package cards inside the locked panel (js/learner/upgrade.js packageCards): phone-plan style, swipe on phones */
+.lockp.has-packs{max-width:760px}
+.pk-wrap{width:100%;display:grid;gap:10px;text-align:left;margin-top:4px}
+.pk-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.pk-head > b{font:800 1rem var(--f-display)}
+.pk-row{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(220px,1fr);gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;padding:14px 4px 10px;margin-inline:-4px}
+.pk{position:relative;scroll-snap-align:start;display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:20px;background:var(--surface);border:1.5px solid var(--line);
+  box-shadow:var(--shadow-sm);animation:pk-in .55s cubic-bezier(.2,1.2,.35,1) both;animation-delay:calc(var(--i,0) * 90ms);transition:transform .25s cubic-bezier(.2,1.4,.4,1),box-shadow .25s,border-color .25s}
+.pk:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.pk.best{border-color:var(--accent);background:linear-gradient(170deg,color-mix(in srgb,var(--accent) 12%,var(--surface)),var(--surface) 55%);box-shadow:0 14px 30px -18px var(--accent)}
+.pk.sale:not(.best){border-color:var(--warn)}
+.pk-ribbon{position:absolute;top:-11px;left:14px;display:inline-flex;align-items:center;gap:5px;background:var(--accent-grad);color:var(--accent-ink);font-size:.75rem;font-weight:800;border-radius:99px;padding:3px 10px}
+.pk-ribbon .ic{width:var(--ic-2xs);height:var(--ic-2xs)}
+.pk-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px}
+.pk-name{display:inline-flex;align-items:center;gap:6px;font:800 1.02rem var(--f-display)}
+.pk-name .ic{width:var(--ic-sm);height:var(--ic-sm);color:var(--accent)}
+.pk-sale{font-size:.75rem;padding:3px 9px}
+.pk-price{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 6px}
+.pk-price b{font:800 1.6rem var(--f-display);font-variant-numeric:tabular-nums}
+.pk-price span{color:var(--ink-2);font-weight:600}
+.pk-save{font-size:.75rem;font-weight:800;color:var(--jade);background:color-mix(in srgb,var(--jade) 14%,var(--surface));border-radius:99px;padding:2px 8px}
+.pk-only{flex-basis:100%;color:var(--ink-3);font-size:.78rem}
+.pk-unlock{display:flex;gap:6px;align-items:center;margin:0;font-size:.86rem;font-weight:700;color:var(--jade)}
+.pk-unlock .ic{flex:none;width:var(--ic-sm);height:var(--ic-sm)}
+.pk-feats{list-style:none;margin:0;padding:0;display:grid;gap:5px;flex:1}
+.pk-feats li{display:flex;gap:7px;align-items:flex-start;font-size:.86rem;color:var(--ink-2)}
+.pk-feats .ic{flex:none;width:var(--ic-xs);height:var(--ic-xs);color:var(--jade);margin-top:3px}
+.pk-go{width:100%;justify-content:center;margin-top:4px;min-height:46px}
+@keyframes pk-in{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.pk{animation:none}}
 .stack-l > .lockp-sale{justify-items:start}
 .stack-l > .lockp-sale .lockp-sale-h{justify-content:flex-start;text-align:start}
 .bill-sale{position:absolute;top:-11px;right:16px;display:inline-flex;align-items:center;gap:5px;background:var(--warn);color:var(--surface);font-size:.74rem;font-weight:800;border-radius:99px;padding:3px 10px}

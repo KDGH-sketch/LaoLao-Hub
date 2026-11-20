@@ -5,10 +5,10 @@ import { t, lang } from "../shared/i18n.js";
 import { featureByKey, ROUTE_FEATURE, PRACTICE_FEATURE } from "../shared/features.js";
 import { planIncluding } from "../shared/access.js";
 import { setFeature } from "../shared/practice-feature.js";
-import { encodeReturn, planPrice, money, enabledMethods, methodCurrency } from "../shared/billing.js";
+import { encodeReturn, planPrice, money, enabledMethods, methodCurrency, forSale, yearlySaving } from "../shared/billing.js";
 import { planLabel as sharedPlanLabel } from "../shared/plan-format.js";
 import { A } from "./core.js";
-import { saleStrip } from "./promo.js";
+import { saleStrip, offerForPlan } from "./promo.js";
 
 const L = obj => tr(obj, lang());
 export const featureName = f => featureByKey[f] ? L(featureByKey[f].label) : f;
@@ -79,10 +79,66 @@ function fromPrice(plan){
   return null;
 }
 
+// The packages that unlock what is locked, as phone-plan style cards inside the locked panel: price per month or year,
+// what each includes, the sale (if any), and a button straight to that package's checkout.
+function plansUnlocking(info){
+  const ent = A.ent || {}, f = info.feature, isObj = o => o && typeof o === "object";
+  return (A.plans || []).filter(p => p.active !== false && forSale(p) && p.id !== ent.planId)
+    .filter(p => info.tier != null ? (+p.tier || 1) >= info.tier
+      : (!f || !isObj(p.entitlements) || p.entitlements[f] === true)
+        && (!info.result || info.result.reason !== "limit_reached" || !isObj(p.limits) || !p.limits[f] || +p.limits[f].n > +info.result.limit))
+    .sort((a, b) => ((+a.tier || 1) - (+b.tier || 1)) || ((a.order || 0) - (b.order || 0)));
+}
+function packageCards(plans, best, info, onClose){
+  const curs = [...new Set(enabledMethods(A.settings).map(m => methodCurrency(A.settings, m)))];
+  const CUR = curs.length ? curs : ["LAK", "USD"];
+  const priceOf = (p, c) => { for (const k of CUR){ const v = planPrice(p, c, k); if (v) return { v, k }; } return null; };
+  const hasYear = plans.some(p => priceOf(p, "year")), hasMonth = plans.some(p => priceOf(p, "month"));
+  let cycle = hasMonth ? "month" : "year";
+  const unlocks = info.feature ? featureName(info.feature) : null;
+  const row = h("div",{class:"pk-row",role:"list"});
+  const buy = (p, c) => { if (onClose) onClose(); saveReturn(); A.go("checkout",{ plan:p.id, cycle:c }); };
+  function card(p, i){
+    const c = priceOf(p, cycle) ? cycle : (priceOf(p, "month") ? "month" : "year"), pr = priceOf(p, c);
+    const save = c === "year" && pr ? yearlySaving(p, pr.k) : 0, sale = offerForPlan(p.id), isBest = best && p.id === best.id;
+    const feats = ((p.features && (p.features[lang()] || p.features.en)) || []).slice(0, 3);
+    return h("article",{class:"pk"+(isBest?" best":"")+(sale?" sale":""),role:"listitem",style:"--i:"+i},
+      isBest ? h("span",{class:"pk-ribbon"}, icon("star"), t("pk_best")) : null,
+      h("div",{class:"pk-top"},
+        h("span",{class:"pk-name"}, icon(isBest ? "crown" : "spark"), planLabel(p)),
+        sale ? h("span",{class:"promo-badge pk-sale"}, icon("spark"), L(sale.discountText) || L(sale.badge) || t("pr_on_sale")) : null),
+      h("div",{class:"pk-price"}, pr ? [h("b",null, money(pr.v, pr.k, lang())), h("span",null, " "+t(c === "year" ? "bl_per_year" : "bl_per_month"))] : h("b",null,"—"),
+        save ? h("span",{class:"pk-save"}, t("bl_save", { n:save })) : null,
+        c !== cycle ? h("small",{class:"pk-only"}, t(c === "year" ? "pk_year_only" : "pk_month_only")) : null),
+      unlocks ? h("p",{class:"pk-unlock"}, icon("unlock"), t("pk_unlocks", { f:unlocks })) : null,
+      feats.length ? h("ul",{class:"pk-feats"+(lang()==="lo"?" lo":"")}, feats.map(x => h("li",null, icon("check"), x))) : null,
+      h("button",{class:"btn "+(isBest?"primary":"")+" pk-go",onclick:()=>buy(p, c)}, isBest ? t("bl_upgrade_to", { p:planLabel(p) }) : t("bl_choose", { p:planLabel(p) })));
+  }
+  const draw = () => { row.replaceChildren(...plans.map(card)); };
+  const seg = hasYear && hasMonth ? h("div",{class:"seg pk-cycle",role:"group","aria-label":t("bl_cycle")},
+    ["month","year"].map(k => h("button",{type:"button","aria-pressed":String(cycle===k),onclick:e=>{ cycle = k; seg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === e.currentTarget))); draw(); }},
+      t(k === "year" ? "bl_yearly" : "bl_monthly"),
+      k === "year" ? (n => n ? h("span",{class:"bill-save"}, t("bl_save", { n })) : null)(Math.max(0, ...plans.map(p => Math.max(...CUR.map(cu => yearlySaving(p, cu)))))) : null))) : null;
+  draw();
+  return h("div",{class:"pk-wrap"}, h("div",{class:"pk-head"}, h("b",null, t("pk_title")), seg), row);
+}
+
 // Full-page locked state (direct URL, locked route, content above the plan)
 export function lockedPanel(info, { onClose, onLater } = {}){
   const x = explain(info);
   const price = x.plan ? fromPrice(x.plan) : null;
+  const packs = !x.renew && x.plan ? plansUnlocking(info) : [];
+  const later = onLater ? h("button",{class:"btn ghost",onclick:onLater}, t("bl_later"))
+    : onClose ? h("button",{class:"btn ghost",onclick:onClose}, t("close")) : h("button",{class:"btn ghost",onclick:()=>A.back ? A.back() : A.go("home")}, icon("left"), t("back"));
+  // packages for sale: the cards are the way to buy; "View plans" compares everything
+  if (packs.length) return h("section",{class:"card lockp has-packs",role:"status"},
+    h("div",{class:"lockp-ic"}, icon(x.icon)),
+    h("h2",null, x.title),
+    h("p",{class:"muted"}, x.text),
+    saleStrip(x.plan),
+    packageCards(packs, x.plan, info, onClose),
+    h("div",{class:"row lockp-act"},
+      h("button",{class:"btn ghost",onclick:()=>{ if (onClose) onClose(); goPlans(); }}, icon("list"), t("ac_view_plans")), later));
   const primary = x.renew && x.plan
     ? h("button",{class:"btn primary",onclick:()=>{ if (onClose) onClose(); saveReturn(); A.go("checkout",{ plan:x.plan.id, cycle:(A.access && A.access.billingCycle) || "month" }); }}, icon("repeat"), t("bl_renew"))
     : h("button",{class:"btn primary",onclick:()=>{ if (onClose) onClose(); goPlans(); }}, icon("spark"), x.plan ? t("bl_upgrade_to", { p:planLabel(x.plan) }) : t("ac_view_plans"));
@@ -93,9 +149,7 @@ export function lockedPanel(info, { onClose, onLater } = {}){
     planPerks(x.plan),
     price ? h("p",{class:"lockp-price"}, h("b",null, planLabel(x.plan)), " · ", price) : null,
     x.plan && !x.renew ? saleStrip(x.plan) : null,
-    h("div",{class:"row lockp-act"}, primary,
-      onLater ? h("button",{class:"btn ghost",onclick:onLater}, t("bl_later"))
-        : onClose ? h("button",{class:"btn ghost",onclick:onClose}, t("close")) : h("button",{class:"btn ghost",onclick:()=>A.back ? A.back() : A.go("home")}, icon("left"), t("back"))));
+    h("div",{class:"row lockp-act"}, primary, later));
 }
 // Same message in a dialog (locked buttons, limit reached during an activity). After "Maybe later" the same block
 // shows a short note instead of the dialog for 10 minutes, so the learner is not interrupted on every click.

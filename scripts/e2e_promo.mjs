@@ -94,7 +94,12 @@ try {
   await closePromo();
   await b.goto(srv.base + "/?r=" + Date.now() + "#tone_lab"); await b.waitFor(`!!document.querySelector(".app")`, 30000); await sleep(1500);
   ok(await b.eval(`!!document.querySelector("main .lockp .lockp-sale")`) && /30%/.test(await b.eval(`document.querySelector("main .lockp").innerText`)), "the locked screen shows what is on sale for the plan it needs");
-  await b.eval(`[...document.querySelectorAll("main .lockp button")].find(x => /Upgrade to/.test(x.innerText)).click()`); await sleep(1200);
+  const pk = await b.eval(`({ n: document.querySelectorAll("main .lockp .pk").length, best: document.querySelector("main .lockp .pk.best .pk-name")?.innerText || "", unlock: document.querySelector("main .lockp .pk .pk-unlock")?.innerText || "", sale: !!document.querySelector("main .lockp .pk.best .pk-sale") })`);
+  ok(pk.n >= 1 && /Premium/.test(pk.best) && /Unlocks/.test(pk.unlock) && pk.sale, "the locked panel shows the packages that unlock it: the best one marked, what it unlocks, its sale", pk);
+  await b.eval(`document.querySelector("main .lockp .pk.best .pk-go").click()`); await sleep(1200);
+  ok(await b.eval(`!!document.querySelector(".bill-checkout")`), "the package's button opens its checkout");
+  await b.goto(srv.base + "/?r=" + Date.now() + "#tone_lab"); await b.waitFor(`!!document.querySelector("main .lockp")`, 30000); await sleep(1000);
+  await b.eval(`[...document.querySelectorAll("main .lockp button")].find(x => /View plans/.test(x.innerText)).click()`); await sleep(1200);
   ok(await b.eval(`!!document.querySelector(".bill-grid")`) && await b.eval(`!!document.querySelector(".stack-l > .lockp-sale")`) && await b.eval(`!!document.querySelector(".bill-plan .bill-sale")`), "Upgrade opens the plans: the sale on top and a sale badge on the plan");
 
   step("phone, Night");

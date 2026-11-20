@@ -64,7 +64,7 @@ try {
   await ok(await b.eval(`!!document.querySelector("main .lockp")`) && /Tone lab/.test(await text()) && /Upgrade to|View plans/.test(await text()), "direct link #tone_lab shows the locked screen with the reason and an upgrade button");
   await ok(!(await b.eval(`[...document.querySelectorAll("main h1")].some(h => /tone/i.test(h.innerText))`)), "the tone lab itself is not rendered");
   await b.screenshot(path.join(SHOTS, "access-locked-desktop.png"));
-  await click("main .lockp button", /Upgrade to|View plans/); await sleep(900);
+  await click("main .lockp button", /View plans/); await sleep(900);
   await ok(await b.eval(`!!document.querySelector(".bill-grid .bill-plan.current")`), "the upgrade button opens the Plans page with the current plan marked");
   await learnerAt("#account");
   await ok(/Usage/.test(await text()) && /Dictionary search/.test(await text()), "the Account page shows usage meters");

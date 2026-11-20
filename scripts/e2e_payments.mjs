@@ -61,8 +61,9 @@ try {
   step("free learner: locked feature → plans");
   await login("/", "free@demo.laolao");
   await learnerAt("#tone_lab");
-  await ok(await b.eval(`!!document.querySelector("main .lockp")`) && /Upgrade to/.test(await text()) && /from .*\/ month/.test(await text()), "locked screen names the plan and its price");
-  await click("main .lockp button", /Upgrade to/); await sleep(900);
+  await ok(await b.eval(`!!document.querySelector("main .lockp")`) && /Upgrade to/.test(await text()) && /\/ month/.test(await text())
+    && await b.eval(`document.querySelectorAll("main .lockp .pk").length >= 1 && !!document.querySelector("main .lockp .pk.best .pk-go")`), "locked screen shows the packages that unlock it, with prices and the best one marked");
+  await click("main .lockp button", /View plans/); await sleep(900);
   await ok(await b.eval(`!!document.querySelector(".bill-grid")`) && /Choose a plan to unlock Tone lab/.test(await text()), "plans page, remembering the feature to unlock");
   await ok(await b.eval(`!!document.querySelector(".bill-plan.recommended .bill-ribbon")`) && await b.eval(`!!document.querySelector(".bill-plan.current")`), "recommended plan highlighted, current plan marked");
   await click(".bill-cycle button", /Yearly/); await sleep(300);
