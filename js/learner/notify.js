@@ -6,6 +6,7 @@
 // Everything comes from what the learner may read anyway (their own orders and plan, the public life calendar). The app
 // checks their orders every 45 s while open and when it comes back to the front; what was already shown is remembered in
 // this browser (localStorage), so a change made while they were away is announced at the next visit.
+import { sheetDrag } from "../shared/sheet-drag.js";
 import { h, icon, fmtDate, reducedMotion } from "../shared/ui.js";
 import { t, lang } from "../shared/i18n.js";
 import { money, TRANSFER_OPEN } from "../shared/billing.js";
@@ -150,6 +151,8 @@ function openPanel(){
     tabs, body);
   const scrim = h("div", { class: "npanel-scrim", onclick: closePanel });
   document.body.append(scrim, panel);
+  // phones: pull the panel down to close it
+  sheetDrag(panel, { onClose: closePanel, handle: t => !!(t.closest && t.closest(".npanel-h, .npanel-tabs")), scroller: () => panel.querySelector(".npanel-b"), enabled: () => matchMedia("(max-width: 560px)").matches });
   setTab(tab);
   write(SEEN(), Date.now()); drawBadge(false);
   document.addEventListener("keydown", escClose);

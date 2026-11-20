@@ -3260,3 +3260,11 @@ tr.picked td{background:color-mix(in srgb,var(--accent) 7%,transparent)}
 }
 @keyframes home-flame{50%{transform:scale(1.08) rotate(-4deg)}}
 @media (prefers-reduced-motion:reduce){.home-hero,.home-streak-ic{animation:none}}
+
+/* sheets on the welcome page: a close button that stands out over any picture, and a clear pull handle */
+.wl .wl-x{width:42px;height:42px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:0 8px 18px -8px rgba(0,0,0,.45)}
+.wl .wl-x .ic{width:20px;height:20px;stroke-width:2.4}
+.wl .wl-x:hover{background:var(--surface);transform:rotate(90deg) scale(1.06)}
+.wl .wl-evdlg .wl-x{inset-block-start:12px;inset-inline-end:12px;width:44px;height:44px;background:rgba(255,255,255,.97);color:#0A1B2E;border:0;box-shadow:0 10px 24px -8px rgba(0,0,0,.55)}
+.wl .wl-evdlg .wl-grab{width:56px;height:6px;inset-block-start:10px;background:rgba(255,255,255,.95);box-shadow:0 1px 6px rgba(0,0,0,.35)}
+@media (pointer:coarse){.wl .wl-x{width:44px;height:44px}}

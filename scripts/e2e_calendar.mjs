@@ -106,6 +106,29 @@ try {
   const ph = await b.eval(`(() => { const r = document.querySelector(".wl-evdlg .wl-glass-in").getBoundingClientRect(); return { b: Math.round(r.bottom), h: innerHeight, w: Math.round(r.width), iw: innerWidth }; })()`);
   ok(Math.abs(ph.b - ph.h) <= 1 && ph.w >= ph.iw - 1, "phone: the event opens as a bottom sheet", ph);
   await b.screenshot(path.join(SHOTS, "calendar-phone-sheet.png"));
+  // the close button stands out: a solid light circle with a dark cross, 44 px
+  const xb = await b.eval(`(() => { const x = document.querySelector(".wl-evdlg .wl-x"), r = x.getBoundingClientRect(), cs = getComputedStyle(x); return { w: Math.round(r.width), bg: cs.backgroundColor, fg: cs.color }; })()`);
+  ok(xb.w >= 44 && /255, 255, 255/.test(xb.bg) && !/255, 255, 255/.test(xb.fg), "phone: the close button is a solid light circle, 44 px", xb);
+  // swipe down with a finger (real touch events)
+  await b.send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
+  const swipe = async (y0, y1, steps = 8) => { const x = 195;
+    await b.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y: y0 }] });
+    for (let i = 1; i <= steps; i++){ await b.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: y0 + (y1 - y0) * i / steps }] }); await sleep(30); }
+    await b.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }); await sleep(700); };
+  const top = await b.eval(`Math.round(document.querySelector(".wl-evdlg .wl-ev-art").getBoundingClientRect().top + 60)`);
+  await swipe(top, top + 40);
+  ok(await b.eval(`document.querySelector(".wl-evdlg").open`), "phone: a short pull springs back (the sheet stays)");
+  await swipe(top, top + 260);
+  ok(!(await b.eval(`document.querySelector(".wl-evdlg").open`)), "phone: swiping down from the top of the card (its picture) closes it");
+  await b.eval(`document.querySelector(".wl-cal-go").click()`); await sleep(900);
+  const mid = await b.eval(`Math.round(document.querySelector(".wl-evdlg .wl-ev-sum").getBoundingClientRect().top + 10)`);
+  await swipe(mid, mid - 200);
+  ok(await b.eval(`document.querySelector(".wl-evdlg").open && document.querySelector(".wl-evdlg .wl-glass-in").scrollTop > 0`), "phone: swiping up scrolls the card, it does not close");
+  await b.eval(`document.querySelector(".wl-evdlg .wl-glass-in").scrollTop = 0`); await sleep(200);
+  const mid2 = await b.eval(`Math.round(document.querySelector(".wl-evdlg .wl-ev-sum").getBoundingClientRect().top + 10)`);
+  await swipe(mid2, mid2 + 260);
+  ok(!(await b.eval(`document.querySelector(".wl-evdlg").open`)), "phone: at the top, swiping down from the middle of the card closes it too");
+  await b.send("Emulation.setTouchEmulationEnabled", { enabled: false });
   await b.eval(`try { localStorage.setItem("laolao_theme", "day"); } catch(e){}`);
   await b.viewport(1366, 900, false);
 

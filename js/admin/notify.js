@@ -2,6 +2,7 @@
 // What needs someone: transfer slips waiting for approval, orders flagged "Needs review" (a payment that did not match),
 // and new paid orders. A new slip drops in as an alert card with a chime, so it is not missed. Checked every 45 s while
 // the admin is open (support, admin and Super Admin: those who may approve).
+import { sheetDrag } from "../shared/sheet-drag.js";
 import { h, icon, fmtDate } from "../shared/ui.js";
 import { lang } from "../shared/i18n.js";
 import { money } from "../shared/billing.js";
@@ -88,6 +89,8 @@ function openPanel(){
       h("div", { class: "nempty" }, h("span", null, icon("check")), h("b", null, L(["All caught up","ບໍ່ມີຫຍັງຄ້າງ"])), h("p", { class: "small muted" }, L(["New slips and payments appear here.","ສະລິບ ແລະ ການຈ່າຍໃໝ່ຈະສະແດງທີ່ນີ້."])))));
   const scrim = h("div", { class: "npanel-scrim", onclick: closePanel });
   document.body.append(scrim, panel);
+  // phones: pull the panel down to close it
+  sheetDrag(panel, { onClose: closePanel, handle: t => !!(t.closest && t.closest(".npanel-h, .npanel-tabs")), scroller: () => panel.querySelector(".npanel-b"), enabled: () => matchMedia("(max-width: 560px)").matches });
   write(SEEN(), Date.now()); draw(false);
 }
 function closePanel(){ document.querySelectorAll(".npanel:not(.out),.npanel-scrim:not(.out)").forEach(x => { x.classList.add("out"); setTimeout(() => x.remove(), 200); }); }

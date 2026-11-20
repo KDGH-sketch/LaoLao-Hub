@@ -6,6 +6,7 @@
 import { h, icon, reducedMotion, videoSource } from "../shared/ui.js";
 import { t, lang } from "../shared/i18n.js";
 import { speak } from "../shared/speech.js";
+import { sheetDrag } from "../shared/sheet-drag.js";
 
 const pad = n => String(n).padStart(2, "0");
 const ymd = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
@@ -105,16 +106,13 @@ export function lifeCalendar({ events, LT, loEl, photoOf, head, nudge, toAuth, r
   const panel = h("div", { class: "wl-glass-in" }, grab, h("button", { type: "button", class: "wl-x", "aria-label": t("close"), title: t("close"), onclick: () => closeSheet() }, icon("x")), sheetBody);
   const dlg = h("dialog", { class: "wl-glass wl-evdlg", "aria-labelledby": "wl-ev-title" }, panel);
   let order = [], cur = -1;
-  function closeSheet(){ if (!dlg.open) return; if (reducedMotion()){ dlg.close(); return; } dlg.classList.add("out"); setTimeout(() => { dlg.classList.remove("out"); try { dlg.close(); } catch(e){ dlg.removeAttribute("open"); } }, 240); }
+  function closeSheet(opt){ if (!dlg.open) return; if (reducedMotion() || (opt && opt.instant)){ dlg.close(); return; } dlg.classList.add("out"); setTimeout(() => { dlg.classList.remove("out"); try { dlg.close(); } catch(e){ dlg.removeAttribute("open"); } }, 240); }
   dlg.addEventListener("cancel", e => { e.preventDefault(); closeSheet(); });
   let downOut = false;
   dlg.addEventListener("pointerdown", e => { downOut = e.target === dlg; });
   dlg.addEventListener("click", e => { if (e.target === dlg && downOut) closeSheet(); });
-  let y0 = null;                                          // phones: pull the sheet down by its handle to close
-  grab.addEventListener("pointerdown", e => { y0 = e.clientY; panel.style.transition = "none"; try { grab.setPointerCapture(e.pointerId); } catch(err){} });
-  grab.addEventListener("pointermove", e => { if (y0 != null) panel.style.translate = "0 " + Math.max(0, e.clientY - y0) + "px"; });
-  const end = e => { if (y0 == null) return; const dy = e.clientY - y0; y0 = null; panel.style.transition = ""; panel.style.translate = ""; if (dy > 90) closeSheet(); };
-  grab.addEventListener("pointerup", end); grab.addEventListener("pointercancel", end);
+  // phones: pull the sheet down to close it, from its picture, title or handle, or from anywhere when scrolled to the top
+  sheetDrag(panel, { onClose: closeSheet, handle: t => !!(t.closest && t.closest(".wl-grab, .wl-ev-art, .wl-ev-h")) });
 
   function openEvent(e, seq){
     order = seq && seq.length ? seq : [e]; cur = Math.max(0, order.indexOf(e));

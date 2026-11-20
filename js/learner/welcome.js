@@ -13,6 +13,7 @@ import { A, createLearnerProfile, rememberPendingProfile, SIGNUP_KEY } from "./c
 import * as D from "./welcome-data.js";
 import * as ART from "./welcome-scenes.js";
 import { lifeCalendar } from "./welcome-calendar.js";
+import { sheetDrag } from "../shared/sheet-drag.js";
 
 const RESOURCE_KEY = "laolao.pendingResource";
 const HOOK_KEY = "laolao.wl.hooked";          // the automatic sign-in pop-up shows at most once per visit (this tab)
@@ -282,9 +283,9 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
       }
       setTimeout(() => { try { el.querySelector(m === "register" ? "#nm" : "#em").focus({ preventScroll: true }); } catch(e){} }, reducedMotion() ? 0 : 380);
     }
-    function close(){
+    function close(opt){
       if (!el.open) return;
-      if (reducedMotion()){ el.close(); return; }
+      if (reducedMotion() || (opt && opt.instant)){ el.close(); return; }
       el.classList.add("out");
       setTimeout(() => { el.classList.remove("out"); try { el.close(); } catch(e){ el.removeAttribute("open"); } }, 240);
     }
@@ -300,13 +301,8 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
     let downOut = false;
     el.addEventListener("pointerdown", e => { downOut = e.target === el; });
     el.addEventListener("click", e => { if (e.target === el && downOut) close(); });
-    let y0 = null;
-    [grab, head].forEach(z => {
-      z.addEventListener("pointerdown", e => { if (e.pointerType === "mouse") return; y0 = e.clientY; panel.style.transition = "none"; try { z.setPointerCapture(e.pointerId); } catch(err){} });
-      z.addEventListener("pointermove", e => { if (y0 == null) return; panel.style.translate = "0 " + Math.max(0, e.clientY - y0) + "px"; });
-      const end = e => { if (y0 == null) return; const dy = e.clientY - y0; y0 = null; panel.style.transition = ""; panel.style.translate = ""; if (dy > 90) close(); };
-      z.addEventListener("pointerup", end); z.addEventListener("pointercancel", end);
-    });
+    // phones: pull the sheet down to close it (from its top, or from anywhere when the form is scrolled to the top)
+    sheetDrag(panel, { onClose: close, handle: t => grab.contains(t) || head.contains(t) });
     return { el, open, close, isOpen };
   }
 
