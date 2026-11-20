@@ -36,13 +36,13 @@ export function offerForPlan(planId){
   return list.find(o => o.placement === "app") || list[0] || null;
 }
 // what the pop-up shows: { offer, plan } or null
-export function pickPromo(){
+export function pickPromo(preview = false){
   const offers = liveOffers();
   const forApp = offers.find(o => o.placement === "app" && (!o.planId || isPaidPlan(planById(o.planId))));
   if (forApp) return { offer: forApp, plan: planById(forApp.planId) };
   const onSale = offers.find(o => o.planId && isPaidPlan(planById(o.planId)));
   if (onSale) return { offer: onSale, plan: planById(onSale.planId) };
-  if (A.settings && A.settings.promoPlanAd === false) return null;
+  if (A.settings && A.settings.promoPlanAd === false && !preview) return null;
   const paid = (A.plans || []).filter(p => p.active !== false && isPaidPlan(p));
   const plan = paid.find(p => p.recommended || p.highlight) || paid.sort((a, b) => ((+a.tier || 1) - (+b.tier || 1)))[0];
   return plan ? { offer: null, plan } : null;
@@ -109,15 +109,27 @@ export function promoSheet({ offer, plan }){
 }
 
 // After the app opens: a free account sees the promotion once per sign-in (a short pause so the page appears first)
+// ?promo in the address shows it now, for anyone signed in (admins too), to preview what free accounts see.
 export function maybeShowPromo({ delay = 1200 } = {}){
-  if (!A.user || !isFreeAccount()) return false;
+  let preview = false;
+  try { preview = new URLSearchParams(location.search).has("promo"); } catch(e){}
+  if (!A.user) return false;
+  if (preview){ const p = pickPromo(true); if (p) setTimeout(() => promoSheet(p), delay); return !!p; }
+  if (!isFreeAccount()) return false;
   const key = PROMO_KEY + ":" + A.user.uid;
   try { if (sessionStorage.getItem(key)) return false; } catch(e){}
   // automated test browsers opt in (scripts/e2e_promo.mjs), so the other tests are not interrupted
   try { if (navigator.webdriver && !localStorage.getItem("laolao.promo.test")) return false; } catch(e){}
   const promo = pickPromo(); if (!promo) return false;
   try { sessionStorage.setItem(key, "1"); } catch(e){}
-  setTimeout(() => { if (A.user && !document.querySelector(".dialog")) promoSheet(promo); else try { sessionStorage.removeItem(key); } catch(e){} }, delay);
+  // wait until no other dialog is open (a welcome note, a download…), up to a minute, then show it once
+  let tries = 0;
+  const attempt = () => {
+    if (!A.user) return;
+    if (document.querySelector(".dialog:not(.out)") && ++tries < 60) return setTimeout(attempt, 1000);
+    promoSheet(promo);
+  };
+  setTimeout(attempt, delay);
   return true;
 }
 export function forgetPromo(){ try { Object.keys(sessionStorage).filter(k => k.startsWith(PROMO_KEY)).forEach(k => sessionStorage.removeItem(k)); } catch(e){} }
