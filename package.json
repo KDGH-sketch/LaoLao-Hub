@@ -22,11 +22,11 @@
     "check:upload": "node scripts/check_upload_live.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.117.2",
-    "express": "^4.21.2"
+    "@supabase/supabase-js": "^2.118.0",
+    "express": "^5.3.0"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.8",
-    "axe-core": "^4.13.0"
+    "@electric-sql/pglite": "^0.5.13",
+    "axe-core": "^4.14.0"
   }
 }
