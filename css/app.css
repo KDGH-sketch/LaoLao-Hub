@@ -3167,3 +3167,96 @@ tr.picked td{background:color-mix(in srgb,var(--accent) 7%,transparent)}
 .tr-notyours h2,.tr-notyours p{margin:0}
 .tr-notyours-ic{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--warn-2);color:var(--warn)}
 .tr-notyours-ic .ic{width:var(--ic-lg);height:var(--ic-lg)}
+
+/* ---------- polish (Nov 2026): one look for every learner page ----------
+   Page headers become soft cards with a Lao watermark and an accent rule, so plain pages (Saved, Notes, News, Downloads,
+   Dictionary, Vocabulary, Plans, My plan, Account, More…) match the pages with their own hero cards. Empty states get
+   an illustration. Quiz answers get letter badges and a clear chosen / right / wrong state. Learner app only. */
+.app:not(.adm) main .pagehead{position:relative;isolation:isolate;overflow:hidden;padding:22px 26px 20px;border-radius:24px;border:1px solid var(--line);
+  background:linear-gradient(130deg,color-mix(in srgb,var(--accent) 11%,var(--surface)) 0%,var(--surface) 62%);box-shadow:0 14px 34px -28px color-mix(in srgb,var(--accent) 70%,transparent);
+  animation:ph-in .5s cubic-bezier(.2,.9,.3,1.1) both}
+.app:not(.adm) main .pagehead::after{content:"ລ";position:absolute;z-index:-1;right:22px;top:50%;transform:translateY(-50%) rotate(-8deg);font:700 8.5rem/1 var(--f-lo);color:var(--accent);opacity:.07;pointer-events:none}
+.app:not(.adm) main .pagehead::before{content:"";position:absolute;z-index:-1;width:220px;height:220px;right:-60px;top:-110px;border-radius:50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--warn) 22%,transparent),transparent);pointer-events:none}
+.app:not(.adm) main .pagehead h1{position:relative;padding-bottom:10px}
+.app:not(.adm) main .pagehead h1::after{content:"";position:absolute;left:0;bottom:0;width:46px;height:4px;border-radius:4px;background:var(--accent-grad);animation:ph-rule .7s .2s cubic-bezier(.2,.9,.3,1) both;transform-origin:left}
+.app:not(.adm) main .pagehead .spread h1{padding-bottom:10px}
+@media (max-width:560px){.app:not(.adm) main .pagehead{padding:18px 18px 16px;border-radius:20px}.app:not(.adm) main .pagehead::after{font-size:6rem;right:10px}}
+/* empty states: a friendly picture above the text */
+.empty{display:grid;justify-items:center;gap:10px;padding:34px 24px;color:var(--ink-2);border:1.5px dashed var(--line-2);border-radius:22px;background:color-mix(in srgb,var(--surface) 75%,transparent);animation:ph-in .45s both}
+.empty::before{content:"";width:68px;height:68px;border-radius:22px;transform:rotate(-6deg);
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230284C7' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z'/%3E%3Cpath d='M19 15l.8 2 2 .8-2 .8L19 21l-.8-2-2-.8 2-.8z'/%3E%3C/svg%3E") center/34px no-repeat,
+    linear-gradient(140deg,color-mix(in srgb,var(--accent) 16%,var(--surface)),color-mix(in srgb,var(--warn) 14%,var(--surface)));box-shadow:0 10px 22px -16px var(--accent)}
+.empty:has(> svg)::before,.empty:has(> .ic)::before,.empty.plain::before{display:none}
+/* quiz answers: A B C D badges, a lift on hover, clear right / wrong */
+.opts.abc{counter-reset:opt}
+.opts.abc .opt{counter-increment:opt;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:14px;padding:12px 16px 12px 12px;border-radius:16px;
+  transition:border-color .2s,box-shadow .2s,transform .2s,background .2s}
+.opts.abc .opt::before{content:counter(opt,upper-alpha);width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font:800 .9rem var(--f-display);
+  background:var(--surface-2);color:var(--ink-2);transition:background .2s,color .2s}
+.opts.abc .opt:hover:not([disabled]){border-color:var(--accent);box-shadow:0 10px 24px -18px var(--accent);transform:translateY(-1px)}
+.opts.abc .opt:hover:not([disabled])::before{background:var(--accent);color:var(--accent-ink)}
+.opts.abc .opt.right::before{background:var(--jade);color:var(--surface);content:"✓"}
+.opts.abc .opt.wrong::before{background:var(--bad);color:var(--surface);content:"✕"}
+.opts.abc .opt.right{animation:opt-pop .4s cubic-bezier(.2,1.5,.4,1)}
+.opts.abc .opt.wrong{animation:opt-shake .35s ease}
+.qbox{border-radius:22px;box-shadow:0 18px 40px -32px color-mix(in srgb,var(--accent) 60%,transparent)}
+@keyframes ph-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes ph-rule{from{transform:scaleX(0)}to{transform:none}}
+@keyframes opt-pop{50%{transform:scale(1.02)}}
+@keyframes opt-shake{20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+@media (prefers-reduced-motion:reduce){.app:not(.adm) main .pagehead,.app:not(.adm) main .pagehead h1::after,.empty,.opts.abc .opt{animation:none!important}}
+
+/* phones: the bell sits right next to the profile (the empty toggles and the profile both took "auto" space, so the
+   bell floated in the middle of the bar) */
+@media (max-width:900px){
+  .app .topbar .toggles{margin-left:0}
+  .app .topbar .nb{margin-left:auto}
+  .app .topbar .pchip{margin-left:8px}
+}
+/* the bell's pulse: a soft ring around the badge, three times, not a large pink circle over the bell */
+.nb-badge:not([hidden])::after{inset:-3px;animation:nb-halo 2.2s ease-out 3}
+@keyframes nb-halo{0%{transform:scale(.95);opacity:.7}70%,100%{transform:scale(1.35);opacity:0}}
+
+/* ---------- Home: the greeting as a hero card (js/learner/views-learn.js homeHero) ---------- */
+.home-hero{position:relative;isolation:isolate;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center;
+  margin-bottom:22px;padding:26px 28px;border-radius:26px;color:var(--accent-ink);background:var(--accent-grad);
+  box-shadow:0 22px 50px -30px var(--accent);animation:ph-in .55s cubic-bezier(.2,.9,.3,1.1) both}
+.home-hero::before{content:"";position:absolute;z-index:-1;width:340px;height:340px;right:-90px;top:-170px;border-radius:50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--warn) 45%,transparent),transparent)}
+.home-hero-wm{position:absolute;z-index:-1;left:-6px;bottom:-34px;font:700 7.5rem/1 var(--f-lo);opacity:.09;white-space:nowrap;pointer-events:none}
+.home-hero .eyebrow{color:inherit;opacity:.85}
+.home-hero h1{color:inherit;margin:2px 0 0}
+.home-hero-main{display:grid;gap:6px;min-width:0}
+.home-hero-sub{margin:0;opacity:.92;max-width:52ch}
+.home-hero-act{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.home-hero-go{background:var(--surface);color:var(--ink);border:0;min-height:52px;padding:8px 18px 8px 14px;border-radius:16px;box-shadow:0 12px 26px -16px rgba(0,0,0,.5);text-align:left;
+  display:inline-flex;align-items:center;gap:10px;max-width:100%}
+.home-hero-go > span{display:grid;line-height:1.2;min-width:0}
+.home-hero-go small{font-weight:500;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:34ch}
+.home-hero-go .ic{flex:none;width:28px;height:28px;padding:6px;border-radius:50%;background:var(--accent);color:var(--accent-ink)}
+.home-hero-go:hover{transform:translateY(-2px)}
+.home-hero-ghost{background:color-mix(in srgb,var(--accent-ink) 14%,transparent);color:inherit;border:1px solid color-mix(in srgb,var(--accent-ink) 35%,transparent);min-height:52px;border-radius:16px}
+.home-hero-ghost:hover{background:color-mix(in srgb,var(--accent-ink) 24%,transparent)}
+.home-hero-side{display:grid;gap:10px;justify-items:stretch;min-width:190px}
+.home-streak{display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:10px;padding:10px 14px;border-radius:18px;background:color-mix(in srgb,var(--accent-ink) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--accent-ink) 22%,transparent)}
+.home-streak-ic{grid-row:1 / span 2;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--warn);color:var(--surface);animation:home-flame 2.6s ease-in-out infinite}
+.home-streak b{font:800 1.4rem/1 var(--f-display)}
+.home-streak small{opacity:.85;font-size:.78rem}
+.home-wotd{position:relative;display:grid;justify-items:start;gap:1px;padding:12px 44px 12px 14px;border-radius:18px;border:0;cursor:pointer;text-align:left;
+  background:var(--surface);color:var(--ink);box-shadow:0 12px 26px -18px rgba(0,0,0,.55);transition:transform .2s}
+.home-wotd:hover{transform:translateY(-2px) rotate(-.5deg)}
+.home-wotd small{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.home-wotd small .ic{width:12px;height:12px}
+.home-wotd b{font-size:1.5rem;line-height:1.35}
+.home-wotd > span:not(.home-wotd-play){font-size:.85rem;font-weight:700;color:var(--accent)}
+.home-wotd em{font-style:normal;font-size:.82rem;color:var(--ink-2);max-width:22ch}
+.home-wotd-play{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink)}
+.home-wotd-play .ic{width:16px;height:16px}
+@media (max-width:760px){
+  .home-hero{grid-template-columns:minmax(0,1fr);padding:22px 20px;border-radius:22px}
+  .home-hero-side{grid-template-columns:auto minmax(0,1fr);min-width:0}
+  .home-hero-act .btn{flex:1 1 100%}
+  .home-hero-go small{max-width:26ch}
+}
+@keyframes home-flame{50%{transform:scale(1.08) rotate(-4deg)}}
+@media (prefers-reduced-motion:reduce){.home-hero,.home-streak-ic{animation:none}}

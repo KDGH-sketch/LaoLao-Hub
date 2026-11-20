@@ -36,12 +36,39 @@ export const STAGE_NAMES = {
 export const stageLabel = n => tr(STAGE_NAMES[n] || { en:"Stage "+n, lo:"ຂັ້ນຕອນ "+n, zh:"阶段 "+n }, lang());
 
 // ---------- dashboard ----------
+// The greeting as a hero card: the date, a hello, where to carry on (next lesson, review), the streak, and a Lao word of
+// the day (the same word all day, a new one tomorrow) to hear with one tap.
+function wordOfTheDay(){
+  const list = ((A.B && A.B.vocabulary) || []).filter(v => v && v.hz && v.py);
+  if (!list.length) return null;
+  const day = Math.floor((Date.now() - new Date().getTimezoneOffset() * 6e4) / 864e5);
+  const v = list[(day * 7919) % list.length];
+  const mean = (v.tr && ((v.tr[expLang()] && v.tr[expLang()].meaning) || (v.tr.en && v.tr.en.meaning))) || v.en || "";
+  return { lo: v.hz, rom: v.py, mean };
+}
+function homeHero(hr, name){
+  const nl = nextLesson(), due = srsDue().length, st = streak(), w = wordOfTheDay();
+  const greet = (hr < 11 ? t("greet_morning") : hr < 18 ? t("greet_day") : t("greet_evening")) + (name ? ", " + name : "");
+  return h("section",{class:"hero-greet home-hero"},
+    h("span",{class:"home-hero-wm",lang:"lo","aria-hidden":"true"}, "ສະບາຍດີ"),
+    h("div",{class:"home-hero-main"},
+      h("span",{class:"eyebrow"}, new Date().toLocaleDateString(lang()==="zh"?"zh-CN":lang()==="lo"?"lo-LA":"en-GB",{weekday:"long",day:"numeric",month:"long"})),
+      h("h1",null, greet),
+      h("p",{class:"home-hero-sub"}, st > 1 ? t("home_streak_on", { n: st }) : t("home_hello")),
+      h("div",{class:"home-hero-act"},
+        nl ? h("button",{class:"btn home-hero-go",onclick:()=>go("lesson",{ id:nl.id })}, icon("play"), h("span",null, Object.keys(A.prog.lessons).length ? t("rec_continue") : t("rec_start"), h("small",null, T(nl.title)))) : null,
+        due ? h("button",{class:"btn home-hero-ghost",onclick:()=>go("review")}, icon("review"), t("home_review_n", { n: due })) : h("button",{class:"btn home-hero-ghost",onclick:()=>go("practice")}, icon("practice"), t("nav_practice")))),
+    h("div",{class:"home-hero-side"},
+      h("div",{class:"home-streak",title:t("stat_streak")}, h("span",{class:"home-streak-ic"}, icon("flame")), h("b",null, String(st)), h("small",null, t("stat_streak"))),
+      w ? h("button",{class:"home-wotd",type:"button",onclick:()=>speak(w.lo),"aria-label":t("home_wotd")+": "+w.lo+" · "+w.rom},
+        h("small",null, icon("star"), t("home_wotd")), h("b",{class:"lo",lang:"lo"}, w.lo), h("span",null, w.rom), w.mean ? h("em",null, String(w.mean).split(/[;/]/)[0]) : null,
+        h("span",{class:"home-wotd-play","aria-hidden":"true"}, icon("speaker"))) : null));
+}
 VIEWS.home = () => {
   touchDay();
   const hr = new Date().getHours(), name = (A.profile.name||"").split(" ")[0];
   const root = h("div",{class:"stack-l"});
-  root.append(h("div",{class:"hero-greet"}, h("span",{class:"eyebrow"}, new Date().toLocaleDateString(lang()==="zh"?"zh-CN":lang()==="lo"?"lo-LA":"en-GB",{weekday:"long",day:"numeric",month:"long"})),
-    h("h1",null,(hr<11?t("greet_morning"):hr<18?t("greet_day"):t("greet_evening"))+(name?", "+name:""))));
+  root.append(homeHero(hr, name));
   // stats
   const acc = A.prog.answers && A.prog.answers.t ? Math.round(100*A.prog.answers.r/A.prog.answers.t)+"%" : "–";
   root.append(h("div",{class:"grid4"},

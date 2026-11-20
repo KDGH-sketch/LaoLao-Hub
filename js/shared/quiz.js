@@ -151,7 +151,7 @@ export function questionEl(q, L, onResult, onNext){
     else if (ptr) els.push(h("div",{class:"muted"+(L==="lo"?" lo":"")}, ptr));
     return els;
   };
-  const optionButtons = (opts, correctIdx, hz) => h("div",{class:"opts"}, opts.map((o,i) => h("button",{class:"opt"+(hz?" hz":"")+(L==="lo"&&!hz?" lo":""),lang:hz?"zh-CN":null,"data-i":i,onclick:e=>{
+  const optionButtons = (opts, correctIdx, hz) => h("div",{class:"opts abc"}, opts.map((o,i) => h("button",{class:"opt"+(hz?" hz":"")+(L==="lo"&&!hz?" lo":""),lang:hz?"zh-CN":null,"data-i":i,onclick:e=>{
     if (answered) return; const ok = i===correctIdx; e.currentTarget.classList.add(ok?"right":"wrong");
     if (!ok) $$(".opt",box).forEach(b=>{ if (+b.dataset.i===correctIdx) b.classList.add("right"); }); finish(ok, null, { given: optText(o, L) }); }}, optText(o, L))));
   const shuffled = (opts, ans) => { const idx = shuffle(opts.map((_,i)=>i)); return { opts: idx.map(i=>opts[i]), ans: idx.indexOf(ans) }; };

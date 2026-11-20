@@ -82,7 +82,7 @@ VIEWS.plans = (params = {}) => {
       !mine && !c.isAdmin && offerForPlan(p.id) ? h("div",{class:"bill-sale"}, icon("spark"), L(offerForPlan(p.id).discountText) || L(offerForPlan(p.id).badge) || t("pr_on_sale")) : null,
       h("div",{class:"spread"}, h("h2",null, planLabel(p)), mine ? h("span",{class:"chip lv"}, icon("check"), t("ac_current")) : p.badge && L(p.badge) ? h("span",{class:"chip warn"}, L(p.badge)) : null),
       h("div",{class:"bill-price"}, lines.length ? [h("b",null, money(lines[0][1], lines[0][0], lang())), h("span",null, " "+perCycle(cycle)),
-        lines[1] ? h("div",{class:"small muted"}, t("bl_or")+" "+money(lines[1][1], lines[1][0], lang())) : null] : h("b",null, forSale(p) ? "—" : t("ac_price_free"))),
+        lines[1] ? h("div",{class:"small muted"}, t("bl_or")+" "+money(lines[1][1], lines[1][0], lang())) : null] : forSale(p) ? h("b",null,"—") : [h("b",null, money(0, (curs[0] || "LAK"), lang())), h("span",null, " "+perCycle(cycle)), h("div",{class:"small muted"}, t("bl_free_forever"))]),
       p.description && L(p.description) ? h("p",{class:"small muted"+lo()}, L(p.description)) : null,
       feats.length ? h("ul",{class:"bill-feats"+lo()}, feats.map(f => h("li",null, icon("check"), h("span",null,f)))) : null,
       lim.length ? h("p",{class:"small muted"}, lim.map(([f, v]) => featureName(f)+": "+v.n+" "+t("ac_unit_"+(v.per||"day"))).join(" · ")) : null,
