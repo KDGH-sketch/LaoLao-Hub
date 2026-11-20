@@ -62,6 +62,20 @@ export function checkWebItem(type, o){
     if (o.unesco !== "" && o.unesco != null && !(+o.unesco >= 1972 && +o.unesco <= 2100)) errors.push(L(["UNESCO year looks wrong","ປີ UNESCO ບໍ່ຖືກ"]));
   }
   if (type === "festivals"){ needTitle(); if (!(+o.month >= 1 && +o.month <= 12)) errors.push(L(["Month must be 1 to 12","ເດືອນຕ້ອງແມ່ນ 1-12"])); }
+  if (type === "events"){
+    needTitle();
+    const d = v => /^\d{4}-\d{2}-\d{2}$/.test(v || "") && !isNaN(Date.parse(v));
+    if (o.when === "date" || o.when === "yearly"){
+      if (!d(o.start)) errors.push(L(["A start date is needed","ຕ້ອງມີວັນເລີ່ມ"]));
+      else if (o.end && (!d(o.end) || o.end < o.start)) errors.push(L(["The end must be a date after the start","ວັນສິ້ນສຸດຕ້ອງຫຼັງວັນເລີ່ມ"]));
+      (o.also || []).forEach((x, i) => { if (!d(x.start) || (x.end && (!d(x.end) || x.end < x.start))) errors.push(L(["Other years","ປີອື່ນ"]) + " " + (i + 1) + ": " + L(["dates are not valid","ວັນທີບໍ່ຖືກ"])); });
+    }
+    if (o.when === "season" && !(+o.monthFrom >= 1 && +o.monthFrom <= 12 && +o.monthTo >= 1 && +o.monthTo <= 12)) errors.push(L(["A season needs its first and last month","ລະດູຕ້ອງມີເດືອນເລີ່ມ ແລະ ເດືອນສິ້ນສຸດ"]));
+    if (o.videoUrl && !/^https:\/\/[^\s<>"]+$/i.test(o.videoUrl)) errors.push(L(["Video: use a full https:// link","ວິດີໂອ: ໃຊ້ລິ້ງ https://"]));
+    if (o.lunar && o.when === "date" && !(o.also || []).length) warnings.push(L(["A lunar date moves each year: add next year's date under Other years","ວັນຕາມຈັນທະຄະຕິປ່ຽນທຸກປີ"]));
+    if (o.laoName && !LO_RE.test(o.laoName)) warnings.push(L(["The Lao name has no Lao letters","ຊື່ລາວບໍ່ມີອັກສອນລາວ"]));
+    (o.words || []).forEach((w, i) => { if (w.audio && !URL_OK(w.audio)) errors.push(L(["Word","ຄຳ"]) + " " + (i + 1) + ": " + L(["audio link must be https://","ລິ້ງສຽງຕ້ອງເປັນ https://"])); });
+  }
   if (type === "offers"){
     needTitle();
     const a = o.startsAt ? Date.parse(o.startsAt) : null, b = o.endsAt ? Date.parse(o.endsAt) : null;
@@ -71,7 +85,7 @@ export function checkWebItem(type, o){
     if (b && b < Date.now()) warnings.push(L(["This offer has already ended and will not be shown","ໂປຣໂມຊັນນີ້ໝົດແລ້ວ"]));
   }
   if (type === "resources"){ needTitle(); if (!o.url) warnings.push(L(["No file yet: visitors see \"Coming soon\"","ຍັງບໍ່ມີໄຟລ໌: ຜູ້ເຂົ້າຊົມຈະເຫັນ \"ໄວໆນີ້\""])); if (o.glyph && !LO_RE.test(o.glyph)) warnings.push(L(["Cover letters should be Lao","ຕົວອັກສອນໜ້າປົກຄວນເປັນລາວ"])); }
-  if (["places","festivals","offers","resources"].includes(type) && o.access && o.access !== "public") warnings.push(L(["Access is not \"Public\": visitors who are not signed in will not see it","ບໍ່ແມ່ນ \"ສາທາລະນະ\": ຜູ້ທີ່ບໍ່ໄດ້ເຂົ້າສູ່ລະບົບຈະບໍ່ເຫັນ"]));
+  if (["places","festivals","events","offers","resources"].includes(type) && o.access && o.access !== "public") warnings.push(L(["Access is not \"Public\": visitors who are not signed in will not see it","ບໍ່ແມ່ນ \"ສາທາລະນະ\": ຜູ້ທີ່ບໍ່ໄດ້ເຂົ້າສູ່ລະບົບຈະບໍ່ເຫັນ"]));
   for (const k of (type === "welcome" ? [] : ["text"])) if (o[k] && o[k].en && o[k].en.length > 1200) warnings.push(L(["The description is very long","ຄຳອະທິບາຍຍາວຫຼາຍ"]));
   return { errors: [...new Set(errors)], warnings: [...new Set(warnings)] };
 }

@@ -13,8 +13,8 @@ export function project(lat, lon){
 export const inLaos = (lat, lon) => Number.isFinite(+lat) && Number.isFinite(+lon) && +lat >= MAP.bounds.latMin && +lat <= MAP.bounds.latMax && +lon >= MAP.bounds.lonMin && +lon <= MAP.bounds.lonMax;
 
 // Page sections in order; editors switch them on / off and reorder them
-export const SECTION_IDS = ["greetings","alphabet","stats","journey","festivals","services","resources","promotions","news","about","closing"];
-export const NAV_SECTIONS = ["journey","services","resources","promotions","news","about"];
+export const SECTION_IDS = ["greetings","alphabet","stats","journey","festivals","lifecal","services","resources","promotions","news","about","closing"];
+export const NAV_SECTIONS = ["journey","lifecal","services","resources","promotions","news","about"];
 
 const T = (en, lo, zh) => ({ en, lo, zh });
 
@@ -23,7 +23,7 @@ export const WELCOME = {
          description: T("Learn Lao with sentence patterns, native audio, a handwriting studio and spaced review. Start free.",
            "ຮຽນພາສາລາວດ້ວຍໂຄງສ້າງປະໂຫຍກ, ສຽງເຈົ້າຂອງພາສາ, ຫ້ອງຝຶກຂຽນ ແລະ ການທົບທວນ. ເລີ່ມຟຣີ.",
            "用句型、真人发音、书写练习和间隔复习学习老挝语。免费开始。") },
-  nav: { home: T("Home","ໜ້າຫຼັກ","首页"), journey: T("Journey","ການເດີນທາງ","旅程"), services: T("Services","ບໍລິການ","服务"),
+  nav: { home: T("Home","ໜ້າຫຼັກ","首页"), journey: T("Journey","ການເດີນທາງ","旅程"), lifecal: T("Calendar","ປະຕິທິນ","日历"), services: T("Services","ບໍລິການ","服务"),
          resources: T("Free resources","ຟຣີ","免费资源"), promotions: T("Promotions","ໂປຣໂມຊັນ","优惠"), news: T("News","ຂ່າວ","新闻"), about: T("About","ກ່ຽວກັບ","关于") },
   hero: {
     badge: T("Lao for real conversations · 27 consonants, 6 tones", "ຮຽນລາວເພື່ອສົນທະນາຈິງ · 27 ພະຍັນຊະນະ, 6 ວັນນະຍຸດ", "学真正能用的老挝语 · 27个辅音，6个声调"),
@@ -51,6 +51,9 @@ export const WELCOME = {
       mapCaption: T("The Mekong, ແມ່ນ້ຳຂອງ, flowing south","ແມ່ນ້ຳຂອງ ໄຫຼລົງທິດໃຕ້","湄公河（ແມ່ນ້ຳຂອງ）向南流淌") },
     festivals: { eyebrow: T("Festival calendar","ປະຕິທິນບຸນ","节日日历"), title: T("The Lao year, month by month","ປີລາວ ເດືອນຕໍ່ເດືອນ","老挝的一年，按月看"),
       intro: T("Lunar festival dates move each year. The current one is highlighted.","ວັນບຸນຕາມຈັນທະຄະຕິປ່ຽນທຸກປີ. ບຸນປັດຈຸບັນຖືກເນັ້ນໄວ້.","农历节日的日期每年不同，当前的节日已高亮显示。") },
+    lifecal: { eyebrow: T("Lao life calendar","ປະຕິທິນຊີວິດລາວ","老挝生活日历"), title: T("What is happening in Laos","ມີຫຍັງເກີດຂຶ້ນໃນລາວ","老挝正在发生什么"),
+      loSub: "ປະຕິທິນຊີວິດລາວ",
+      intro: T("Holidays, Buddhist days, seasons and everyday customs. Tap a day or an event to read its story, why it matters, and what to know.","ວັນພັກ, ວັນພຸດ, ລະດູ ແລະ ຮີດຄອງປະຈຳວັນ. ແຕະວັນ ຫຼື ເຫດການ ເພື່ອອ່ານເລື່ອງລາວ.","节假日、佛教节日、季节和日常习俗。点一天或一个活动，了解它的故事、意义和须知。") },
     services: { eyebrow: T("Services","ບໍລິການ","服务"), title: T("Everything you need to read, write and speak","ທຸກຢ່າງທີ່ຕ້ອງການເພື່ອອ່ານ, ຂຽນ ແລະ ເວົ້າ","读、写、说所需的一切"),
       loSub: "ທຸກຢ່າງທີ່ຕ້ອງການເພື່ອຮຽນພາສາລາວ",
       intro: T("Each tool runs on the same sentence patterns, so what you hear in a lesson turns up in practice, review and the dictionary.",
@@ -159,6 +162,7 @@ export const FESTIVALS = [
   row("national-day", 6, { month:12, lunar:false, art:"flag", dateText:T("2 December","2 ທັນວາ","12月2日"), title:T("Lao National Day","ວັນຊາດ","老挝国庆节"), laoName:"ວັນຊາດ",
     text:T("Marks the founding of the Lao People's Democratic Republic in 1975.","ລະນຶກການສະຖາປະນາ ສປປ ລາວ ໃນປີ 1975.","纪念1975年老挝人民民主共和国成立。") })
 ];
+export { EVENTS, EVENT_KINDS, EVENT_WHEN } from "./welcome-calendar-data.js";
 export const RESOURCES = [
   row("starter-guide", 1, { kind:"pdf", glyph:"ກ", cover:1, requiresAccount:true, url:"", title:T("30-day Lao starter guide","ຄູ່ມືເລີ່ມຕົ້ນ 30 ວັນ","30天老挝语入门指南"),
     text:T("Script, tones and survival conversation in one reference.","ອັກສອນ, ວັນນະຍຸດ ແລະ ບົດສົນທະນາພື້ນຖານໃນເຫຼັ້ມດຽວ.","文字、声调和生存会话，一本全搞定。") }),

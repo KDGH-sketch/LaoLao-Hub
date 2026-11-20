@@ -58,7 +58,7 @@ declare doc jsonb; op jsonb; p text[]; i int; cur jsonb;
 begin
   if p_table not in ('users','admins','adminNotes','access','plans','subscriptions','settings',
                      'lessons','patterns','grammar','vocabulary','dialogues','quizzes','audio','paths','releases','lexicon',
-                     'videos','tones','culture','characters','dictionary','places','festivals','offers','resources',
+                     'videos','tones','culture','characters','dictionary','places','festivals','events','offers','resources','pronunciation',
                      'bundles','progress','reviews','bookmarks','notes','activity') then
     raise exception 'll_apply: table % is not allowed', p_table;
   end if;

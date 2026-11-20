@@ -37,6 +37,7 @@ export const ALL_ADMIN_MENUS = [
       { id: "welcome", label: ["Welcome Page", "ໜ້າຕ້ອນຮັບ"], icon: "home", type: "content" },
       { id: "places", label: ["Journey Places", "ສະຖານທີ່"], icon: "globe", type: "content" },
       { id: "festivals", label: ["Festivals", "ບຸນ"], icon: "star", type: "content" },
+      { id: "events", label: ["Life Calendar", "ປະຕິທິນຊີວິດລາວ"], icon: "history", type: "content" },
       { id: "promotions", label: ["Promotions & Feed", "ໂປຣໂມຊັ່ນ ແລະ ຂ່າວ"], icon: "gift", type: "content" },
       { id: "resources", label: ["Free Resources", "ຊັບພະຍາກອນຟຣີ"], icon: "download", type: "content" }
     ]

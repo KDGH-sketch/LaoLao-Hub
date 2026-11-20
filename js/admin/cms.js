@@ -71,7 +71,7 @@ export async function viewContentHome(){
     lessons:"learn", patterns:"gen", grammar:"layers", vocabulary:"dict", dialogues:"users",
     quizzes:"practice", audio:"speaker", paths:"path", releases:"gift", lexicon:"content",
     videos:"play", tones:"speaker", culture:"culture", characters:"chars", dictionary:"dict",
-    places:"globe", festivals:"star", offers:"gift", resources:"download"
+    places:"globe", festivals:"star", events:"history", offers:"gift", resources:"download"
   };
   return h("div",{class:"stack-l"}, canEditMenu("lessons") ? packPanel() : null, h("div",{class:"pagehead"}, h("h1",null,t("adm_content")), h("p",null,"Universal Content Management System: Create, edit, duplicate, bulk-manage, and publish curriculum entities.")),
     h("div",{class:"grid3"}, counts.map(([ty,n]) => h("button",{class:"qs",onclick:()=>go("contentList",{type:ty})}, h("span",{class:"qi",style:"background:var(--surface-2);color:var(--accent)"}, icon(ICON[ty]||"content")), h("span",null, h("b",null,t("type_"+ty)||ty), h("div",{class:"small muted"}, n+" "+t("items")))))));

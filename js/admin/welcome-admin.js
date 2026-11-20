@@ -17,7 +17,7 @@ import { checkWebItem } from "./web-checks.js";
 const HEAD_FIELDS = [{ key:"eyebrow", type:"tr", label:["Small heading","ຫົວຂໍ້ນ້ອຍ"] }, { key:"title", type:"tr", label:["Title","ຫົວຂໍ້"] },
   { key:"loSub", type:"text", cls:"lo", label:["Lao subtitle (optional)","ຫົວຂໍ້ຍ່ອຍພາສາລາວ"] }, { key:"intro", type:"tr", multiline:true, label:["Intro text","ຂໍ້ຄວາມແນະນຳ"] }];
 const SECTION_NAMES = { greetings:["Greetings ribbon","ແຖບຄຳທັກທາຍ"], alphabet:["Alphabet chips","ຕົວອັກສອນ"], stats:["Numbers strip","ແຖບຕົວເລກ"], journey:["Journey through Laos","ເດີນທາງທົ່ວລາວ"],
-  festivals:["Festival calendar","ປະຕິທິນບຸນ"], services:["Services","ບໍລິການ"], resources:["Free resources","ຊັບພະຍາກອນຟຣີ"], promotions:["Promotions and plans","ໂປຣໂມຊັນ ແລະ ແພັກເກດ"],
+  festivals:["Festival calendar","ປະຕິທິນບຸນ"], lifecal:["Life calendar","ປະຕິທິນຊີວິດລາວ"], services:["Services","ບໍລິການ"], resources:["Free resources","ຊັບພະຍາກອນຟຣີ"], promotions:["Promotions and plans","ໂປຣໂມຊັນ ແລະ ແພັກເກດ"],
   news:["News","ຂ່າວ"], about:["About","ກ່ຽວກັບ"], closing:["Closing call to action","ປຸ່ມສະຫຼຸບທ້າຍໜ້າ"] };
 const GROUPS = [
   ["hero", ["Top of the page","ສ່ວນເທິງ"], [{ key:"hero", type:"object", label:["Hero","ສ່ວນເທິງ"], fields:[
@@ -58,8 +58,15 @@ export async function viewWelcome(){
   const published = (pubDoc && pubDoc.published) || null;
   // the same filling-in of missing parts as the page does, so "changed" compares like with like
   const complete = src => { const d = Object.assign(clone(WELCOME), clone(src || {})); d.heads = Object.assign(clone(WELCOME.heads), d.heads || {});
+    d.nav = Object.assign(clone(WELCOME.nav), d.nav || {});
     const known = new Set((d.sections || []).map(s => s.id));
-    d.sections = (d.sections || []).filter(s => SECTION_IDS.includes(s.id)).concat(SECTION_IDS.filter(id => !known.has(id)).map(id => ({ id, on:true }))); return d; };
+    // a section added later goes in at its default place (after the one before it in SECTION_IDS), like on the page
+    d.sections = (d.sections || []).filter(s => SECTION_IDS.includes(s.id));
+    for (const id of SECTION_IDS.filter(x => !known.has(x))){
+      const prev = SECTION_IDS.slice(0, SECTION_IDS.indexOf(id)).reverse().find(p => d.sections.some(s => s.id === p));
+      d.sections.splice(prev ? d.sections.findIndex(s => s.id === prev) + 1 : 0, 0, { id, on:true });
+    }
+    return d; };
   let draft = complete((draftDoc && draftDoc.data) || published);
   let savedJson = JSON.stringify(draft);                  // what is in settings/welcomeDraft; leaving with other edits asks first
   S.leaveGuard = () => canEdit && JSON.stringify(draft) !== savedJson;
@@ -88,7 +95,7 @@ export async function viewWelcome(){
   drawSections();
 
   // ----- section headings + every text group -----
-  const headsBox = h("div",{class:"stack"}, ["alphabet","journey","festivals","services","resources","promotions","news"].map(id => {
+  const headsBox = h("div",{class:"stack"}, ["alphabet","journey","festivals","lifecal","services","resources","promotions","news"].map(id => {
     draft.heads[id] = draft.heads[id] || {};
     return h("details",{class:"panel"}, h("summary",null, h("b",null, L(SECTION_NAMES[id]))), h("div",{class:"stack",style:"margin-top:10px"},
       HEAD_FIELDS.concat(id === "journey" ? [{ key:"mapCaption", type:"tr", label:["Map caption","ຄຳອະທິບາຍແຜນທີ່"] }] : []).map(f => renderField(f, draft.heads[id], "welcome")))); }));
@@ -171,7 +178,7 @@ export async function viewWelcome(){
   setTimeout(loadFrame, 50);
   return h("div",{class:"stack-l"},
     h("div",{class:"pagehead"}, h("h1",null, L(["Welcome Page","ໜ້າຕ້ອນຮັບ"])), h("p",null, L(["The page visitors see before signing in. Edit the draft, check it in the preview, then publish. Places, festivals, offers and free resources have their own menus.","ໜ້າທີ່ຜູ້ເຂົ້າຊົມເຫັນກ່ອນເຂົ້າສູ່ລະບົບ. ແກ້ໄຂຮ່າງ, ເບິ່ງຕົວຢ່າງ, ແລ້ວເຜີຍແຜ່."]))),
-    h("div",{class:"row",style:"flex-wrap:wrap;gap:8px"}, ["places","festivals","promotions","resources"].filter(canViewMenu).map(k => h("button",{class:"btn sm",onclick:()=>k === "promotions" ? go("promotions") : go("contentList",{ type:k })}, L(({ places:["Journey places","ສະຖານທີ່"], festivals:["Festivals","ບຸນ"], promotions:["Promotions & Feed","ໂປຣໂມຊັນ"], resources:["Free resources","ຊັບພະຍາກອນຟຣີ"] })[k])))),
+    h("div",{class:"row",style:"flex-wrap:wrap;gap:8px"}, ["places","festivals","events","promotions","resources"].filter(canViewMenu).map(k => h("button",{class:"btn sm",onclick:()=>k === "promotions" ? go("promotions") : go("contentList",{ type:k })}, L(({ places:["Journey places","ສະຖານທີ່"], festivals:["Festivals","ບຸນ"], events:["Life calendar","ປະຕິທິນຊີວິດ"], promotions:["Promotions & Feed","ໂປຣໂມຊັນ"], resources:["Free resources","ຊັບພະຍາກອນຟຣີ"] })[k])))),
     h("div",{class:"editor"}, form, side), previewPanel, statsBox);
 }
 

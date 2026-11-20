@@ -6,7 +6,7 @@ export const STATUS_KEYS = ["draft","published","archived"];
 export const CONTENT_TYPES = [
   "lessons","patterns","grammar","vocabulary","dialogues","quizzes","audio","paths","releases","lexicon",
   "videos","tones","culture","characters","dictionary",
-  "places","festivals","offers","resources",         // the public welcome page (docs/WELCOME.md)
+  "places","festivals","events","offers","resources",         // the public welcome page (docs/WELCOME.md)
   "pronunciation"                                     // Pronunciation Studio units (needs the table: supabase-schema.sql)
 ];
 export const OPTIONAL_TYPES = new Set(["pronunciation"]);

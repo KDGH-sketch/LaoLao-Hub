@@ -72,6 +72,8 @@ async function boot(){
     render(); preloadViews();
     // a free download chosen on the welcome page before signing up
     const res = (await welcome()).pendingResource();
+    // a free account: the promotion pop-up once per sign-in (not on top of the download, nor on the checkout pages)
+    if (!res && !["plans","checkout","payment","myplan"].includes(A.view && A.view.name)) import("./promo.js").then(m => m.maybeShowPromo()).catch(() => {});
     if (res) dialog({ title: t("wl_res_ready"), body: h("div",{class:"stack"}, h("p",null, res.title || ""),
       h("a",{class:"btn primary",href:res.url,target:"_blank",rel:"noopener",download:""}, icon("download"), t("wl_download"))), actions:[{ label:t("close"), value:true }] });
   });
@@ -272,6 +274,7 @@ export async function signOutNow(){
   if (!await confirmDialog(t("pf_logout_q"), t("pf_logout_d"), t("sign_out"), t("cancel"), true)) return;
   closeProfileMenu();
   document.body.classList.add("leaving");                   // the app fades away before the sign-in screen appears
+  import("./promo.js").then(m => m.forgetPromo()).catch(() => {});      // the next sign-in shows the promotion again
   setTimeout(async () => { try { await A.api.auth.signOut(); } finally { document.body.classList.remove("leaving"); } }, 260);
 }
 function openProfileMenu(anchor){

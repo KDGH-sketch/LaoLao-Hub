@@ -8,6 +8,7 @@ import { METHODS, CYCLES, planPrice, forSale, money, yearlySaving, enabledMethod
 import { ROUTE_FEATURE } from "../shared/features.js";
 import { A, refreshAccess } from "./core.js";
 import { featureName, planLabel, usageMeters, RETURN_KEY } from "./upgrade.js";
+import { offerForPlan, saleStrip } from "./promo.js";
 
 export const VIEWS = {};
 const go = (...a) => A.go(...a);
@@ -78,6 +79,7 @@ VIEWS.plans = (params = {}) => {
     const feats = (p.features && (p.features[lang()] || p.features.en)) || [];
     return h("article",{class:"card bill-plan"+(mine?" current":"")+(p.recommended?" recommended":"")},
       p.recommended && !mine ? h("div",{class:"bill-ribbon"}, icon("star"), t("bl_recommended")) : null,
+      !mine && !c.isAdmin && offerForPlan(p.id) ? h("div",{class:"bill-sale"}, icon("spark"), L(offerForPlan(p.id).discountText) || L(offerForPlan(p.id).badge) || t("pr_on_sale")) : null,
       h("div",{class:"spread"}, h("h2",null, planLabel(p)), mine ? h("span",{class:"chip lv"}, icon("check"), t("ac_current")) : p.badge && L(p.badge) ? h("span",{class:"chip warn"}, L(p.badge)) : null),
       h("div",{class:"bill-price"}, lines.length ? [h("b",null, money(lines[0][1], lines[0][0], lang())), h("span",null, " "+perCycle(cycle)),
         lines[1] ? h("div",{class:"small muted"}, t("bl_or")+" "+money(lines[1][1], lines[1][0], lang())) : null] : h("b",null, forSale(p) ? "—" : t("ac_price_free"))),
@@ -97,6 +99,7 @@ VIEWS.plans = (params = {}) => {
   const s = A.settings || {};
   add(root, pageHead(t("bl_plans_title"), t("bl_plans_sub")),
     retName ? h("div",{class:"banner bill-from"}, icon("lock"), h("span",null, t("bl_unlock_for", { f:retName }))) : null,
+    c.isAdmin || c.paid ? null : (sp => sp ? saleStrip(sp) : null)(plans.find(p => offerForPlan(p.id) && c.ent.planId !== p.id)),
     c.ent.status === "expired" ? h("div",{class:"banner"}, t("bl_expired_banner", { p:planLabel(planById(c.a.planId)) || "", d:fmtDate(c.exp, lang()) })) : null,
     h("div",{class:"bill-top"}, seg, c.isAdmin ? null : h("button",{class:"btn ghost",onclick:()=>go("myplan")}, icon("wallet"), t("bl_myplan"))),
     grid,

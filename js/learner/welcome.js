@@ -12,6 +12,7 @@ import { DEMO } from "../shared/setup.js";
 import { A, createLearnerProfile, rememberPendingProfile, SIGNUP_KEY } from "./core.js";
 import * as D from "./welcome-data.js";
 import * as ART from "./welcome-scenes.js";
+import { lifeCalendar } from "./welcome-calendar.js";
 
 const RESOURCE_KEY = "laolao.pendingResource";
 const HOOK_KEY = "laolao.wl.hooked";          // the automatic sign-in pop-up shows at most once per visit (this tab)
@@ -46,8 +47,15 @@ const remember = patch => { try { sessionStorage.setItem(SIGNUP_KEY, JSON.string
 function assemble({ welcome, app, plans, bundle, rows, legacy }){
   const W = Object.assign({}, D.WELCOME, welcome || {});
   W.heads = Object.assign({}, D.WELCOME.heads, (welcome && welcome.heads) || {});
+  W.nav = Object.assign({}, D.WELCOME.nav, (welcome && welcome.nav) || {});        // menu labels added later (e.g. Calendar) fall back to the defaults
   const known = new Set((W.sections || []).map(s => s.id));
-  W.sections = (W.sections || []).filter(s => D.SECTION_IDS.includes(s.id)).concat(D.SECTION_IDS.filter(id => !known.has(id)).map(id => ({ id, on: true })));
+  // a section added after the page was saved (e.g. the life calendar) goes in at its default place: after the section
+  // that comes before it in SECTION_IDS (or first), not at the end of the page
+  W.sections = (W.sections || []).filter(s => D.SECTION_IDS.includes(s.id));
+  for (const id of D.SECTION_IDS.filter(x => !known.has(x))){
+    const prev = D.SECTION_IDS.slice(0, D.SECTION_IDS.indexOf(id)).reverse().find(p => W.sections.some(s => s.id === p));
+    W.sections.splice(prev ? W.sections.findIndex(s => s.id === prev) + 1 : 0, 0, { id, on: true });
+  }
   const src = rows || bundle;                                     // preview: the raw tables; visitors: the tier-0 bundle
   const live = list => (list || []).filter(x => x && x.status !== "archived" && (rows ? true : x.status === "published"));
   const byOrder = (a, b) => (a.order || 0) - (b.order || 0);
@@ -61,6 +69,7 @@ function assemble({ welcome, app, plans, bundle, rows, legacy }){
     W, app: app || {}, plans: (plans || []).filter(p => p.active !== false && p.showOnWelcome !== false).sort((a, b) => (a.order || 0) - (b.order || 0)),
     places: pick("places", D.PLACES).filter(p => D.inLaos(p.lat, p.lon)),
     festivals: pick("festivals", D.FESTIVALS).sort((a, b) => (a.month || 0) - (b.month || 0)),
+    events: pick("events", D.EVENTS),
     // the old Promotions banner (settings/promotions) still counts as a free resource until an admin converts it
     resources: src && Array.isArray(src.resources) ? (live(src.resources).length || !legacy || legacy.migratedAt || legacy.active === false || !/^https:\/\//.test(legacy.link || "") ? live(src.resources).sort(byOrder)
       : [{ id:"legacy-download", kind:"pdf", glyph:"ລ", cover:1, requiresAccount:true, url: legacy.link, title: legacy.title || { en:"Free download" }, text: legacy.desc || {} }]) : D.RESOURCES,
@@ -72,8 +81,8 @@ async function fetchData(api, preview){
   const get = p => within(api.db.get(p));
   if (preview){
     const [draft, app, plans, ...lists] = await Promise.all([get("settings/welcomeDraft"), get("settings/app"), within(api.db.list("plans")),
-      ...["places","festivals","offers","resources","releases","culture"].map(ty => within(api.db.list(ty)))]);
-    const rows = {}; ["places","festivals","offers","resources","releases","culture"].forEach((ty, i) => rows[ty] = (lists[i] || []).filter(x => !String(x.id).includes("__")));
+      ...["places","festivals","events","offers","resources","releases","culture"].map(ty => within(api.db.list(ty)))]);
+    const rows = {}; ["places","festivals","events","offers","resources","releases","culture"].forEach((ty, i) => rows[ty] = (lists[i] || []).filter(x => !String(x.id).includes("__")));
     return assemble({ welcome: draft && draft.data, app, plans, rows });
   }
   const [pub, app, plans, bundle, legacy] = await Promise.all([get("settings/welcome"), get("settings/app"), within(api.db.list("plans")), loadPublicBundle(api, 2500), get("settings/promotions")]);
@@ -349,6 +358,7 @@ export async function renderWelcome({ root, api, mode = "signin", preview = fals
     stats(){ return h("div", { class: "wl-strip wl-rv", role: "region", "aria-label": t("wl_at_glance") }, M.W.stats.map(s => h("div", null, h("b", null, s.value), h("span", null, LT(s.label))))); },
     journey(){ return journey(); },
     festivals(){ return festivals(); },
+    lifecal(){ return lifeCalendar({ events: M.events, LT, loEl, photoOf, head, nudge, toAuth, regMode }); },
     services(){
       return h("section", { id: "w-services" }, head("services"), h("div", { class: "wl-bento-wrap" }, h("div", { class: "wl-bento" }, M.W.services.map(c =>
         h("article", { class: "wl-card wl-b-" + (c.size || "sm") + " wl-rv" }, h("span", { class: "wl-tile" }, icon(ICONS[c.icon] || "spark")), h("h3", null, LT(c.title)), h("p", null, LT(c.text)),

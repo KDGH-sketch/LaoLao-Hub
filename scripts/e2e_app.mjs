@@ -42,6 +42,7 @@ try {
   // ======================= AUTH =======================
   step("auth");
   await signOutAll(); await openApp("/");
+  await b.eval(`document.querySelector("#wl-go-signin")?.click()`); await sleep(600);     // sign-in lives in the welcome pop-up
   await b.eval(`(() => { const e = document.querySelector("#em"), p = document.querySelector("#pw"); e.value = "free@demo.laolao"; p.value = "wrong-password"; e.form.requestSubmit(); })()`);
   await sleep(800);
   await ok(!(await b.eval(`!!document.querySelector(".app")`)) && /wrong email or password/i.test(await b.eval(`document.body.innerText`)), "wrong password is rejected with a message");

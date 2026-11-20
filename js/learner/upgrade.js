@@ -8,6 +8,7 @@ import { setFeature } from "../shared/practice-feature.js";
 import { encodeReturn, planPrice, money, enabledMethods, methodCurrency } from "../shared/billing.js";
 import { planLabel as sharedPlanLabel } from "../shared/plan-format.js";
 import { A } from "./core.js";
+import { saleStrip } from "./promo.js";
 
 const L = obj => tr(obj, lang());
 export const featureName = f => featureByKey[f] ? L(featureByKey[f].label) : f;
@@ -91,6 +92,7 @@ export function lockedPanel(info, { onClose, onLater } = {}){
     h("p",{class:"muted"}, x.text),
     planPerks(x.plan),
     price ? h("p",{class:"lockp-price"}, h("b",null, planLabel(x.plan)), " · ", price) : null,
+    x.plan && !x.renew ? saleStrip(x.plan) : null,
     h("div",{class:"row lockp-act"}, primary,
       onLater ? h("button",{class:"btn ghost",onclick:onLater}, t("bl_later"))
         : onClose ? h("button",{class:"btn ghost",onclick:onClose}, t("close")) : h("button",{class:"btn ghost",onclick:()=>A.back ? A.back() : A.go("home")}, icon("left"), t("back"))));

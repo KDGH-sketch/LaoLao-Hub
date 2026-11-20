@@ -8529,6 +8529,11 @@
         "lo": "ການເດີນທາງ",
         "zh": "旅程"
       },
+      "lifecal": {
+        "en": "Calendar",
+        "lo": "ປະຕິທິນ",
+        "zh": "日历"
+      },
       "services": {
         "en": "Services",
         "lo": "ບໍລິການ",
@@ -8624,6 +8629,10 @@
         "on": true
       },
       {
+        "id": "lifecal",
+        "on": true
+      },
+      {
         "id": "services",
         "on": true
       },
@@ -8694,6 +8703,24 @@
           "en": "Lunar festival dates move each year. The current one is highlighted.",
           "lo": "ວັນບຸນຕາມຈັນທະຄະຕິປ່ຽນທຸກປີ. ບຸນປັດຈຸບັນຖືກເນັ້ນໄວ້.",
           "zh": "农历节日的日期每年不同，当前的节日已高亮显示。"
+        }
+      },
+      "lifecal": {
+        "eyebrow": {
+          "en": "Lao life calendar",
+          "lo": "ປະຕິທິນຊີວິດລາວ",
+          "zh": "老挝生活日历"
+        },
+        "title": {
+          "en": "What is happening in Laos",
+          "lo": "ມີຫຍັງເກີດຂຶ້ນໃນລາວ",
+          "zh": "老挝正在发生什么"
+        },
+        "loSub": "ປະຕິທິນຊີວິດລາວ",
+        "intro": {
+          "en": "Holidays, Buddhist days, seasons and everyday customs. Tap a day or an event to read its story, why it matters, and what to know.",
+          "lo": "ວັນພັກ, ວັນພຸດ, ລະດູ ແລະ ຮີດຄອງປະຈຳວັນ. ແຕະວັນ ຫຼື ເຫດການ ເພື່ອອ່ານເລື່ອງລາວ.",
+          "zh": "节假日、佛教节日、季节和日常习俗。点一天或一个活动，了解它的故事、意义和须知。"
         }
       },
       "services": {
@@ -9151,6 +9178,1286 @@
       "status": "published",
       "access": "free",
       "version": 1
+    }
+  ],
+  "events": [
+    {
+      "id": "intl-new-year",
+      "status": "published",
+      "access": "public",
+      "order": 1,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [],
+      "words": [
+        {
+          "lo": "ສະບາຍດີປີໃໝ່",
+          "rom": "sabaidee pi mai",
+          "en": "Happy New Year"
+        }
+      ],
+      "kind": "holiday",
+      "when": "yearly",
+      "start": "2026-01-01",
+      "title": {
+        "en": "International New Year",
+        "lo": "ປີໃໝ່ສາກົນ",
+        "zh": "元旦"
+      },
+      "laoName": "ປີໃໝ່ສາກົນ",
+      "summary": {
+        "en": "A public holiday. Offices close and families visit each other, though the big Lao New Year comes in April.",
+        "lo": "ວັນພັກລັດຖະການ. ຫ້ອງການປິດ ແລະ ຄອບຄົວໄປຢາມກັນ.",
+        "zh": "公共假日。机关放假，家人互相拜访；老挝自己的大新年在四月。"
+      },
+      "history": {
+        "en": "Laos follows the international calendar for work and school, so 1 January is a holiday. The traditional Lao New Year, Pi Mai, still follows the sun's move into Aries in mid-April.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "Expect quieter offices and busy restaurants. Many Lao people say the year has really turned only after Pi Mai.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "Wish people a happy new year with ສະບາຍດີປີໃໝ່ (sabaidee pi mai).",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "makha-bucha",
+      "status": "published",
+      "access": "public",
+      "order": 2,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [
+        {
+          "start": "2027-02-20"
+        }
+      ],
+      "words": [
+        {
+          "lo": "ວຽນທຽນ",
+          "rom": "vian tian",
+          "en": "candle procession"
+        },
+        {
+          "lo": "ວັດ",
+          "rom": "vat",
+          "en": "temple"
+        }
+      ],
+      "kind": "buddhist",
+      "when": "date",
+      "lunar": true,
+      "start": "2026-03-03",
+      "title": {
+        "en": "Boun Makha Bousa",
+        "lo": "ບຸນມາຂະບູຊາ",
+        "zh": "万佛节"
+      },
+      "laoName": "ບຸນມາຂະບູຊາ",
+      "summary": {
+        "en": "Full moon of the third lunar month: candle processions around the temple at night.",
+        "lo": "ວັນເພັງເດືອນສາມ: ວຽນທຽນອ້ອມວັດໃນຕອນກາງຄືນ.",
+        "zh": "农历三月月圆：夜晚绕寺院举烛游行。"
+      },
+      "history": {
+        "en": "It remembers the day 1,250 monks gathered, uninvited, to hear the Buddha teach. In Champasak the same full moon brings Boun Wat Phou, a pilgrimage to the Khmer-era temple.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "Families give alms in the morning and walk three times around the temple at night with candles, flowers and incense (ວຽນທຽນ, vian tian).",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "Visitors are welcome to join the candle walk: dress modestly and walk clockwise, keeping the temple on your right.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "womens-day",
+      "status": "published",
+      "access": "public",
+      "order": 3,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [],
+      "words": [
+        {
+          "lo": "ແມ່ຍິງ",
+          "rom": "mae nying",
+          "en": "woman"
+        },
+        {
+          "lo": "ດອກໄມ້",
+          "rom": "dok mai",
+          "en": "flower"
+        }
+      ],
+      "kind": "holiday",
+      "when": "yearly",
+      "start": "2026-03-08",
+      "title": {
+        "en": "International Women's Day",
+        "lo": "ວັນແມ່ຍິງສາກົນ",
+        "zh": "国际妇女节"
+      },
+      "laoName": "ວັນແມ່ຍິງສາກົນ",
+      "summary": {
+        "en": "A public holiday for women in Laos, with flowers, parties and events at work.",
+        "lo": "ວັນພັກສຳລັບແມ່ຍິງໃນລາວ, ມີດອກໄມ້ ແລະ ງານລ້ຽງ.",
+        "zh": "老挝女性的公共假日，有鲜花、聚会和单位活动。"
+      },
+      "history": {
+        "en": "Laos has marked 8 March for decades. The Lao Women's Union, founded in 1955, organizes events across the country.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "Colleagues give flowers and small gifts, and many workplaces hold a lunch or a party for their women staff.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "A simple ສຸກສັນວັນແມ່ຍິງ (suk san van mae nying) means 'Happy Women's Day'.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "pi-mai",
+      "status": "published",
+      "access": "public",
+      "order": 4,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [],
+      "words": [
+        {
+          "lo": "ສະບາຍດີປີໃໝ່",
+          "rom": "sabaidee pi mai",
+          "en": "Happy New Year"
+        },
+        {
+          "lo": "ຫົດນ້ຳ",
+          "rom": "hot nam",
+          "en": "to pour water (blessing)"
+        }
+      ],
+      "kind": "festival",
+      "when": "yearly",
+      "start": "2026-04-14",
+      "end": "2026-04-16",
+      "title": {
+        "en": "Boun Pi Mai Lao",
+        "lo": "ບຸນປີໃໝ່ລາວ",
+        "zh": "老挝新年"
+      },
+      "laoName": "ບຸນປີໃໝ່ລາວ",
+      "summary": {
+        "en": "Lao New Year: three days of water blessings, sand stupas and family visits.",
+        "lo": "ປີໃໝ່ລາວ: ສາມມື້ແຫ່ງການຫົດນ້ຳ, ກໍ່ທາດຊາຍ ແລະ ຢາມຄອບຄົວ.",
+        "zh": "老挝新年：三天的泼水祈福、堆沙塔和走亲访友。"
+      },
+      "history": {
+        "en": "Pi Mai marks the sun entering Aries, the old start of the year across Southeast Asia. The three days are the last day of the old year, a day 'in between', and the first day of the new year.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "People pour scented water on Buddha images and gently on elders' hands to ask for blessings, then the streets turn into friendly water fights. Luang Prabang holds the Nang Sangkhan parade.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "Keep your phone in a plastic bag. Pouring water on monks is not done; on elders, pour gently and ask for a blessing.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "hot-season",
+      "status": "published",
+      "access": "public",
+      "order": 5,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [],
+      "words": [
+        {
+          "lo": "ຮ້ອນ",
+          "rom": "hon",
+          "en": "hot"
+        },
+        {
+          "lo": "ລະດູຮ້ອນ",
+          "rom": "ladu hon",
+          "en": "hot season"
+        }
+      ],
+      "kind": "season",
+      "when": "season",
+      "monthFrom": 3,
+      "monthTo": 4,
+      "title": {
+        "en": "Hot season",
+        "lo": "ລະດູຮ້ອນ",
+        "zh": "热季"
+      },
+      "laoName": "ລະດູຮ້ອນ",
+      "summary": {
+        "en": "March to April: the hottest, haziest months, before the rains arrive.",
+        "lo": "ມີນາ ຫາ ເມສາ: ເດືອນທີ່ຮ້ອນທີ່ສຸດ ກ່ອນຝົນມາ.",
+        "zh": "三月至四月：最热、最朦胧的月份，雨季之前。"
+      },
+      "history": {
+        "en": "Before the monsoon, farmers clear and burn fields to prepare them for planting, which brings smoky skies in the north.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "Life moves to the early morning and the evening; the middle of the day is for rest. Water festivals in April are a welcome relief.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "ຮ້ອນຫຼາຍ (hon lai), 'very hot', is the most useful phrase of the season.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "labour-day",
+      "status": "published",
+      "access": "public",
+      "order": 6,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [],
+      "words": [
+        {
+          "lo": "ວັນພັກ",
+          "rom": "van phak",
+          "en": "holiday"
+        }
+      ],
+      "kind": "holiday",
+      "when": "yearly",
+      "start": "2026-05-01",
+      "title": {
+        "en": "International Labour Day",
+        "lo": "ວັນກຳມະກອນສາກົນ",
+        "zh": "国际劳动节"
+      },
+      "laoName": "ວັນກຳມະກອນສາກົນ",
+      "summary": {
+        "en": "A public holiday for workers; offices and many businesses close.",
+        "lo": "ວັນພັກສຳລັບຜູ້ອອກແຮງງານ.",
+        "zh": "劳动者的公共假日，机关和许多企业放假。"
+      },
+      "history": {
+        "en": "Like many countries, Laos keeps 1 May as a holiday honoring workers.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "A long weekend for many families, often spent at the river or with relatives in the provinces.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "Government offices are closed: plan visas and paperwork around it.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "bang-fai",
+      "status": "published",
+      "access": "public",
+      "order": 7,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [
+        {
+          "start": "2027-05-01",
+          "end": "2027-05-31"
+        }
+      ],
+      "words": [
+        {
+          "lo": "ບັ້ງໄຟ",
+          "rom": "bang fai",
+          "en": "bamboo rocket"
+        },
+        {
+          "lo": "ຝົນ",
+          "rom": "fon",
+          "en": "rain"
+        }
+      ],
+      "kind": "festival",
+      "when": "date",
+      "lunar": true,
+      "start": "2026-05-01",
+      "end": "2026-05-31",
+      "title": {
+        "en": "Boun Bang Fai",
+        "lo": "ບຸນບັ້ງໄຟ",
+        "zh": "火箭节"
+      },
+      "laoName": "ບຸນບັ້ງໄຟ",
+      "summary": {
+        "en": "The rocket festival: villages fire bamboo rockets to call the rain. Each village picks its own weekend in May.",
+        "lo": "ບຸນບັ້ງໄຟ: ບ້ານຈູດບັ້ງໄຟເພື່ອຂໍຝົນ. ແຕ່ລະບ້ານເລືອກມື້ຂອງຕົນໃນເດືອນພຶດສະພາ.",
+        "zh": "火箭节：村民发射竹制火箭祈雨，各村在五月自选周末举办。"
+      },
+      "history": {
+        "en": "An old, pre-Buddhist rite: the rockets remind the sky spirits that the fields need rain before rice planting.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "Expect music, dancing, cheerful teasing and a contest for the rocket that flies highest. Teams whose rockets fail are thrown into the mud.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "Watch from a safe distance and ask locals where the launch site is; rockets do not always fly straight.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "visakha",
+      "status": "published",
+      "access": "public",
+      "order": 8,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [
+        {
+          "start": "2027-05-20"
+        }
+      ],
+      "words": [
+        {
+          "lo": "ພະພຸດທະເຈົ້າ",
+          "rom": "pha phoutthachao",
+          "en": "the Buddha"
+        },
+        {
+          "lo": "ທຽນ",
+          "rom": "tian",
+          "en": "candle"
+        }
+      ],
+      "kind": "buddhist",
+      "when": "date",
+      "lunar": true,
+      "start": "2026-05-31",
+      "title": {
+        "en": "Boun Visakha Bousa",
+        "lo": "ບຸນວິສາຂະບູຊາ",
+        "zh": "卫塞节"
+      },
+      "laoName": "ບຸນວິສາຂະບູຊາ",
+      "summary": {
+        "en": "The full moon of the sixth lunar month: the Buddha's birth, enlightenment and passing.",
+        "lo": "ວັນເພັງເດືອນຫົກ: ວັນປະສູດ, ຕັດສະຣູ້ ແລະ ປະລິນິບພານ.",
+        "zh": "农历六月月圆：纪念佛陀诞生、成道和涅槃。"
+      },
+      "history": {
+        "en": "Buddhists believe the three great moments of the Buddha's life fell on this same full moon.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "Temples fill with families giving alms in the morning, listening to sermons, and walking with candles at night.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "It is a quiet, religious day; a good evening to watch a candle procession respectfully.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "rainy-season",
+      "status": "published",
+      "access": "public",
+      "order": 9,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [],
+      "words": [
+        {
+          "lo": "ຝົນຕົກ",
+          "rom": "fon tok",
+          "en": "it's raining"
+        },
+        {
+          "lo": "ລະດູຝົນ",
+          "rom": "ladu fon",
+          "en": "rainy season"
+        }
+      ],
+      "kind": "season",
+      "when": "season",
+      "monthFrom": 5,
+      "monthTo": 10,
+      "title": {
+        "en": "Rainy season",
+        "lo": "ລະດູຝົນ",
+        "zh": "雨季"
+      },
+      "laoName": "ລະດູຝົນ",
+      "summary": {
+        "en": "May to October: green fields, full rivers, and rice growing everywhere.",
+        "lo": "ພຶດສະພາ ຫາ ຕຸລາ: ທົ່ງນາຂຽວ ແລະ ແມ່ນ້ຳເຕັມ.",
+        "zh": "五月至十月：稻田翠绿，河水充盈。"
+      },
+      "history": {
+        "en": "The monsoon shapes the Lao year: the planting, Buddhist Lent and the boat races all follow the rains.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "Afternoon downpours are short and heavy; mornings are often clear. Waterfalls are at their most powerful.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "Carry a light rain jacket, and expect some dirt roads in the countryside to be muddy.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "childrens-day",
+      "status": "published",
+      "access": "public",
+      "order": 10,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [],
+      "words": [
+        {
+          "lo": "ເດັກນ້ອຍ",
+          "rom": "dek noy",
+          "en": "child"
+        }
+      ],
+      "kind": "culture",
+      "when": "yearly",
+      "start": "2026-06-01",
+      "title": {
+        "en": "International Children's Day",
+        "lo": "ວັນເດັກນ້ອຍສາກົນ",
+        "zh": "国际儿童节"
+      },
+      "laoName": "ວັນເດັກນ້ອຍສາກົນ",
+      "summary": {
+        "en": "Schools and villages hold games, shows and small gifts for children.",
+        "lo": "ໂຮງຮຽນ ແລະ ບ້ານຈັດກິດຈະກຳ ແລະ ຂອງຂວັນໃຫ້ເດັກນ້ອຍ.",
+        "zh": "学校和村庄为孩子们举办游戏、表演并赠送小礼物。"
+      },
+      "history": {
+        "en": "Laos marks 1 June with many other countries in the region.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "A cheerful day for families; parks and schools are busy with performances.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "ເດັກນ້ອຍ (dek noy) means 'child'.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "rice-planting",
+      "status": "published",
+      "access": "public",
+      "order": 11,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [],
+      "words": [
+        {
+          "lo": "ດຳນາ",
+          "rom": "dam na",
+          "en": "to transplant rice"
+        },
+        {
+          "lo": "ເຂົ້າໜຽວ",
+          "rom": "khao niao",
+          "en": "sticky rice"
+        }
+      ],
+      "kind": "season",
+      "when": "season",
+      "monthFrom": 6,
+      "monthTo": 8,
+      "title": {
+        "en": "Rice planting",
+        "lo": "ລົງນາ",
+        "zh": "插秧季"
+      },
+      "laoName": "ລົງນາ",
+      "summary": {
+        "en": "June to August: families transplant rice seedlings into flooded paddies.",
+        "lo": "ມິຖຸນາ ຫາ ສິງຫາ: ຄອບຄົວດຳນາໃນທົ່ງນາທີ່ມີນ້ຳ.",
+        "zh": "六月至八月：家家户户在水田里插秧。"
+      },
+      "history": {
+        "en": "Sticky rice has been grown in Laos for thousands of years and is still the heart of every meal.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "Whole villages help each other in turn (ລົງແຂກ, long khaek); work starts at dawn and ends before the heat.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "Ask before photographing people working in the fields; most will smile and wave.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "khao-phansa",
+      "status": "published",
+      "access": "public",
+      "order": 12,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [
+        {
+          "start": "2027-07-18"
+        }
+      ],
+      "words": [
+        {
+          "lo": "ພັນສາ",
+          "rom": "phansa",
+          "en": "Buddhist Lent"
+        },
+        {
+          "lo": "ພະສົງ",
+          "rom": "phasong",
+          "en": "monk"
+        }
+      ],
+      "kind": "buddhist",
+      "when": "date",
+      "lunar": true,
+      "start": "2026-07-29",
+      "title": {
+        "en": "Boun Khao Phansa",
+        "lo": "ບຸນເຂົ້າພັນສາ",
+        "zh": "入夏节"
+      },
+      "laoName": "ບຸນເຂົ້າພັນສາ",
+      "summary": {
+        "en": "The start of Buddhist Lent: three months when monks stay in their temple.",
+        "lo": "ເລີ່ມເຂົ້າພັນສາ: ສາມເດືອນທີ່ພະສົງຢູ່ວັດ.",
+        "zh": "守夏开始：僧侣在寺院中静居三个月。"
+      },
+      "history": {
+        "en": "In the Buddha's time monks stopped travelling during the rains so they would not trample the young rice. The custom continues today.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "Families bring candles, robes and food to the temple. Weddings are traditionally not held during Lent.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "Many young men are ordained as monks for this season; you may see new, freshly shaved novices.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "khao-padap-din",
+      "status": "published",
+      "access": "public",
+      "order": 13,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [
+        {
+          "start": "2027-08-30"
+        }
+      ],
+      "words": [
+        {
+          "lo": "ບັນພະບູລຸດ",
+          "rom": "banphabulut",
+          "en": "ancestors"
+        },
+        {
+          "lo": "ທຳບຸນ",
+          "rom": "tham boun",
+          "en": "to make merit"
+        }
+      ],
+      "kind": "buddhist",
+      "when": "date",
+      "lunar": true,
+      "start": "2026-09-10",
+      "title": {
+        "en": "Boun Khao Padap Din",
+        "lo": "ບຸນຂ້າວປະດັບດິນ",
+        "zh": "祭亡节"
+      },
+      "laoName": "ບຸນຂ້າວປະດັບດິນ",
+      "summary": {
+        "en": "A day for remembering the dead: small parcels of rice and sweets are left for spirits.",
+        "lo": "ວັນລະນຶກເຖິງຜູ້ລ່ວງລັບ: ວາງຫໍ່ເຂົ້າ ແລະ ຂອງຫວານໃຫ້ຜີ.",
+        "zh": "纪念亡者的日子：为亡灵留下小包米饭和甜点。"
+      },
+      "history": {
+        "en": "On this night the gates of the spirit world are believed to open, and families feed ancestors and wandering spirits so that no one goes hungry.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "Before dawn, families place banana-leaf parcels around the temple grounds, then make merit for relatives who have died.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "Two weeks later comes Boun Khao Salak, when families give baskets of offerings drawn by lottery to monks.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "teachers-day",
+      "status": "published",
+      "access": "public",
+      "order": 14,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [],
+      "words": [
+        {
+          "lo": "ຄູ",
+          "rom": "khu",
+          "en": "teacher"
+        },
+        {
+          "lo": "ຂອບໃຈ",
+          "rom": "khop jai",
+          "en": "thank you"
+        }
+      ],
+      "kind": "culture",
+      "when": "yearly",
+      "start": "2026-10-07",
+      "title": {
+        "en": "Teachers' Day",
+        "lo": "ວັນຄູແຫ່ງຊາດ",
+        "zh": "教师节"
+      },
+      "laoName": "ວັນຄູແຫ່ງຊາດ",
+      "summary": {
+        "en": "Students thank their teachers with flowers, cards and small ceremonies.",
+        "lo": "ນັກຮຽນຂອບໃຈຄູດ້ວຍດອກໄມ້ ແລະ ບັດອວຍພອນ.",
+        "zh": "学生们用鲜花、贺卡和小仪式感谢老师。"
+      },
+      "history": {
+        "en": "Respect for teachers runs deep in Lao culture; a teacher is ຄູ (khu), from the same root as the Sanskrit guru.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "A good day to thank your own Lao teacher: a few words in Lao mean a lot.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "Say ຂອບໃຈຄູ (khop jai khu), 'thank you, teacher'.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "ok-phansa",
+      "status": "published",
+      "access": "public",
+      "order": 15,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [
+        {
+          "start": "2027-10-15",
+          "end": "2027-10-16"
+        }
+      ],
+      "words": [
+        {
+          "lo": "ເຮືອໄຟ",
+          "rom": "heua fai",
+          "en": "fire boat"
+        },
+        {
+          "lo": "ແຂ່ງເຮືອ",
+          "rom": "khaeng heua",
+          "en": "boat race"
+        }
+      ],
+      "kind": "festival",
+      "when": "date",
+      "lunar": true,
+      "start": "2026-10-26",
+      "end": "2026-10-27",
+      "title": {
+        "en": "Boun Ok Phansa and Suang Heua",
+        "lo": "ບຸນອອກພັນສາ ແລະ ບຸນສ່ວງເຮືອ",
+        "zh": "出夏节与龙舟赛"
+      },
+      "laoName": "ບຸນອອກພັນສາ",
+      "summary": {
+        "en": "The end of Lent: little fire boats float down the Mekong, then long-boat races the next day.",
+        "lo": "ອອກພັນສາ: ໄຫຼເຮືອໄຟໃນແມ່ນ້ຳຂອງ ແລ້ວແຂ່ງເຮືອມື້ຕໍ່ມາ.",
+        "zh": "出夏节：小火船漂流湄公河，次日举行长舟赛。"
+      },
+      "history": {
+        "en": "The floating lights (ໄຫຼເຮືອໄຟ, lai heua fai) thank the river spirit, the Naga, and carry away bad luck. The races recall the boats of old Lao kingdoms.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "Vientiane and Luang Prabang are full of lights, music and crowds along the river; the boat races are the biggest sports event of the year.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "Buy a small banana-leaf boat with a candle and flowers, and let it go on the water with a wish.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "rice-harvest",
+      "status": "published",
+      "access": "public",
+      "order": 16,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [],
+      "words": [
+        {
+          "lo": "ເກັບກ່ຽວ",
+          "rom": "kep kiao",
+          "en": "to harvest"
+        },
+        {
+          "lo": "ເຂົ້າໃໝ່",
+          "rom": "khao mai",
+          "en": "new rice"
+        }
+      ],
+      "kind": "season",
+      "when": "season",
+      "monthFrom": 10,
+      "monthTo": 11,
+      "title": {
+        "en": "Rice harvest",
+        "lo": "ເກັບກ່ຽວເຂົ້າ",
+        "zh": "收稻季"
+      },
+      "laoName": "ເກັບກ່ຽວ",
+      "summary": {
+        "en": "October to November: golden fields, threshing, and the year's new sticky rice.",
+        "lo": "ຕຸລາ ຫາ ພະຈິກ: ທົ່ງນາສີຄຳ ແລະ ເຂົ້າໃໝ່.",
+        "zh": "十月至十一月：金色的稻田和当年的新糯米。"
+      },
+      "history": {
+        "en": "Harvest closes the farming year; many villages hold their own small ceremonies to thank the rice spirit (ແມ່ໂພສົບ, mae phosop).",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "New rice is especially soft and fragrant. After the harvest, families have time for festivals and weddings.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "Try ເຂົ້າໃໝ່ (khao mai), the new season's rice, at a market.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "that-luang",
+      "status": "published",
+      "access": "public",
+      "order": 17,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [
+        {
+          "start": "2027-11-08",
+          "end": "2027-11-14"
+        }
+      ],
+      "words": [
+        {
+          "lo": "ທາດ",
+          "rom": "that",
+          "en": "stupa"
+        },
+        {
+          "lo": "ຕັກບາດ",
+          "rom": "tak bat",
+          "en": "to give alms"
+        }
+      ],
+      "kind": "festival",
+      "when": "date",
+      "lunar": true,
+      "start": "2026-11-18",
+      "end": "2026-11-24",
+      "title": {
+        "en": "Boun That Luang",
+        "lo": "ບຸນທາດຫຼວງ",
+        "zh": "塔銮节"
+      },
+      "laoName": "ບຸນທາດຫຼວງ",
+      "summary": {
+        "en": "A week of fairs and processions at Pha That Luang in Vientiane, ending at the full moon.",
+        "lo": "ງານບຸນໜຶ່ງອາທິດທີ່ພະທາດຫຼວງ ວຽງຈັນ, ສິ້ນສຸດໃນວັນເພັງ.",
+        "zh": "万象塔銮一周的集市和游行，在月圆时结束。"
+      },
+      "history": {
+        "en": "Pha That Luang, the golden stupa on the Lao coat of arms, was built by King Setthathirath in 1566 and is the national symbol.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "Pilgrims come from every province. On the last morning thousands give alms to monks, and in the afternoon teams play a traditional game of ຕີຄີ (ti khi).",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "Arrive before dawn on the full-moon morning for the alms giving; dress modestly and bring sticky rice.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "cool-season",
+      "status": "published",
+      "access": "public",
+      "order": 18,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [],
+      "words": [
+        {
+          "lo": "ໜາວ",
+          "rom": "nao",
+          "en": "cold"
+        },
+        {
+          "lo": "ເຝີ",
+          "rom": "foe",
+          "en": "noodle soup"
+        }
+      ],
+      "kind": "season",
+      "when": "season",
+      "monthFrom": 11,
+      "monthTo": 2,
+      "title": {
+        "en": "Cool and dry season",
+        "lo": "ລະດູໜາວ",
+        "zh": "凉季"
+      },
+      "laoName": "ລະດູໜາວ",
+      "summary": {
+        "en": "November to February: clear skies, cool mornings, and the best time to travel.",
+        "lo": "ພະຈິກ ຫາ ກຸມພາ: ຟ້າແຈ້ງ ແລະ ຕອນເຊົ້າເຢັນ.",
+        "zh": "十一月至二月：天空晴朗，早晨凉爽，最适合旅行。"
+      },
+      "history": {
+        "en": "After the harvest the north turns chilly at night, especially in the mountains around Phonsavan and Sam Neua.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "It is the season of weddings, festivals and the Hmong New Year. Markets sell warm noodle soups at dawn.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "ໜາວ (nao) means 'cold': bring a jacket for mountain evenings.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "national-day",
+      "status": "published",
+      "access": "public",
+      "order": 19,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [],
+      "words": [
+        {
+          "lo": "ວັນຊາດ",
+          "rom": "van xat",
+          "en": "National Day"
+        },
+        {
+          "lo": "ທຸງ",
+          "rom": "thung",
+          "en": "flag"
+        }
+      ],
+      "kind": "holiday",
+      "when": "yearly",
+      "start": "2026-12-02",
+      "title": {
+        "en": "Lao National Day",
+        "lo": "ວັນຊາດ",
+        "zh": "老挝国庆节"
+      },
+      "laoName": "ວັນຊາດ",
+      "summary": {
+        "en": "2 December: the founding of the Lao People's Democratic Republic in 1975.",
+        "lo": "2 ທັນວາ: ວັນສະຖາປະນາ ສປປ ລາວ ໃນປີ 1975.",
+        "zh": "12月2日：1975年老挝人民民主共和国成立。"
+      },
+      "history": {
+        "en": "On 2 December 1975 the monarchy ended and the Lao PDR was proclaimed in Vientiane.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "Flags fly from every house and office, and towns hold ceremonies. It is a public holiday.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "The national flag (red, blue, red, with a white moon) is everywhere; it is a nice day to learn the colours in Lao.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "hmong-new-year",
+      "status": "published",
+      "access": "public",
+      "order": 20,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [
+        {
+          "start": "2027-12-05",
+          "end": "2027-12-20"
+        }
+      ],
+      "words": [
+        {
+          "lo": "ມົ້ງ",
+          "rom": "mong",
+          "en": "Hmong"
+        },
+        {
+          "lo": "ໝາກຄອນ",
+          "rom": "mak khon",
+          "en": "cloth ball"
+        }
+      ],
+      "kind": "festival",
+      "when": "date",
+      "start": "2026-12-05",
+      "end": "2026-12-20",
+      "title": {
+        "en": "Hmong New Year",
+        "lo": "ບຸນປີໃໝ່ມົ້ງ",
+        "zh": "苗族新年"
+      },
+      "laoName": "ປີໃໝ່ມົ້ງ",
+      "summary": {
+        "en": "After the harvest, Hmong villages celebrate with ball-tossing games, music and their finest clothes. Dates differ by province.",
+        "lo": "ຫຼັງເກັບກ່ຽວ, ບ້ານມົ້ງສະຫຼອງດ້ວຍການໂຍນໝາກຄອນ ແລະ ຊຸດທີ່ງາມທີ່ສຸດ.",
+        "zh": "收获之后，苗族村寨以抛绣球、音乐和盛装庆祝，各省日期不同。"
+      },
+      "history": {
+        "en": "The Hmong, one of Laos's many ethnic groups, celebrate their new year at the end of the farming cycle to honour ancestors and spirits.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "Young people play ໂຍນໝາກຄອນ (yon mak khon), a ball-tossing game used for meeting and courtship. Phonsavan and Luang Prabang host big celebrations.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "Check the dates locally each year; each province chooses its own days in November–January.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "tak-bat",
+      "status": "published",
+      "access": "public",
+      "order": 21,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [],
+      "words": [
+        {
+          "lo": "ຕັກບາດ",
+          "rom": "tak bat",
+          "en": "to give alms"
+        },
+        {
+          "lo": "ເຂົ້າໜຽວ",
+          "rom": "khao niao",
+          "en": "sticky rice"
+        }
+      ],
+      "kind": "daily",
+      "when": "daily",
+      "time": {
+        "en": "At dawn, about 5:30–6:30",
+        "lo": "ຕອນເຊົ້າມືດ, ປະມານ 5:30–6:30",
+        "zh": "黎明，约5:30–6:30"
+      },
+      "title": {
+        "en": "Tak Bat, the morning alms",
+        "lo": "ຕັກບາດ",
+        "zh": "布施"
+      },
+      "laoName": "ຕັກບາດ",
+      "summary": {
+        "en": "Every morning, monks walk in silence to receive sticky rice from kneeling families.",
+        "lo": "ທຸກເຊົ້າ ພະສົງເດີນຮັບບາດຈາກຄອບຄົວ.",
+        "zh": "每天清晨，僧侣静静走过，接受跪坐家人布施的糯米。"
+      },
+      "history": {
+        "en": "Alms giving lets lay people make merit and lets monks live from the community, as the Buddha taught.",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "In Luang Prabang the long line of saffron robes at dawn is one of the most beautiful sights in Laos, and it is a real religious practice, not a show.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "Watch quietly from across the street, do not use flash, and only give if you do it properly: kneel, keep your head lower than the monks', and do not touch them.",
+        "lo": "",
+        "zh": ""
+      }
+    },
+    {
+      "id": "baci",
+      "status": "published",
+      "access": "public",
+      "order": 22,
+      "imageUrl": "",
+      "imageAlt": {
+        "en": "",
+        "lo": "",
+        "zh": ""
+      },
+      "imageFocus": "",
+      "videoUrl": "",
+      "also": [],
+      "words": [
+        {
+          "lo": "ບາສີ",
+          "rom": "basi",
+          "en": "baci ceremony"
+        },
+        {
+          "lo": "ຂວັນ",
+          "rom": "khuan",
+          "en": "spirit, soul"
+        },
+        {
+          "lo": "ຜູກແຂນ",
+          "rom": "phuk khaen",
+          "en": "to tie the wrist"
+        }
+      ],
+      "kind": "culture",
+      "when": "anytime",
+      "title": {
+        "en": "Baci ceremony",
+        "lo": "ບາສີສູ່ຂວັນ",
+        "zh": "拴线祈福仪式"
+      },
+      "laoName": "ບາສີສູ່ຂວັນ",
+      "summary": {
+        "en": "White strings tied around the wrist to call back the 'khuan' spirits and wish good luck.",
+        "lo": "ຜູກແຂນດ້ວຍຝ້າຍຂາວ ເພື່ອເອີ້ນຂວັນ ແລະ ອວຍພອນ.",
+        "zh": "在手腕系上白线，召回“魂”并送上祝福。"
+      },
+      "history": {
+        "en": "Lao people believe each person has 32 'khuan' (spirits) that can wander away. A baci calls them home around a tall arrangement of flowers, the ພາຂວັນ (pha khuan).",
+        "lo": "",
+        "zh": ""
+      },
+      "relevance": {
+        "en": "A baci is held for weddings, births, departures, returns and welcomes, and for guests. Being invited is an honour.",
+        "lo": "",
+        "zh": ""
+      },
+      "tip": {
+        "en": "Keep the strings on for at least three days, and untie them rather than cut them.",
+        "lo": "",
+        "zh": ""
+      }
     }
   ]
 }

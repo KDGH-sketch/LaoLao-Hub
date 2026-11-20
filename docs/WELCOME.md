@@ -83,6 +83,40 @@ Month (1 to 12, for the calendar order), the date as shown ("13–16 April"), *F
 date moves each year), a picture (water bowl, rocket, candle, fire boat, stupa, flag, lanterns), name, Lao name, text.
 The festival of the current month (or the next one) is highlighted.
 
+## Life calendar
+
+The section right after the festival calendar (menu: *Calendar*): what is happening in Laos through the year.
+Admin → **Website & Welcome → Life Calendar** (`events`), with the same draft / published / archived, history and
+*Publish now* as festivals. Code: `js/learner/welcome-calendar.js` (page), `welcome-calendar-data.js` (the 22 starter
+events).
+
+**What visitors see**
+
+- **Today in Laos**: today's date, the season(s), the full or new moon, and the event happening now (or the next one)
+  with *Explore*.
+- **Filters**: Everything, Holidays, Buddhist days, Festivals, Culture, Seasons, Daily life (each kind has its colour).
+- **The month**: arrows and *Today*; each day with events has coloured dots; the full and new moons are marked (they are
+  Buddhist holy days, ວັນສິນ, worked out from the moon's mean cycle, so within about a day). Tapping a day lists its
+  events; the seasons of the month are chips above the days.
+- **The list**: the month's events (or the chosen day's) with their dates, *Happening now* / *In 5 days* / *Ended*, and
+  *Explore*; below it, the everyday customs (morning alms, baci).
+- **The event sheet** (*Explore*): photo or a coloured card with the Lao name, kind, dates (*about* for lunar dates),
+  summary, **The story**, **Why it matters today**, **Good to know** (a remark for visitors), **Words to know** (tap to
+  hear), **Watch** (a YouTube or video link), **Add to my calendar** (an .ics file; yearly events repeat), **Learn the
+  words with LaoLao** (opens Create account with a note), and *Previous / Next* through the month's events. A bottom
+  sheet on phones.
+
+**The event form**
+
+| Field | Notes |
+|---|---|
+| Name, Lao name, kind | Kind sets the colour and the filter |
+| When | *On a date* (Start, optional End), *Same date every year* (the year is ignored), *Months every year* (a season, may wrap past December), *Every day* (optional time), *Any time* |
+| Follows the moon | Shown as "about" with a note that the date moves. Add next year's date under **Other years**; a lunar date with none is a warning. Dates are never guessed for a year that has none |
+| Summary, The story, Why it matters today, Good to know | Short summary on the calendar; the rest in the sheet |
+| Words | Lao, romanization, English, optional recording |
+| Video, photo | https:// links only; the photo needs alt text and has a focus point (see Photos) |
+
 ## Offers (Promotions & Feed)
 
 Kind (banner, or countdown to the end), where (Promotions section, or a strip above the top of the page), headline,
@@ -133,7 +167,8 @@ items, which are readable only after sign-in, and a download page in the app (no
 
 ## Upgrading a live project
 
-1. Run `supabase-welcome-migration.sql` in the Supabase SQL Editor (safe to run again; changes no rows).
+1. Run `supabase-welcome-migration.sql`, then `supabase-calendar-migration.sql` (the life calendar's `events` table), in
+   the Supabase SQL Editor (both safe to run again; they change no rows).
 2. Optional: *Settings → Import starter content* adds the six places, six festivals, four resources and the example
    offer (inactive), or create your own.
 3. *Publish now*, then *Website & Welcome → Welcome Page → Publish welcome page*.
@@ -144,6 +179,7 @@ items, which are readable only after sign-in, and a download page in the app (no
 |---|---|
 | `node scripts/test_welcome_data.mjs` | Defaults = starter content; pins match the mockup; every place inside Laos; the editors' checks |
 | `npm run test:sql` | Visitors read only tier 0 and the published copy; who may write the new tables and `settings/welcome`; the migration runs twice |
+| `node scripts/e2e_calendar.mjs` | The life calendar after the festivals with its menu link, this month and today, the moon, month arrows, filters, a day's events, everyday customs, the event sheet (story, why, good to know, words, previous / next, .ics, Create account), a new event from the admin, phone bottom sheet in Night, the admin form |
 | `node scripts/e2e_welcome_photos.mjs` | A 12.9 MB photo resized to WebP before upload, the focus point, alt text required, the photo shown in each section (hero, festival, place, offer, resource, news, About) with its alt text and focus, phone and computer, Day and Night, removing a photo brings the drawing back |
 | `node scripts/e2e_welcome.mjs` | Plans from the table, registration closed, offer dates and on/off, empty resources, hidden news, draft / publish / revert / preview, a new place gets a pin, hashes, phone menu, sign-up source, keyboard sign-in, offline |
 | `npm run test:qa` | 20 sizes (280 to 3840 px) × Day and Night: no sideways scroll, clipping, small targets or tiny text, layout shift under 0.1; axe-core WCAG 2.2 AA on the page and on each admin screen; 200% text; 320 px reflow; skip link first; reduced motion |
@@ -160,4 +196,8 @@ These texts were written for the mockup and translated without a native reviewer
 - **Festivals**: Boun Pi Mai (13–16 April, Nang Sangkhan in Luang Prabang), Boun Bang Fai (May), Boun Khao Phansa
   (July full moon), Boun Ok Phansa and Suang Heua (October), Boun That Luang (November full moon, up to a week),
   National Day (2 December, 1975).
+- **Life calendar** (`welcome-calendar-data.js`): the lunar dates for 2026 and 2027 (Makha Bousa, Visakha Bousa,
+  Khao Phansa, Khao Padap Din, Ok Phansa, That Luang), which follow the Thai/Lao full moons and must be confirmed each
+  year; the Hmong New Year dates (they differ by province); the Lao summaries. The story, why it matters and good to know
+  are in English only so far (the page shows English when Lao or Chinese is empty).
 - **All Lao and Chinese copy** in `welcome-data.js` (hero, section headings, services, about, resources).

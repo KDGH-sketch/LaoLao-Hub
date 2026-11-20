@@ -207,6 +207,7 @@ const NAV_SECTIONS = [
       { id:"welcome", label:["Welcome Page", "ໜ້າຕ້ອນຮັບ"], icon:"home", view:"welcome" },
       { id:"places", label:["Journey Places", "ສະຖານທີ່"], icon:"globe", view:"contentList", params:{ type:"places" } },
       { id:"festivals", label:["Festivals", "ບຸນ"], icon:"star", view:"contentList", params:{ type:"festivals" } },
+      { id:"events", label:["Life Calendar", "ປະຕິທິນຊີວິດລາວ"], icon:"history", view:"contentList", params:{ type:"events" } },
       { id:"promotions", label:["Promotions & Feed", "ໂປຣໂມຊັ່ນ ແລະ ຂ່າວ"], icon:"gift", view:"promotions" },
       { id:"resources", label:["Free Resources", "ຊັບພະຍາກອນຟຣີ"], icon:"download", view:"contentList", params:{ type:"resources" } }
     ]
@@ -439,6 +440,7 @@ async function viewSettings(){
   const name = h("input",{class:"input",value:s.appName}), reg = h("input",{type:"checkbox",class:"switch",checked:!!s.allowRegistration,"aria-label":t("allow_reg")});
   const plan = h("select",{class:"input"}, S.plans.map(p=>h("option",{value:p.id,selected:p.id===s.defaultPlanId},(p.name&&p.name.en)||p.id)));
   const contact = h("input",{class:"input",value:s.supportContact,placeholder:"WhatsApp / email / Facebook page"});
+  const planAd = h("input",{type:"checkbox",class:"switch",checked:s.promoPlanAd !== false,"aria-label":"Plan ad"});
   const wrap = h("div",{class:"stack-l"});
   wrap.append(h("div",{class:"pagehead"}, h("h1",null,t("adm_settings")), h("p",null,"Configure platform settings, database schema, and test accounts.")));
 
@@ -512,8 +514,9 @@ async function viewSettings(){
 
   wrap.append(h("section",{class:"panel"},
     fld(t("app_name"), name), h("div",{class:"set-row"}, h("div",null,h("label",null,t("allow_reg")),h("p",null,t("allow_reg_d"))), reg),
+    h("div",{class:"set-row"}, h("div",null,h("label",null,"Upgrade pop-up without an offer"),h("p",null,"After sign-in, a free account sees the running offer once. When no offer is running, show an ad for the recommended plan instead.")), planAd),
     fld(t("support_contact"), contact),
-    h("div",{class:"row"}, h("button",{class:"btn primary",disabled:!isSuper(),onclick:async()=>{ await S.api.db.set("settings/app",{appName:name.value.trim(),allowRegistration:reg.checked,defaultPlanId:plan.value,supportContact:contact.value.trim()},true); S.settings = await S.api.db.get("settings/app"); toast(t("saved_ok")); }}, t("save")), isSuper()?null:h("span",{class:"muted small"},t("only_super")))));
+    h("div",{class:"row"}, h("button",{class:"btn primary",disabled:!isSuper(),onclick:async()=>{ await S.api.db.set("settings/app",{appName:name.value.trim(),allowRegistration:reg.checked,defaultPlanId:plan.value,supportContact:contact.value.trim(),promoPlanAd:planAd.checked},true); S.settings = await S.api.db.get("settings/app"); toast(t("saved_ok")); }}, t("save")), isSuper()?null:h("span",{class:"muted small"},t("only_super")))));
 
   wrap.append(h("section",{class:"panel"}, h("h3",null,t("adm_import")), h("p",{class:"muted"},t("adm_import_d")),
     h("div",{class:"row"}, h("button",{class:"btn",disabled:!isSuper(),onclick:async()=>{

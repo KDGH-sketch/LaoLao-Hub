@@ -82,11 +82,18 @@ export async function addWelcomeDemo(api, who = "admin-demo-owner"){
   if (!(await api.db.count("places").catch(() => 0))){
     const seed = await fetch(new URL("../../data/seed.json", import.meta.url)).then(r => r.json());
     const now = new Date(), meta = { version:1, createdAt: now, updatedAt: now, createdBy: who, updatedBy: who }, ops = [];
-    for (const type of ["places","festivals","offers","resources"]) for (const item of (seed[type]||[])){ const { id, ...rest } = item; ops.push({ op:"set", path:`${type}/${id}`, data: Object.assign(rest, meta) }); }
+    for (const type of ["places","festivals","events","offers","resources"]) for (const item of (seed[type]||[])){ const { id, ...rest } = item; ops.push({ op:"set", path:`${type}/${id}`, data: Object.assign(rest, meta) }); }
     for (const [type, ids] of [["culture",["cul-alms","cul-baci","cul-khao-niao"]],["releases",["r100"]]]) for (const id of ids) ops.push({ op:"set", path:`${type}/${id}`, data:{ featured:true }, merge:true });
     ops.push({ op:"set", path:"settings/welcome", data:{ published: seed.welcome, publishedAt: now, publishedBy: who } });
     ops.push({ op:"set", path:"settings/welcomeDraft", data:{ data: seed.welcome, updatedAt: now, updatedBy: who } });
     await api.db.batch(ops); changed = true;
+  }
+  // the life calendar came later: demo databases that already had places get its events too
+  if (!(await api.db.count("events").catch(() => 0))){
+    const seed = await fetch(new URL("../../data/seed.json", import.meta.url)).then(r => r.json());
+    const now = new Date(), meta = { version:1, createdAt: now, updatedAt: now, createdBy: who, updatedBy: who };
+    const ops = (seed.events || []).map(({ id, ...rest }) => ({ op:"set", path:`events/${id}`, data: Object.assign(rest, meta) }));
+    if (ops.length){ await api.db.batch(ops); changed = true; }
   }
   const offer = await api.db.get("offers/sample-premium").catch(() => null);
   if (offer && offer.active !== true && !offer.demoTouched){ await api.db.set("offers/sample-premium", { active:true, demoTouched:true }, true); changed = true; }

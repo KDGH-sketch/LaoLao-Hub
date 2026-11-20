@@ -197,7 +197,7 @@ console.log("welcome page: new tables and settings/welcome (docs/WELCOME.md)");
     try { return await fn(); } finally { await db.exec(`reset role; select set_config('request.jwt.claim.sub', '', false);`); }
   };
   const tryWrite = (k, table, id) => asW(k, async () => { try { await db.query(`insert into public."${table}" (id, data) values ($1, '{"status":"draft"}')`, [id]); return true; } catch(e){ return false; } });
-  const types = ["places","festivals","offers","resources"];
+  const types = ["places","festivals","events","offers","resources"];
   // seed one published public row of each type, a published welcome copy and its draft
   for (const t of types) await db.exec(`insert into public."${t}" (id, data) values ('seed-${t}', '{"status":"published","access":"public"}') on conflict (id) do nothing`);
   await db.exec(`insert into public.settings (id, data) values ('welcome', '{"published":{"hero":{}}}'), ('welcomeDraft', '{"data":{"secret":"unpublished copy"}}') on conflict (id) do update set data = excluded.data`);
@@ -216,7 +216,7 @@ console.log("welcome page: new tables and settings/welcome (docs/WELCOME.md)");
     ok((await tryWrite("ed", t, "x-ed")) && (await tryWrite("ct", t, "x-ct")) && (await tryWrite("ad", t, "x-ad")) && (await tryWrite("adm", t, "x-super")),
       `${t}: editor, content, admin and super can write`);
   }
-  ok((await tryWrite("cu", "places", "x-cu")) && !(await tryWrite("cu", "festivals", "x-cu")) && !(await tryWrite("cu", "offers", "x-cu")), "custom role with places → edit: places only");
+  ok((await tryWrite("cu", "places", "x-cu")) && !(await tryWrite("cu", "festivals", "x-cu")) && !(await tryWrite("cu", "events", "x-cu")) && !(await tryWrite("cu", "offers", "x-cu")), "custom role with places → edit: places only");
   ok((await tryWrite("cp", "offers", "x-cp")) && !(await tryWrite("cp", "places", "x-cp2")), "custom role with promotions → edit: offers only");
   const setW = (k, id) => asW(k, async () => { try { await db.query(`insert into public.settings (id, data) values ($1, '{"x":1}') on conflict (id) do update set data = excluded.data`, [id]); return (await one(`select data->>'x' x from public.settings where id = '${id}'`))?.x === "1"; } catch(e){ return false; } });
   ok((await setW("ed", "welcome")) && (await setW("ed", "welcomeDraft")), "editor: writes settings/welcome and its draft");
@@ -228,6 +228,12 @@ console.log("welcome page: new tables and settings/welcome (docs/WELCOME.md)");
   const mig = fs.readFileSync(new URL("supabase-welcome-migration.sql", ROOT), "utf8");
   try { await db.exec(mig); await db.exec(mig); ok(true, "supabase-welcome-migration.sql runs, twice"); } catch(e){ ok(false, "migration failed: " + e.message); }
   ok(!(await tryWrite("free", "places", "x-free2")) && (await tryWrite("ed", "places", "x-ed2")), "after the migration the same rules apply");
+  const calMig = fs.readFileSync(new URL("supabase-calendar-migration.sql", ROOT), "utf8");
+  try { await db.exec(calMig); await db.exec(calMig); ok(true, "supabase-calendar-migration.sql runs, twice"); } catch(e){ ok(false, "calendar migration failed: " + e.message); }
+  ok(!(await tryWrite(null, "events", "x-anon2")) && !(await tryWrite("free", "events", "x-free3")) && (await tryWrite("ed", "events", "x-ed3")), "events after the calendar migration: editors write, learners and anonymous do not");
+  ok(await asW(null, async () => (await all(`select id from public.events`)).length) === 0, "anonymous: cannot read the raw events table (only the bundle)");
+  const applyOk = await asW("ed", async () => { try { await db.query(`select public.ll_apply('events', 'x-ed3', '[{"path":["n"],"inc":1}]'::jsonb)`); return true; } catch(e){ return e.message; } });
+  ok(applyOk === true, "atomic updates (ll_apply) accept the events table", applyOk);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
